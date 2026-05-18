@@ -140,6 +140,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AnalyticsController.cs" />
+    <Compile Include="Controllers\ApprovalsController.cs" />
     <Compile Include="Controllers\CategoryAPIController.cs" />
     <Compile Include="Controllers\CategoryController.cs" />
     <Compile Include="Controllers\DeviceController.cs" />
@@ -165,7 +166,9 @@
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
+    <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
+    <Compile Include="Models\Tickets.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Models\UserRole.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -195,6 +198,7 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
     <Content Include="Scripts\app\inventory.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
@@ -231,6 +235,7 @@
     <Content Include="Views\Inventory\Index.cshtml" />
     <Content Include="Views\VongDoiKhauHao\VongDoiKhauHao.cshtml" />
     <Content Include="Views\Analytics\Index.cshtml" />
+    <Content Include="Views\Approvals\Index.cshtml" />
     <Content Include="Views\Category\Category.cshtml" />
     <Content Include="Views\Location\Location.cshtml" />
   </ItemGroup>

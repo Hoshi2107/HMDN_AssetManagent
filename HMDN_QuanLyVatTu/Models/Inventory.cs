@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HMS.Models.Catalog;
 
 namespace HMS.Models.Inventory
@@ -52,6 +52,8 @@ namespace HMS.Models.Inventory
         public DateTime CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
+
+        public int? IdTicket { get; set; }
 
         // Navigation
         public virtual Item Item { get; set; }
