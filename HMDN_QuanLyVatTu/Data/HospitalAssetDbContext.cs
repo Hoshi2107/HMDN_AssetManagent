@@ -30,8 +30,7 @@ namespace HMS.Data
         public DbSet<Inventory> Inventories { get; set; }
 
         public DbSet<Location> Locations { get; set; }
-        public DbSet<Approvals> Approvals { get; set; }
-        public DbSet<HMDN_QuanLyVatTu.Models.DepreciationLog> DepreciationLogs { get; set; }
+        public DbSet<Tickets> Tickets { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -55,15 +54,15 @@ namespace HMS.Data
             modelBuilder.Entity<Item>()
                 .ToTable("Items");
 
+            modelBuilder.Entity<Tickets>()
+                .ToTable("Tickets");
+
             // QUAN TRỌNG NHẤT
-            modelBuilder.Entity<Approvals>().ToTable("Approvals");
             modelBuilder.Entity<Inventory>()
                 .ToTable("Inventory");
 
             modelBuilder.Entity<Location>()
                 .ToTable("Locations");
-            modelBuilder.Entity<HMDN_QuanLyVatTu.Models.DepreciationLog>()
-                .ToTable("DepreciationLogs");
         }
 
     }
