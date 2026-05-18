@@ -1,0 +1,340 @@
+@{
+    ViewBag.Title = "Vòng đời & Khấu hao";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+  :root {
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --muted: #94a3b8;
+    --card-bg: #ffffff;
+    --body-bg: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --disposed: #64748b;
+  }
+  
+  .page-title { font-size: 22px; font-weight: 700; color: var(--text); }
+  .page-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: white; border-radius: 12px; padding: 18px 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; transition: box-shadow .18s; }
+  .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+  .stat-info .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+  .stat-info .value { font-size: 28px; font-weight: 700; color: var(--text); margin: 4px 0 2px; }
+  .stat-info .delta { font-size: 11.5px; color: var(--success); font-weight: 500; }
+  .stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .si-blue { background: #eff6ff; color: var(--accent); }
+  .si-green { background: #f0fdf4; color: var(--success); }
+  .si-yellow { background: #fffbeb; color: var(--warning); }
+  .si-gray { background: #f1f5f9; color: var(--disposed); }
+
+  /* FILTERS */
+  .filter-bar { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 16px 20px; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-group { display: flex; flex-direction: column; gap: 3px; }
+  .filter-group label { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .filter-select { background: #f8fafc; border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; font-size: 12.5px; outline: none; min-width: 150px; }
+  .btn-filter { background: white; border: 1px solid var(--border); border-radius: 7px; padding: 7px 14px; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; margin-top: 16px; transition: background .15s; }
+  .btn-filter:hover { background: #f1f5f9; }
+
+  /* TABLE */
+  .table-card { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .table-top { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .table-title { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #f8fafc; padding: 11px 16px; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--border); }
+  tbody td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:hover { background: #f8fafc; }
+  .device-id { color: var(--accent); font-weight: 600; font-size: 12px; }
+  .device-name { font-weight: 600; color: var(--text); }
+  .money { font-family: monospace; font-size: 12.5px; font-weight: 500; text-align: right; }
+  .th-money { text-align: right !important; }
+
+  /* BADGES */
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .status-badge::before { content:''; width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .s-active { background: #f0fdf4; color: #16a34a; }
+  .s-suspended { background: #fffbeb; color: #d97706; }
+  .s-disposed { background: #f1f5f9; color: var(--disposed); }
+  .s-replaced { background: #eff6ff; color: var(--accent); }
+  .replaced-link { color: var(--accent); text-decoration: underline; font-weight: 600; font-size: 11.5px; cursor: pointer; }
+
+  /* ACTIONS */
+  .action-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 4px 8px; border-radius: 5px; }
+  .action-btn:hover { background: #e2e8f0; color: var(--text); }
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; background: white; min-width: 180px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid var(--border); z-index: 10; overflow: hidden; }
+  .dropdown.show .dropdown-menu { display: block; animation: fadeIn .15s ease; }
+  .dropdown-item { padding: 10px 14px; font-size: 12.5px; color: var(--text); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background .15s; }
+  .dropdown-item:hover { background: #f8fafc; color: var(--accent); }
+  .dropdown-item i { width: 14px; text-align: center; color: var(--muted); }
+  .dropdown-item:hover i { color: var(--accent); }
+
+  /* MODALS */
+  .custom-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1050; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn .2s ease; }
+  .custom-modal { background: white; border-radius: 16px; width: 500px; max-width: 90vw; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: popUp .25s ease; }
+  .custom-modal.large { width: 750px; }
+  @@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @@keyframes popUp { from { transform: scale(.95); opacity:0; } to { transform: scale(1); opacity:1; } }
+  .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .btn-close-modal { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+  .modal-body { padding: 24px; max-height: 65vh; overflow-y: auto; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
+
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+  .form-control { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13.5px; outline: none; transition: all .2s; }
+  .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+  .btn-primary { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+
+  /* DEPRECIATION LOGS */
+  .log-timeline { display: flex; flex-direction: column; gap: 12px; }
+  .log-item { background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .log-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; color: var(--text); border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
+  .log-year { color: var(--accent); }
+  .log-calc { font-size: 11.5px; color: var(--muted); font-weight: 400; }
+  .log-stats { display: flex; justify-content: space-between; gap: 20px; }
+  .l-stat { flex: 1; display: flex; flex-direction: column; }
+  .l-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+  .l-val { font-size: 14px; font-weight: 600; font-family: monospace; }
+  .val-minus { color: var(--danger); }
+  .log-note { font-size: 12px; color: var(--text-muted); background: white; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); margin-top: 4px; }
+</style>
+
+<div id="app">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+            <div class="page-title">Vòng đời & Khấu hao Thiết bị</div>
+            <div class="page-sub">Theo dõi tình trạng (LifeStatus), tính toán khấu hao tự động và quản lý lịch sử thay thế.</div>
+        </div>
+        <div style="position:relative; width: 300px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:11px; color:var(--muted)"></i>
+            <input type="text" placeholder="Tìm kiếm thiết bị khấu hao..." v-model="searchQuery" style="width:100%; padding:9px 16px 9px 36px; border:1px solid var(--border); border-radius:8px; outline:none; font-size:13px; background:white;">
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="label">Tổng thiết bị</div>
+                <div class="value">{{ devices.length }}</div>
+                <div class="delta"><i class="fa-solid fa-arrow-up"></i> Tăng 12%</div>
+            </div>
+            <div class="stat-icon si-blue"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="label">Đang khấu hao (Active)</div>
+                <div class="value">{{ countStatus('active') }}</div>
+                <div class="delta" style="color:var(--text-muted)">Sinh lời ổn định</div>
+            </div>
+            <div class="stat-icon si-green"><i class="fa-solid fa-heart-pulse"></i></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="label">Tạm ngưng do hỏng</div>
+                <div class="value">{{ countStatus('suspended') }}</div>
+                <div class="delta" style="color:var(--warning)">Cần đánh giá sửa chữa</div>
+            </div>
+            <div class="stat-icon si-yellow"><i class="fa-solid fa-wrench"></i></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="label">Đã thanh lý / Thay thế</div>
+                <div class="value">{{ countStatus('disposed') + countStatus('replaced') }}</div>
+                <div class="delta" style="color:var(--disposed)">Kết thúc vòng đời</div>
+            </div>
+            <div class="stat-icon si-gray"><i class="fa-solid fa-box-archive"></i></div>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>Trạng thái vòng đời</label>
+            <select class="filter-select" v-model="filterStatus">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang sử dụng (Active)</option>
+                <option value="suspended">Tạm ngưng (Suspended)</option>
+                <option value="disposed">Đã thanh lý (Disposed)</option>
+                <option value="replaced">Đã thay mới (Replaced)</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Năm tính khấu hao</label>
+            <select class="filter-select" v-model="filterYear">
+                <option value="2024">Năm 2024</option>
+                <option value="2023">Năm 2023</option>
+            </select>
+        </div>
+        <button class="btn-filter" @@click="refreshData">
+            <i class="fa-solid fa-calculator"></i> Tính khấu hao tự động
+        </button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+        <div class="table-top">
+            <div class="table-title">Danh sách khấu hao tài sản</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã tài sản</th>
+                    <th>Tên thiết bị</th>
+                    <th>Ngày nhập</th>
+                    <th>Hạn BH</th>
+                    <th>Hạn sử dụng</th>
+                    <th>Trạng thái (LifeStatus)</th>
+                    <th class="th-money">Nguyên giá (VNĐ)</th>
+                    <th class="th-money">Khấu hao lũy kế</th>
+                    <th class="th-money">Giá trị còn lại</th>
+                    <th>Thay thế bởi</th>
+                    <th style="text-align:right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="d in filteredDevices" :key="d.id">
+                    <td><span class="device-id">{{ d.id }}</span></td>
+                    <td><div class="device-name">{{ d.name }}</div></td>
+                    <td>{{ d.importDate }}</td>
+                    <td>{{ d.warrantyExpiry }}</td>
+                    <td>{{ d.expiryDate }}</td>
+                    <td>
+                        <span :class="['status-badge', 's-' + d.status]">
+                            {{ statusText(d.status) }}
+                        </span>
+                    </td>
+                    <td class="money">{{ formatMoney(d.openingValue) }}</td>
+                    <td class="money" style="color:var(--danger)">{{ formatMoney(d.depreciation) }}</td>
+                    <td class="money" style="color:var(--success)">{{ formatMoney(d.closingValue) }}</td>
+                    <td>
+                        <span v-if="d.replacedBy" class="replaced-link" title="Xem thiết bị thay thế">{{ d.replacedBy }}</span>
+                        <span v-else style="color:var(--muted)">-</span>
+                    </td>
+                    <td style="text-align:right">
+                        <div class="dropdown" :class="{show: activeDropdown === d.id}">
+                            <button class="action-btn" @@click.stop="toggleDropdown(d.id)">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" @@click="openStatusModal(d)">
+                                    <i class="fa-solid fa-rotate"></i> Cập nhật trạng thái
+                                </a>
+                                <a class="dropdown-item" @@click="openLogModal(d)">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> Xem LS Khấu hao
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MODAL: Cập nhật trạng thái -->
+    <div class="custom-modal-overlay" v-if="showStatusModal" @@click.self="showStatusModal=false">
+        <div class="custom-modal">
+            <div class="modal-header">
+                <div class="modal-title">Cập nhật vòng đời thiết bị</div>
+                <button class="btn-close-modal" @@click="showStatusModal=false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Thiết bị đang chọn</label>
+                    <div class="form-control" style="background:#f8fafc;font-weight:600;color:var(--accent)">
+                        {{ selectedDevice?.id }} - {{ selectedDevice?.name }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Trạng thái mới (LifeStatus)</label>
+                    <select class="form-control" v-model="formStatus">
+                        <option value="active">Active - Hoạt động bình thường</option>
+                        <option value="suspended">Suspended - Tạm ngưng do hỏng</option>
+                        <option value="disposed">Disposed - Thanh lý</option>
+                        <option value="replaced">Replaced - Thay thế bằng TB mới</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" v-if="formStatus === 'replaced'">
+                    <label class="form-label">Mã thiết bị thay thế (ReplacedByInventoryId)</label>
+                    <input type="text" class="form-control" placeholder="Nhập ID thiết bị mới..." v-model="formReplacedBy">
+                    <small style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">
+                        Liên kết ID này để duy trì lịch sử luân chuyển thiết bị của khoa phòng.
+                    </small>
+                </div>
+
+                <div class="mb-3" v-if="formStatus === 'disposed' || formStatus === 'suspended'">
+                    <label class="form-label">Lý do / Ghi chú</label>
+                    <textarea class="form-control" rows="3" placeholder="Nhập lý do..." v-model="formReason"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" @@click="showStatusModal=false">Hủy bỏ</button>
+                <button class="btn-primary" @@click="saveStatus">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Lịch sử khấu hao (DepreciationLogs) -->
+    <div class="custom-modal-overlay" v-if="showLogModal" @@click.self="showLogModal=false">
+        <div class="custom-modal large">
+            <div class="modal-header">
+                <div class="modal-title">Bảng tính Khấu hao tài sản (DepreciationLogs)</div>
+                <button class="btn-close-modal" @@click="showLogModal=false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="background:#f1f5f9;">
+                <div style="margin-bottom:16px;background:white;padding:14px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:4px;">THIẾT BỊ</div>
+                    <div style="font-weight:700;font-size:16px;color:var(--accent);">{{ selectedDevice?.id }}</div>
+                    <div style="font-size:14px;">{{ selectedDevice?.name }}</div>
+                </div>
+
+                <div class="log-timeline">
+                    <div class="log-item" v-for="log in mockLogs" :key="log.year">
+                        <div class="log-header">
+                            <span>Khấu hao năm <span class="log-year">{{ log.year }}</span></span>
+                            <span class="log-calc">Tính lúc: {{ log.calculatedAt }} | Bởi: Admin</span>
+                        </div>
+                        <div class="log-stats">
+                            <div class="l-stat">
+                                <span class="l-label">Giá trị đầu kỳ (Opening)</span>
+                                <span class="l-val">{{ formatMoney(log.opening) }}</span>
+                            </div>
+                            <div class="l-stat">
+                                <span class="l-label">Mức khấu hao (Amt)</span>
+                                <span class="l-val val-minus">- {{ formatMoney(log.amt) }}</span>
+                            </div>
+                            <div class="l-stat">
+                                <span class="l-label">Giá trị cuối kỳ (Closing)</span>
+                                <span class="l-val" style="color:var(--success)">{{ formatMoney(log.closing) }}</span>
+                            </div>
+                        </div>
+                        <div class="log-note">
+                            <strong>Ghi chú:</strong> {{ log.note }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background:white">
+                <button class="btn-secondary" @@click="showLogModal=false">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/Addon/vue/vue.js"></script>
+    <script>
+        window.DevicesJsonData = @Html.Raw(ViewBag.DevicesJson ?? "[]");
+    </script>
+    <script src="~/Scripts/app/VongDoiKhauHao.js"></script>
+}

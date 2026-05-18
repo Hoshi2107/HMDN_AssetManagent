@@ -1,0 +1,777 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - MedEquip Enterprise</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        :root {
+            --sidebar-bg: #0f1623;
+            --sidebar-hover: #1a2236;
+            --sidebar-active: #2563eb;
+            --sidebar-width: 230px;
+            --text-primary: #f0f4ff;
+            --text-secondary: #8a96b0;
+            --text-muted: #4a5568;
+            --body-bg: #f4f7fb;
+            --card-bg: #ffffff;
+            --border: #e5eaf3;
+            --accent-blue: #2563eb;
+            --accent-cyan: #06b6d4;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --shadow-sm: 0 1px 4px rgba(0,0,0,.06);
+            --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+            --radius: 10px;
+            --font-main: 'Be Vietnam Pro', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition: 0.18s ease;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: var(--font-main);
+            font-size: 14px;
+            background: var(--body-bg);
+            color: #1e2a3a;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* ── APP SHELL ── */
+        .app-shell {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+            position: relative;
+        }
+
+            .sidebar::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+                background-size: 24px 24px;
+                pointer-events: none;
+            }
+
+        /* ── BRAND (Đã tối ưu căn giữa và khoảng cách) ── */
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 14px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0;
+        }
+
+        .slidebar-logo {
+            width: 100%;
+            height: 52px; /* Độ cao lý tưởng để hiển thị trọn vẹn chữ Hoàn Mỹ dài */
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            overflow: hidden;
+        }
+
+            /* Đã sửa từ .brand-logo img sang đúng .slidebar-logo img */
+            .slidebar-logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain; /* Giữ nguyên tỷ lệ chuẩn của bệnh viện, không bị bóp méo dẹt hình */
+                display: block;
+            }
+
+        .brand-text strong {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.25;
+            letter-spacing: -.2px;
+        }
+
+        .brand-text span {
+            display: block;
+            font-size: 10px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+
+        /* ── NAV ── */
+        .sidebar-nav {
+            flex: 1;
+            padding: 8px 10px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+            .sidebar-nav::-webkit-scrollbar {
+                display: none;
+            }
+
+        .nav-section-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 12px 8px 5px;
+            user-select: none;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 12.5px;
+            font-weight: 500;
+            transition: background var(--transition), color var(--transition);
+            white-space: nowrap;
+        }
+
+            .nav-item a .nav-icon {
+                width: 16px;
+                text-align: center;
+                font-size: 12px;
+                flex-shrink: 0;
+                opacity: .8;
+            }
+
+            .nav-item a:hover {
+                background: var(--sidebar-hover);
+                color: var(--text-primary);
+            }
+
+        .nav-item.active a {
+            background: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(37,99,235,.35);
+        }
+
+            .nav-item.active a .nav-icon {
+                opacity: 1;
+            }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent-red);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            flex-shrink: 0;
+        }
+
+        /* ── FOOTER ── */
+        .sidebar-footer {
+            padding: 8px 10px 14px;
+            border-top: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0;
+        }
+
+            .sidebar-footer .nav-section-label {
+                padding-top: 8px;
+            }
+
+        .staff-pill {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 11px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background var(--transition);
+            margin-top: 8px;
+        }
+
+            .staff-pill:hover {
+                background: rgba(255,255,255,.08);
+            }
+
+        .staff-avatars {
+            display: flex;
+        }
+
+            .staff-avatars img,
+            .staff-avatars .av-count {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 2px solid var(--sidebar-bg);
+                margin-left: -6px;
+                object-fit: cover;
+            }
+
+                .staff-avatars img:first-child {
+                    margin-left: 0;
+                }
+
+        .av-count {
+            background: var(--accent-cyan);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .staff-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+            .staff-info small {
+                display: block;
+                font-size: 9px;
+                color: var(--text-muted);
+                line-height: 1.2;
+            }
+
+            .staff-info strong {
+                display: block;
+                font-size: 11.5px;
+                color: var(--text-primary);
+                font-weight: 600;
+            }
+
+        .staff-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(16,185,129,.6);
+            flex-shrink: 0;
+        }
+
+        /* ── MAIN CONTENT ── */
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .page-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 52px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            gap: 16px;
+        }
+
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e2a3a;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: var(--font-main);
+            transition: background var(--transition);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid var(--border);
+        }
+
+            .btn-ghost:hover {
+                background: var(--body-bg);
+            }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+            .btn-primary:hover {
+                background: #1d4ed8;
+            }
+
+        .page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 26px 28px;
+            scrollbar-width: thin;
+            scrollbar-color: #d1d9e6 transparent;
+        }
+
+            .page-content::-webkit-scrollbar {
+                width: 5px;
+            }
+
+            .page-content::-webkit-scrollbar-thumb {
+                background: #d1d9e6;
+                border-radius: 4px;
+            }
+
+        /* ── SHARED HELPERS ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+            .badge-status::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+                opacity: .7;
+            }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-maint {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .badge-pending {
+            background: #f0f9ff;
+            color: #075985;
+        }
+
+        /* ── TOAST ── */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12);
+            min-width: 300px;
+            max-width: 380px;
+            animation: slideIn .25s ease;
+        }
+
+        .toast-danger {
+            border-left: 4px solid var(--accent-red);
+        }
+
+        .toast-warning {
+            border-left: 4px solid var(--accent-amber);
+        }
+
+        .toast-success {
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .toast-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .toast-danger .toast-icon {
+            color: var(--accent-red);
+        }
+
+        .toast-warning .toast-icon {
+            color: var(--accent-amber);
+        }
+
+        .toast-success .toast-icon {
+            color: var(--accent-green);
+        }
+
+        .toast-body {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e2a3a;
+            margin-bottom: 3px;
+        }
+
+        .toast-msg {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 14px;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+            .toast-close:hover {
+                color: #1e2a3a;
+            }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 58px;
+                min-width: 58px;
+            }
+
+            .brand-text,
+            .nav-item a span,
+            .staff-info,
+            .nav-section-label,
+            .nav-badge,
+            .slidebar-logo img { /* Ẩn bớt chi tiết ảnh khi thu nhỏ mobile */
+                display: none;
+            }
+
+            .sidebar-brand {
+                justify-content: center;
+                padding: 14px 10px;
+            }
+
+            .nav-item a {
+                justify-content: center;
+                gap: 0;
+                padding: 10px;
+            }
+
+            .staff-pill {
+                justify-content: center;
+                padding: 10px;
+            }
+
+            .page-content {
+                padding: 18px;
+            }
+
+            .page-topbar {
+                padding: 0 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+
+        <aside class="sidebar">
+
+            <div class="sidebar-brand">
+                <div class="slidebar-logo">
+                    <img src="@Url.Content("~/Content/images1/logobv.png")" alt="MedEquip Logo">
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <div class="nav-section-label">Tổng quan</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Analytics" ? "active" : "")">
+                        <a href="@Url.Action("Index","Analytics")">
+                            <i class="fa-solid fa-chart-pie nav-icon"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-label">Tài sản & Kho</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Inventory" ? "active" : "")">
+                        <a href="@Url.Action("Index","Inventory")">
+                            <i class="fa-solid fa-box-archive nav-icon"></i>
+                            <span>Tồn kho</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Catalog" ? "active" : "")">
+                        <a href="@Url.Action("Category","Category")">
+                            <i class="fa-solid fa-layer-group nav-icon"></i>
+                            <span>Danh mục</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Locations" ? "active" : "")">
+                        <a href="@Url.Action("Location","Location")">
+                            <i class="fa-solid fa-map-pin nav-icon"></i>
+                            <span>Vị trí</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "QrCodes" ? "active" : "")">
+                        <a href="@Url.Action("Index","QrCodes")">
+                            <i class="fa-solid fa-qrcode nav-icon"></i>
+                            <span>QR Code</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-label">Vòng đời</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Lifecycle" ? "active" : "")">
+                        <a href="@Url.Action("Index","Lifecycle")">
+                            <i class="fa-solid fa-rotate nav-icon"></i>
+                            <span>Trạng thái</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
+                        <a href="@Url.Action("VongDoiKhauHao", "VongDoiKhauHao")">
+                            <i class="fa fa-recycle"></i> <span>Vòng đời & Khấu hao</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-label">Bảo trì</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Checklists" ? "active" : "")">
+                        <a href="@Url.Action("Index","Checklists")">
+                            <i class="fa-solid fa-list-check nav-icon"></i>
+                            <span>Checklist</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Maintenance" ? "active" : "")">
+                        <a href="@Url.Action("Index","Maintenance")">
+                            <i class="fa-solid fa-screwdriver-wrench nav-icon"></i>
+                            <span>Sửa chữa</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="nav-section-label">Vận hành</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Alerts" ? "active" : "")">
+                        <a href="@Url.Action("Index","Alerts")">
+                            <i class="fa-solid fa-bell nav-icon"></i>
+                            <span>Cảnh báo</span>
+                            @if (ViewBag.AlertCount != null && (int)ViewBag.AlertCount > 0)
+                            {
+                                <span class="nav-badge">@ViewBag.AlertCount</span>
+                            }
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Approvals" ? "active" : "")">
+                        <a href="@Url.Action("Index","Approvals")">
+                            <i class="fa-solid fa-clipboard-check nav-icon"></i>
+                            <span>Phê duyệt</span>
+                            @if (ViewBag.PendingApprovals != null && (int)ViewBag.PendingApprovals > 0)
+                            {
+                                <span class="nav-badge">@ViewBag.PendingApprovals</span>
+                            }
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="nav-section-label">Hệ thống</div>
+                <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Settings" ? "active" : "")">
+                        <a href="@Url.Action("Index","Settings")">
+                            <i class="fa-solid fa-gear nav-icon"></i>
+                            <span>Cài đặt</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "Support" ? "active" : "")">
+                        <a href="@Url.Action("Index","Support")">
+                            <i class="fa-solid fa-circle-question nav-icon"></i>
+                            <span>Hỗ trợ</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="staff-pill">
+                    <div class="staff-avatars">
+                        <img src="https://i.pravatar.cc/40?img=11" alt="Staff 1" />
+                        <img src="https://i.pravatar.cc/40?img=22" alt="Staff 2" />
+                        <div class="av-count">+4</div>
+                    </div>
+                    <div class="staff-info">
+                        <small>Nhân viên trực tuyến</small>
+                        <strong>6 Kỹ thuật viên</strong>
+                    </div>
+                    <div class="staff-dot"></div>
+                </div>
+            </div>
+
+        </aside>
+
+        <div class="page-wrapper">
+            <header class="page-topbar">
+                <span class="topbar-title">@(ViewBag.PageTitle ?? ViewBag.Title ?? "")</span>
+                <div class="topbar-actions">
+                    @RenderSection("topbar_actions", required: false)
+                </div>
+            </header>
+
+            <main class="page-content">
+                @RenderBody()
+            </main>
+        </div>
+
+    </div>
+
+    <div id="toast-container"></div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+
+    <script>
+        // ── Toast utility ──────────────────────────────────────
+        window.MedEquip = window.MedEquip || {};
+
+        MedEquip.toast = function (title, message, type) {
+            type = type || 'warning';
+            var icons = {
+                danger: 'fa-triangle-exclamation',
+                warning: 'fa-circle-exclamation',
+                success: 'fa-circle-check'
+            };
+            var id = 'toast-' + Date.now();
+            var html = '<div class="toast toast-' + type + '" id="' + id + '">'
+                + '<i class="fa-solid ' + icons[type] + ' toast-icon"></i>'
+                + '<div class="toast-body">'
+                + '<div class="toast-title">' + title + '</div>'
+                + '<div class="toast-msg">' + message + '</div>'
+                + '</div>'
+                + '<button class="toast-close" onclick="MedEquip.closeToast(\'' + id + '\')">'
+                + '<i class="fa-solid fa-xmark"></i>'
+                + '</button></div>';
+            document.getElementById('toast-container').insertAdjacentHTML('beforeend', html);
+            setTimeout(function () { MedEquip.closeToast(id); }, 6000);
+        };
+
+        MedEquip.closeToast = function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(20px)';
+                el.style.transition = '.2s ease';
+                setTimeout(function () { el.remove(); }, 200);
+            }
+        };
+
+        // ── Auto-highlight active nav from URL ────────────────
+        (function () {
+            if (!document.querySelector('.nav-item.active')) {
+                var seg = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0] || '';
+                document.querySelectorAll('.nav-item a').forEach(function (a) {
+                    var href = (a.getAttribute('href') || '').toLowerCase();
+                    if (seg && href.indexOf(seg) > -1) {
+                        a.closest('.nav-item').classList.add('active');
+                    }
+                });
+            }
+        })();
+    </script>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,259 @@
+﻿@{
+    ViewBag.Title = "Inventory";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/Content/inventory/inventory.css" rel="stylesheet" />
+
+<div id="app">
+
+
+    <!-- MAIN -->
+    <div class="main-wrap">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-search">
+                <input type="text"
+                       placeholder="Tìm thiết bị..."
+                       v-model="searchQuery">
+            </div>
+
+            <div class="user-chip">
+                Admin
+            </div>
+
+        </header>
+
+        <!-- CONTENT -->
+        <main class="page-content">
+
+            <div class="page-header">
+
+                <div>
+                    <h2>Danh sách thiết bị</h2>
+                    <p>Quản lý kho thiết bị y tế</p>
+                </div>
+
+                <button class="btn-primary"
+                        @@click="goDetail()">
+                    Thêm thiết bị
+                </button>
+
+            </div>
+
+            <!-- FILTER -->
+            <div class="filter-bar">
+
+            <!-- Filter theo vị trí -->
+            <select v-model="filterLoca">
+                <option value="">Tất cả vị trí</option>
+            
+                <option v-for="loc in locations" :key="loc" :value="loc">
+                    ${ loc }
+                </option>
+
+
+            <!-- Filter theo trạng thái -->
+            </select>
+
+                <select v-model="filterStatus">
+                    <option value="">Tất cả trạng thái</option>
+
+                    <option v-for="stat in status" :key="stat" :value="stat">
+                        @*${ stat }*@
+                        ${ statusLabel(stat) }
+                    </option>
+                </select>
+
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-card">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th @@click="sortBy('id')">Mã</th>
+                            <th>Tên</th>
+                            <th>Serial</th>
+                            <th>Khoa</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr v-for="item in paginatedDevices"
+                            :key="item.Id"
+                            @@click="openDetail(item.Id)"
+                            class="table-row">
+
+                            <td>${ item.Id }</td>
+
+                            <td>${ item.ItemName }</td>
+
+                            <td>${ item.SerialNumber }</td>
+
+                            <td>${ item.DepartmentName }</td>
+
+                            <td>
+                                <span :class="statusClass(item.LifeStatus)">
+                                    ${ statusLabel(item.LifeStatus) }
+                                </span>
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+                <!-- Modal -->
+                <div class="modal-overlay"
+                     v-if="showModal"
+                     @@click.self="showModal = false">
+
+                    <div class="device-modal">
+
+                        <div class="modal-header">
+
+                            <h3>
+                                Chi tiết thiết bị
+                            </h3>
+
+                            <button class="close-btn"
+                                    @@click="showModal = false">
+
+                                ×
+                            </button>
+
+                        </div>
+
+                        <div class="modal-body"
+                             v-if="selectedDevice">
+
+                            <div class="detail-grid">
+
+                                <div>
+                                    <label>Mã tài sản</label>
+                                    <p>${ selectedDevice.AssetCode }</p>
+                                </div>
+
+                                <div>
+                                    <label>Tên thiết bị</label>
+                                    <p>${ selectedDevice.ItemName }</p>
+                                </div>
+
+                                <div>
+                                    <label>Serial</label>
+                                    <p>${ selectedDevice.SerialNumber }</p>
+                                </div>
+
+                                <div>
+                                    <label>Hãng</label>
+                                    <p>${ selectedDevice.Brand }</p>
+                                </div>
+
+                                <div>
+                                    <label>Model</label>
+                                    <p>${ selectedDevice.Model }</p>
+                                </div>
+
+                                <div>
+                                    <label>Khoa</label>
+                                    <p>${ selectedDevice.DepartmentName }</p>
+                                </div>
+
+                                <div>
+                                    <label>Vị trí</label>
+                                    <p>${ selectedDevice.LocationName }</p>
+                                </div>
+
+                                <div>
+                                    <label>Tầng</label>
+                                    <p>${ selectedDevice.Floor }</p>
+                                </div>
+
+                                <div>
+                                    <label>Tòa nhà</label>
+                                    <p>${ selectedDevice.Building }</p>
+                                </div>
+
+                                <div>
+                                    <label>Trạng thái</label>
+
+                                    <span :class="statusClass(selectedDevice.LifeStatus)">
+                                        ${ statusLabel(selectedDevice.LifeStatus) }
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <label>Giá trị</label>
+                                    <p>
+                                        ${ selectedDevice.TotalPrice }
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label>Phiếu</label>
+                                    <p>${ selectedDevice.TicketCode }</p>
+                                </div>
+
+                            </div>
+
+                            <div class="note-box">
+
+                                <label>Ghi chú</label>
+
+                                <p>
+                                    ${ selectedDevice.Note || 'Không có ghi chú' }
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+            <div class="pagination">
+
+            <button @@click="prevPage"
+                    :disabled="currentPage == 1">
+
+                Prev
+            </button>
+
+            <button v-for="page in pages"
+                    :key="page"
+                    @@click="changePage(page)"
+                    :class="{ active: currentPage == page }">
+
+                ${ page }
+            </button>
+
+            <button @@click="nextPage"
+                    :disabled="currentPage == totalPages">
+
+                Next
+            </button>
+
+            </div>
+        </main>
+
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script src="~/Addon/vue/vue.js"></script>
+<script src="~/Addon/vue/vue_dev.js"></script>
+
+<script src="~/Scripts/app/inventory.js"></script>

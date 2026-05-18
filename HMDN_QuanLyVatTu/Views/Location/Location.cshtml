@@ -1,0 +1,951 @@
+﻿@{
+    ViewBag.Title = "Location";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'DM Sans', Arial, sans-serif;
+        background: #f1f5f9;
+    }
+
+    #app-loc { display: flex; }
+
+    /* ── MAIN WRAP ── */
+    .main-wrap { flex: 1; min-height: 100vh; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+        background: #fff;
+        padding: 15px 28px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+    .topbar-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
+        letter-spacing: -.3px;
+    }
+
+    .topbar-search {
+        position: relative;
+    }
+
+    .topbar-search input {
+        width: 280px;
+        padding: 9px 14px 9px 36px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        background: #f8fafc;
+        transition: border .2s, box-shadow .2s;
+        outline: none;
+    }
+
+    .topbar-search input:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 15px;
+        pointer-events: none;
+    }
+
+    .user-chip {
+        background: #2563eb;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* ── PAGE CONTENT ── */
+    .page-content { padding: 28px; }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+    }
+
+    .page-header h2 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -.4px;
+    }
+
+    .page-header p {
+        color: #64748b;
+        font-size: 14px;
+        margin-top: 3px;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background .2s, transform .1s;
+    }
+
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-primary:active { transform: scale(.98); }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        flex: 1;
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px 20px;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: box-shadow .2s;
+    }
+
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.blue   { background: #eff6ff; color: #2563eb; }
+    .stat-icon.green  { background: #f0fdf4; color: #16a34a; }
+    .stat-icon.orange { background: #fff7ed; color: #ea580c; }
+
+    .stat-num {
+        font-size: 26px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 3px;
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+
+    .filter-bar select {
+        padding: 9px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        outline: none;
+        transition: border .2s;
+    }
+
+    .filter-bar select:focus { border-color: #2563eb; }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead tr { background: #f8fafc; }
+
+    th {
+        padding: 13px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        white-space: nowrap;
+        user-select: none;
+    }
+
+    th.sortable { cursor: pointer; }
+    th.sortable:hover { color: #2563eb; }
+
+    td {
+        padding: 13px 16px;
+        border-top: 1px solid #f1f5f9;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .table-row { cursor: pointer; transition: background .15s; }
+    .table-row:hover { background: #f8fafc; }
+
+    .mono {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: #475569;
+    }
+
+    /* ── BADGES ── */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .badge-active    { background: #f0fdf4; color: #16a34a; }
+    .badge-inactive  { background: #fef2f2; color: #dc2626; }
+    .badge-floor     { background: #eff6ff; color: #2563eb; }
+
+    /* ── ACTION BTNS ── */
+    .action-btns { display: flex; gap: 6px; }
+
+    .btn-icon {
+        width: 30px;
+        height: 30px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 7px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all .15s;
+        color: #64748b;
+    }
+
+    .btn-icon:hover       { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    .btn-icon.del:hover   { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── PAGINATION ── */
+    .pagination {
+        display: flex;
+        gap: 6px;
+        margin-top: 20px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .pagination button {
+        min-width: 36px;
+        height: 36px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #fff;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        transition: all .15s;
+    }
+
+    .pagination button:hover:not(:disabled) { border-color: #2563eb; color: #2563eb; }
+    .pagination button.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        animation: fadeIn .15s ease;
+    }
+
+    @@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @@keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+
+    .loc-modal {
+        width: 540px;
+        max-width: 95%;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        animation: slideUp .2s ease;
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+    .modal-header h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .modal-subtitle {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 2px;
+        font-family: 'DM Mono', monospace;
+    }
+
+    .close-btn {
+        border: none;
+        background: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+        padding: 4px;
+        border-radius: 6px;
+        transition: all .15s;
+    }
+
+    .close-btn:hover { background: #f1f5f9; color: #374151; }
+
+    .modal-body { padding: 24px; }
+
+    /* ── FORM ── */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px 12px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        color: #0f172a;
+        outline: none;
+        transition: border .2s, box-shadow .2s;
+        background: #fff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-cancel {
+        padding: 10px 18px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        background: #fff;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+    .btn-save {
+        padding: 10px 20px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .btn-save:hover { background: #1d4ed8; }
+
+    /* ── DELETE CONFIRM ── */
+    .confirm-modal {
+        width: 400px;
+        max-width: 95%;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        animation: slideUp .2s ease;
+    }
+
+    .confirm-body {
+        padding: 28px 24px 20px;
+        text-align: center;
+    }
+
+    .confirm-icon {
+        font-size: 36px;
+        margin-bottom: 12px;
+    }
+
+    .confirm-body h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .confirm-body p {
+        font-size: 14px;
+        color: #64748b;
+        line-height: 1.5;
+    }
+
+    .confirm-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-danger {
+        padding: 10px 20px;
+        background: #dc2626;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .btn-danger:hover { background: #b91c1c; }
+
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        background: #0f172a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.2);
+        animation: slideUp .2s ease;
+    }
+
+    .toast.success { background: #16a34a; }
+    .toast.error   { background: #dc2626; }
+</style>
+
+<div id="app-loc">
+
+    <div class="main-wrap">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-search">
+                    <span class="search-icon">⌕</span>
+                    <input type="text"
+                           placeholder="Tìm vị trí..."
+                           v-model="searchQuery">
+                </div>
+            </div>
+            <div class="user-chip">Admin</div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="page-content">
+
+            <div class="page-header">
+                <div>
+                    <h2>Quản lý vị trí</h2>
+                    <p>Danh sách phòng / tầng / tòa nhà trong bệnh viện</p>
+                </div>
+                <button class="btn-primary" @@click="openAdd">
+                    ＋ Thêm vị trí
+                </button>
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-strip">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📍</div>
+                    <div>
+                        <div class="stat-num">${ locations.length }</div>
+                        <div class="stat-label">Tổng vị trí</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🏢</div>
+                    <div>
+                        <div class="stat-num">${ uniqueBuildings }</div>
+                        <div class="stat-label">Tòa nhà</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">🏥</div>
+                    <div>
+                        <div class="stat-num">${ uniqueFloors }</div>
+                        <div class="stat-label">Tầng</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTER -->
+            <div class="filter-bar">
+                <select v-model="filterBuilding">
+                    <option value="">Tất cả tòa nhà</option>
+                    <option v-for="b in buildings" :key="b" :value="b">${ b }</option>
+                </select>
+
+                <select v-model="filterFloor">
+                    <option value="">Tất cả tầng</option>
+                    <option v-for="f in floors" :key="f" :value="f">${ f }</option>
+                </select>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="sortable" @@click="sortBy('Id')">
+                                ID ${ sortIcon('Id') }
+                            </th>
+                            <th class="sortable" @@click="sortBy('Name')">
+                                Tên vị trí ${ sortIcon('Name') }
+                            </th>
+                            <th class="sortable" @@click="sortBy('Building')">
+                                Tòa nhà ${ sortIcon('Building') }
+                            </th>
+                            <th class="sortable" @@click="sortBy('Floor')">
+                                Tầng ${ sortIcon('Floor') }
+                            </th>
+                            <th>Ghi chú</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr v-if="paginatedLocations.length === 0">
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📭</div>
+                                    <p>Không tìm thấy vị trí nào</p>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr v-for="item in paginatedLocations"
+                            :key="item.Id"
+                            class="table-row">
+
+                            <td><span class="mono">#${ item.Id }</span></td>
+                            <td><strong>${ item.Name }</strong></td>
+                            <td>
+                                <span class="badge badge-floor">${ item.Building || '—' }</span>
+                            </td>
+                            <td>${ item.Floor || '—' }</td>
+                            <td style="color:#94a3b8;font-size:13px">
+                                ${ item.Note || '—' }
+                            </td>
+                            <td>
+                                <div class="action-btns" @@click.stop>
+                                    <button class="btn-icon" @@click="openEdit(item)" title="Sửa">✏️</button>
+                                    <button class="btn-icon del" @@click="openDelete(item)" title="Xoá">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination">
+                <button @@click="prevPage" :disabled="currentPage == 1">← Prev</button>
+                <button v-for="page in pages"
+                        :key="page"
+                        @@click="changePage(page)"
+                        :class="{ active: currentPage == page }">
+                    ${ page }
+                </button>
+                <button @@click="nextPage" :disabled="currentPage == totalPages">Next →</button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ── MODAL THÊM / SỬA ── -->
+    <div class="modal-overlay"
+         v-if="showModal"
+         @@click.self="showModal = false">
+
+        <div class="loc-modal">
+
+            <div class="modal-header">
+                <div>
+                    <h3>${ isEdit ? 'Chỉnh sửa vị trí' : 'Thêm vị trí mới' }</h3>
+                    <div class="modal-subtitle" v-if="isEdit">#${ form.Id }</div>
+                </div>
+                <button class="close-btn" @@click="showModal = false">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label>Tên vị trí *</label>
+                        <input type="text"
+                               placeholder="VD: Phòng X-Quang 1"
+                               v-model="form.Name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tòa nhà</label>
+                        <input type="text"
+                               placeholder="VD: Nhà A"
+                               v-model="form.Building">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tầng</label>
+                        <input type="text"
+                               placeholder="VD: Tầng 2"
+                               v-model="form.Floor">
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Ghi chú</label>
+                        <textarea placeholder="Mô tả thêm nếu cần..."
+                                  v-model="form.Note"></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" @@click="showModal = false">Huỷ</button>
+                <button class="btn-save" @@click="saveLocation">
+                    ${ isEdit ? '💾 Lưu thay đổi' : '＋ Thêm vị trí' }
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── MODAL XOÁ ── -->
+    <div class="modal-overlay"
+         v-if="showDeleteModal"
+         @@click.self="showDeleteModal = false">
+
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="confirm-icon">⚠️</div>
+                <h3>Xác nhận xoá</h3>
+                <p>Bạn chắc muốn xoá vị trí <strong>${ deleteTarget?.Name }</strong>? Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" @@click="showDeleteModal = false">Không</button>
+                <button class="btn-danger" @@click="confirmDelete">Xoá luôn</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── TOAST ── -->
+    <div class="toast" :class="toast.type" v-if="toast.show">
+        ${ toast.msg }
+    </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="~/Addon/vue/vue.js"></script>
+<script src="~/Addon/vue/vue_dev.js"></script>
+
+<script>var appLoc = new Vue({
+    el: '#app-loc',
+    delimiters: ['${', '}'],
+
+    data: {
+        searchQuery: '',
+        filterBuilding: '',
+        filterFloor: '',
+
+        locations: [],
+
+        sort: { key: '', dir: 1 },
+
+        currentPage: 1,
+        pageSize: 15,
+
+        showModal: false,
+        isEdit: false,
+        form: { Id: null, Name: '', Building: '', Floor: '', Note: '' },
+
+        showDeleteModal: false,
+        deleteTarget: null,
+
+        toast: { show: false, msg: '', type: 'success' }
+    },
+
+    computed: {
+
+        filteredLocations() {
+            let list = [...this.locations]
+
+            if (this.searchQuery) {
+                const q = this.searchQuery.toLowerCase().trim()
+                list = list.filter(x =>
+                    ((x.Name || '') + ' ' + (x.Building || '') + ' ' + (x.Floor || '') + ' ' + (x.Note || ''))
+                        .toLowerCase().includes(q)
+                )
+            }
+
+            if (this.filterBuilding)
+                list = list.filter(x => x.Building == this.filterBuilding)
+
+            if (this.filterFloor)
+                list = list.filter(x => x.Floor == this.filterFloor)
+
+            if (this.sort.key) {
+                list.sort((a, b) => {
+                    const A = a[this.sort.key], B = b[this.sort.key]
+                    if (A < B) return -1 * this.sort.dir
+                    if (A > B) return 1 * this.sort.dir
+                    return 0
+                })
+            }
+
+            return list
+        },
+
+        paginatedLocations() {
+            const start = (this.currentPage - 1) * this.pageSize
+            return this.filteredLocations.slice(start, start + this.pageSize)
+        },
+
+        totalPages() {
+            return Math.max(1, Math.ceil(this.filteredLocations.length / this.pageSize))
+        },
+
+        pages() {
+            return Array.from({ length: this.totalPages }, (_, i) => i + 1)
+        },
+
+        buildings() {
+            return [...new Set(this.locations.map(x => x.Building).filter(x => x))]
+        },
+
+        floors() {
+            return [...new Set(this.locations.map(x => x.Floor).filter(x => x))]
+        },
+
+        uniqueBuildings() {
+            return this.buildings.length
+        },
+
+        uniqueFloors() {
+            return [...new Set(this.locations.map(x => x.Floor).filter(x => x))].length
+        }
+    },
+
+    methods: {
+
+        sortBy(key) {
+            if (this.sort.key == key) this.sort.dir *= -1
+            else { this.sort.key = key; this.sort.dir = 1 }
+        },
+
+        sortIcon(key) {
+            if (this.sort.key !== key) return '↕'
+            return this.sort.dir === 1 ? '↑' : '↓'
+        },
+
+        changePage(page) {
+            if (page < 1 || page > this.totalPages) return
+            this.currentPage = page
+        },
+
+        nextPage() { if (this.currentPage < this.totalPages) this.currentPage++ },
+        prevPage() { if (this.currentPage > 1) this.currentPage-- },
+
+        openAdd() {
+            this.isEdit = false
+            this.form = { Id: null, Name: '', Building: '', Floor: '', Note: '' }
+            this.showModal = true
+        },
+
+        openEdit(item) {
+            this.isEdit = true
+            this.form = { ...item }
+            this.showModal = true
+        },
+
+        openDelete(item) {
+            this.deleteTarget = item
+            this.showDeleteModal = true
+        },
+
+        saveLocation() {
+            if (!this.form.Name.trim()) {
+                this.showToast('Vui lòng nhập tên vị trí!', 'error')
+                return
+            }
+
+            const url  = this.isEdit ? '/api/location/update' : '/api/location/create'
+            const type = this.isEdit ? 'PUT' : 'POST'
+
+            $.ajax({
+                url, type,
+                contentType: 'application/json',
+                data: JSON.stringify(this.form),
+                success: () => {
+                    this.showModal = false
+                    this.loadLocations()
+                    this.showToast(this.isEdit ? '✅ Đã cập nhật vị trí!' : '✅ Đã thêm vị trí mới!')
+                },
+                error: () => this.showToast('❌ Có lỗi xảy ra!', 'error')
+            })
+        },
+
+        confirmDelete() {
+            $.ajax({
+                url: '/api/location/delete?id=' + this.deleteTarget.Id,
+                type: 'DELETE',
+                success: () => {
+                    this.showDeleteModal = false
+                    this.loadLocations()
+                    this.showToast('🗑️ Đã xoá vị trí!')
+                },
+                error: () => this.showToast('❌ Không thể xoá!', 'error')
+            })
+        },
+
+        showToast(msg, type = 'success') {
+            this.toast = { show: true, msg, type }
+            setTimeout(() => { this.toast.show = false }, 3000)
+        },
+
+        loadLocations() {
+            $.ajax({
+                url: '/api/location/list',
+                type: 'GET',
+                success: (res) => { this.locations = res },
+                error: () => this.showToast('❌ Load dữ liệu thất bại!', 'error')
+            })
+        }
+    },
+
+    watch: {
+        searchQuery()    { this.currentPage = 1 },
+        filterBuilding() { this.currentPage = 1 },
+        filterFloor()    { this.currentPage = 1 }
+    },
+
+    mounted() {
+        this.loadLocations()
+    }
+})</script>
