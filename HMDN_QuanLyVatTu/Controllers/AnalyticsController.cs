@@ -56,24 +56,52 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
-        // API 3: Lấy danh sách bộ lọc Khoa phòng & Loại thiết bị (Groups)
+        
+        // API 3: Lấy danh sách bộ lọc Khoa phòng & Loại thiết bị (Sử dụng Stored Procedure đa kết quả)
         [HttpGet]
         public JsonResult GetFilterLookups()
         {
             using (var db = new HospitalAssetDbContext())
             {
-                var departments = db.Database
-                    .SqlQuery<FilterLookupModel>("SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name")
-                    .ToList();
+                var departments = new List<FilterLookupModel>();
+                var groups = new List<FilterLookupModel>();
 
-                var groups = db.Database
-                    .SqlQuery<FilterLookupModel>("SELECT Id, Name FROM Groups WHERE IsActive = 1 ORDER BY SortOrder")
-                    .ToList();
+                // 1. Tạo kết nối DbCommand chuẩn để gọi Stored Procedure
+                var cmd = db.Database.Connection.CreateCommand();
+                cmd.CommandText = "[dbo].[sp_GetFilterLookups]";
+                cmd.CommandType = CommandType.StoredProcedure;
 
+                try
+                {
+                    // Mở kết nối nếu chưa mở
+                    if (db.Database.Connection.State == ConnectionState.Closed)
+                        db.Database.Connection.Open();
+
+                    // 2. Thực thi và đọc Multiple Resultsets
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        // Ép kiểu sang ObjectContext của EF để tận dụng hàm Translate dữ liệu thành Model
+                        var objectContext = ((System.Data.Entity.Infrastructure.IObjectContextAdapter)db).ObjectContext;
+
+                        // Đọc kết quả thứ nhất (Danh sách Departments)
+                        departments = objectContext.Translate<FilterLookupModel>(reader).ToList();
+
+                        // Chuyển sang kết quả thứ hai (Danh sách Groups)
+                        reader.NextResult();
+                        groups = objectContext.Translate<FilterLookupModel>(reader).ToList();
+                    }
+                }
+                finally
+                {
+                    // Luôn đảm bảo đóng kết nối an toàn
+                    if (db.Database.Connection.State == ConnectionState.Open)
+                        db.Database.Connection.Close();
+                }
+
+                // 3. Trả về kết quả JSON đồng bộ cấu trúc cũ cho Frontend
                 return Json(new { Departments = departments, Groups = groups }, JsonRequestBehavior.AllowGet);
             }
         }
-
         // API 4: Truy vấn danh sách Báo cáo tồn kho tài sản y tế
         [HttpGet]
         public JsonResult GetInventoryReport(int? departmentId, int? groupId, int? year)
