@@ -140,5 +140,24 @@ namespace HMDN.Controllers.API
             }
         }
 
+        //Get inventory with location
+        [HttpGet]
+        //[Route("inventory")]
+        public IHttpActionResult Inventory(int id)
+        {
+            var data = db.Database
+                .SqlQuery<LocationInventoryDetailVM>(
+                    "EXEC sp_Location_GetInventoryByLocation @p0",
+                    id
+                )
+                .ToList();
+
+            if (!data.Any())
+                return NotFound();
+
+            return Ok(data);
+        }
+
+
     }
 }

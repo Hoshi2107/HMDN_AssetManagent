@@ -164,6 +164,7 @@
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\LocationDetailVM.cs" />
+    <Compile Include="Models\LocationInventoryDetailVM.cs" />
     <Compile Include="Models\LocationListVM.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
