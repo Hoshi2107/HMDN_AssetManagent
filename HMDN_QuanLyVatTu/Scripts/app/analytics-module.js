@@ -86,14 +86,16 @@ window.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // TÍNH NĂNG XUẤT EXCEL: Gọi chuẩn Action Controller phân nhóm Khoa phòng
+          
+            // TÍNH NĂNG XUẤT EXCEL: Đã sửa lại đường dẫn trỏ chuẩn vào Web API
             exportExcelReport: function () {
                 var dept = this.filterDept !== null ? this.filterDept : "";
                 var group = this.filterGroup !== null ? this.filterGroup : "";
                 var yr = this.filterYear !== null ? this.filterYear : "";
 
-                // Gọi thẳng tên Controller/Action chuẩn của MVC truyền thống để chạy mượt mà nhất
-                var downloadUrl = "/Analytics/ExportInventoryToExcel?departmentId=" + dept + "&groupId=" + group + "&year=" + yr;
+                
+               
+                var downloadUrl = "/api/analytics/export-excel?departmentId=" + dept + "&groupId=" + group + "&year=" + yr;
 
                 // Thực hiện lệnh kích hoạt tải file
                 window.location.href = downloadUrl;

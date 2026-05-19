@@ -178,12 +178,12 @@
 
 <script>
     window.AnalyticsEndpoints = {
-        getSummary: '@Url.Action("GetDashboardSummary", "Analytics")',
-        getCosts: '@Url.Action("GetMaintenanceCosts", "Analytics")',
-        getLookups: '@Url.Action("GetFilterLookups", "Analytics")',
-        getReport: '@Url.Action("GetInventoryReport", "Analytics")',
-        socketServer: 'http://localhost:3000'
-    };
+    getSummary: '/api/analytics/dashboard-summary',
+    getCosts: '/api/analytics/maintenance-costs',
+    getLookups: '/api/analytics/filter-lookups',
+    getReport: '/api/analytics/inventory-report',
+    socketServer: 'http://localhost:3000' // Giữ nguyên cấu hình socket của bạn
+};
 </script>
 
 <script src="@Url.Content("~/Scripts/app/analytics-module.js")"></script>
