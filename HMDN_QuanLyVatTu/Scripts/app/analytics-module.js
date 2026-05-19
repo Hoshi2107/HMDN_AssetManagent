@@ -1,11 +1,15 @@
-﻿window.addEventListener('DOMContentLoaded', function () {
+﻿/**
+ * Hệ thống Quản lý Vật tư Bệnh viện - Module Thống kê & Dashboard
+ * Logic Vue.js v2, Tương tác đồ thị Drill-down & Trích xuất file Excel phân nhóm
+ */
+window.addEventListener('DOMContentLoaded', function () {
 
     new Vue({
         el: '#analytics-module-hub',
         data: {
             kpi: { TotalAssets: 0, TotalActive: 0, TotalSuspended: 0, ActivePercentage: 0, SuspendedPercentage: 0 },
             selectedYear: 2026,
-            filterYear: 2026,
+            filterYear: null, // Mặc định để null để hiển thị toàn bộ thiết bị khi mới load trang
             filterDept: null,
             filterGroup: null,
             lookups: { Departments: [], Groups: [] },
@@ -14,7 +18,7 @@
             pieChart: null,
             barChart: null,
 
-            // Khai báo biến hỗ trợ phân trang dữ liệu bảng
+            // Cấu hình phân trang danh sách bảng dữ liệu
             currentPage: 1,
             pageSize: 15
         },
@@ -27,15 +31,12 @@
             this.initRealtimeSync();
         },
         computed: {
-            // Đếm tổng số lượng thiết bị sau khi lọc
             filteredInventoryLength: function () {
                 return this.inventoryList.length;
             },
-            // Tính toán tổng số trang dựa trên mốc 15 dòng/trang
             totalPages: function () {
                 return Math.ceil(this.filteredInventoryLength / this.pageSize);
             },
-            // Tự động cắt mảng dữ liệu để hiển thị đúng trang hiện hành
             paginatedInventory: function () {
                 var start = (this.currentPage - 1) * this.pageSize;
                 var end = start + this.pageSize;
@@ -81,9 +82,23 @@
                 };
                 $.getJSON(window.AnalyticsEndpoints.getReport, params, function (data) {
                     vm.inventoryList = data;
-                    vm.currentPage = 1; // Đưa về trang thứ nhất mỗi khi thay đổi bộ lọc
+                    vm.currentPage = 1;
                 });
             },
+
+            // TÍNH NĂNG XUẤT EXCEL: Gọi chuẩn Action Controller phân nhóm Khoa phòng
+            exportExcelReport: function () {
+                var dept = this.filterDept !== null ? this.filterDept : "";
+                var group = this.filterGroup !== null ? this.filterGroup : "";
+                var yr = this.filterYear !== null ? this.filterYear : "";
+
+                // Gọi thẳng tên Controller/Action chuẩn của MVC truyền thống để chạy mượt mà nhất
+                var downloadUrl = "/Analytics/ExportInventoryToExcel?departmentId=" + dept + "&groupId=" + group + "&year=" + yr;
+
+                // Thực hiện lệnh kích hoạt tải file
+                window.location.href = downloadUrl;
+            }, // ĐÃ SỬA: Bổ sung dấu phẩy ngăn cách chí mạng ở đây
+
             nextPage: function () {
                 if (this.currentPage < this.totalPages) this.currentPage++;
             },
@@ -93,17 +108,16 @@
             resetFilters: function () {
                 this.filterDept = null;
                 this.filterGroup = null;
-                this.filterYear = 2026;
+                this.filterYear = null; // Trả về null để khi bấm làm mới sẽ hiện lại tất cả các năm
                 this.fetchInventoryReport();
             },
             formatMoney: function (val) {
                 if (!val && val !== 0) return '0';
                 return new Intl.NumberFormat('vi-VN').format(val);
             },
-            // Hàm xử lý định dạng làm tròn số phần trăm đẹp mắt (Chỉ lấy tối đa 1 hoặc 2 chữ số thập phân)
             formatPercent: function (val) {
                 if (!val) return '0';
-                return parseFloat(val).toFixed(1); // Trả về dạng 90.9% hoặc 9.1% thay vì chuỗi vô tận
+                return parseFloat(val).toFixed(1);
             },
             renderPieChart: function (data) {
                 var chartElement = document.getElementById('statusPieChart');
@@ -119,18 +133,48 @@
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '75%' }
                 });
             },
+
+            // TÍNH NĂNG TƯƠNG TÁC ĐỒ THỊ: Click cột tự động gán bộ lọc và cuộn màn hình xuống bảng
             renderBarChart: function (costData) {
                 var chartElement = document.getElementById('costBarChart');
                 if (!chartElement) return;
+
+                var vm = this;
                 var ctx = chartElement.getContext('2d');
                 if (this.barChart) this.barChart.destroy();
+
                 this.barChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: costData.map(function (x) { return x.CategoryName; }),
                         datasets: [{ label: 'Chi phí bảo trì (VNĐ)', data: costData.map(function (x) { return x.TotalCost; }), backgroundColor: '#2563eb', borderRadius: 4 }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true } },
+                        onClick: function (evt, elements) {
+                            if (elements && elements.length > 0) {
+                                var activeElement = elements[0];
+                                var clickedGroupLabel = vm.barChart.data.labels[activeElement.index];
+
+                                var foundGroup = vm.lookups.Groups.find(function (g) {
+                                    return g.Name.trim() === clickedGroupLabel.trim();
+                                });
+
+                                if (foundGroup) {
+                                    vm.filterGroup = foundGroup.Id;
+                                    vm.fetchInventoryReport();
+
+                                    // Tự động cuộn màn hình xuống vùng bảng danh sách
+                                    var tableSection = document.getElementById('target-inventory-table');
+                                    if (tableSection) {
+                                        tableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }
+                            }
+                        }
+                    }
                 });
             },
             initRealtimeSync: function () {

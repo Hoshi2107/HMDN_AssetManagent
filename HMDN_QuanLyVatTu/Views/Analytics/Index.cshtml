@@ -2,7 +2,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link rel="stylesheet" href="~/Content/app/analytics-module.css" />
+<link rel="stylesheet" href="@Url.Content("~/Content/app/analytics-module.css")" />
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -81,7 +81,7 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card p-4 border-0 shadow-sm bg-white">
+            <div id="target-inventory-table" class="card p-4 border-0 shadow-sm bg-white">
                 <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between border-bottom pb-3 mb-3">
                     <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-boxes-stacked mr-2 text-warning"></i>Báo cáo chi tiết tồn kho tài sản y tế</h6>
 
@@ -103,6 +103,11 @@
                                 <option v-for="g in lookups.Groups" :value="g.Id">{{ g.Name }}</option>
                             </select>
                         </div>
+
+                        <button class="btn btn-sm btn-success font-weight-bold text-white mr-1" v-on:click="exportExcelReport">
+                            <i class="fa-solid fa-file-excel mr-1"></i>Xuất Excel
+                        </button>
+
                         <button class="btn btn-sm btn-light border font-weight-bold text-secondary" v-on:click="resetFilters">
                             <i class="fa-solid fa-arrows-rotate mr-1"></i>Làm mới
                         </button>
@@ -181,4 +186,4 @@
     };
 </script>
 
-<script src="~/Scripts/app/analytics-module.js"></script>
+<script src="@Url.Content("~/Scripts/app/analytics-module.js")"></script>
