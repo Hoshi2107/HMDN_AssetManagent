@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Web.Mvc;
 using HMS.Data;
 using HMDN_QuanLyVatTu.Models;
@@ -19,40 +20,50 @@ namespace HMDN_QuanLyVatTu.Controllers
         [HttpGet]
         public JsonResult GetTickets()
         {
-            var data = db.Tickets
-                .OrderByDescending(x => x.CreatedAt)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.TicketCode,
-                    x.TicketType,
-                    x.Status,
-                    x.Note,
-                    x.CreatedBy,
-                    CreatedAt = x.CreatedAt,
-                    x.CheckedBy,
-                    CheckedAt = x.CheckedAt,
-                    x.ApprovedBy,
-                    ApprovedAt = x.ApprovedAt,
-                    TransactionDate = x.TransactionDate
-                })
-                .ToList()
-                .Select(x => new
-                {
-                    x.Id,
-                    x.TicketCode,
-                    x.TicketType,
-                    x.Status,
-                    x.Note,
-                    x.CreatedBy,
-                    CreatedAt = x.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss"),
-                    x.CheckedBy,
-                    CheckedAt = x.CheckedAt.HasValue ? x.CheckedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
-                    x.ApprovedBy,
-                    ApprovedAt = x.ApprovedAt.HasValue ? x.ApprovedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
-                    TransactionDate = x.TransactionDate.HasValue ? x.TransactionDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null
-                });
-            return Json(data, JsonRequestBehavior.AllowGet);
+            try
+            {
+                var users = db.Users.ToList().ToDictionary(u => u.Id);
+                var departments = db.Departments.ToList().ToDictionary(d => d.Id);
+
+                var data = db.Tickets
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToList()
+                    .Select(t =>
+                    {
+                        users.TryGetValue(t.CreatedBy, out var creator);
+                        HMS.Models.Department dept = null;
+                        if (creator != null && creator.DepartmentId.HasValue)
+                        {
+                            departments.TryGetValue(creator.DepartmentId.Value, out dept);
+                        }
+
+                        return new
+                        {
+                            t.Id,
+                            t.TicketCode,
+                            t.TicketType,
+                            t.Status,
+                            t.Note,
+                            t.CreatedBy,
+                            CreatedByName = creator != null ? creator.FullName : null,
+                            CreatedByUsername = creator != null ? creator.Username : null,
+                            DepartmentName = dept != null ? dept.Name : null,
+                            CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd"),
+                            t.CheckedBy,
+                            CheckedAt = t.CheckedAt.HasValue ? t.CheckedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
+                            t.ApprovedBy,
+                            ApprovedAt = t.ApprovedAt.HasValue ? t.ApprovedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
+                            TransactionDate = t.TransactionDate.HasValue ? t.TransactionDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null
+                        };
+                    });
+
+                return Json(data, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                Response.StatusCode = 500;
+                return Json(new { error = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         [HttpGet]

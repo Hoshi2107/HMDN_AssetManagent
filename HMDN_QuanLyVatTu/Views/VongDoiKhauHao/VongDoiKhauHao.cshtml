@@ -6,6 +6,7 @@
 <style>
   :root {
     --accent: #2563eb;
+
     --accent-light: #3b82f6;
     --danger: #ef4444;
     --warning: #f59e0b;
@@ -23,7 +24,7 @@
   .page-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
 
   /* STATS */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
   .stat-card { background: white; border-radius: 12px; padding: 18px 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; transition: box-shadow .18s; }
   .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
   .stat-info .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
@@ -153,6 +154,14 @@
                 <div class="delta" style="color:var(--disposed)">Kết thúc vòng đời</div>
             </div>
             <div class="stat-icon si-gray"><i class="fa-solid fa-box-archive"></i></div>
+        </div>
+        <div class="stat-card" style="border-color:var(--accent-light);">
+            <div class="stat-info">
+                <div class="label">Tổng giá trị còn lại</div>
+                <div class="value" style="font-size: 22px; color:var(--accent);">{{ formatMoney(totalClosingValue) }} đ</div>
+                <div class="delta" style="color:var(--accent)">Sau khấu hao</div>
+            </div>
+            <div class="stat-icon si-blue"><i class="fa-solid fa-coins"></i></div>
         </div>
     </div>
 
@@ -336,5 +345,5 @@
     <script>
         window.DevicesJsonData = @Html.Raw(ViewBag.DevicesJson ?? "[]");
     </script>
-    <script src="~/Scripts/app/VongDoiKhauHao.js"></script>
+    <script src="~/Scripts/app/VongDoiKhauHao.js?v=@DateTime.Now.Ticks"></script>
 }

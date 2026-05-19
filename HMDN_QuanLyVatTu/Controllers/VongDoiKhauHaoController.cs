@@ -22,9 +22,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                 name = i.Item != null ? i.Item.Name : "Không rõ",
                 status = string.IsNullOrEmpty(i.LifeStatus) ? "active" : i.LifeStatus.ToLower(),
                 openingValue = i.TotalPrice,
-                depreciation = i.TotalPrice - (i.ResidualValue ?? 0),
-                closingValue = i.ResidualValue ?? 0,
-                replacedBy = (string)null,
+                depreciation = i.ResidualValue.HasValue ? (i.TotalPrice - i.ResidualValue.Value) : 0,
+                closingValue = i.ResidualValue.HasValue ? i.ResidualValue.Value : i.TotalPrice,
+                replacedBy = i.ReplacedByInventoryId.HasValue ? i.ReplacedByInventoryId.ToString() : null,
                 importDate = i.ImportDate.ToString("dd/MM/yyyy"),
                 expiryDate = i.ExpiryDate.HasValue ? i.ExpiryDate.Value.ToString("dd/MM/yyyy") : "-",
                 warrantyExpiry = i.WarrantyExpiry.HasValue ? i.WarrantyExpiry.Value.ToString("dd/MM/yyyy") : "-"
@@ -50,6 +50,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                 
                 if (status == "replaced" && !string.IsNullOrEmpty(replacedBy))
                 {
+                    if (int.TryParse(replacedBy, out int replacedId))
+                    {
+                        inventory.ReplacedByInventoryId = replacedId;
+                    }
                     string replacedNote = "Thay thế bởi: " + replacedBy;
                     inventory.Note = string.IsNullOrEmpty(inventory.Note) ? replacedNote : inventory.Note + " | " + replacedNote;
                 }
@@ -73,6 +77,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                 // Số năm đã sử dụng tính đến năm calculateYear
                 int yearsUsed = calculateYear - inv.ImportDate.Year;
                 if (yearsUsed < 0) yearsUsed = 0;
+
+                // Mặc định Khấu hao là 25% nếu chưa được thiết lập
+                if (!inv.DepreciationRate.HasValue && !inv.DepreciationYears.HasValue)
+                {
+                    inv.DepreciationRate = 25m;
+                }
 
                 decimal rate = 0;
                 if (inv.DepreciationRate.HasValue && inv.DepreciationRate.Value > 0)

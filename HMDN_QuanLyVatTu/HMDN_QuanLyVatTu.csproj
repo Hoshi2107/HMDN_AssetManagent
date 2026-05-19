@@ -151,6 +151,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Approvals.cs" />
+    <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
     <Compile Include="Models\DashboardGroupSummary.cs" />
     <Compile Include="Models\DashboardOverviewModel.cs" />
@@ -162,10 +163,13 @@
     <Compile Include="Models\InventoryReportModel.cs" />
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\Location.cs" />
+    <Compile Include="Models\LocationDetailVM.cs" />
+    <Compile Include="Models\LocationListVM.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\Tickets.cs" />
+    <Compile Include="Models\UpdateLocation.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Models\UserRole.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -193,6 +197,7 @@
     <Content Include="Content\category\category.css" />
     <Content Include="Content\images1\logobv.png" />
     <Content Include="Content\inventory\inventory.css" />
+    <Content Include="Content\location\location.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
@@ -200,6 +205,7 @@
     <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
     <Content Include="Scripts\app\inventory.js" />
+    <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />

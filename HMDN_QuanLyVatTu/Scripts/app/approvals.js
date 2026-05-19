@@ -46,7 +46,9 @@ var app = new Vue({
                     (
                         (x.TicketCode || '') +
                         (x.TicketType || '') +
-                        (x.CreatedBy || '')
+                        (x.CreatedBy || '') +
+                        (x.CreatedByName || '') +
+                        (x.CreatedByUsername || '')
                     )
                         .toLowerCase()
                         .includes(q)
@@ -89,23 +91,42 @@ var app = new Vue({
     methods: {
         formatDate(dateStr) {
             if (!dateStr) return '';
-            // Handle C# Json format /Date(123123123)/ 
-            if (dateStr.toString().indexOf('/Date') !== -1) {
-                var date = new Date(parseInt(dateStr.substr(6)));
-                var day = ("0" + date.getDate()).slice(-2);
-                var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var s = dateStr.toString();
+            if (s.indexOf('/Date') !== -1) {
+                var date = new Date(parseInt(s.substr(6), 10));
+                var day = ('0' + date.getDate()).slice(-2);
+                var month = ('0' + (date.getMonth() + 1)).slice(-2);
                 return day + '/' + month + '/' + date.getFullYear();
             }
-            var d = new Date(dateStr);
-            var day = ("0" + d.getDate()).slice(-2);
-            var month = ("0" + (d.getMonth() + 1)).slice(-2);
+            var iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (iso) {
+                return iso[3] + '/' + iso[2] + '/' + iso[1];
+            }
+            var d = new Date(s);
+            if (isNaN(d.getTime())) return s;
+            var day = ('0' + d.getDate()).slice(-2);
+            var month = ('0' + (d.getMonth() + 1)).slice(-2);
             return day + '/' + month + '/' + d.getFullYear();
         },
+        creatorLabel(item) {
+            if (!item) return '';
+            if (item.CreatedByName) return item.CreatedByName;
+            if (item.CreatedByUsername) return item.CreatedByUsername;
+            return 'User ' + (item.CreatedBy || '');
+        },
+        creatorInitials(item) {
+            var name = this.creatorLabel(item);
+            var parts = name.trim().split(/\s+/);
+            if (parts.length >= 2) {
+                return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+            }
+            return (name[0] || 'U').toUpperCase();
+        },
         statusClass(status) {
-            return STATUS[status]?.class || 'badge-pending'
+            return (STATUS[status] && STATUS[status].class) || 'badge-pending'
         },
         statusLabel(status) {
-            return STATUS[status]?.label || status || 'Pending'
+            return (STATUS[status] && STATUS[status].label) || status || 'Pending'
         },
         changePage(page) {
             if (page < 1 || page > this.totalPages) return
@@ -167,11 +188,22 @@ var app = new Vue({
             $.ajax({
                 url: '/Approvals/GetTickets',
                 type: 'GET',
+                dataType: 'json',
+                cache: false,
                 success: (res) => {
-                    this.tickets = res
+                    if (Array.isArray(res)) {
+                        this.tickets = res
+                        return
+                    }
+                    if (res && res.error) {
+                        console.error('GetTickets:', res.error)
+                        alert('Không tải được danh sách phê duyệt: ' + res.error)
+                    }
+                    this.tickets = []
                 },
-                error: () => {
-                    console.log('Load dữ liệu thất bại')
+                error: (xhr) => {
+                    console.error('Load dữ liệu thất bại', xhr.status, xhr.responseText)
+                    alert('Không kết nối được API danh sách phê duyệt. Vui lòng build lại project và thử lại.')
                 }
             })
         }

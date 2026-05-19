@@ -9,7 +9,7 @@ namespace HMS.Models.Inventory
 
         public string AssetCode { get; set; }
 
-        public int ItemId { get; set; }
+        public int? ItemId { get; set; }
 
         public string SerialNumber { get; set; }
 
@@ -40,6 +40,8 @@ namespace HMS.Models.Inventory
         public string ApprovalStatus { get; set; }
 
         public string LifeStatus { get; set; }
+
+        public int? ReplacedByInventoryId { get; set; }
 
         public string QrCode { get; set; }
 
