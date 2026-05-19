@@ -26,6 +26,9 @@ new Vue({
                 list = list.filter(d => d.id.toLowerCase().includes(q) || d.name.toLowerCase().includes(q));
             }
             return list;
+        },
+        totalClosingValue() {
+            return this.devices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
         }
     },
     methods: {
