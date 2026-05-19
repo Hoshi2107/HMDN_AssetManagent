@@ -490,78 +490,6 @@
         padding: 24px;
     }
 
-    /* Stepper */
-    .dm-stepper {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 20px;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-between;
-        position: relative;
-    }
-
-        .dm-stepper::before {
-            content: '';
-            position: absolute;
-            top: 40px;
-            left: 50px;
-            right: 50px;
-            height: 2px;
-            background: #e2e8f0;
-            z-index: 1;
-        }
-
-    .dm-step {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        width: 120px;
-    }
-
-    .dm-step-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #ffffff;
-        border: 2px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #94a3b8;
-        font-size: 14px;
-        background: #ffffff;
-    }
-
-    .dm-step.active .dm-step-icon {
-        background: #0ea5e9;
-        border-color: #0ea5e9;
-        color: #ffffff;
-    }
-
-    .dm-step.completed .dm-step-icon {
-        background: #0ea5e9;
-        border-color: #0ea5e9;
-        color: #ffffff;
-    }
-
-    .dm-step-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: #0f172a;
-        text-align: center;
-    }
-
-    .dm-step-desc {
-        font-size: 12px;
-        color: #0ea5e9;
-        text-align: center;
-    }
-
     .dm-body-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
@@ -838,8 +766,8 @@
                         <td>${item.TicketType || 'Nhập kho'}</td>
                         <td>
                             <div class="user-cell">
-                                <div class="user-avatar-text">US</div>
-                                <span>User ${item.CreatedBy}</span>
+                                <div class="user-avatar-text">${creatorInitials(item)}</div>
+                                <span>${creatorLabel(item)}</span>
                             </div>
                         </td>
                         <td>${formatDate(item.CreatedAt)}</td>
@@ -889,29 +817,6 @@
             </div>
 
             <div class="dm-content">
-                <div class="dm-stepper">
-                    <div class="dm-step completed">
-                        <div class="dm-step-icon"><i class="fa-solid fa-check"></i></div>
-                        <div class="dm-step-title">Khởi tạo</div>
-                        <div class="dm-step-desc">${formatDate(selectedTicket.CreatedAt)}</div>
-                    </div>
-                    <div class="dm-step" :class="{completed: selectedTicket.CheckedBy, active: !selectedTicket.CheckedBy && selectedTicket.Status !== 'REJECTED'}">
-                        <div class="dm-step-icon"><i class="fa-solid fa-user-tie"></i></div>
-                        <div class="dm-step-title">Trưởng khoa duyệt</div>
-                        <div class="dm-step-desc" v-if="selectedTicket.CheckedBy">${formatDate(selectedTicket.CheckedAt)}</div>
-                        <div class="dm-step-desc" v-else>Đang chờ</div>
-                    </div>
-                    <div class="dm-step" :class="{completed: selectedTicket.ApprovedBy, active: selectedTicket.CheckedBy && !selectedTicket.ApprovedBy && selectedTicket.Status !== 'REJECTED'}">
-                        <div class="dm-step-icon"><i class="fa-solid fa-building-user"></i></div>
-                        <div class="dm-step-title">BCĐ duyệt</div>
-                        <div class="dm-step-desc" v-if="selectedTicket.ApprovedBy">${formatDate(selectedTicket.ApprovedAt)}</div>
-                    </div>
-                    <div class="dm-step" :class="{completed: selectedTicket.Status === 'APPROVED'}">
-                        <div class="dm-step-icon"><i class="fa-solid fa-flag-checkered"></i></div>
-                        <div class="dm-step-title">Hoàn tất</div>
-                    </div>
-                </div>
-
                 <div class="dm-body-grid">
                     <div class="dm-main">
                         <div class="dm-card">
@@ -920,13 +825,13 @@
                                 <div class="dm-info-item">
                                     <label>Người yêu cầu</label>
                                     <div class="dm-user">
-                                        <div class="dm-avatar">U</div>
-                                        <p>User ${selectedTicket.CreatedBy}</p>
+                                        <div class="dm-avatar">${creatorInitials(selectedTicket)}</div>
+                                        <p>${creatorLabel(selectedTicket)}</p>
                                     </div>
                                 </div>
                                 <div class="dm-info-item">
                                     <label>Phòng ban</label>
-                                    <p>Khoa Phẫu thuật - Gây mê hồi sức</p>
+                                    <p>${selectedTicket.DepartmentName || '—'}</p>
                                 </div>
                                 <div class="dm-info-item">
                                     <label>Ngày lập yêu cầu</label>
@@ -953,7 +858,6 @@
                                             <th>Tên thiết bị</th>
                                             <th>Serial</th>
                                             <th>Số lượng</th>
-                                            <th>Trạng thái</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -962,10 +866,9 @@
                                             <td style="font-weight: 500;">${dt.ItemName}</td>
                                             <td>${dt.SerialNumber || 'N/A'}</td>
                                             <td>${dt.Quantity}</td>
-                                            <td>${dt.LifeStatus}</td>
                                         </tr>
                                         <tr v-if="ticketDetails.length === 0">
-                                            <td colspan="5" style="text-align: center; padding: 24px; color: #64748b;">Không có thiết bị đính kèm trong Inventory</td>
+                                            <td colspan="4" style="text-align: center; padding: 24px; color: #64748b;">Không có thiết bị đính kèm trong Inventory</td>
                                         </tr>
                                     </tbody>
                                 </table>
