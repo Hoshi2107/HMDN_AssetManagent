@@ -6,6 +6,13 @@
 
     data: {
 
+        //Detail Modal
+        showDetailModal: false,
+
+        locationDetail: null,
+
+        locationInventories: [],
+
         showStatusModal: false,
 
         statusTarget: null,
@@ -231,6 +238,40 @@
             this.showStatusModal = true
         },
 
+        openDetail(item) {
+
+            $.ajax({
+
+                url: '/api/locationapi/inventory?id=' + item.Id,
+
+                type: 'GET',
+
+                success: (res) => {
+
+                    this.locationDetail = {
+
+                        Code: res[0].LocationCode,
+                        Name: res[0].LocationName,
+                        Floor: res[0].Floor,
+                        Building: res[0].Building,
+                        DepartmentName: res[0].DepartmentName
+                    }
+
+                    this.locationInventories =
+                        res.filter(x => x.InventoryId)
+
+                    this.showDetailModal = true
+                },
+
+                error: () => {
+
+                    this.showToast(
+                        'Không tải được chi tiết vị trí',
+                        'error'
+                    )
+                }
+            })
+        },
 
         openAdd() {
 
