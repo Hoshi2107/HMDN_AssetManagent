@@ -2,6 +2,8 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<link rel="stylesheet" href="~/Content/app/analytics-module.css" />
+
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -12,10 +14,10 @@
         <div class="col-12 col-md-4 mb-3">
             <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
                 <div>
-                    <small class="text-uppercase text-muted font-weight-bold" style="font-size: 11px;">Tổng tài sản thiết bị</small>
+                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Tổng tài sản thiết bị</small>
                     <h2 class="mt-1 mb-0 font-weight-bold text-dark">{{ kpi.TotalAssets }}</h2>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 48px; height: 48px; font-size: 18px; background: #eff6ff;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-primary kpi-icon-box bg-blue-light">
                     <i class="fa-solid fa-hospital-user"></i>
                 </div>
             </div>
@@ -23,10 +25,13 @@
         <div class="col-12 col-md-4 mb-3">
             <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
                 <div>
-                    <small class="text-uppercase text-muted font-weight-bold" style="font-size: 11px;">Đang hoạt động tốt</small>
-                    <h2 class="mt-1 mb-0 font-weight-bold text-success">{{ kpi.TotalActive }} <span style="font-size:13px; font-weight: normal;">({{ kpi.ActivePercentage }}%)</span></h2>
+                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Đang hoạt động tốt</small>
+                    <h2 class="mt-1 mb-0 font-weight-bold text-success">
+                        {{ kpi.TotalActive }}
+                        <span class="kpi-percentage">({{ formatPercent(kpi.ActivePercentage) }}%)</span>
+                    </h2>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-success" style="width: 48px; height: 48px; font-size: 18px; background: #d1fae5;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-success kpi-icon-box bg-green-light">
                     <i class="fa-solid fa-square-check"></i>
                 </div>
             </div>
@@ -34,10 +39,13 @@
         <div class="col-12 col-md-4 mb-3">
             <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
                 <div>
-                    <small class="text-uppercase text-muted font-weight-bold" style="font-size: 11px;">Thiết bị hỏng / Bảo trì</small>
-                    <h2 class="mt-1 mb-0 font-weight-bold text-danger">{{ kpi.TotalSuspended }} <span style="font-size:13px; font-weight: normal;">({{ kpi.SuspendedPercentage }}%)</span></h2>
+                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Thiết bị hỏng / Bảo trì</small>
+                    <h2 class="mt-1 mb-0 font-weight-bold text-danger">
+                        {{ kpi.TotalSuspended }}
+                        <span class="kpi-percentage">({{ formatPercent(kpi.SuspendedPercentage) }}%)</span>
+                    </h2>
                 </div>
-                <div class="rounded-circle d-flex align-items-center justify-content-center text-danger" style="width: 48px; height: 48px; font-size: 18px; background: #fee2e2;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-danger kpi-icon-box bg-red-light">
                     <i class="fa-solid fa-circle-exclamation"></i>
                 </div>
             </div>
@@ -48,7 +56,7 @@
         <div class="col-12 col-lg-4 mb-3">
             <div class="card p-3 border-0 shadow-sm bg-white h-100">
                 <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-pie mr-2 text-info"></i>Tỉ lệ thiết bị hoạt động</h6>
-                <div class="position-relative d-flex align-items-center justify-content-center" style="height: 220px;">
+                <div class="position-relative d-flex align-items-center justify-content-center chart-container">
                     <canvas id="statusPieChart"></canvas>
                 </div>
             </div>
@@ -59,13 +67,12 @@
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-money-bill-trend-up mr-2 text-primary"></i>Tổng chi phí bảo trì theo loại thiết bị</h6>
                     <div>
-                        <select class="form-control form-control-sm font-weight-bold border" v-model="selectedYear" @@change="fetchCostData">
-                            <option value="2025">Năm 2025</option>
-                            <option value="2026">Năm 2026</option>
+                        <select class="form-control form-control-sm font-weight-bold border" v-model="selectedYear" v-on:change="fetchCostData">
+                            <option v-for="y in availableYears" :value="y">Năm {{ y }}</option>
                         </select>
                     </div>
                 </div>
-                <div class="position-relative" style="height: 220px;">
+                <div class="position-relative chart-container">
                     <canvas id="costBarChart"></canvas>
                 </div>
             </div>
@@ -80,25 +87,30 @@
 
                     <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
                         <div class="form-group mb-0 mr-2">
-                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterDept" @@change="fetchInventoryReport">
+                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterYear" v-on:change="fetchInventoryReport">
+                                <option v-for="y in availableYears" :value="y">Năm {{ y }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-0 mr-2">
+                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterDept" v-on:change="fetchInventoryReport">
                                 <option :value="null">── Lọc theo Khoa phòng ──</option>
                                 <option v-for="d in lookups.Departments" :value="d.Id">{{ d.Name }}</option>
                             </select>
                         </div>
                         <div class="form-group mb-0 mr-2">
-                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterGroup" @@change="fetchInventoryReport">
+                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterGroup" v-on:change="fetchInventoryReport">
                                 <option :value="null">── Lọc theo Loại thiết bị ──</option>
                                 <option v-for="g in lookups.Groups" :value="g.Id">{{ g.Name }}</option>
                             </select>
                         </div>
-                        <button class="btn btn-sm btn-light border font-weight-bold text-secondary" @@click="resetFilters">
+                        <button class="btn btn-sm btn-light border font-weight-bold text-secondary" v-on:click="resetFilters">
                             <i class="fa-solid fa-arrows-rotate mr-1"></i>Làm mới
                         </button>
                     </div>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle border-0" style="font-size: 13px;">
+                    <table class="table table-hover align-middle border-0 table-analytics">
                         <thead class="bg-light text-secondary font-weight-bold">
                             <tr>
                                 <th class="border-0">Mã tài sản</th>
@@ -113,149 +125,60 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in inventoryList" :key="item.Id">
+                            <tr v-for="item in paginatedInventory" :key="item.Id">
                                 <td class="font-weight-bold text-primary">{{ item.AssetCode }}</td>
                                 <td class="font-weight-bold text-dark">{{ item.ItemName }}</td>
-                                <td><span class="badge badge-secondary py-1 px-2">{{ item.GroupName }}</span></td>
+                                <td><span class="badge-group-custom">{{ item.GroupName || 'Chưa phân loại' }}</span></td>
                                 <td>{{ item.DepartmentName }}</td>
-                                <td><i class="fa-solid fa-map-location-dot mr-1 text-muted"></i>{{ item.LocationName }}</td>
+                                <td><i class="fa-solid fa-map-location-dot text-muted" style="margin-right: 8px;"></i>{{ item.LocationName }}</td>
                                 <td class="text-center font-weight-bold">{{ item.Quantity }}</td>
                                 <td class="text-right">{{ formatMoney(item.UnitPrice) }}</td>
                                 <td class="text-right font-weight-bold text-dark">{{ formatMoney(item.TotalPrice) }}</td>
                                 <td class="text-center">
-                                    <span v-if="item.LifeStatus === 'active'" class="badge badge-success px-2 py-1">Đang chạy tốt</span>
-                                    <span v-else-if="item.LifeStatus === 'suspended'" class="badge badge-danger px-2 py-1">Đang báo hỏng</span>
-                                    <span v-else class="badge badge-warning px-2 py-1">{{ item.LifeStatus }}</span>
+                                    <span v-if="item.LifeStatus === 'active'" class="badge-status-custom badge-status-active">Đang chạy tốt</span>
+                                    <span v-else-if="item.LifeStatus === 'suspended'" class="badge-status-custom badge-status-suspended">Đang báo hỏng</span>
+                                    <span v-else class="badge-status-custom badge-status-warning">{{ item.LifeStatus }}</span>
                                 </td>
                             </tr>
-                            <tr v-if="inventoryList.length === 0">
+                            <tr v-if="filteredInventoryLength === 0">
                                 <td colspan="9" class="text-center py-5 text-muted font-italic">Không tìm thấy dữ liệu thiết bị phù hợp với bộ lọc hiện tại.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center bg-white border-top pt-3 mt-2" style="font-size: 13.5px;" v-if="filteredInventoryLength > 0">
+                    <div class="text-muted font-weight-bold">
+                        Hiển thị từ {{ (currentPage - 1) * pageSize + 1 }} đến {{ Math.min(currentPage * pageSize, filteredInventoryLength) }} trong tổng số {{ filteredInventoryLength }} thiết bị
+                    </div>
+                    <div class="pagination d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary font-weight-bold" v-on:click="prevPage" :disabled="currentPage === 1">
+                            <i class="fa-solid fa-chevron-left mr-1"></i> Trước
+                        </button>
+                        <button class="btn btn-sm font-weight-bold" v-for="page in totalPages" :key="page"
+                                :class="page === currentPage ? 'btn-primary' : 'btn-outline-secondary'"
+                                v-on:click="currentPage = page">
+                            {{ page }}
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary font-weight-bold" v-on:click="nextPage" :disabled="currentPage === totalPages || totalPages === 0">
+                            Sau <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    [v-cloak] {
-        display: none;
-    }
-
-    .card {
-        border-radius: 12px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,.03) !important;
-    }
-
-    .table th {
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 11px;
-        letter-spacing: 0.3px;
-    }
-
-    .table td {
-        vertical-align: middle !important;
-    }
-
-    .gap-2 {
-        gap: 8px;
-    }
-</style>
-
 <script>
-    window.addEventListener('DOMContentLoaded', function () {
-
-        new Vue({
-            el: '#analytics-module-hub',
-            data: {
-                kpi: { TotalAssets: 0, TotalActive: 0, TotalSuspended: 0, ActivePercentage: 0, SuspendedPercentage: 0 },
-                selectedYear: 2026,
-                filterDept: null,
-                filterGroup: null,
-                lookups: { Departments: [], Groups: [] },
-                inventoryList: [],
-                pieChart: null,
-                barChart: null
-            },
-            mounted: function () {
-                this.fetchKpiOverview();
-                this.fetchCostData();
-                this.fetchDropdownLookups();
-                this.fetchInventoryReport();
-                this.initRealtimeSync();
-            },
-            methods: {
-                fetchKpiOverview: function () {
-                    var vm = this;
-                    $.getJSON('@Url.Action("GetDashboardSummary", "Analytics")', function (data) {
-                        vm.kpi = data;
-                        vm.renderPieChart(data);
-                    });
-                },
-                fetchCostData: function () {
-                    var vm = this;
-                    $.getJSON('@Url.Action("GetMaintenanceCosts", "Analytics")', { year: vm.selectedYear }, function (data) {
-                        vm.renderBarChart(data);
-                    });
-                },
-                fetchDropdownLookups: function () {
-                    var vm = this;
-                    $.getJSON('@Url.Action("GetFilterLookups", "Analytics")', function (data) {
-                        vm.lookups = data;
-                    });
-                },
-                fetchInventoryReport: function () {
-                    var vm = this;
-                    $.getJSON('@Url.Action("GetInventoryReport", "Analytics")', { departmentId: vm.filterDept, groupId: vm.filterGroup }, function (data) {
-                        vm.inventoryList = data;
-                    });
-                },
-                resetFilters: function () {
-                    this.filterDept = null;
-                    this.filterGroup = null;
-                    this.fetchInventoryReport();
-                },
-                formatMoney: function (val) {
-                    return new Intl.NumberFormat('vi-VN').format(val);
-                },
-                renderPieChart: function (data) {
-                    var ctx = document.getElementById('statusPieChart').getContext('2d');
-                    if (this.pieChart) this.pieChart.destroy();
-                    this.pieChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Hoạt động tốt', 'Hỏng / Bảo trì'],
-                            datasets: [{ data: [data.TotalActive, data.TotalSuspended], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 3 }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '75%' }
-                    });
-                },
-                renderBarChart: function (costData) {
-                    var ctx = document.getElementById('costBarChart').getContext('2d');
-                    if (this.barChart) this.barChart.destroy();
-                    this.barChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: costData.map(function(x){return x.CategoryName;}),
-                            datasets: [{ label: 'Chi phí bảo trì', data: costData.map(function(x){return x.TotalCost;}), backgroundColor: '#2563eb', borderRadius: 4 }]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-                    });
-                },
-                initRealtimeSync: function () {
-                    var vm = this;
-                    var socket = io('http://localhost:3000', { transports: ['websocket'] });
-                    socket.on('assetStatusChanged', function () {
-                        vm.fetchKpiOverview();
-                        vm.fetchCostData();
-                        vm.fetchInventoryReport();
-                    });
-                }
-            } // Khóa dòng methods
-        }); // Khóa dòng new Vue
-
-    }); // CHỖ NÀY CẦN KIỂM TRA: Khóa dòng $(document).ready
+    window.AnalyticsEndpoints = {
+        getSummary: '@Url.Action("GetDashboardSummary", "Analytics")',
+        getCosts: '@Url.Action("GetMaintenanceCosts", "Analytics")',
+        getLookups: '@Url.Action("GetFilterLookups", "Analytics")',
+        getReport: '@Url.Action("GetInventoryReport", "Analytics")',
+        socketServer: 'http://localhost:3000'
+    };
 </script>
+
+<script src="~/Scripts/app/analytics-module.js"></script>

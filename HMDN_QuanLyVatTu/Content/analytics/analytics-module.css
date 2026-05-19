@@ -1,0 +1,147 @@
+﻿/**
+ * Hệ thống Quản lý Vật tư Bệnh viện - CSS Module Thống kê
+ * Tối ưu hóa hiển thị, chống giật v-cloak và sửa màu trạng thái tương phản cao
+ */
+
+/* Khử giật giao diện khi Vue.js chưa biên dịch xong */
+[v-cloak] {
+    display: none !important;
+}
+
+/* Định dạng cấu trúc Card bo góc hiện đại */
+#analytics-module-hub .card {
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .03) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    #analytics-module-hub .card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .06) !important;
+    }
+
+/* Các thành phần chữ bổ trợ trong Card KPI */
+.card-kpi-title {
+    font-size: 11px !important;
+    letter-spacing: 0.5px;
+}
+
+.kpi-percentage {
+    font-size: 13px !important;
+    font-weight: normal !important;
+}
+
+/* Khối tròn chứa Icon tiêu đề KPI */
+.kpi-icon-box {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+}
+
+/* Các lớp màu nền mờ Flat UI cho Icon */
+.bg-blue-light {
+    background-color: #eff6ff !important;
+}
+
+.bg-green-light {
+    background-color: #d1fae5 !important;
+}
+
+.bg-red-light {
+    background-color: #fee2e2 !important;
+}
+
+/* Quản lý khu vực đồ thị Chart.js */
+.chart-container {
+    height: 220px;
+}
+
+/* Khoảng cách các phần tử thanh bộ lọc */
+.gap-2 {
+    gap: 8px;
+}
+
+/* Định dạng cấu trúc bảng dữ liệu tổng hợp */
+.table-analytics {
+    font-size: 13px !important;
+}
+
+    .table-analytics th {
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        font-size: 11px !important;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #dee2e6 !important;
+    }
+
+    .table-analytics td {
+        vertical-align: middle !important;
+        padding: 12px 8px !important;
+    }
+
+/* =========================================================================
+   HỆ THỐNG MÀU BADGE TRẠNG THÁI (ĐỘ TƯƠNG PHẢN CAO - CHỮ SIÊU ĐẬM)
+   ========================================================================= */
+.badge-group-custom {
+    display: inline-block !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important; /* Làm chữ dày dặn, sắc nét */
+    border-radius: 6px !important; /* Bo góc nhẹ đồng bộ với hệ thống */
+    /* Màu nền Tím/Indigo nhạt và màu chữ Tím đậm tương phản cao */
+    background-color: #e0e7ff !important;
+    color: #3730a3 !important;
+    border: 1px solid #c7d2fe !important;
+    text-transform: none !important; /* Giữ nguyên chữ hoa/thường từ Database */
+    white-space: nowrap !important;
+}
+
+/* Trạng thái hoạt động tốt: Nền xanh pastel, chữ xanh rừng cực đậm */
+.badge-status-active {
+    background-color: #d1fae5 !important;
+    color: #044e37 !important;
+    border: 1px solid #10b981 !important;
+}
+
+/* Trạng thái báo hỏng/bảo trì: Nền đỏ nhạt, chữ đỏ sẫm khẩn cấp (Có nhấp nháy phát sáng) */
+.badge-status-suspended {
+    background-color: #fee2e2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #ef4444 !important;
+    animation: pulse-red-glow 2s infinite !important; /* Đồng bộ tên animation */
+}
+
+/* Trạng thái tạm ngưng/chờ thanh lý: Nền cam nhạt, chữ cam đất sẫm */
+.badge-status-warning {
+    background-color: #fef3c7 !important;
+    color: #78350f !important;
+    border: 1px solid #f59e0b !important;
+}
+
+/* Hiệu ứng xung mạch đập báo động lỗi cho thiết bị hỏng */
+@keyframes pulse-red-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* =========================================================================
+   CẤU HÌNH TƯƠNG THÍCH ĐA THIẾT BỊ (RESPONSIVE MOBILE)
+   ========================================================================= */
+@media (max-width: 768px) {
+    #analytics-module-hub .card {
+        margin-bottom: 10px;
+    }
+
+    .table-analytics th,
+    .table-analytics td {
+        white-space: nowrap; /* Bật cuộn ngang mượt mà cho bảng trên điện thoại */
+    }
+}
