@@ -8,12 +8,34 @@ new Vue({
 
         showStatusModal: false,
         showLogModal: false,
+        showAddAssetModal: false,
+        isSavingAsset: false,
         selectedDevice: null,
         formStatus: '',
         formReplacedBy: '',
         formReason: '',
 
         devices: window.DevicesJsonData || [],
+        groupsList: window.GroupsJsonData || [],
+        departmentsList: window.DepartmentsJsonData || [],
+        locationsList: window.LocationsJsonData || [],
+
+        formAddAsset: {
+            assetCode: '',
+            itemName: '',
+            groupId: '',
+            serialNumber: '',
+            quantity: 1,
+            locationId: '',
+            departmentId: '',
+            importDate: new Date().toISOString().substring(0, 10),
+            expiryDate: '',
+            warrantyExpiry: '',
+            unitPrice: 0,
+            depreciationRate: '',
+            depreciationYears: '',
+            note: ''
+        },
 
         mockLogs: []
     },
@@ -140,6 +162,87 @@ new Vue({
             })
             .catch(err => {
                 console.error(err);
+                if (window.MedEquip && window.MedEquip.toast) {
+                    window.MedEquip.toast('Lỗi', 'Lỗi kết nối đến máy chủ!', 'danger');
+                } else {
+                    alert('Lỗi kết nối đến máy chủ!');
+                }
+            });
+        },
+
+        openAddAssetModal() {
+            this.formAddAsset = {
+                assetCode: '',
+                itemName: '',
+                groupId: '',
+                serialNumber: '',
+                quantity: 1,
+                locationId: '',
+                departmentId: '',
+                importDate: new Date().toISOString().substring(0, 10),
+                expiryDate: '',
+                warrantyExpiry: '',
+                unitPrice: 0,
+                depreciationRate: '',
+                depreciationYears: '',
+                note: ''
+            };
+            this.showAddAssetModal = true;
+        },
+        saveAddAsset() {
+            if (!this.formAddAsset.assetCode) return alert('Vui lòng nhập Mã tài sản!');
+            if (!this.formAddAsset.itemName) return alert('Vui lòng nhập Tên thiết bị!');
+            if (!this.formAddAsset.groupId) return alert('Vui lòng chọn Nhóm thiết bị!');
+            if (!this.formAddAsset.departmentId) return alert('Vui lòng chọn Khoa/Phòng!');
+            if (!this.formAddAsset.locationId) return alert('Vui lòng chọn Vị trí lắp đặt!');
+            if (!this.formAddAsset.importDate) return alert('Vui lòng chọn ngày nhập kho!');
+            if (!this.formAddAsset.unitPrice || this.formAddAsset.unitPrice <= 0) return alert('Vui lòng nhập đơn giá hợp lệ!');
+
+            this.isSavingAsset = true;
+
+            const formData = new FormData();
+            formData.append('assetCode', this.formAddAsset.assetCode);
+            formData.append('itemName', this.formAddAsset.itemName);
+            formData.append('groupId', this.formAddAsset.groupId);
+            formData.append('serialNumber', this.formAddAsset.serialNumber || '');
+            formData.append('quantity', this.formAddAsset.quantity || 1);
+            formData.append('locationId', this.formAddAsset.locationId);
+            formData.append('departmentId', this.formAddAsset.departmentId);
+            formData.append('importDateStr', this.formAddAsset.importDate);
+            formData.append('expiryDateStr', this.formAddAsset.expiryDate || '');
+            formData.append('warrantyExpiryStr', this.formAddAsset.warrantyExpiry || '');
+            formData.append('unitPrice', this.formAddAsset.unitPrice);
+            formData.append('totalPrice', this.formAddAsset.unitPrice * this.formAddAsset.quantity);
+            formData.append('depreciationRate', this.formAddAsset.depreciationRate || '');
+            formData.append('depreciationYears', this.formAddAsset.depreciationYears || '');
+            formData.append('note', this.formAddAsset.note || '');
+
+            fetch('/VongDoiKhauHao/AddAsset', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                this.isSavingAsset = false;
+                if(data.success) {
+                    this.showAddAssetModal = false;
+                    if (window.MedEquip && window.MedEquip.toast) {
+                        window.MedEquip.toast('Thành công', data.message, 'success');
+                    } else {
+                        alert(data.message);
+                    }
+                    setTimeout(() => { window.location.reload(); }, 1500);
+                } else {
+                    if (window.MedEquip && window.MedEquip.toast) {
+                        window.MedEquip.toast('Lỗi', data.message || 'Có lỗi xảy ra!', 'danger');
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra!');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                this.isSavingAsset = false;
                 if (window.MedEquip && window.MedEquip.toast) {
                     window.MedEquip.toast('Lỗi', 'Lỗi kết nối đến máy chủ!', 'danger');
                 } else {

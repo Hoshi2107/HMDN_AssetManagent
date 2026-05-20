@@ -110,14 +110,19 @@
 </style>
 
 <div id="app">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
         <div>
             <div class="page-title">Vòng đời & Khấu hao Thiết bị</div>
             <div class="page-sub">Theo dõi tình trạng (LifeStatus), tính toán khấu hao tự động và quản lý lịch sử thay thế.</div>
         </div>
-        <div style="position:relative; width: 300px;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:11px; color:var(--muted)"></i>
-            <input type="text" placeholder="Tìm kiếm thiết bị khấu hao..." v-model="searchQuery" style="width:100%; padding:9px 16px 9px 36px; border:1px solid var(--border); border-radius:8px; outline:none; font-size:13px; background:white;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="position:relative; width: 260px;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:11px; color:var(--muted)"></i>
+                <input type="text" placeholder="Tìm kiếm thiết bị khấu hao..." v-model="searchQuery" style="width:100%; padding:9px 16px 9px 36px; border:1px solid var(--border); border-radius:8px; outline:none; font-size:13px; background:white;">
+            </div>
+            <button class="btn-primary" @@click="openAddAssetModal" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; transition: background .15s; height: 38px;">
+                <i class="fa-solid fa-plus"></i> Thêm tài sản
+            </button>
         </div>
     </div>
 
@@ -338,12 +343,120 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL: Thêm tài sản mới -->
+    <div class="custom-modal-overlay" v-if="showAddAssetModal" @@click.self="showAddAssetModal=false">
+        <div class="custom-modal large">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-circle-plus" style="color:var(--accent); margin-right: 6px;"></i>Thêm tài sản mới</div>
+                <button class="btn-close-modal" @@click="showAddAssetModal=false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="background:#f8fafc; padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                    <!-- Mã tài sản -->
+                    <div>
+                        <label class="form-label">Mã tài sản <span style="color:var(--danger)">*</span></label>
+                        <input type="text" class="form-control" placeholder="Ví dụ: PC-2026-001" v-model="formAddAsset.assetCode" required>
+                    </div>
+                    <!-- Tên thiết bị -->
+                    <div>
+                        <label class="form-label">Tên thiết bị <span style="color:var(--danger)">*</span></label>
+                        <input type="text" class="form-control" placeholder="Nhập tên thiết bị..." v-model="formAddAsset.itemName" required>
+                    </div>
+                    <!-- Nhóm thiết bị -->
+                    <div>
+                        <label class="form-label">Nhóm thiết bị <span style="color:var(--danger)">*</span></label>
+                        <select class="form-control" v-model="formAddAsset.groupId" required>
+                            <option value="">-- Chọn nhóm thiết bị --</option>
+                            <option v-for="grp in groupsList" :key="grp.Id" :value="grp.Id">{{ grp.Name }}</option>
+                        </select>
+                    </div>
+                    <!-- Số Serial -->
+                    <div>
+                        <label class="form-label">Số Serial</label>
+                        <input type="text" class="form-control" placeholder="Nhập số Serial..." v-model="formAddAsset.serialNumber">
+                    </div>
+                    <!-- Số lượng -->
+                    <div>
+                        <label class="form-label">Số lượng <span style="color:var(--danger)">*</span></label>
+                        <input type="number" class="form-control" v-model.number="formAddAsset.quantity" min="1" required>
+                    </div>
+                    <!-- Khoa / Phòng ban -->
+                    <div>
+                        <label class="form-label">Khoa / Phòng ban sử dụng <span style="color:var(--danger)">*</span></label>
+                        <select class="form-control" v-model="formAddAsset.departmentId" required>
+                            <option value="">-- Chọn khoa phòng --</option>
+                            <option v-for="dept in departmentsList" :key="dept.Id" :value="dept.Id">{{ dept.Name }}</option>
+                        </select>
+                    </div>
+                    <!-- Vị trí lắp đặt -->
+                    <div>
+                        <label class="form-label">Vị trí cụ thể <span style="color:var(--danger)">*</span></label>
+                        <select class="form-control" v-model="formAddAsset.locationId" required>
+                            <option value="">-- Chọn vị trí --</option>
+                            <option v-for="loc in locationsList" :key="loc.Id" :value="loc.Id">{{ loc.Name }}</option>
+                        </select>
+                    </div>
+                    <!-- Ngày nhập -->
+                    <div>
+                        <label class="form-label">Ngày nhập kho <span style="color:var(--danger)">*</span></label>
+                        <input type="date" class="form-control" v-model="formAddAsset.importDate" required>
+                    </div>
+                    <!-- Đơn giá -->
+                    <div>
+                        <label class="form-label">Đơn giá (VNĐ) <span style="color:var(--danger)">*</span></label>
+                        <input type="number" class="form-control" placeholder="Nhập đơn giá..." v-model.number="formAddAsset.unitPrice" required>
+                    </div>
+                    <!-- Hạn bảo hành -->
+                    <div>
+                        <label class="form-label">Hạn bảo hành</label>
+                        <input type="date" class="form-control" v-model="formAddAsset.warrantyExpiry">
+                    </div>
+                    <!-- Hạn sử dụng -->
+                    <div>
+                        <label class="form-label">Hạn sử dụng</label>
+                        <input type="date" class="form-control" v-model="formAddAsset.expiryDate">
+                    </div>
+                    <!-- Tỷ lệ khấu hao -->
+                    <div>
+                        <label class="form-label">Tỷ lệ khấu hao hàng năm (%)</label>
+                        <input type="number" class="form-control" placeholder="Mặc định: 25%" v-model.number="formAddAsset.depreciationRate" min="0" max="100">
+                    </div>
+                    <!-- Số năm khấu hao -->
+                    <div>
+                        <label class="form-label">Số năm khấu hao</label>
+                        <input type="number" class="form-control" placeholder="Ví dụ: 4" v-model.number="formAddAsset.depreciationYears" min="1">
+                    </div>
+                </div>
+                <!-- Thành tiền -->
+                <div style="margin-top: 16px; background:#eff6ff; padding: 12px; border-radius: 8px; border: 1px solid #bfdbfe; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight:600; color:#1e40af;">TỔNG GIÁ TRỊ (Thành tiền):</span>
+                    <span style="font-size:18px; font-weight:700; color:var(--accent);">{{ formatMoney(formAddAsset.unitPrice * formAddAsset.quantity || 0) }} đ</span>
+                </div>
+                <!-- Ghi chú -->
+                <div style="margin-top: 16px;">
+                    <label class="form-label">Mô tả / Ghi chú</label>
+                    <textarea class="form-control" rows="2" placeholder="Nhập ghi chú thêm..." v-model="formAddAsset.note"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" @@click="showAddAssetModal=false">Hủy bỏ</button>
+                <button class="btn-primary" @@click="saveAddAsset" :disabled="isSavingAsset">
+                    <span v-if="isSavingAsset"><i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...</span>
+                    <span v-else>Lưu tài sản</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section scripts {
     <script src="~/Addon/vue/vue.js"></script>
     <script>
         window.DevicesJsonData = @Html.Raw(ViewBag.DevicesJson ?? "[]");
+        window.GroupsJsonData = @Html.Raw(ViewBag.GroupsJson ?? "[]");
+        window.DepartmentsJsonData = @Html.Raw(ViewBag.DepartmentsJson ?? "[]");
+        window.LocationsJsonData = @Html.Raw(ViewBag.LocationsJson ?? "[]");
     </script>
     <script src="~/Scripts/app/VongDoiKhauHao.js?v=@DateTime.Now.Ticks"></script>
 }
