@@ -245,7 +245,6 @@
     <Content Include="Views\Approvals\Index.cshtml" />
     <Content Include="Views\Category\Category.cshtml" />
     <Content Include="Views\Location\Location.cshtml" />
-    <Content Include="Views\Category\Catalog.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
