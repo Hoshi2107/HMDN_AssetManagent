@@ -1,4 +1,4 @@
-﻿const STATUS = {
+const STATUS = {
     PENDING: {
         label: 'PENDING',
         class: 'badge-pending'
@@ -145,7 +145,7 @@ var app = new Vue({
             this.showModal = true;
 
             $.ajax({
-                url: '/Approvals/GetTicketDetails?ticketId=' + item.Id,
+                url: '/api/approvals/GetTicketDetails?ticketId=' + item.Id,
                 type: 'GET',
                 success: (res) => {
                     this.ticketDetails = res;
@@ -163,7 +163,7 @@ var app = new Vue({
         // Execute status update when user confirms in modal
         executeAction(status) {
             $.ajax({
-                url: '/Approvals/UpdateStatus',
+                url: '/api/approvals/UpdateStatus',
                 type: 'POST',
                 data: {
                     ticketId: this.selectedTicket.Id,
@@ -186,7 +186,7 @@ var app = new Vue({
         },
         loadTickets() {
             $.ajax({
-                url: '/Approvals/GetTickets',
+                url: '/api/approvals/GetTickets',
                 type: 'GET',
                 dataType: 'json',
                 cache: false,
