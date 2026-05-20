@@ -5,7 +5,7 @@ namespace HMDN_QuanLyVatTu.Controllers
     public class CategoryController : Controller
     {
         //// GET: Category
-        public ActionResult Index()
+        public ActionResult Category()
         {
             return View();
         }

@@ -1,12 +1,1123 @@
 ﻿@{
-    ViewBag.Title = "Inventory";
+    ViewBag.Title = "Quản lý Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link href="~/Content/inventory/inventory.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<style>
+    /* ── RESET ── */
+    * {
+        box-sizing: border-box;
+    }
 
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f1f5f9;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+        background: white;
+        padding: 0 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 52px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .tab-item {
+        padding: 0 20px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        font-size: 13.5px;
+        color: #64748b;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all .15s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+        .tab-item:hover {
+            color: #0f172a;
+        }
+
+        .tab-item.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            font-weight: 600;
+        }
+
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .topbar-search-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+        .topbar-search-wrap input {
+            padding: 7px 12px 7px 32px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 220px;
+            outline: none;
+            background: #f8fafc;
+            color: #374151;
+        }
+
+            .topbar-search-wrap input:focus {
+                border-color: #2563eb;
+                background: #fff;
+            }
+
+    .search-ico {
+        position: absolute;
+        left: 9px;
+        font-size: 14px;
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    .topbar-icon-btn {
+        width: 34px;
+        height: 34px;
+        border: none;
+        background: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s;
+    }
+
+        .topbar-icon-btn:hover {
+            background: #f1f5f9;
+        }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* ── CATALOG WRAP ── */
+    .catalog-wrap {
+        display: flex;
+        height: calc(100vh - 52px);
+        overflow: hidden;
+    }
+
+    /* ── LEFT: GROUP LIST ── */
+    .group-panel {
+        width: 260px;
+        flex-shrink: 0;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .group-panel-header {
+        padding: 14px 16px 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f1f5f9;
+        flex-shrink: 0;
+    }
+
+        .group-panel-header h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+    .btn-add-group {
+        width: 26px;
+        height: 26px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s;
+        flex-shrink: 0;
+    }
+
+        .btn-add-group:hover {
+            background: #1d4ed8;
+        }
+
+    .group-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+
+    .group-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background .12s;
+        border-left: 3px solid transparent;
+        position: relative;
+    }
+
+        .group-item:hover {
+            background: #f8fafc;
+        }
+
+        .group-item.active {
+            background: #eff6ff;
+            border-left-color: #2563eb;
+        }
+
+            .group-item.active .gi-name {
+                color: #2563eb;
+            }
+
+    .gi-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .gi-sub {
+        font-size: 11.5px;
+        color: #94a3b8;
+    }
+
+    .gi-actions {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: none;
+        gap: 4px;
+    }
+
+    .group-item:hover .gi-actions {
+        display: flex;
+    }
+
+    .btn-gi {
+        width: 24px;
+        height: 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        background: white;
+        cursor: pointer;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all .12s;
+    }
+
+        .btn-gi:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .btn-gi.del:hover {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+
+    /* ── RIGHT: ITEM PANEL ── */
+    .item-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+
+    .item-panel-header {
+        padding: 16px 24px 12px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .item-panel-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .item-panel-label span {
+            font-size: 14px;
+        }
+
+    .item-panel-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .item-panel-toolbar {
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .item-search-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+        .item-search-wrap input {
+            padding: 8px 12px 8px 32px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 280px;
+            outline: none;
+            font-family: inherit;
+            transition: border .2s;
+        }
+
+            .item-search-wrap input:focus {
+                border-color: #2563eb;
+            }
+
+        .item-search-wrap .search-ico {
+            left: 9px;
+        }
+
+    .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-add-item {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background .15s;
+    }
+
+        .btn-add-item:hover {
+            background: #1d4ed8;
+        }
+
+    /* ── TABLE ── */
+    .item-table-wrap {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 24px;
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead tr {
+        background: #f8fafc;
+    }
+
+    th {
+        padding: 11px 16px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        white-space: nowrap;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    td {
+        padding: 13px 16px;
+        border-top: 1px solid #f1f5f9;
+        font-size: 13px;
+        color: #374151;
+        vertical-align: middle;
+    }
+
+    tbody tr {
+        transition: background .12s;
+    }
+
+        tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+    .td-code {
+        color: #2563eb;
+        font-weight: 600;
+        font-family: monospace;
+        font-size: 12.5px;
+        white-space: nowrap;
+    }
+
+    .td-name {
+        font-weight: 500;
+        color: #0f172a;
+    }
+
+    .td-count {
+        background: #f0fdf4;
+        color: #16a34a;
+        padding: 3px 9px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    /* Toggle switch */
+    .toggle {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        display: inline-block;
+    }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+    .toggle-slider {
+        position: absolute;
+        inset: 0;
+        background: #cbd5e1;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background .2s;
+    }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform .2s;
+        }
+
+    .toggle input:checked + .toggle-slider {
+        background: #2563eb;
+    }
+
+        .toggle input:checked + .toggle-slider::before {
+            transform: translateX(16px);
+        }
+
+    /* Action buttons in row */
+    .row-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .btn-row-icon {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all .12s;
+        color: #64748b;
+    }
+
+        .btn-row-icon:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .btn-row-icon.del:hover {
+            border-color: #dc2626;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+    /* ── PAGINATION ── */
+    .item-pagination {
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        flex-shrink: 0;
+        font-size: 12.5px;
+        color: #64748b;
+    }
+
+    .pg-btns {
+        display: flex;
+        gap: 4px;
+    }
+
+    .pg-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        background: white;
+        font-size: 12.5px;
+        cursor: pointer;
+        font-family: inherit;
+        color: #374151;
+        transition: all .12s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .pg-btn:hover:not(:disabled) {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .pg-btn.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .pg-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+    /* ── EMPTY ── */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+        .empty-state .ei {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+    .no-select-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        gap: 12px;
+    }
+
+        .no-select-state .ei {
+            font-size: 48px;
+        }
+
+        .no-select-state p {
+            font-size: 14px;
+        }
+
+    /* ── MODAL FORM ── */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+    }
+
+    .form-modal {
+        width: 500px;
+        max-width: 96vw;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0,0,0,.2);
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+
+        .modal-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 2px;
+        }
+
+    .modal-header-sub {
+        font-size: 11.5px;
+        color: #94a3b8;
+        font-family: monospace;
+    }
+
+    .close-btn {
+        border: none;
+        background: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+        padding: 2px 6px;
+        border-radius: 6px;
+        transition: all .12s;
+        flex-shrink: 0;
+    }
+
+        .close-btn:hover {
+            background: #f1f5f9;
+            color: #374151;
+        }
+
+    .form-body {
+        padding: 20px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+        .fg.full {
+            grid-column: 1/-1;
+        }
+
+        .fg label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+        }
+
+        .fg input, .fg select, .fg textarea {
+            padding: 9px 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0f172a;
+            outline: none;
+            font-family: inherit;
+            transition: border .2s, box-shadow .2s;
+            background: white;
+        }
+
+            .fg input:focus, .fg select:focus, .fg textarea:focus {
+                border-color: #2563eb;
+                box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+            }
+
+        .fg textarea {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+    .form-footer {
+        padding: 14px 20px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-cancel {
+        padding: 9px 18px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all .15s;
+    }
+
+        .btn-cancel:hover {
+            background: #f8fafc;
+        }
+
+    .btn-save {
+        padding: 9px 20px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background .15s;
+    }
+
+        .btn-save:hover {
+            background: #1d4ed8;
+        }
+
+    /* ── CONFIRM DELETE ── */
+    .confirm-modal {
+        width: 380px;
+        max-width: 95vw;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(0,0,0,.2);
+        text-align: center;
+    }
+
+    .confirm-body {
+        padding: 30px 24px 16px;
+    }
+
+        .confirm-body .ci {
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        .confirm-body h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .confirm-body p {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.55;
+        }
+
+    .confirm-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn-danger {
+        padding: 9px 20px;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background .15s;
+    }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+    /* ── TOAST ── */
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        background: #0f172a;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 9999;
+        box-shadow: 0 8px 24px rgba(0,0,0,.2);
+        pointer-events: none;
+    }
+</style>
+
+<div id="app-catalog">
+
+    <!-- ── TOPBAR ── -->
+    <div class="topbar">
+        <div class="topbar-left">
+            @*<a class="tab-item" href="/Inventory">Tổng quan</a>*@
+            <a class="tab-item active" href="/Catalog">Quản lý Danh mục</a>
+            <a class="tab-item" href="/Inventory">Tài sản hiện có</a>
+        </div>
+        <div class="topbar-right">
+            <div class="topbar-search-wrap">
+                <span class="search-ico">🔍</span>
+                <input type="text" placeholder="Tìm kiếm hệ thống..." v-model="globalSearch">
+            </div>
+            <button class="topbar-icon-btn">🔔</button>
+            @*<button class="topbar-icon-btn">❓</button>*@
+            <div class="avatar">A</div>
+        </div>
+    </div>
+
+    <!-- ── CATALOG LAYOUT ── -->
+    <div class="catalog-wrap">
+
+        <!-- LEFT: GROUP LIST -->
+        <div class="group-panel">
+
+            <div class="group-panel-header">
+                <h4>Nhóm tài sản</h4>
+                <button class="btn-add-group" @@click="openAddGroup" title="Thêm nhóm">+</button>
+            </div>
+
+            <div class="group-list">
+
+                <div v-if="groups.length === 0" style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">
+                    Chưa có nhóm nào
+                </div>
+
+                <div v-for="g in filteredGroups"
+                     :key="g.Id"
+                     class="group-item"
+                     :class="{ active: activeGroup && activeGroup.Id === g.Id }"
+                     @@click="selectGroup(g)">
+
+                    <div class="gi-name">${ g.Name }</div>
+                    <div class="gi-sub">${ itemCountOf(g.Id) } Mẫu tài sản</div>
+
+                    <div class="gi-actions" @@click.stop>
+                        <button class="btn-gi" @@click="openEditGroup(g)" title="Sửa">✏️</button>
+                        <button class="btn-gi del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT: ITEM PANEL -->
+        <div class="item-panel">
+
+            <!-- No group selected -->
+            <div v-if="!activeGroup" class="no-select-state">
+                <div class="ei">👈</div>
+                <p>Chọn một nhóm để xem danh sách loại thiết bị</p>
+            </div>
+
+            <!-- Group selected -->
+            <template v-if="activeGroup">
+
+                <div class="item-panel-header">
+                    <div class="item-panel-label">
+                        <span>${ activeGroup.Icon || '📦' }</span>
+                        DANH MỤC CỤ THỂ
+                    </div>
+                    <div class="item-panel-title">${ activeGroup.Name }</div>
+                </div>
+
+                <div class="item-panel-toolbar">
+                    <div class="item-search-wrap">
+                        <span class="search-ico">🔍</span>
+                        <input type="text"
+                               placeholder="Tìm theo tên hoặc model..."
+                               v-model="itemSearch">
+                    </div>
+                    <div class="toolbar-right">
+                        <select style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;font-family:inherit"
+                                v-model="itemFilterStatus">
+                            <option value="">Tất cả</option>
+                            <option value="1">Đang dùng</option>
+                            <option value="0">Ngưng</option>
+                        </select>
+                        <button class="btn-add-item" @@click="openAddItem">
+                            ⊕ Thêm Mẫu Mới
+                        </button>
+                    </div>
+                </div>
+
+                <div class="item-table-wrap">
+                    <div class="table-card">
+
+                        <div v-if="paginatedItems.length === 0" class="empty-state">
+                            <div class="ei">🗂️</div>
+                            <p>Chưa có mẫu thiết bị nào</p>
+                        </div>
+
+                        <table v-else>
+                            <thead>
+                                <tr>
+                                    <th>Mã Model</th>
+                                    <th>Tên Mẫu</th>
+                                    <th>Hãng sản xuất</th>
+                                    <th>ĐVT</th>
+                                    <th>Thuộc tính</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in paginatedItems" :key="item.Id">
+                                    <td><span class="td-code">${ item.Code }</span></td>
+                                    <td><span class="td-name">${ item.Name }</span></td>
+                                    <td>${ item.Brand || '—' }</td>
+                                    <td>${ item.Unit }</td>
+                                    <td>
+                                        <span class="td-count" v-if="item.Model">
+                                            ${ item.Model }
+                                        </span>
+                                        <span v-else style="color:#cbd5e1">—</span>
+                                    </td>
+                                    <td>
+                                        <label class="toggle" @@click.stop>
+                                            <input type="checkbox"
+                                                   :checked="item.IsActive"
+                                                   @@change="toggleItemStatus(item)">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <div class="row-actions">
+                                            <button class="btn-row-icon" @@click="openEditItem(item)" title="Sửa">✏️</button>
+                                            <button class="btn-row-icon" @@click="openDetailItem(item)" title="Chi tiết">⠿</button>
+                                            @*<button class="btn-row-icon del" @@click="openDeleteItem(item)" title="Xoá">🗑️</button>*@
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="item-pagination">
+                    <span>Hiển thị ${ paginationInfo } mẫu</span>
+                    <div class="pg-btns">
+                        <button class="pg-btn" @@click="prevPage" :disabled="currentPage === 1">‹</button>
+                        <button v-for="p in pages"
+                                :key="p"
+                                class="pg-btn"
+                                :class="{ active: currentPage === p }"
+                                @@click="changePage(p)">
+                            ${ p }
+                        </button>
+                        <button class="pg-btn" @@click="nextPage" :disabled="currentPage === totalPages">›</button>
+                    </div>
+                </div>
+
+            </template>
+
+        </div>
+
+    </div>
+
+    <!-- ══ FORM GROUP ══ -->
+    <div class="modal-overlay" v-if="showGroupForm" @@click.self="showGroupForm = false">
+        <div class="form-modal">
+            <div class="modal-header">
+                <div>
+                    <h3>${ isEditGroup ? 'Sửa nhóm tài sản' : 'Thêm nhóm mới' }</h3>
+                </div>
+                <button class="close-btn" @@click="showGroupForm = false">×</button>
+            </div>
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="fg">
+                        <label>Mã nhóm *</label>
+                        <input type="text" placeholder="VD: CDHA" v-model="groupForm.Code">
+                    </div>
+                    <div class="fg">
+                        <label>Icon (emoji)</label>
+                        <input type="text" placeholder="VD: 🏥" v-model="groupForm.Icon">
+                    </div>
+                    <div class="fg full">
+                        <label>Tên nhóm *</label>
+                        <input type="text" placeholder="VD: Thiết bị Chẩn đoán hình ảnh" v-model="groupForm.Name">
+                    </div>
+                    <div class="fg">
+                        <label>Thứ tự hiển thị</label>
+                        <input type="number" placeholder="0" v-model.number="groupForm.SortOrder">
+                    </div>
+                    <div class="fg">
+                        <label>Trạng thái</label>
+                        <select v-model="groupForm.IsActive">
+                            <option :value="true">Đang hoạt động</option>
+                            <option :value="false">Ngưng hoạt động</option>
+                        </select>
+                    </div>
+                    <div class="fg full">
+                        <label>Mô tả</label>
+                        <textarea placeholder="Mô tả nhóm thiết bị..." v-model="groupForm.Description"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="btn-cancel" @@click="showGroupForm = false">Huỷ</button>
+                <button class="btn-save" @@click="saveGroup">${ isEditGroup ? '💾 Lưu' : '+ Thêm' }</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ FORM ITEM ══ -->
+    <div class="modal-overlay" v-if="showItemForm" @@click.self="showItemForm = false">
+        <div class="form-modal">
+            <div class="modal-header">
+                <div>
+                    <h3>${ isEditItem ? 'Sửa mẫu thiết bị' : 'Thêm mẫu thiết bị' }</h3>
+                    <div class="modal-header-sub" v-if="activeGroup">Nhóm: ${ activeGroup.Name }</div>
+                </div>
+                <button class="close-btn" @@click="showItemForm = false">×</button>
+            </div>
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="fg">
+                        <label>Mã model *</label>
+                        <input type="text" placeholder="VD: MODEL-MRI-001" v-model="itemForm.Code">
+                    </div>
+                    <div class="fg">
+                        <label>Đơn vị *</label>
+                        <input type="text" placeholder="VD: Bộ" v-model="itemForm.Unit">
+                    </div>
+                    <div class="fg full">
+                        <label>Tên mẫu *</label>
+                        <input type="text" placeholder="VD: Máy MRI Magnetom Lumina" v-model="itemForm.Name">
+                    </div>
+                    <div class="fg">
+                        <label>Hãng sản xuất</label>
+                        <input type="text" placeholder="VD: Siemens" v-model="itemForm.Brand">
+                    </div>
+                    <div class="fg">
+                        <label>Model</label>
+                        <input type="text" placeholder="VD: Magnetom Lumina" v-model="itemForm.Model">
+                    </div>
+                    <div class="fg">
+                        <label>Trạng thái</label>
+                        <select v-model="itemForm.IsActive">
+                            <option :value="true">Đang dùng</option>
+                            <option :value="false">Ngưng</option>
+                        </select>
+                    </div>
+                    <div class="fg full">
+                        <label>Mô tả</label>
+                        <textarea placeholder="Mô tả thiết bị..." v-model="itemForm.Description"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="btn-cancel" @@click="showItemForm = false">Huỷ</button>
+                <button class="btn-save" @@click="saveItem">${ isEditItem ? '💾 Lưu' : '+ Thêm' }</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CONFIRM XOÁ ══ -->
+    <div class="modal-overlay" v-if="showDeleteModal" @@click.self="showDeleteModal = false">
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="ci">⚠️</div>
+                <h3>Xác nhận xoá</h3>
+                <p>Bạn chắc muốn xoá <strong>${ deleteTarget.Name }</strong>?<br>Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" @@click="showDeleteModal = false">Không</button>
+                <button class="btn-danger" @@click="confirmDelete">Xoá luôn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" v-if="toast.show">${ toast.msg }</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="~/Addon/vue/vue.js"></script>
 <script src="~/Addon/vue/vue_dev.js"></script>
-
 <script src="~/Scripts/app/category.js"></script>
+
