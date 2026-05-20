@@ -417,16 +417,6 @@
                         <label class="form-label">Hạn sử dụng</label>
                         <input type="date" class="form-control" v-model="formAddAsset.expiryDate">
                     </div>
-                    <!-- Tỷ lệ khấu hao -->
-                    <div>
-                        <label class="form-label">Tỷ lệ khấu hao hàng năm (%)</label>
-                        <input type="number" class="form-control" placeholder="Mặc định: 25%" v-model.number="formAddAsset.depreciationRate" min="0" max="100">
-                    </div>
-                    <!-- Số năm khấu hao -->
-                    <div>
-                        <label class="form-label">Số năm khấu hao</label>
-                        <input type="number" class="form-control" placeholder="Ví dụ: 4" v-model.number="formAddAsset.depreciationYears" min="1">
-                    </div>
                 </div>
                 <!-- Thành tiền -->
                 <div style="margin-top: 16px; background:#eff6ff; padding: 12px; border-radius: 8px; border: 1px solid #bfdbfe; display: flex; justify-content: space-between; align-items: center;">

@@ -32,8 +32,6 @@ new Vue({
             expiryDate: '',
             warrantyExpiry: '',
             unitPrice: 0,
-            depreciationRate: '',
-            depreciationYears: '',
             note: ''
         },
 
@@ -183,8 +181,6 @@ new Vue({
                 expiryDate: '',
                 warrantyExpiry: '',
                 unitPrice: 0,
-                depreciationRate: '',
-                depreciationYears: '',
                 note: ''
             };
             this.showAddAssetModal = true;
@@ -213,8 +209,8 @@ new Vue({
             formData.append('warrantyExpiryStr', this.formAddAsset.warrantyExpiry || '');
             formData.append('unitPrice', this.formAddAsset.unitPrice);
             formData.append('totalPrice', this.formAddAsset.unitPrice * this.formAddAsset.quantity);
-            formData.append('depreciationRate', this.formAddAsset.depreciationRate || '');
-            formData.append('depreciationYears', this.formAddAsset.depreciationYears || '');
+            formData.append('depreciationRate', '');
+            formData.append('depreciationYears', '');
             formData.append('note', this.formAddAsset.note || '');
 
             fetch('/VongDoiKhauHao/AddAsset', {
