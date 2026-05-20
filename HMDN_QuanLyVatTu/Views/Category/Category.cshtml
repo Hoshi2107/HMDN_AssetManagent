@@ -1,12 +1,314 @@
 ﻿@{
-    ViewBag.Title = "Inventory";
+    ViewBag.Title = "Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link href="~/Content/inventory/inventory.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<link href="~/Content/category/category.css" rel="stylesheet" />
 
+<div id="app-catalog">
+    <div class="main-wrap">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-search">
+                <input type="text" placeholder="Tìm nhóm thiết bị..." v-model="searchQuery">
+            </div>
+            <div class="user-chip">Admin</div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="page-content">
+
+            <div class="page-header">
+                <div>
+                    <h2>Danh mục thiết bị</h2>
+                    <p>Quản lý nhóm và loại thiết bị y tế</p>
+                </div>
+                <button class="btn-primary" @@click="openAddGroup">
+                    + Thêm nhóm
+                </button>
+            </div>
+
+            <!-- FILTER -->
+            <div class="filter-bar">
+                <select v-model="filterStatus">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="true">Đang hoạt động</option>
+                    <option value="false">Ngưng hoạt động</option>
+                </select>
+            </div>
+
+            <!-- GROUP GRID -->
+            <div class="group-grid">
+
+                <div v-if="filteredGroups.length === 0" class="empty-grid">
+                    <div style="font-size:40px;margin-bottom:12px">📭</div>
+                    <p>Không tìm thấy nhóm nào</p>
+                </div>
+
+                <div v-for="g in filteredGroups"
+                     :key="g.Id"
+                     class="group-card"
+                     :class="{ inactive: !g.IsActive }"
+                     @@click="openGroupItems(g)">
+
+                    <span class="group-icon">${ g.Icon || '📦' }</span>
+                    <div class="group-name">${ g.Name }</div>
+                    <div class="group-code">${ g.Code }</div>
+                    <div class="group-desc">${ g.Description || 'Chưa có mô tả' }</div>
+
+                    <div class="group-footer">
+                        <span class="item-count-badge">
+                            ${ itemCountOf(g.Id) } loại
+                        </span>
+                        <div class="action-btns" @@click.stop>
+                            <button class="btn-icon-sm" @@click="openEditGroup(g)" title="Sửa">✏️</button>
+                            <button class="btn-icon-sm del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: ITEMS CỦA GROUP
+    ══════════════════════════════════════ -->
+    <div class="modal-overlay"
+         v-if="showItemsModal"
+         @@click.self="showItemsModal = false">
+
+        <div class="items-modal">
+
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <span class="modal-group-icon">${ activeGroup.Icon || '📦' }</span>
+                    <div>
+                        <h3>${ activeGroup.Name }</h3>
+                        <div class="modal-header-sub">${ activeGroup.Code }</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                    <button class="btn-primary" style="font-size:12px;padding:7px 14px" @@click="openAddItem">
+                        + Thêm loại
+                    </button>
+                    <button class="close-btn" @@click="showItemsModal = false">×</button>
+                </div>
+            </div>
+
+            <!-- Search + filter trong modal -->
+            <div class="modal-toolbar">
+                <input class="modal-search"
+                       type="text"
+                       placeholder="Tìm theo tên, mã, hãng, model..."
+                       v-model="itemSearch">
+                <select class="modal-filter" v-model="itemFilterStatus">
+                    <option value="">Tất cả</option>
+                    <option value="true">Đang dùng</option>
+                    <option value="false">Ngưng</option>
+                </select>
+            </div>
+
+            <div class="modal-body">
+
+                <div v-if="filteredItems.length === 0" class="empty-items">
+                    <div style="font-size:36px;margin-bottom:10px">🗂️</div>
+                    <p>Chưa có loại thiết bị nào trong nhóm này</p>
+                </div>
+
+                <table class="items-table" v-else>
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên thiết bị</th>
+                            <th>Hãng / Model</th>
+                            <th>Đơn vị</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in filteredItems" :key="item.Id">
+                            <td><span class="mono-sm">${ item.Code }</span></td>
+                            <td>
+                                <div class="item-name-cell">
+                                    <strong>${ item.Name }</strong>
+                                    <small v-if="item.Description">${ item.Description }</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size:13px">${ item.Brand || '—' }</div>
+                                <div style="font-size:11px;color:#94a3b8">${ item.Model || '' }</div>
+                            </td>
+                            <td>${ item.Unit }</td>
+                            <td>
+                                <span :class="item.IsActive ? 'badge-active' : 'badge-inactive'">
+                                    ${ item.IsActive ? 'Đang dùng' : 'Ngưng' }
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="btn-icon-sm" @@click="openEditItem(item)" title="Sửa">✏️</button>
+                                    <button class="btn-icon-sm del" @@click="openDeleteItem(item)" title="Xoá">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div class="modal-footer">
+                <span>${ filteredItems.length } / ${ groupItems.length } loại thiết bị</span>
+                <span>Nhóm: ${ activeGroup.Name }</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: FORM GROUP
+    ══════════════════════════════════════ -->
+    <div class="form-overlay"
+         v-if="showGroupForm"
+         @@click.self="showGroupForm = false">
+
+        <div class="form-modal">
+            <div class="modal-header">
+                <h3>${ isEditGroup ? 'Sửa nhóm thiết bị' : 'Thêm nhóm mới' }</h3>
+                <button class="close-btn" @@click="showGroupForm = false">×</button>
+            </div>
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Mã nhóm *</label>
+                        <input type="text" placeholder="VD: PC" v-model="groupForm.Code">
+                    </div>
+                    <div class="form-group">
+                        <label>Icon (emoji)</label>
+                        <input type="text" placeholder="VD: 💻" v-model="groupForm.Icon">
+                    </div>
+                    <div class="form-group full">
+                        <label>Tên nhóm *</label>
+                        <input type="text" placeholder="VD: Máy tính" v-model="groupForm.Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Thứ tự hiển thị</label>
+                        <input type="number" placeholder="0" v-model.number="groupForm.SortOrder">
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select v-model="groupForm.IsActive">
+                            <option :value="true">Đang hoạt động</option>
+                            <option :value="false">Ngưng hoạt động</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label>Mô tả</label>
+                        <textarea placeholder="Mô tả nhóm thiết bị..." v-model="groupForm.Description"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="btn-cancel" @@click="showGroupForm = false">Huỷ</button>
+                <button class="btn-save" @@click="saveGroup">
+                    ${ isEditGroup ? '💾 Lưu' : '+ Thêm' }
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: FORM ITEM
+    ══════════════════════════════════════ -->
+    <div class="form-overlay"
+         v-if="showItemForm"
+         @@click.self="showItemForm = false">
+
+        <div class="form-modal">
+            <div class="modal-header">
+                <div>
+                    <h3>${ isEditItem ? 'Sửa loại thiết bị' : 'Thêm loại thiết bị' }</h3>
+                    <div class="modal-header-sub">Nhóm: ${ activeGroup.Name }</div>
+                </div>
+                <button class="close-btn" @@click="showItemForm = false">×</button>
+            </div>
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Mã loại *</label>
+                        <input type="text" placeholder="VD: PC-DELL-001" v-model="itemForm.Code">
+                    </div>
+                    <div class="form-group">
+                        <label>Đơn vị *</label>
+                        <input type="text" placeholder="VD: Cái" v-model="itemForm.Unit">
+                    </div>
+                    <div class="form-group full">
+                        <label>Tên thiết bị *</label>
+                        <input type="text" placeholder="VD: Máy tính Dell OptiPlex" v-model="itemForm.Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Hãng</label>
+                        <input type="text" placeholder="VD: Dell" v-model="itemForm.Brand">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <input type="text" placeholder="VD: OptiPlex 7090" v-model="itemForm.Model">
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select v-model="itemForm.IsActive">
+                            <option :value="true">Đang dùng</option>
+                            <option :value="false">Ngưng</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label>Mô tả</label>
+                        <textarea placeholder="Mô tả thiết bị..." v-model="itemForm.Description"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="btn-cancel" @@click="showItemForm = false">Huỷ</button>
+                <button class="btn-save" @@click="saveItem">
+                    ${ isEditItem ? '💾 Lưu' : '+ Thêm' }
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: XÁC NHẬN XOÁ
+    ══════════════════════════════════════ -->
+    <div class="form-overlay"
+         v-if="showDeleteModal"
+         @@click.self="showDeleteModal = false">
+
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="ci">⚠️</div>
+                <h3>Xác nhận xoá</h3>
+                <p>Bạn chắc muốn xoá <strong>${ deleteTarget.Name }</strong>?<br>Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" @@click="showDeleteModal = false">Không</button>
+                <button class="btn-danger" @@click="confirmDelete">Xoá luôn</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" v-if="toast.show">${ toast.msg }</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="~/Addon/vue/vue.js"></script>
 <script src="~/Addon/vue/vue_dev.js"></script>
-
-<script src="~/Scripts/app/category.js"></script>
+<script src="~/Scripts/app/category.js"
