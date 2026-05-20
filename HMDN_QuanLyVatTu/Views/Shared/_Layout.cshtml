@@ -31,7 +31,7 @@
             --radius: 10px;
             --font-main: 'Be Vietnam Pro', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --transition: 0.18s ease;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         *, *::before, *::after {
@@ -76,16 +76,16 @@
             position: relative;
         }
 
-            .sidebar::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-                background-size: 24px 24px;
-                pointer-events: none;
-            }
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
 
-        /* ── BRAND (Đã tối ưu căn giữa và khoảng cách) ── */
+        /* ── BRAND ── */
         .sidebar-brand {
             display: flex;
             align-items: center;
@@ -97,7 +97,7 @@
 
         .slidebar-logo {
             width: 100%;
-            height: 52px; /* Độ cao lý tưởng để hiển thị trọn vẹn chữ Hoàn Mỹ dài */
+            height: 52px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -106,36 +106,14 @@
             overflow: hidden;
         }
 
-            /* Đã sửa từ .brand-logo img sang đúng .slidebar-logo img */
-            .slidebar-logo img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain; /* Giữ nguyên tỷ lệ chuẩn của bệnh viện, không bị bóp méo dẹt hình */
-                display: block;
-            }
-
-        .brand-text strong {
+        .slidebar-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
             display: block;
-            font-size: 12.5px;
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1.25;
-            letter-spacing: -.2px;
         }
 
-        .brand-text span {
-            display: block;
-            font-size: 10px;
-            color: var(--text-secondary);
-            font-weight: 400;
-            margin-top: 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 140px;
-        }
-
-        /* ── NAV ── */
+        /* ── SIDEBAR NAV ── */
         .sidebar-nav {
             flex: 1;
             padding: 8px 10px;
@@ -143,9 +121,9 @@
             scrollbar-width: none;
         }
 
-            .sidebar-nav::-webkit-scrollbar {
-                display: none;
-            }
+        .sidebar-nav::-webkit-scrollbar {
+            display: none;
+        }
 
         .nav-section-label {
             font-size: 9px;
@@ -157,41 +135,81 @@
             user-select: none;
         }
 
+        .nav-item {
+            position: relative;
+            margin-bottom: 3px;
+        }
+
         .nav-item a {
             display: flex;
             align-items: center;
             gap: 9px;
-            padding: 8px 10px;
+            padding: 9px 12px;
             border-radius: 8px;
             color: var(--text-secondary);
             font-size: 12.5px;
             font-weight: 500;
-            transition: background var(--transition), color var(--transition);
+            transition: background var(--transition),
+                        color var(--transition),
+                        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        padding-left var(--transition);
             white-space: nowrap;
         }
 
-            .nav-item a .nav-icon {
-                width: 16px;
-                text-align: center;
-                font-size: 12px;
-                flex-shrink: 0;
-                opacity: .8;
-            }
+        .nav-item a .nav-icon {
+            width: 16px;
+            text-align: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            opacity: .75;
+            transition: transform var(--transition), opacity var(--transition);
+        }
 
-            .nav-item a:hover {
-                background: var(--sidebar-hover);
-                color: var(--text-primary);
-            }
+        /* [HOVER EFFECT] */
+        .nav-item a:hover {
+            background: var(--sidebar-hover);
+            color: var(--text-primary);
+            padding-left: 16px;
+        }
 
+        .nav-item a:hover .nav-icon {
+            opacity: 1;
+            transform: scale(1.12);
+        }
+
+        /* [ACTIVE EFFECT] */
         .nav-item.active a {
             background: var(--accent-blue);
             color: #fff;
-            box-shadow: 0 2px 10px rgba(37,99,235,.35);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            font-weight: 600;
+            transform: scale(1.02);
         }
 
-            .nav-item.active a .nav-icon {
-                opacity: 1;
-            }
+        .nav-item.active a .nav-icon {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* [LEFT INDICATOR GLOW] */
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 18px;
+            background: var(--accent-cyan);
+            border-radius: 0 4px 4px 0;
+            /* Đã sửa tên gọi đồng nhất với keyframe bên dưới */
+            animation: activeIndicator 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* [MICRO-INTERACTION CLICK] */
+        .nav-item a:active {
+            transform: scale(0.97);
+        }
 
         .nav-badge {
             margin-left: auto;
@@ -212,9 +230,9 @@
             flex-shrink: 0;
         }
 
-            .sidebar-footer .nav-section-label {
-                padding-top: 8px;
-            }
+        .sidebar-footer .nav-section-label {
+            padding-top: 8px;
+        }
 
         .staff-pill {
             display: flex;
@@ -229,27 +247,27 @@
             margin-top: 8px;
         }
 
-            .staff-pill:hover {
-                background: rgba(255,255,255,.08);
-            }
+        .staff-pill:hover {
+            background: rgba(255,255,255,.08);
+        }
 
         .staff-avatars {
             display: flex;
         }
 
-            .staff-avatars img,
-            .staff-avatars .av-count {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                border: 2px solid var(--sidebar-bg);
-                margin-left: -6px;
-                object-fit: cover;
-            }
+        .staff-avatars img,
+        .staff-avatars .av-count {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--sidebar-bg);
+            margin-left: -6px;
+            object-fit: cover;
+        }
 
-                .staff-avatars img:first-child {
-                    margin-left: 0;
-                }
+        .staff-avatars img:first-child {
+            margin-left: 0;
+        }
 
         .av-count {
             background: var(--accent-cyan);
@@ -266,19 +284,19 @@
             min-width: 0;
         }
 
-            .staff-info small {
-                display: block;
-                font-size: 9px;
-                color: var(--text-muted);
-                line-height: 1.2;
-            }
+        .staff-info small {
+            display: block;
+            font-size: 9px;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
 
-            .staff-info strong {
-                display: block;
-                font-size: 11.5px;
-                color: var(--text-primary);
-                font-weight: 600;
-            }
+        .staff-info strong {
+            display: block;
+            font-size: 11.5px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
 
         .staff-dot {
             width: 7px;
@@ -341,18 +359,18 @@
             border: 1px solid var(--border);
         }
 
-            .btn-ghost:hover {
-                background: var(--body-bg);
-            }
+        .btn-ghost:hover {
+            background: var(--body-bg);
+        }
 
         .btn-primary {
             background: var(--accent-blue);
             color: #fff;
         }
 
-            .btn-primary:hover {
-                background: #1d4ed8;
-            }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
 
         .page-content {
             flex: 1;
@@ -362,14 +380,14 @@
             scrollbar-color: #d1d9e6 transparent;
         }
 
-            .page-content::-webkit-scrollbar {
-                width: 5px;
-            }
+        .page-content::-webkit-scrollbar {
+            width: 5px;
+        }
 
-            .page-content::-webkit-scrollbar-thumb {
-                background: #d1d9e6;
-                border-radius: 4px;
-            }
+        .page-content::-webkit-scrollbar-thumb {
+            background: #d1d9e6;
+            border-radius: 4px;
+        }
 
         /* ── SHARED HELPERS ── */
         .card {
@@ -389,39 +407,20 @@
             font-weight: 600;
         }
 
-            .badge-status::before {
-                content: '';
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                background: currentColor;
-                opacity: .7;
-            }
-
-        .badge-active {
-            background: #d1fae5;
-            color: #065f46;
+        .badge-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: .7;
         }
 
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .badge-maint {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .badge-pending {
-            background: #f0f9ff;
-            color: #075985;
-        }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-maint { background: #e0e7ff; color: #3730a3; }
+        .badge-pending { background: #f0f9ff; color: #075985; }
 
         /* ── TOAST ── */
         #toast-container {
@@ -448,77 +447,28 @@
             animation: slideIn .25s ease;
         }
 
-        .toast-danger {
-            border-left: 4px solid var(--accent-red);
-        }
+        .toast-danger { border-left: 4px solid var(--accent-red); }
+        .toast-warning { border-left: 4px solid var(--accent-amber); }
+        .toast-success { border-left: 4px solid var(--accent-green); }
+        .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .toast-danger .toast-icon { color: var(--accent-red); }
+        .toast-warning .toast-icon { color: var(--accent-amber); }
+        .toast-success .toast-icon { color: var(--accent-green); }
+        .toast-body { flex: 1; }
+        .toast-title { font-size: 13px; font-weight: 700; color: #1e2a3a; margin-bottom: 3px; }
+        .toast-msg { font-size: 12px; color: #64748b; line-height: 1.4; }
+        .toast-close { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 0; flex-shrink: 0; }
+        .toast-close:hover { color: #1e2a3a; }
 
-        .toast-warning {
-            border-left: 4px solid var(--accent-amber);
-        }
-
-        .toast-success {
-            border-left: 4px solid var(--accent-green);
-        }
-
-        .toast-icon {
-            font-size: 18px;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-
-        .toast-danger .toast-icon {
-            color: var(--accent-red);
-        }
-
-        .toast-warning .toast-icon {
-            color: var(--accent-amber);
-        }
-
-        .toast-success .toast-icon {
-            color: var(--accent-green);
-        }
-
-        .toast-body {
-            flex: 1;
-        }
-
-        .toast-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #1e2a3a;
-            margin-bottom: 3px;
-        }
-
-        .toast-msg {
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .toast-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #94a3b8;
-            font-size: 14px;
-            padding: 0;
-            flex-shrink: 0;
-        }
-
-            .toast-close:hover {
-                color: #1e2a3a;
-            }
-
+        /* ── KEYFRAMES ── */
         @@keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
 
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        @@keyframes activeIndicator {
+            from { height: 0; opacity: 0; }
+            to { height: 18px; opacity: 1; }
         }
 
         /* ── RESPONSIVE ── */
@@ -533,8 +483,8 @@
             .staff-info,
             .nav-section-label,
             .nav-badge,
-            .slidebar-logo img { /* Ẩn bớt chi tiết ảnh khi thu nhỏ mobile */
-                display: none;
+            .slidebar-logo img {
+                display: none !important;
             }
 
             .sidebar-brand {
@@ -548,18 +498,21 @@
                 padding: 10px;
             }
 
+            .nav-item a:hover {
+                padding-left: 10px; /* Chặn giật menu trên mobile */
+            }
+
+            .nav-item.active::before {
+                left: 2px; /* Đưa gờ chỉ thị khít vào bên trong icon khi co menu */
+            }
+
             .staff-pill {
                 justify-content: center;
                 padding: 10px;
             }
 
-            .page-content {
-                padding: 18px;
-            }
-
-            .page-topbar {
-                padding: 0 18px;
-            }
+            .page-content { padding: 18px; }
+            .page-topbar { padding: 0 18px; }
         }
     </style>
 </head>
@@ -567,7 +520,6 @@
     <div class="app-shell">
 
         <aside class="sidebar">
-
             <div class="sidebar-brand">
                 <div class="slidebar-logo">
                     <img src="@Url.Content("~/Content/images1/logobv.png")" alt="MedEquip Logo">
@@ -575,7 +527,6 @@
             </div>
 
             <nav class="sidebar-nav">
-
                 <div class="nav-section-label">Tổng quan</div>
                 <ul>
                     <li class="nav-item @(ViewBag.ActiveNav == "Analytics" ? "active" : "")">
@@ -622,9 +573,10 @@
                             <span>Trạng thái</span>
                         </a>
                     </li>
-                    <li class="@(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
+                    <li class="nav-item @(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
                         <a href="@Url.Action("VongDoiKhauHao", "VongDoiKhauHao")">
-                            <i class="fa fa-recycle"></i> <span>Vòng đời & Khấu hao</span>
+                            <i class="fa-solid fa-recycle nav-icon"></i>
+                            <span>Vòng đời & Khấu hao</span>
                         </a>
                     </li>
                 </ul>
@@ -668,7 +620,6 @@
                         </a>
                     </li>
                 </ul>
-
             </nav>
 
             <div class="sidebar-footer">
@@ -700,7 +651,6 @@
                     <div class="staff-dot"></div>
                 </div>
             </div>
-
         </aside>
 
         <div class="page-wrapper">
@@ -758,14 +708,26 @@
             }
         };
 
-        // ── Auto-highlight active nav from URL ────────────────
+        // ── Auto-highlight active nav from URL (Đã tối ưu cho cả Route con) ────────────────
         (function () {
-            if (!document.querySelector('.nav-item.active')) {
-                var seg = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0] || '';
+            // Sửa logic: Luôn chạy quét URL để đảm bảo các trang con của Controller vẫn giữ được sáng đèn Menu
+            var currentPath = window.location.pathname.toLowerCase();
+            var segments = currentPath.split('/').filter(Boolean);
+            var currentController = segments[0] || '';
+
+            if (currentController) {
+                var found = false;
                 document.querySelectorAll('.nav-item a').forEach(function (a) {
                     var href = (a.getAttribute('href') || '').toLowerCase();
-                    if (seg && href.indexOf(seg) > -1) {
+                    var hrefSegments = href.split('/').filter(Boolean);
+                    var targetController = hrefSegments[0] || '';
+
+                    // Nếu Controller của liên kết trùng với Controller trên URL, kích hoạt active
+                    if (targetController === currentController) {
+                        // Loại bỏ active cũ do backend gán sai trước khi gán mới
+                        document.querySelectorAll('.nav-item').forEach(function (li) { li.classList.remove('active'); });
                         a.closest('.nav-item').classList.add('active');
+                        found = true;
                     }
                 });
             }
