@@ -2,6 +2,7 @@
 using HMS.Models;
 using HMS.Models.Catalog;
 using HMS.Models.ViewModels;
+using System;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
@@ -77,6 +78,44 @@ namespace HMDN.Controllers.API
                 success = true,
                 message = "Cập nhật trạng thái thành công"
             });
+        }
+
+        // POST: api/category/group/create
+        [HttpPost]
+        [Route("group/create")]
+        public IHttpActionResult Create(GroupCreateDTO dto)
+        {
+            try
+            {
+                db.Database.ExecuteSqlCommand(
+                    @"
+            EXEC sp_Group_Create
+                @Code = @Code,
+                @Name = @Name,
+                @Icon = @Icon,
+                @Description = @Description,
+                @SortOrder = @SortOrder,
+                @IsActive = @IsActive
+            ",
+
+                    new SqlParameter("@Code", dto.Code),
+                    new SqlParameter("@Name", dto.Name),
+                    new SqlParameter("@Icon", (object)dto.Icon ?? DBNull.Value),
+                    new SqlParameter("@Description", (object)dto.Description ?? DBNull.Value),
+                    new SqlParameter("@SortOrder", dto.SortOrder),
+                    new SqlParameter("@IsActive", dto.IsActive)
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Thêm nhóm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
     }

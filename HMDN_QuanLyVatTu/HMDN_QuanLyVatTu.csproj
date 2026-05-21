@@ -161,6 +161,7 @@
     <Compile Include="Models\Department.cs" />
     <Compile Include="Models\FilterLookupModel.cs" />
     <Compile Include="Models\Group.cs" />
+    <Compile Include="Models\GroupCreateDTO.cs" />
     <Compile Include="Models\GroupVM.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\InventoryDetailVM.cs" />

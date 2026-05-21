@@ -329,22 +329,56 @@
         },
 
         saveGroup() {
-            if (!this.groupForm.Code.trim() || !this.groupForm.Name.trim()) {
-                this.showToast('⚠️ Mã và tên nhóm không được trống!')
+
+            if (!this.groupForm.Code.trim()
+                || !this.groupForm.Name.trim()) {
+
+                this.showToast(
+                    '⚠️ Mã và tên nhóm không được trống!'
+                )
+
                 return
             }
-            const url = this.isEditGroup ? '/api/categoryapi/group/update' : '/api/categoryapi/group/create'
-            const type = this.isEditGroup ? 'PUT' : 'POST'
+
+            const url = this.isEditGroup
+                ? '/api/category/group/update'
+                : '/api/category/group/create'
+
+            const type = this.isEditGroup
+                ? 'PUT'
+                : 'POST'
+
             $.ajax({
-                url, type,
+
+                url: url,
+
+                type: type,
+
                 contentType: 'application/json',
+
                 data: JSON.stringify(this.groupForm),
-                success: () => {
+
+                success: (res) => {
+
                     this.showGroupForm = false
+
                     this.loadGroups()
-                    this.showToast(this.isEditGroup ? '✅ Đã cập nhật nhóm!' : '✅ Đã thêm nhóm mới!')
+
+                    this.showToast(
+                        this.isEditGroup
+                            ? '✅ Đã cập nhật nhóm!'
+                            : '✅ Đã thêm nhóm mới!'
+                    )
                 },
-                error: () => this.showToast('❌ Có lỗi xảy ra!')
+
+                error: (xhr) => {
+
+                    console.log(xhr)
+
+                    this.showToast(
+                        xhr.responseText || '❌ Có lỗi xảy ra!'
+                    )
+                }
             })
         },
 
