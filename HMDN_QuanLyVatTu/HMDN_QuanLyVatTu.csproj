@@ -153,11 +153,13 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Approvals.cs" />
+    <Compile Include="Models\ChecklistProgressModel.cs" />
     <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
     <Compile Include="Models\DashboardGroupSummary.cs" />
     <Compile Include="Models\DashboardOverviewModel.cs" />
     <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\FilterLookupModel.cs" />
     <Compile Include="Models\Group.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\InventoryDetailVM.cs" />
@@ -169,6 +171,7 @@
     <Compile Include="Models\LocationInventoryDetailVM.cs" />
     <Compile Include="Models\LocationListVM.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
+    <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\Tickets.cs" />

@@ -11,8 +11,8 @@
 <div id="analytics-module-hub" class="container-fluid" v-cloak>
 
     <div class="row mb-4">
-        <div class="col-12 col-md-4 mb-3">
-            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
+        <div class="col-12 col-sm-6 col-xl-3 mb-3">
+            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white h-100">
                 <div>
                     <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Tổng tài sản thiết bị</small>
                     <h2 class="mt-1 mb-0 font-weight-bold text-dark">{{ kpi.TotalAssets }}</h2>
@@ -22,12 +22,13 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-4 mb-3">
-            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
+
+        <div class="col-12 col-sm-6 col-xl-3 mb-3">
+            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white h-100">
                 <div>
                     <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Đang hoạt động tốt</small>
                     <h2 class="mt-1 mb-0 font-weight-bold text-success">
-                        {{ kpi.TotalActive }}
+                        {{ kpi.OperatingWell }}
                         <span class="kpi-percentage">({{ formatPercent(kpi.ActivePercentage) }}%)</span>
                     </h2>
                 </div>
@@ -36,13 +37,14 @@
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-4 mb-3">
-            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white">
+
+        <div class="col-12 col-sm-6 col-xl-3 mb-3">
+            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white h-100">
                 <div>
-                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Thiết bị hỏng / Bảo trì</small>
+                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Thiết bị hỏng</small>
                     <h2 class="mt-1 mb-0 font-weight-bold text-danger">
-                        {{ kpi.TotalSuspended }}
-                        <span class="kpi-percentage">({{ formatPercent(kpi.SuspendedPercentage) }}%)</span>
+                        {{ kpi.BrokenAssets }}
+                        <span class="kpi-percentage">({{ formatPercent(kpi.BrokenPercentage) }}%)</span>
                     </h2>
                 </div>
                 <div class="rounded-circle d-flex align-items-center justify-content-center text-danger kpi-icon-box bg-red-light">
@@ -50,10 +52,29 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-12 col-sm-6 col-xl-3 mb-3">
+            <div class="card p-3 border-0 shadow-sm d-flex flex-row align-items-center justify-content-between bg-white h-100">
+                <div>
+                    <small class="text-uppercase text-muted font-weight-bold card-kpi-title">Thiết bị đang bảo trì</small>
+                    <h2 class="mt-1 mb-0 font-weight-bold text-warning">
+                        {{ kpi.HospitalMaintenanceCount + kpi.VendorMaintenanceCount }}
+                        <small style="font-size: 14px;" class="text-muted">máy</small>
+                    </h2>
+                    <div class="mt-1" style="font-size: 11.5px; line-height: 1.4;">
+                        <span class="text-secondary mr-2">● BV bảo trì: <strong>{{ kpi.HospitalMaintenanceCount }}</strong></span> <br />
+                        <span class="text-secondary">● Hãng bảo trì: <strong>{{ kpi.VendorMaintenanceCount }}</strong></span>
+                    </div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-warning kpi-icon-box bg-yellow-light">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row mb-4">
-        <div class="col-12 col-lg-4 mb-3">
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
             <div class="card p-3 border-0 shadow-sm bg-white h-100">
                 <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-pie mr-2 text-info"></i>Tỉ lệ thiết bị hoạt động</h6>
                 <div class="position-relative d-flex align-items-center justify-content-center chart-container">
@@ -62,8 +83,28 @@
             </div>
         </div>
 
-        <div class="col-12 col-lg-8 mb-3">
+        <div class="col-12 col-md-6 col-xl-3 mb-3">
             <div class="card p-3 border-0 shadow-sm bg-white h-100">
+                <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-list-check mr-2 text-success"></i>Tiến độ Checklist hôm nay</h6>
+                <div class="position-relative d-flex align-items-center justify-content-center chart-container">
+                    <canvas id="todayChecklistChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6 mb-3">
+            <div class="card p-3 border-0 shadow-sm bg-white h-100">
+                <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-chart-line mr-2 text-warning"></i>Tần suất bảo trì theo tháng</h6>
+                <div class="position-relative chart-container">
+                    <canvas id="maintenanceMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card p-3 border-0 shadow-sm bg-white">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-money-bill-trend-up mr-2 text-primary"></i>Tổng chi phí bảo trì theo loại thiết bị</h6>
                     <div>
@@ -72,7 +113,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="position-relative chart-container">
+                <div class="position-relative chart-container" style="height: 300px;">
                     <canvas id="costBarChart"></canvas>
                 </div>
             </div>
@@ -82,10 +123,10 @@
     <div class="row">
         <div class="col-12">
             <div id="target-inventory-table" class="card p-4 border-0 shadow-sm bg-white">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between border-bottom pb-3 mb-3">
+                <div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between border-bottom pb-3 mb-3">
                     <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-boxes-stacked mr-2 text-warning"></i>Báo cáo chi tiết tồn kho tài sản y tế</h6>
 
-                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-xl-0">
                         <div class="form-group mb-0 mr-2">
                             <select class="form-control form-control-sm font-weight-bold border" v-model="filterYear" v-on:change="fetchInventoryReport">
                                 <option v-for="y in availableYears" :value="y">Năm {{ y }}</option>
@@ -104,9 +145,15 @@
                             </select>
                         </div>
 
-                        <button class="btn btn-sm btn-success font-weight-bold text-white mr-1" v-on:click="exportExcelReport">
-                            <i class="fa-solid fa-file-excel mr-1"></i>Xuất Excel
-                        </button>
+                        <div class="form-group mb-0 mr-2">
+                            <select class="form-control form-control-sm font-weight-bold border" v-model="filterStatus" v-on:change="fetchInventoryReport">
+                                <option :value="null">── Lọc theo Trạng thái ──</option>
+                                <option value="active">Đang chạy tốt</option>
+                                <option value="suspended">Đang báo hỏng</option>
+                                <option value="maintenance_bv">Bệnh viện bảo trì</option>
+                                <option value="maintenance_hang">Hãng đối tác bảo trì</option>
+                            </select>
+                        </div>
 
                         <button class="btn btn-sm btn-light border font-weight-bold text-secondary" v-on:click="resetFilters">
                             <i class="fa-solid fa-arrows-rotate mr-1"></i>Làm mới
@@ -135,14 +182,17 @@
                                 <td class="font-weight-bold text-dark">{{ item.ItemName }}</td>
                                 <td><span class="badge-group-custom">{{ item.GroupName || 'Chưa phân loại' }}</span></td>
                                 <td>{{ item.DepartmentName }}</td>
-                                <td><i class="fa-solid fa-map-location-dot text-muted" style="margin-right: 8px;"></i>{{ item.LocationName }}</td>
+                                <td><i class="fa-solid fa-map-location-dot text-muted" style="margin-right: 8px;"></i>{{ item.LocationName || 'Chưa chỉ định' }}</td>
                                 <td class="text-center font-weight-bold">{{ item.Quantity }}</td>
                                 <td class="text-right">{{ formatMoney(item.UnitPrice) }}</td>
                                 <td class="text-right font-weight-bold text-dark">{{ formatMoney(item.TotalPrice) }}</td>
+
                                 <td class="text-center">
                                     <span v-if="item.LifeStatus === 'active'" class="badge-status-custom badge-status-active">Đang chạy tốt</span>
                                     <span v-else-if="item.LifeStatus === 'suspended'" class="badge-status-custom badge-status-suspended">Đang báo hỏng</span>
-                                    <span v-else class="badge-status-custom badge-status-warning">{{ item.LifeStatus }}</span>
+                                    <span v-else-if="item.LifeStatus === 'maintenance_bv'" class="badge-status-custom badge-status-maintenance-bv">BV bảo trì</span>
+                                    <span v-else-if="item.LifeStatus === 'maintenance_hang'" class="badge-status-custom badge-status-maintenance-hang">Hãng bảo trì</span>
+                                    <span v-else class="badge-status-custom badge-status-neutral">{{ item.LifeStatus }}</span>
                                 </td>
                             </tr>
                             <tr v-if="filteredInventoryLength === 0">
@@ -178,12 +228,14 @@
 
 <script>
     window.AnalyticsEndpoints = {
-    getSummary: '/api/analytics/dashboard-summary',
-    getCosts: '/api/analytics/maintenance-costs',
-    getLookups: '/api/analytics/filter-lookups',
-    getReport: '/api/analytics/inventory-report',
-    socketServer: 'http://localhost:3000' // Giữ nguyên cấu hình socket của bạn
-};
+        getSummary: '/api/analytics/dashboard-summary',
+        getCosts: '/api/analytics/maintenance-costs',
+        getLookups: '/api/analytics/filter-lookups',
+        getReport: '/api/analytics/inventory-report',
+        getChecklist: '/api/analytics/checklist-today-progress',
+        getFrequency: '/api/analytics/maintenance-frequency',
+        socketServer: 'http://localhost:3000'
+    };
 </script>
 
 <script src="@Url.Content("~/Scripts/app/analytics-module.js")"></script>

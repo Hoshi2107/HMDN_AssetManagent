@@ -8,9 +8,12 @@ namespace HMDN_QuanLyVatTu.Models
     public class DashboardOverviewModel
     {
         public int TotalAssets { get; set; }
-        public int TotalActive { get; set; }
-        public int TotalSuspended { get; set; }
+        public int OperatingWell { get; set; }
+        public int BrokenAssets { get; set; }
         public double ActivePercentage { get; set; }
-        public double SuspendedPercentage { get; set; }
+        public double BrokenPercentage { get; set; }
+        public string MaintenanceDeviceName { get; set; }
+        public int HospitalMaintenanceCount { get; set; }
+        public int VendorMaintenanceCount { get; set; }
     }
 }
