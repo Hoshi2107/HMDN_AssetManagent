@@ -26,6 +26,8 @@ var app = new Vue({
 
         filterStatus: '',
 
+        filterGroup: '',
+
         showModal: false,
 
         selectedDevice: null,
@@ -120,6 +122,13 @@ var app = new Vue({
                 )
             }
 
+            if (this.filterGroup) {
+
+                list = list.filter(x =>
+                    x.GroupName == this.filterGroup
+                )
+            }
+
             // SORT
             if (this.sort.key) {
 
@@ -139,6 +148,18 @@ var app = new Vue({
             }
 
             return list
+        },
+
+        // Get unique groups for filter dropdown
+        groups() {
+
+            return [...new Set(
+
+                this.devices
+                    .map(x => x.GroupName)
+                    .filter(x => x)
+
+            )]
         },
 
         //Paginate
@@ -313,6 +334,10 @@ var app = new Vue({
         },
 
         filterLoca() {
+            this.currentPage = 1
+        },
+
+        filterGroup() {
             this.currentPage = 1
         },
 

@@ -46,18 +46,33 @@
             <!-- FILTER -->
             <div class="filter-bar">
 
-            <!-- Filter theo vị trí -->
-            <select v-model="filterLoca">
-                <option value="">Tất cả vị trí</option>
-            
-                <option v-for="loc in locations" :key="loc" :value="loc">
-                    ${ loc }
-                </option>
+                <!-- Filter theo vị trí -->
+                <select v-model="filterLoca">
+                    <option value="">Tất cả vị trí</option>
 
+                    <option v-for="loc in locations" :key="loc" :value="loc">
+                        ${ loc }
+                    </option>
+                </select>
 
-            <!-- Filter theo trạng thái -->
-            </select>
+                <!-- Filter theo loại tài sản -->
+                <select v-model="filterGroup">
 
+                    <option value="">
+                        Tất cả loại tài sản
+                    </option>
+
+                    <option v-for="g in groups"
+                            :key="g"
+                            :value="g">
+
+                        ${ g }
+
+                    </option>
+
+                </select>
+
+                <!-- Filter theo trạng thái -->
                 <select v-model="filterStatus">
                     <option value="">Tất cả trạng thái</option>
 

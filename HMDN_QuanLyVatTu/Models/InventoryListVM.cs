@@ -1,4 +1,6 @@
-﻿namespace HMS.Models.ViewModels
+﻿using Microsoft.SqlServer.Server;
+
+namespace HMS.Models.ViewModels
 {
     public class InventoryListVM
     {
@@ -13,6 +15,8 @@
         public string DepartmentName { get; set; }
 
         public string LifeStatus { get; set; }
+
+        public string GroupName { get; set; }
 
         public string LocationName { get; set; }
     }

@@ -830,8 +830,21 @@
     <div class="topbar">
         <div class="topbar-left">
             @*<a class="tab-item" href="/Inventory">Tổng quan</a>*@
-            <a class="tab-item active" href="/Catalog">Quản lý Danh mục</a>
-            <a class="tab-item" href="/Inventory">Tài sản hiện có</a>
+            @*<a class="tab-item active" href="/Catalog">Quản lý Danh mục</a>
+                <a class="tab-item" href="/Inventory">Tài sản hiện có</a>*@
+            <div class="tab-item"
+                 :class="{ active: currentTab === 'category' }"
+                 @@click="currentTab = 'category'">
+
+                Quản lý Danh mục
+            </div>
+
+            <div class="tab-item"
+                 :class="{ active: currentTab === 'inventory' }"
+                 @@click="currentTab = 'inventory'">
+
+                Tài sản hiện có
+            </div>
         </div>
         <div class="topbar-right">
             <div class="topbar-search-wrap">
@@ -845,7 +858,7 @@
     </div>
 
     <!-- ── CATALOG LAYOUT ── -->
-    <div class="catalog-wrap">
+    <div class="catalog-wrap" v-if="currentTab === 'category'">
 
         <!-- LEFT: GROUP LIST -->
         <div class="group-panel">
@@ -996,7 +1009,84 @@
         </div>
 
     </div>
+    <!-- INVENTORY VIEW -->
+    <div v-if="currentTab === 'inventory'"
+         class="item-panel"
+         style="height:calc(100vh - 52px)">
 
+        <div class="item-panel-header">
+            <div class="item-panel-label">
+                <span>📦</span>
+                TÀI SẢN HIỆN CÓ
+            </div>
+
+            <div class="item-panel-title">
+                Danh sách tài sản
+            </div>
+        </div>
+
+        <div class="item-panel-toolbar">
+
+            <div class="item-search-wrap">
+                <span class="search-ico">🔍</span>
+
+                <input type="text"
+                       placeholder="Tìm asset..."
+                       v-model="inventorySearch">
+            </div>
+
+            <button class="btn-add-item">
+                + Nhập tài sản
+            </button>
+
+        </div>
+
+        <div class="item-table-wrap">
+
+            <div class="table-card">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Mã tài sản</th>
+                            <th>Tên thiết bị</th>
+                            <th>Vị trí</th>
+                            <th>SL</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <tr v-for="x in inventories"
+                            :key="x.Id">
+
+                            <td>
+                                <span class="td-code">
+                                    ${ x.AssetCode }
+                                </span>
+                            </td>
+
+                            <td>${ x.ItemName }</td>
+
+                            <td>${ x.LocationName || '—' }</td>
+
+                            <td>${ x.Quantity }</td>
+
+                            <td>${ x.LifeStatusText }</td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
     <!-- ══ FORM GROUP ══ -->
     <div class="modal-overlay" v-if="showGroupForm" @@click.self="showGroupForm = false">
         <div class="form-modal">

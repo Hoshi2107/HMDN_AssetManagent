@@ -6,6 +6,10 @@
         groups: [],
         allItems: [],
 
+        currentTab: 'category',
+        inventorySearch: '',
+        inventories: [],
+
         activeGroup: null,
 
         globalSearch: '',
@@ -101,7 +105,7 @@
         // ── LOAD ──
         loadGroups() {
             $.ajax({
-                url: '/api/catalog/groups', type: 'GET',
+                url: '/api/categoryapi/groups', type: 'GET',
                 success: res => {
                     this.groups = res.sort((a, b) => a.SortOrder - b.SortOrder)
                     // Auto select first group
@@ -114,7 +118,7 @@
 
         loadAllItems() {
             $.ajax({
-                url: '/api/catalog/items', type: 'GET',
+                url: '/api/categoryapi/items', type: 'GET',
                 success: res => { this.allItems = res },
                 error: () => { }
             })
@@ -138,7 +142,7 @@
         // ── TOGGLE STATUS ──
         toggleItemStatus(item) {
             $.ajax({
-                url: '/api/catalog/item/toggle?id=' + item.Id,
+                url: '/api/categoryapi/item/toggle?id=' + item.Id,
                 type: 'PUT',
                 success: () => {
                     item.IsActive = !item.IsActive
@@ -170,7 +174,7 @@
                 this.showToast('⚠️ Mã và tên nhóm không được trống!')
                 return
             }
-            const url = this.isEditGroup ? '/api/catalog/group/update' : '/api/catalog/group/create'
+            const url = this.isEditGroup ? '/api/categoryapi/group/update' : '/api/categoryapi/group/create'
             const type = this.isEditGroup ? 'PUT' : 'POST'
             $.ajax({
                 url, type,
@@ -209,7 +213,7 @@
                 this.showToast('⚠️ Mã, tên và đơn vị không được trống!')
                 return
             }
-            const url = this.isEditItem ? '/api/catalog/item/update' : '/api/catalog/item/create'
+            const url = this.isEditItem ? '/api/category/item/update' : '/api/category/item/create'
             const type = this.isEditItem ? 'PUT' : 'POST'
             $.ajax({
                 url, type,
@@ -234,8 +238,8 @@
         confirmDelete() {
             const isGroup = this.deleteType === 'group'
             const url = isGroup
-                ? '/api/catalog/group/delete?id=' + this.deleteTarget.Id
-                : '/api/catalog/item/delete?id=' + this.deleteTarget.Id
+                ? '/api/category/group/delete?id=' + this.deleteTarget.Id
+                : '/api/category/item/delete?id=' + this.deleteTarget.Id
 
             $.ajax({
                 url, type: 'DELETE',
@@ -253,12 +257,44 @@
                 },
                 error: () => this.showToast('❌ Không thể xoá!')
             })
-        }
+        },
+
+        // Load inventory
+        loadInventories() {
+
+            $.ajax({
+
+                url: '/api/inventory/list',
+
+                type: 'GET',
+
+                success: (res) => {
+
+                    this.inventories = res
+                },
+
+                error: () => {
+
+                    this.showToast(
+                        'Không tải được tài sản',
+                        'error'
+                    )
+                }
+            })
+        },
     },
 
     watch: {
         itemSearch() { this.currentPage = 1 },
-        itemFilterStatus() { this.currentPage = 1 }
+        itemFilterStatus() { this.currentPage = 1 },
+            currentTab(val) {
+
+            if (val === 'inventory') {
+
+                this.loadInventories()
+            }
+        }
+
     },
 
     mounted() {
