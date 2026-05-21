@@ -148,7 +148,18 @@ var app = new Vue({
                 url: '/api/approvals/GetTicketDetails?ticketId=' + item.Id,
                 type: 'GET',
                 success: (res) => {
-                    this.ticketDetails = res;
+                    if (Array.isArray(res)) {
+                        this.ticketDetails = res.map(dt => {
+                            return {
+                                ...dt,
+                                isApproved: dt.ApprovalStatus === 'rejected' ? false : true,
+                                approvedQuantity: (dt.ApprovedQuantity !== null && dt.ApprovedQuantity !== undefined) ? dt.ApprovedQuantity : dt.Quantity,
+                                approvalNote: dt.ApprovalNote || ''
+                            };
+                        });
+                    } else {
+                        this.ticketDetails = [];
+                    }
                 },
                 error: () => {
                     console.log('Lỗi lấy chi tiết!');
@@ -162,14 +173,25 @@ var app = new Vue({
         },
         // Execute status update when user confirms in modal
         executeAction(status) {
+            const itemsPayload = this.ticketDetails.map(dt => {
+                return {
+                    Id: dt.Id,
+                    ApprovedQuantity: dt.isApproved ? dt.approvedQuantity : 0,
+                    IsApproved: dt.isApproved,
+                    ApprovalNote: dt.approvalNote
+                };
+            });
+
             $.ajax({
                 url: '/api/approvals/UpdateStatus',
                 type: 'POST',
-                data: {
-                    ticketId: this.selectedTicket.Id,
-                    status: status,
-                    note: this.approvalNote
-                },
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    TicketId: this.selectedTicket.Id,
+                    Status: status,
+                    Note: this.approvalNote,
+                    Items: itemsPayload
+                }),
                 success: (res) => {
                     if (res.success) {
                         this.showConfirmModal = false;

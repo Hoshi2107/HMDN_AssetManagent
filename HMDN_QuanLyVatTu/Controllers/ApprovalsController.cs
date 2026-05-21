@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Web.Mvc;
 using HMS.Data;
@@ -77,7 +77,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                     ItemName = x.Item != null ? x.Item.Name : "N/A",
                     x.SerialNumber,
                     x.Quantity,
-                    x.LifeStatus
+                    x.LifeStatus,
+                    x.ApprovalStatus,
+                    x.ApprovalNote,
+                    x.ApprovedQuantity
                 })
                 .ToList();
             return Json(details, JsonRequestBehavior.AllowGet);

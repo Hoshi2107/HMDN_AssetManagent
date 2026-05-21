@@ -39,6 +39,14 @@ namespace HMS.Models.Inventory
 
         public string ApprovalStatus { get; set; }
 
+        public string ApprovalNote { get; set; }
+
+        public int? ApprovedBy { get; set; }
+
+        public DateTime? ApprovedAt { get; set; }
+
+        public int? ApprovedQuantity { get; set; }
+
         public string LifeStatus { get; set; }
 
         public int? ReplacedByInventoryId { get; set; }

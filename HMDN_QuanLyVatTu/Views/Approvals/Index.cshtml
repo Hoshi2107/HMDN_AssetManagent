@@ -817,9 +817,9 @@
             </div>
 
             <div class="dm-content">
-                <div class="dm-body-grid">
+                <div class="dm-body-grid" style="margin-bottom: 20px; align-items: stretch;">
                     <div class="dm-main">
-                        <div class="dm-card">
+                        <div class="dm-card" style="margin-bottom: 0; height: 100%; box-sizing: border-box;">
                             <h3><i class="fa-solid fa-circle-info"></i> Thông tin chung</h3>
                             <div class="dm-info-grid">
                                 <div class="dm-info-item">
@@ -847,48 +847,60 @@
                                 <p>${selectedTicket.Note || 'Căn cứ theo kế hoạch bổ sung trang thiết bị y tế. Đề nghị duyệt để phục vụ bệnh nhân cấp cứu kịp thời.'}</p>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="dm-card">
-                            <h3><i class="fa-solid fa-box"></i> Danh sách Thiết bị</h3>
-                            <div class="dm-table-wrap">
-                                <table class="dm-table">
-                                    <thead>
-                                        <tr>
-                                            <th>STT</th>
-                                            <th>Tên thiết bị</th>
-                                            <th>Serial</th>
-                                            <th>Số lượng</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="(dt, index) in ticketDetails" :key="dt.Id">
-                                            <td>${index + 1}</td>
-                                            <td style="font-weight: 500;">${dt.ItemName}</td>
-                                            <td>${dt.SerialNumber || 'N/A'}</td>
-                                            <td>${dt.Quantity}</td>
-                                        </tr>
-                                        <tr v-if="ticketDetails.length === 0">
-                                            <td colspan="4" style="text-align: center; padding: 24px; color: #64748b;">Không có thiết bị đính kèm trong Inventory</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    <div class="dm-sidebar" style="display: flex; flex-direction: column; gap: 20px; height: 100%;">
+                        <div class="dm-card" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column; box-sizing: border-box;">
+                            <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-pen-to-square" style="color: #0ea5e9;"></i> Ghi chú phê duyệt</h3>
+                            <textarea class="dm-textarea" v-model="approvalNote" placeholder="Nhập lý do từ chối hoặc ghi chú (không bắt buộc)..." style="flex: 1; min-height: 80px; resize: none;"></textarea>
+                        </div>
+
+                        <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box;">
+                            <h3><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</h3>
+                            <div class="dm-upload-zone" style="padding: 16px 24px;">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 20px; margin-bottom: 6px;"></i>
+                                <p style="font-size: 12px; margin: 0;">Kéo thả file vào đây hoặc <span>chọn file</span></p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="dm-sidebar">
-                        <div class="dm-card">
-                            <h3><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</h3>
-                            <div class="dm-upload-zone">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <p>Kéo thả file vào đây hoặc <span>chọn file</span></p>
-                            </div>
-                        </div>
-
-                        <div class="dm-card">
-                            <h3>Ghi chú phê duyệt</h3>
-                            <textarea class="dm-textarea" v-model="approvalNote" placeholder="Nhập lý do từ chối hoặc ghi chú (không bắt buộc)..."></textarea>
-                        </div>
+                <div class="dm-card" style="margin-bottom: 0;">
+                    <h3><i class="fa-solid fa-box"></i> Danh sách Thiết bị</h3>
+                    <div class="dm-table-wrap">
+                        <table class="dm-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">STT</th>
+                                    <th style="width: 80px; text-align: center;">Duyệt</th>
+                                    <th>Tên thiết bị</th>
+                                    <th style="width: 150px;">Serial</th>
+                                    <th style="width: 100px; text-align: center;">SL Yêu cầu</th>
+                                    <th style="width: 110px; text-align: center;">SL Duyệt</th>
+                                    <th>Ghi chú duyệt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(dt, index) in ticketDetails" :key="dt.Id" :style="{ opacity: dt.isApproved ? 1 : 0.6, background: dt.isApproved ? 'transparent' : '#f8fafc' }">
+                                    <td>${index + 1}</td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING'" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
+                                    </td>
+                                    <td style="font-weight: 500;">${dt.ItemName}</td>
+                                    <td>${dt.SerialNumber || 'N/A'}</td>
+                                    <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
+                                    <td style="text-align: center;">
+                                        <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING'" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
+                                    </td>
+                                    <td>
+                                        <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING'" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
+                                    </td>
+                                </tr>
+                                <tr v-if="ticketDetails.length === 0">
+                                    <td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">Không có thiết bị đính kèm trong Inventory</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

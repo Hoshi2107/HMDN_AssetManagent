@@ -84,6 +84,23 @@ namespace HMDN_QuanLyVatTu.Controllers
                         new SqlParameter("@Note", (object)request.Note ?? DBNull.Value)
                     );
 
+                    if (request.Items != null)
+                    {
+                        foreach (var itemInput in request.Items)
+                        {
+                            var inv = db.Inventories.Find(itemInput.Id);
+                            if (inv != null)
+                            {
+                                inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
+                                inv.ApprovedQuantity = itemInput.ApprovedQuantity;
+                                inv.ApprovalNote = itemInput.ApprovalNote;
+                                inv.ApprovedBy = 1; // Default Admin User
+                                inv.ApprovedAt = DateTime.Now;
+                            }
+                        }
+                        db.SaveChanges();
+                    }
+
                     return Ok(new { success = true });
                 }
             }
@@ -120,6 +137,9 @@ namespace HMDN_QuanLyVatTu.Controllers
         public string SerialNumber { get; set; }
         public int Quantity { get; set; }
         public string LifeStatus { get; set; }
+        public string ApprovalStatus { get; set; }
+        public string ApprovalNote { get; set; }
+        public int? ApprovedQuantity { get; set; }
     }
 
     public class UpdateStatusRequest
@@ -127,5 +147,14 @@ namespace HMDN_QuanLyVatTu.Controllers
         public int TicketId { get; set; }
         public string Status { get; set; }
         public string Note { get; set; }
+        public List<TicketItemApprovalInput> Items { get; set; }
+    }
+
+    public class TicketItemApprovalInput
+    {
+        public int Id { get; set; }
+        public int ApprovedQuantity { get; set; }
+        public bool IsApproved { get; set; }
+        public string ApprovalNote { get; set; }
     }
 }
