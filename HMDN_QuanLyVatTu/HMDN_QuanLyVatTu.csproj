@@ -161,11 +161,14 @@
     <Compile Include="Models\Department.cs" />
     <Compile Include="Models\FilterLookupModel.cs" />
     <Compile Include="Models\Group.cs" />
+    <Compile Include="Models\GroupVM.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\InventoryDetailVM.cs" />
     <Compile Include="Models\InventoryListVM.cs" />
     <Compile Include="Models\InventoryReportModel.cs" />
     <Compile Include="Models\Item.cs" />
+    <Compile Include="Models\ItemInventoryVM.cs" />
+    <Compile Include="Models\ItemVM.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\LocationDetailVM.cs" />
     <Compile Include="Models\LocationInventoryDetailVM.cs" />
@@ -175,6 +178,7 @@
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\Tickets.cs" />
+    <Compile Include="Models\ToggleItemDTO.cs" />
     <Compile Include="Models\UpdateLocation.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Models\UserRole.cs" />

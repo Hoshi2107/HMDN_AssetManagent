@@ -6,6 +6,17 @@
         groups: [],
         allItems: [],
 
+        //showItemDetail: false,
+        //detailItem: {},
+        //detailInventories: [],
+        //detailLoading: false,
+
+        items: [],
+        showItemDetail: false,
+        detailItem: {},
+        detailInventories: [],
+        detailLoading: false,
+
         currentTab: 'category',
         inventorySearch: '',
         inventories: [],
@@ -46,23 +57,38 @@
         },
 
         groupItems() {
-            if (!this.activeGroup) return []
-            return this.allItems.filter(x => x.GroupId === this.activeGroup.Id)
+            return this.items || []
         },
 
         filteredItems() {
+
             let list = [...this.groupItems]
 
             if (this.itemSearch) {
-                const q = this.itemSearch.toLowerCase().trim()
-                list = list.filter(x =>
-                    ((x.Name || '') + ' ' + (x.Code || '') + ' ' + (x.Brand || '') + ' ' + (x.Model || ''))
-                        .toLowerCase().includes(q)
-                )
+
+                const q = this.itemSearch
+                    .toLowerCase()
+                    .trim()
+
+                list = list.filter(x => {
+
+                    const text = `
+                ${x.Name || ''}
+                ${x.Code || ''}
+                ${x.Brand || ''}
+                ${x.Model || ''}
+                ${x.Unit || ''}
+            `
+                        .toLowerCase()
+
+                    return text.includes(q)
+                })
             }
 
             if (this.itemFilterStatus !== '') {
+
                 const active = this.itemFilterStatus === '1'
+
                 list = list.filter(x => x.IsActive === active)
             }
 
@@ -102,33 +128,147 @@
             setTimeout(() => { this.toast.show = false }, 2800)
         },
 
+        formatDate(date) {
+
+            if (!date) return '—';
+
+            const d = new Date(date);
+
+            return d.toLocaleDateString('vi-VN');
+        },
+
+        formatMoney(value) {
+
+            if (value == null) return '—';
+
+            return Number(value).toLocaleString('vi-VN') + ' đ';
+        },
+
+        openDetailItem(item) {
+
+            this.detailItem = item;
+
+            this.showItemDetail = true;
+
+            this.detailLoading = true;
+
+            this.detailInventories = [];
+
+            $.ajax({
+
+                url: `/api/category/item-inventories/${item.Id}`,
+
+                type: 'GET',
+
+                success: (res) => {
+
+                    this.detailInventories = res || [];
+
+                },
+
+                error: () => {
+
+                    this.showToast('Không tải được dữ liệu');
+
+                },
+
+                complete: () => {
+
+                    this.detailLoading = false;
+
+                }
+
+            });
+
+        },
+
+        closeItemDetail() {
+
+            this.showItemDetail = false;
+            this.detailInventories = [];
+            this.detailItem = {};
+
+        },
+
         // ── LOAD ──
         loadGroups() {
+
             $.ajax({
-                url: '/api/categoryapi/groups', type: 'GET',
-                success: res => {
-                    this.groups = res.sort((a, b) => a.SortOrder - b.SortOrder)
-                    // Auto select first group
-                    if (this.groups.length && !this.activeGroup)
+
+                url: '/api/category/groups',
+
+                type: 'GET',
+
+                success: (res) => {
+
+                    this.groups = res
+
+                    if (this.groups.length && !this.activeGroup) {
+
                         this.selectGroup(this.groups[0])
+                    }
                 },
-                error: () => this.showToast('❌ Load nhóm thất bại')
+
+                error: () => {
+
+                    this.showToast('❌ Load nhóm thất bại')
+                }
             })
         },
 
-        loadAllItems() {
+        //selectGroup(group) {
+
+        //    this.activeGroup = group;
+
+        //    this.loadItems(group.Id);
+        //},
+
+        loadItems(groupId) {
+
+            const vm = this;
+
             $.ajax({
-                url: '/api/categoryapi/items', type: 'GET',
-                success: res => { this.allItems = res },
-                error: () => { }
-            })
+
+                url: '/api/category/items/' + groupId,
+                type: 'GET',
+
+                success: function (res) {
+
+                    vm.items = res;
+
+                    console.log(res);
+                },
+
+                error: function (err) {
+
+                    console.log(err);
+                }
+            });
         },
 
-        selectGroup(g) {
-            this.activeGroup = g
-            this.itemSearch = ''
-            this.itemFilterStatus = ''
-            this.currentPage = 1
+        //loadAllItems() {
+        //    $.ajax({
+        //        url: '/api/categoryapi/items', type: 'GET',
+        //        success: res => { this.allItems = res },
+        //        error: () => { }
+        //    })
+        //},
+
+        //selectGroup(g) {
+        //    this.activeGroup = g
+        //    this.itemSearch = ''
+        //    this.itemFilterStatus = ''
+        //    this.currentPage = 1
+        //},
+        selectGroup(group) {
+
+            this.activeGroup = group;
+
+            this.itemSearch = '';
+            this.itemFilterStatus = '';
+            this.currentPage = 1;
+
+            this.loadItems(group.Id);
         },
 
         // ── PAGINATION ──
@@ -141,19 +281,38 @@
 
         // ── TOGGLE STATUS ──
         toggleItemStatus(item) {
-            $.ajax({
-                url: '/api/categoryapi/item/toggle?id=' + item.Id,
-                type: 'PUT',
-                success: () => {
-                    item.IsActive = !item.IsActive
-                    this.showToast(item.IsActive ? '✅ Đã bật!' : '⏸️ Đã tắt!')
-                },
-                error: () => this.showToast('❌ Không cập nhật được!')
-            })
-        },
 
-        openDetailItem(item) {
-            // mở detail page hoặc modal chi tiết tuỳ mày
+            $.ajax({
+
+                url: '/api/category/item/toggle',
+
+                type: 'PUT',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify({
+                    Id: item.Id,
+                    IsActive: item.IsActive
+                }),
+
+                success: () => {
+
+                    this.showToast(
+                        item.IsActive
+                            ? '✅ Đã bật!'
+                            : '⏸️ Đã tắt!'
+                    );
+                },
+
+                error: () => {
+
+                    item.IsActive = !item.IsActive;
+
+                    this.showToast(
+                        '❌ Không cập nhật được!'
+                    );
+                }
+            });
         },
 
         // ── GROUP CRUD ──
@@ -299,6 +458,5 @@
 
     mounted() {
         this.loadGroups()
-        this.loadAllItems()
     }
 })

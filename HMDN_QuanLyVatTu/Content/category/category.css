@@ -363,6 +363,12 @@ body {
     padding: 16px 24px;
 }
 
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
 .table-card {
     background: white;
     border-radius: 12px;
