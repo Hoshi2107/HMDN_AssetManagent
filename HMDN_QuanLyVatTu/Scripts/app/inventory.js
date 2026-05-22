@@ -217,6 +217,52 @@ var app = new Vue({
 
     methods: {
 
+        getLifeStatusMeta(status) {
+
+            switch (status) {
+
+                case "active":
+                    return {
+                        text: "Đang hoạt động",
+                        bg: "#dcfce7",
+                        color: "#16a34a",
+                        icon: "🟢"
+                    }
+
+                case "suspended":
+                    return {
+                        text: "Tạm ngưng",
+                        bg: "#f1f5f9",
+                        color: "#64748b",
+                        icon: "⏸️"
+                    }
+
+                case "maintenance_bv":
+                    return {
+                        text: "BV bảo trì",
+                        bg: "#ffedd5",
+                        color: "#ea580c",
+                        icon: "🛠️"
+                    }
+
+                case "maintenance_hang":
+                    return {
+                        text: "Hãng bảo hành",
+                        bg: "#ede9fe",
+                        color: "#7c3aed",
+                        icon: "🏭"
+                    }
+
+                default:
+                    return {
+                        text: "Không xác định",
+                        bg: "#fee2e2",
+                        color: "#dc2626",
+                        icon: "❓"
+                    }
+            }
+        },
+
         statusLabel(status) {
             return STATUS[status]?.label || status
         },

@@ -3,6 +3,27 @@
     delimiters: ['${', '}'],
 
     data: {
+
+        showItemForm: false,
+        isEditItem: false,
+
+        itemForm: {
+            GroupId: 0,
+            Code: '',
+            Name: '',
+            Brand: '',
+            Model: '',
+            Unit: '',
+            Description: '',
+            ImageUrl: '',
+            IsActive: true
+        },
+
+        inventoryCurrentPage: 1,
+        inventoryPageSize: 15,
+
+        inventories: [],
+
         groups: [],
         allItems: [],
 
@@ -31,14 +52,11 @@
         pageSize: 10,
 
         showGroupForm: false,
-        showItemForm: false,
         showDeleteModal: false,
 
         isEditGroup: false,
-        isEditItem: false,
 
         groupForm: { Id: null, Code: '', Name: '', Icon: '', Description: '', SortOrder: 0, IsActive: true },
-        itemForm: { Id: null, GroupId: null, Code: '', Name: '', Brand: '', Model: '', Unit: '', Description: '', IsActive: true },
 
         deleteTarget: {},
         deleteType: '',
@@ -54,6 +72,22 @@
             return this.groups.filter(g =>
                 ((g.Name || '') + ' ' + (g.Code || '')).toLowerCase().includes(q)
             )
+        },
+
+        filteredInventories() {
+
+            let s = this.inventorySearch?.toLowerCase() || '';
+
+            return this.inventories.filter(x => {
+
+                return (
+                    (x.AssetCode || '').toLowerCase().includes(s) ||
+                    (x.ItemName || '').toLowerCase().includes(s) ||
+                    (x.LocationName || '').toLowerCase().includes(s)
+                );
+
+            });
+
         },
 
         groupItems() {
@@ -104,6 +138,44 @@
             return Math.max(1, Math.ceil(this.filteredItems.length / this.pageSize))
         },
 
+        inventoryTotalPages() {
+            return Math.ceil(this.filteredInventories.length / this.inventoryPageSize) || 1
+        },
+
+        inventoryPaginated() {
+
+            const start = (this.inventoryCurrentPage - 1) * this.inventoryPageSize
+            const end = start + this.inventoryPageSize
+
+            return this.filteredInventories.slice(start, end)
+        },
+
+        inventoryPages() {
+
+            let arr = []
+
+            for (let i = 1; i <= this.inventoryTotalPages; i++) {
+                arr.push(i)
+            }
+
+            return arr
+        },
+
+        inventoryPaginationInfo() {
+
+            if (this.filteredInventories.length === 0)
+                return '0'
+
+            const start = (this.inventoryCurrentPage - 1) * this.inventoryPageSize + 1
+
+            const end = Math.min(
+                this.inventoryCurrentPage * this.inventoryPageSize,
+                this.filteredInventories.length
+            )
+
+            return `${start}-${end} / ${this.filteredInventories.length}`
+        },
+
         pages() {
             return Array.from({ length: this.totalPages }, (_, i) => i + 1)
         },
@@ -119,13 +191,74 @@
 
     methods: {
 
+        getLifeStatusMeta(status) {
+
+            switch (status) {
+
+                case "active":
+                    return {
+                        text: "Đang hoạt động",
+                        bg: "#dcfce7",
+                        color: "#16a34a",
+                        icon: "🟢"
+                    }
+
+                case "suspended":
+                    return {
+                        text: "Tạm ngưng",
+                        bg: "#f1f5f9",
+                        color: "#64748b",
+                        icon: "⏸️"
+                    }
+
+                case "maintenance_bv":
+                    return {
+                        text: "BV bảo trì",
+                        bg: "#ffedd5",
+                        color: "#ea580c",
+                        icon: "🛠️"
+                    }
+
+                case "maintenance_hang":
+                    return {
+                        text: "Hãng bảo hành",
+                        bg: "#ede9fe",
+                        color: "#7c3aed",
+                        icon: "🏭"
+                    }
+
+                default:
+                    return {
+                        text: "Không xác định",
+                        bg: "#fee2e2",
+                        color: "#dc2626",
+                        icon: "❓"
+                    }
+            }
+        },
+
         itemCountOf(groupId) {
             return this.allItems.filter(x => x.GroupId === groupId).length
         },
 
+        //showToast(msg) {
+        //    this.toast = { show: true, msg }
+        //    setTimeout(() => { this.toast.show = false }, 2800)
+        //},
         showToast(msg) {
-            this.toast = { show: true, msg }
-            setTimeout(() => { this.toast.show = false }, 2800)
+
+            clearTimeout(this.toastTimer)
+
+            this.toast = {
+                show: true,
+                msg
+            }
+
+            this.toastTimer = setTimeout(() => {
+
+                this.toast.show = false
+
+            }, 2800)
         },
 
         formatDate(date) {
@@ -324,62 +457,117 @@
 
         openEditGroup(g) {
             this.isEditGroup = true
-            this.groupForm = { ...g }
+            this.groupForm = {
+                Id: g.Id,
+                Code: g.Code,
+                Name: g.Name,
+                Icon: g.Icon,
+                Description: g.Description,
+                SortOrder: g.SortOrder,
+                IsActive: g.IsActive
+            }
             this.showGroupForm = true
         },
 
         saveGroup() {
 
-            if (!this.groupForm.Code.trim()
-                || !this.groupForm.Name.trim()) {
+            //    if (!this.groupForm.Code.trim()
+            //        || !this.groupForm.Name.trim()) {
 
-                this.showToast(
-                    '⚠️ Mã và tên nhóm không được trống!'
-                )
+            //        this.showToast(
+            //            '⚠️ Mã và tên nhóm không được trống!'
+            //        )
+
+            //        return
+            //    }
+
+            //    const url = this.isEditGroup
+            //        ? '/api/category/group/update'
+            //        : '/api/category/group/create'
+
+            //    const type = this.isEditGroup
+            //        ? 'PUT'
+            //        : 'POST'
+
+            //    $.ajax({
+
+            //        url: url,
+
+            //        type: type,
+
+            //        contentType: 'application/json',
+
+            //        data: JSON.stringify(this.groupForm),
+
+            //        success: (res) => {
+
+            //            this.showGroupForm = false
+
+            //            this.loadGroups()
+
+            //            this.showToast(
+            //                this.isEditGroup
+            //                    ? '✅ Đã cập nhật nhóm!'
+            //                    : '✅ Đã thêm nhóm mới!'
+            //            )
+            //        },
+
+            //        error: (xhr) => {
+
+            //            console.log(xhr)
+
+            //            this.showToast(
+            //                xhr.responseText || '❌ Có lỗi xảy ra!'
+            //            )
+            //        }
+            //    })
+            //},
+
+            if (this.isEditGroup) {
+
+                $.ajax({
+                    url: '/api/category/group/update',
+                    type: 'PUT',
+                    contentType: 'application/json',
+
+                    data: JSON.stringify(this.groupForm),
+
+                    success: (res) => {
+
+                        const index = this.groups.findIndex(
+                            x => x.Id === this.groupForm.Id
+                        )
+
+                        if (index !== -1) {
+
+                            this.groups.splice(index, 1, {
+                                ...this.groups[index],
+                                ...this.groupForm
+                            })
+
+                            // update activeGroup realtime
+                            if (this.activeGroup &&
+                                this.activeGroup.Id === this.groupForm.Id) {
+
+                                this.activeGroup = this.groups[index]
+                            }
+                        }
+
+                        this.showGroupForm = false
+
+                        this.showToast(res.message)
+                    },
+
+                    error: (err) => {
+
+                        console.log(err)
+
+                        this.showToast('Cập nhật thất bại')
+                    }
+                })
 
                 return
             }
-
-            const url = this.isEditGroup
-                ? '/api/category/group/update'
-                : '/api/category/group/create'
-
-            const type = this.isEditGroup
-                ? 'PUT'
-                : 'POST'
-
-            $.ajax({
-
-                url: url,
-
-                type: type,
-
-                contentType: 'application/json',
-
-                data: JSON.stringify(this.groupForm),
-
-                success: (res) => {
-
-                    this.showGroupForm = false
-
-                    this.loadGroups()
-
-                    this.showToast(
-                        this.isEditGroup
-                            ? '✅ Đã cập nhật nhóm!'
-                            : '✅ Đã thêm nhóm mới!'
-                    )
-                },
-
-                error: (xhr) => {
-
-                    console.log(xhr)
-
-                    this.showToast(
-                        xhr.responseText || '❌ Có lỗi xảy ra!'
-                    )
-                }
-            })
         },
 
         openDeleteGroup(g) {
@@ -402,23 +590,38 @@
         },
 
         saveItem() {
-            if (!this.itemForm.Code.trim() || !this.itemForm.Name.trim() || !this.itemForm.Unit.trim()) {
-                this.showToast('⚠️ Mã, tên và đơn vị không được trống!')
-                return
+
+            if (!this.itemForm.Code ||
+                !this.itemForm.Name ||
+                !this.itemForm.Unit) {
+
+                this.showToast("Vui lòng nhập đủ thông tin");
+                return;
             }
-            const url = this.isEditItem ? '/api/category/item/update' : '/api/category/item/create'
-            const type = this.isEditItem ? 'PUT' : 'POST'
+
             $.ajax({
-                url, type,
+                url: '/api/category/item/create',
+                type: 'POST',
                 contentType: 'application/json',
+
                 data: JSON.stringify(this.itemForm),
-                success: () => {
-                    this.showItemForm = false
-                    this.loadAllItems()
-                    this.showToast(this.isEditItem ? '✅ Đã cập nhật!' : '✅ Đã thêm mẫu mới!')
+
+                success: (res) => {
+
+                    this.showToast(res.message);
+
+                    this.showItemForm = false;
+
+                    this.loadItems(this.activeGroup.Id);
                 },
-                error: () => this.showToast('❌ Có lỗi xảy ra!')
-            })
+
+                error: (err) => {
+
+                    console.log(err);
+
+                    this.showToast("Có lỗi xảy ra");
+                }
+            });
         },
 
         openDeleteItem(item) {
@@ -452,32 +655,52 @@
             })
         },
 
+        changeInventoryPage(page) {
+
+            if (page < 1 || page > this.inventoryTotalPages)
+                return
+
+            this.inventoryCurrentPage = page
+        },
+
+        nextInventoryPage() {
+
+            if (this.inventoryCurrentPage < this.inventoryTotalPages) {
+                this.inventoryCurrentPage++
+            }
+        },
+
+        prevInventoryPage() {
+
+            if (this.inventoryCurrentPage > 1) {
+                this.inventoryCurrentPage--
+            }
+        },
+
         // Load inventory
         loadInventories() {
 
             $.ajax({
-
-                url: '/api/inventory/list',
-
-                type: 'GET',
+                url: '/api/category/inventories',
+                method: 'GET',
 
                 success: (res) => {
-
-                    this.inventories = res
+                    this.inventories = res;
                 },
 
                 error: () => {
-
-                    this.showToast(
-                        'Không tải được tài sản',
-                        'error'
-                    )
+                    this.showToast('Không tải được tài sản');
                 }
-            })
+            });
+
         },
     },
 
     watch: {
+
+        inventorySearch() {
+            this.inventoryCurrentPage = 1
+        },
         itemSearch() { this.currentPage = 1 },
         itemFilterStatus() { this.currentPage = 1 },
             currentTab(val) {
@@ -492,5 +715,6 @@
 
     mounted() {
         this.loadGroups()
+        this.loadInventories();
     }
 })

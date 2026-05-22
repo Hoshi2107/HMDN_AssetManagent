@@ -114,10 +114,23 @@
 
                             <td>${ item.DepartmentName }</td>
 
-                            <td>
+                            @*<td>
                                 <span :class="statusClass(item.LifeStatus)">
                                     ${ statusLabel(item.LifeStatus) }
                                 </span>
+                            </td>*@
+
+                            <td>
+
+                                <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                      :style="{background:getLifeStatusMeta(item.LifeStatus).bg,color:getLifeStatusMeta(item.LifeStatus).color}">
+
+                                    ${ getLifeStatusMeta(item.LifeStatus).icon }
+
+                                    ${ getLifeStatusMeta(item.LifeStatus).text }
+
+                                </span>
+
                             </td>
 
                         </tr>
@@ -200,9 +213,18 @@
                                 <div>
                                     <label>Trạng thái</label>
 
-                                    <span :class="statusClass(selectedDevice.LifeStatus)">
+                                    @*<span :class="statusClass(selectedDevice.LifeStatus)">
                                         ${ statusLabel(selectedDevice.LifeStatus) }
-                                    </span>
+                                    </span>*@
+
+                                <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                      :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
+
+                                    ${ getLifeStatusMeta(selectedDevice.LifeStatus).icon }
+
+                                    ${ getLifeStatusMeta(selectedDevice.LifeStatus).text }
+
+                                </span>
                                 </div>
 
                                 <div>

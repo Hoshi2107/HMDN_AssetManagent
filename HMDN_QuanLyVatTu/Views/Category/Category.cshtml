@@ -6,13 +6,40 @@
 <style>
     html, body {
         height: 100%;
-        overflow: hidden;
+        overflow: auto;
     }
 
     body {
         margin: 0;
         font-family: Arial, sans-serif;
         background: #f1f5f9;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        background: #0f172a;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        z-index: 99999;
+        box-shadow: 0 8px 24px rgba(0,0,0,.2);
+        animation: toastShow .2s ease;
+    }
+
+    @@keyframes toastShow {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .form-modal,
@@ -320,6 +347,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        min-width: 0;
         background: #f8fafc;
     }
 
@@ -418,13 +446,14 @@
     .item-table-wrap {
         flex: 1;
         overflow-y: auto;
+        overflow-x: auto;
         padding: 16px 24px;
     }
 
     .table-card {
         background: white;
         border-radius: 12px;
-        overflow: hidden;
+        overflow: auto;
         border: 1px solid #e2e8f0;
     }
 
@@ -961,7 +990,7 @@
 
                     <div class="gi-actions" @@click.stop>
                         <button class="btn-gi" @@click="openEditGroup(g)" title="Sửa">✏️</button>
-                        <button class="btn-gi del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>
+                        @*<button class="btn-gi del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>*@
                     </div>
 
                 </div>
@@ -1125,9 +1154,9 @@
                        v-model="inventorySearch">
             </div>
 
-            <button class="btn-add-item">
+            @*<button class="btn-add-item">
                 + Nhập tài sản
-            </button>
+            </button>*@
 
         </div>
 
@@ -1141,15 +1170,15 @@
                         <tr>
                             <th>Mã tài sản</th>
                             <th>Tên thiết bị</th>
+                            <th>Loại thiết bị</th>
                             <th>Vị trí</th>
-                            <th>SL</th>
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
 
                     <tbody>
 
-                        <tr v-for="x in inventories"
+                        <tr v-for="x in inventoryPaginated"
                             :key="x.Id">
 
                             <td>
@@ -1160,17 +1189,67 @@
 
                             <td>${ x.ItemName }</td>
 
+                            <td>${ x.GroupName }</td>
+
                             <td>${ x.LocationName || '—' }</td>
 
-                            <td>${ x.Quantity }</td>
 
-                            <td>${ x.LifeStatusText }</td>
+                            @*<td>${ x.LifeStatus }</td>*@
+                            <td>
+
+                                <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                      :style="{background:getLifeStatusMeta(x.LifeStatus).bg,color:getLifeStatusMeta(x.LifeStatus).color}">
+
+                                    ${ getLifeStatusMeta(x.LifeStatus).icon }
+
+                                    ${ getLifeStatusMeta(x.LifeStatus).text }
+
+                                </span>
+
+                            </td>
 
                         </tr>
 
                     </tbody>
 
                 </table>
+
+            </div>
+
+            <div class="item-pagination">
+
+                <span>
+                    Hiển thị ${ inventoryPaginationInfo } tài sản
+                </span>
+
+                <div class="pg-btns">
+
+                    <button class="pg-btn"
+                            @@click="prevInventoryPage"
+                            :disabled="inventoryCurrentPage === 1">
+
+                        ‹
+                    </button>
+
+                    <button v-for="p in inventoryPages"
+                            :key="p"
+                            class="pg-btn"
+                            :class="{ active: inventoryCurrentPage === p }"
+                            @@click="changeInventoryPage(p)">
+
+                        ${ p }
+
+                    </button>
+
+                    <button class="pg-btn"
+                            @@click="nextInventoryPage"
+                            :disabled="inventoryCurrentPage === inventoryTotalPages">
+
+                        ›
+
+                    </button>
+
+                </div>
 
             </div>
 

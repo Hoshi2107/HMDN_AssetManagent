@@ -118,5 +118,113 @@ namespace HMDN.Controllers.API
             }
         }
 
+        // GET: api/category/inventories
+        [HttpGet]
+        [Route("inventories")]
+        public IHttpActionResult Inventories()
+        {
+            var data = db.Database
+                .SqlQuery<InventoryListVM>(
+                    "EXEC sp_GetInventoryList"
+                )
+                .ToList();
+
+            return Ok(data);
+        }
+
+// PUT: api/category/group/update
+        [HttpPut]
+        [Route("group/update")]
+        public IHttpActionResult Update(GroupUpdateDTO dto)
+        {
+            try
+            {
+                db.Database.ExecuteSqlCommand(
+                    @"
+            EXEC sp_Groups_Update
+                @Id = @Id,
+                @Code = @Code,
+                @Name = @Name,
+                @Icon = @Icon,
+                @Description = @Description,
+                @SortOrder = @SortOrder,
+                @IsActive = @IsActive
+            ",
+
+                    new SqlParameter("@Id", dto.Id),
+                    new SqlParameter("@Code", dto.Code),
+                    new SqlParameter("@Name", dto.Name),
+                    new SqlParameter("@Icon", (object)dto.Icon ?? DBNull.Value),
+                    new SqlParameter("@Description", (object)dto.Description ?? DBNull.Value),
+                    new SqlParameter("@SortOrder", dto.SortOrder),
+                    new SqlParameter("@IsActive", dto.IsActive)
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Cập nhật nhóm thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/category/item/create
+        [HttpPost]
+        [Route("item/create")]
+        public IHttpActionResult Create(ItemCreateDTO dto)
+        {
+            try
+            {
+                db.Database.ExecuteSqlCommand(
+                    @"
+            EXEC sp_Item_Create
+                @GroupId = @GroupId,
+                @Code = @Code,
+                @Name = @Name,
+                @Brand = @Brand,
+                @Model = @Model,
+                @Unit = @Unit,
+                @Description = @Description,
+                @ImageUrl = @ImageUrl,
+                @IsActive = @IsActive
+            ",
+
+                    new SqlParameter("@GroupId", dto.GroupId),
+                    new SqlParameter("@Code", dto.Code),
+                    new SqlParameter("@Name", dto.Name),
+
+                    new SqlParameter("@Brand",
+                        (object)dto.Brand ?? DBNull.Value),
+
+                    new SqlParameter("@Model",
+                        (object)dto.Model ?? DBNull.Value),
+
+                    new SqlParameter("@Unit", dto.Unit),
+
+                    new SqlParameter("@Description",
+                        (object)dto.Description ?? DBNull.Value),
+
+                    new SqlParameter("@ImageUrl",
+                        (object)dto.ImageUrl ?? DBNull.Value),
+
+                    new SqlParameter("@IsActive", dto.IsActive)
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Thêm mẫu thiết bị thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }
