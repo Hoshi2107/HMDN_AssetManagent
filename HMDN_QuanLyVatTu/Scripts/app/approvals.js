@@ -30,6 +30,15 @@ var app = new Vue({
         selectedTicket: null,
         ticketDetails: [],
         approvalNote: '',
+        chatMessage: '',
+        chatMessagesList: [],
+        isUploadingChatFile: false,
+        activeMediaTab: 'media',
+        lightbox: {
+            show: false,
+            items: [],
+            currentIndex: 0
+        },
         sort: {
             key: '',
             dir: 1
@@ -86,6 +95,62 @@ var app = new Vue({
         },
         pages() {
             return Array.from({ length: this.totalPages }, (_, i) => i + 1)
+        },
+        mediaFiles() {
+            return this.chatMessagesList.filter(msg => !msg.isRevoked && (this.isImageMsg(msg.content) || this.isVideoMsg(msg.content))).map(msg => {
+                if (this.isImageMsg(msg.content)) {
+                    return {
+                        id: msg.id,
+                        url: this.getImageUrl(msg.content),
+                        type: 'IMAGE',
+                        name: msg.rawFileName || 'Ảnh',
+                        sender: msg.sender,
+                        time: msg.time
+                    };
+                } else {
+                    return {
+                        id: msg.id,
+                        url: this.getVideoUrl(msg.content),
+                        type: 'VIDEO',
+                        name: msg.rawFileName || 'Video',
+                        sender: msg.sender,
+                        time: msg.time
+                    };
+                }
+            });
+        },
+        documentFiles() {
+            return this.chatMessagesList.filter(msg => !msg.isRevoked && this.isFileMsg(msg.content)).map(msg => {
+                let fileData = this.getFileData(msg.content);
+                return {
+                    id: msg.id,
+                    url: fileData.url,
+                    name: fileData.name,
+                    sender: msg.sender,
+                    time: msg.time
+                };
+            });
+        },
+        linkFiles() {
+            let links = [];
+            const urlRegex = /(https?:\/\/[^\s]+)/gi;
+            this.chatMessagesList.forEach(msg => {
+                if (msg.isRevoked || msg.isSystem) return;
+                if (this.isImageMsg(msg.content) || this.isFileMsg(msg.content) || this.isVideoMsg(msg.content)) return;
+                
+                let matches = msg.content.match(urlRegex);
+                if (matches) {
+                    matches.forEach(url => {
+                        links.push({
+                            id: msg.id,
+                            url: url,
+                            sender: msg.sender,
+                            time: msg.time
+                        });
+                    });
+                }
+            });
+            return links;
         }
     },
     methods: {
@@ -143,6 +208,9 @@ var app = new Vue({
             this.ticketDetails = [];
             this.approvalNote = '';
             this.showModal = true;
+            this.chatMessage = '';
+            this.chatMessagesList = [];
+            this.loadDiscussions(item.Id);
 
             $.ajax({
                 url: '/api/approvals/GetTicketDetails?ticketId=' + item.Id,
@@ -228,6 +296,339 @@ var app = new Vue({
                     alert('Không kết nối được API danh sách phê duyệt. Vui lòng build lại project và thử lại.')
                 }
             })
+        },
+        // ==== CHAT: Load từ bảng TicketDiscussions ====
+        loadDiscussions(ticketId) {
+            $.ajax({
+                url: '/api/approvals/GetDiscussions?ticketId=' + ticketId,
+                type: 'GET',
+                success: (res) => {
+                    let messages = [];
+
+                    // 1. Lấy "Lý do chi tiết" từ cột Note của bảng Tickets làm tin nhắn đầu tiên trong chat
+                    if (this.selectedTicket && this.selectedTicket.Note) {
+                        messages.push({
+                            id: 0,
+                            sender: this.creatorLabel(this.selectedTicket),
+                            content: this.selectedTicket.Note,
+                            time: this.formatDate(this.selectedTicket.CreatedAt),
+                            isSystem: false,
+                            isRevoked: false,
+                            rawFileType: 'TEXT'
+                        });
+                    }
+
+                    // 2. Nối tiếp các tin nhắn thảo luận từ bảng TicketDiscussions
+                    if (Array.isArray(res)) {
+                        const discussionMsgs = res.map(d => this.mapDiscussionToClient(d));
+                        messages = messages.concat(discussionMsgs);
+                    }
+
+                    this.chatMessagesList = messages;
+                    this.scrollToBottom();
+                },
+                error: () => {
+                    console.error('Lỗi tải thảo luận!');
+                }
+            });
+        },
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const container = this.$el.querySelector('.chat-messages');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        },
+        // Ánh xạ dữ liệu từ DB sang Model Client của chat để tương thích Index.cshtml
+        mapDiscussionToClient(d) {
+            let content = d.Message;
+            if (d.FileType === 'IMAGE') {
+                content = '[IMAGE: ' + d.FilePath + ']';
+            } else if (d.FileType === 'FILE') {
+                content = '[FILE: ' + d.FilePath + '|' + d.FileName + ']';
+            } else if (d.FileType === 'VIDEO') {
+                content = '[VIDEO: ' + d.FilePath + '|' + d.FileName + ']';
+            }
+            return {
+                id: d.Id,
+                sender: d.SenderName,
+                content: content,
+                time: this.formatChatTime(d.CreatedAt),
+                isSystem: false,
+                isRevoked: d.IsRevoked || false,
+                rawFileType: d.FileType,
+                rawFilePath: d.FilePath,
+                rawFileName: d.FileName
+            };
+        },
+        // Gửi tin nhắn text → lưu vào TicketDiscussions
+        sendChatMessage() {
+            if (!this.chatMessage.trim() || !this.selectedTicket) return;
+            const msgText = this.chatMessage.trim();
+            this.chatMessage = '';
+
+            $.ajax({
+                url: '/api/approvals/SendChatMessage',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    TicketId: this.selectedTicket.Id,
+                    SenderName: 'Người duyệt',
+                    Message: msgText
+                }),
+                success: (res) => {
+                    if (res.success) {
+                        // Ánh xạ và push vào danh sách chat
+                        this.chatMessagesList.push(this.mapDiscussionToClient(res.item));
+                        this.scrollToBottom();
+                    } else {
+                        alert('Không gửi được tin nhắn: ' + res.message);
+                    }
+                },
+                error: () => {
+                    alert('Lỗi hệ thống khi gửi tin nhắn!');
+                }
+            });
+        },
+        triggerAttachFile() {
+            if (this.$refs.chatFileInput) {
+                this.$refs.chatFileInput.click();
+            }
+        },
+        // Upload file → lưu vào ~/Uploads + tạo dòng trong TicketDiscussions
+        handleChatFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.avi'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert('Định dạng file không được phép! Chỉ nhận ảnh, video, PDF, Word, Excel.');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('fileUpload', file);
+            formData.append('ticketId', this.selectedTicket.Id);   // Gửi kèm ticketId
+            formData.append('senderName', 'Người duyệt');          // Gửi kèm tên người gửi
+
+            this.isUploadingChatFile = true;
+
+            $.ajax({
+                url: '/api/approvals/UploadChatFile',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: (res) => {
+                    this.isUploadingChatFile = false;
+                    if (this.$refs.chatFileInput) this.$refs.chatFileInput.value = '';
+
+                    if (res.success) {
+                        // Ánh xạ và push thẳng vào danh sách
+                        this.chatMessagesList.push(this.mapDiscussionToClient(res.item));
+                        this.scrollToBottom();
+                    } else {
+                        alert('Upload file thất bại: ' + res.message);
+                    }
+                },
+                error: () => {
+                    this.isUploadingChatFile = false;
+                    if (this.$refs.chatFileInput) this.$refs.chatFileInput.value = '';
+                    alert('Lỗi khi tải file lên server!');
+                }
+            });
+        },
+        // Helper: kiểm tra loại message theo dạng chuỗi [IMAGE: ...] hoặc [FILE: ...] để đồng bộ Index.cshtml
+        isImageMsg(content) {
+            return content && content.startsWith('[IMAGE: ') && content.endsWith(']');
+        },
+        getImageUrl(content) {
+            if (!content) return '';
+            return content.substring(8, content.length - 1);
+        },
+        isFileMsg(content) {
+            return content && content.startsWith('[FILE: ') && content.endsWith(']');
+        },
+        getFileData(content) {
+            if (!content) return { url: '', name: '' };
+            let parts = content.substring(7, content.length - 1).split('|');
+            return { url: parts[0], name: parts[1] || 'Tài liệu' };
+        },
+        getFileIcon(fileName) {
+            if (!fileName) return '📁';
+            let ext = fileName.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return '🖼️';
+            if (ext === 'pdf') return '📕';
+            if (['doc', 'docx'].includes(ext)) return '📘';
+            if (['xls', 'xlsx'].includes(ext)) return '📗';
+            return '📁';
+        },
+        isVideoMsg(content) {
+            return content && content.startsWith('[VIDEO: ') && content.endsWith(']');
+        },
+        getVideoUrl(content) {
+            if (!content) return '';
+            let parts = content.substring(8, content.length - 1).split('|');
+            return parts[0];
+        },
+        getVideoName(content) {
+            if (!content) return '';
+            let parts = content.substring(8, content.length - 1).split('|');
+            return parts[1] || 'Video';
+        },
+        parseMessageContent(content) {
+            if (!content) return '';
+            // Escape HTML to prevent XSS
+            let temp = document.createElement('div');
+            temp.innerText = content;
+            let escaped = temp.innerHTML;
+            
+            const urlRegex = /(https?:\/\/[^\s]+)/gi;
+            return escaped.replace(urlRegex, function(url) {
+                return '<a href="' + url + '" target="_blank" class="chat-text-link">' + url + '</a>';
+            });
+        },
+        replyMessage(msg) {
+            if (!msg) return;
+            let preview = '';
+            if (this.isImageMsg(msg.content)) {
+                preview = '[Hình ảnh]';
+            } else if (this.isVideoMsg(msg.content)) {
+                preview = '[Video] ' + this.getVideoName(msg.content);
+            } else if (this.isFileMsg(msg.content)) {
+                preview = '[File] ' + this.getFileData(msg.content).name;
+            } else {
+                const plainText = msg.content || '';
+                preview = plainText.length > 50 ? plainText.substring(0, 50) + '...' : plainText;
+            }
+            
+            const prefix = `@Phản hồi ${msg.sender}: "${preview}" -> `;
+            this.chatMessage = prefix + (this.chatMessage || '');
+            this.$nextTick(() => {
+                if (this.$refs.chatInput) {
+                    this.$refs.chatInput.focus();
+                }
+            });
+        },
+        forwardMessage(msg) {
+            if (!msg) return;
+            let contentToCopy = '';
+            if (this.isImageMsg(msg.content)) {
+                let url = this.getImageUrl(msg.content);
+                contentToCopy = url.startsWith('/') ? window.location.origin + url : url;
+            } else if (this.isVideoMsg(msg.content)) {
+                let url = this.getVideoUrl(msg.content);
+                contentToCopy = url.startsWith('/') ? window.location.origin + url : url;
+            } else if (this.isFileMsg(msg.content)) {
+                let url = this.getFileData(msg.content).url;
+                contentToCopy = url.startsWith('/') ? window.location.origin + url : url;
+            } else {
+                contentToCopy = msg.content || '';
+            }
+
+            navigator.clipboard.writeText(contentToCopy).then(() => {
+                alert('Đã sao chép nội dung tin nhắn để chuyển tiếp!');
+            }).catch(err => {
+                console.error('Không thể sao chép tin nhắn: ', err);
+            });
+
+            this.chatMessage = '[Chuyển tiếp]: ' + contentToCopy;
+            this.$nextTick(() => {
+                if (this.$refs.chatInput) {
+                    this.$refs.chatInput.focus();
+                }
+            });
+        },
+        revokeMessage(msg) {
+            if (!msg || !msg.id) return;
+            if (!confirm('Bạn có chắc chắn muốn thu hồi tin nhắn này?')) return;
+            
+            $.ajax({
+                url: '/api/approvals/RevokeChatMessage',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    MessageId: msg.id
+                }),
+                success: (res) => {
+                    if (res.success) {
+                        msg.isRevoked = true;
+                        const index = this.chatMessagesList.findIndex(m => m.id === msg.id);
+                        if (index !== -1) {
+                            this.$set(this.chatMessagesList, index, {
+                                ...this.chatMessagesList[index],
+                                isRevoked: true
+                            });
+                        }
+                    } else {
+                        alert('Không thể thu hồi tin nhắn: ' + res.message);
+                    }
+                },
+                error: () => {
+                    alert('Lỗi hệ thống khi thu hồi tin nhắn!');
+                }
+            });
+        },
+        // Lightbox
+        openLightbox(url, type) {
+            const mediaItems = this.mediaFiles;
+            const items = mediaItems.map(m => ({ url: m.url, type: m.type }));
+            const idx = items.findIndex(item => item.url === url);
+            this.lightbox.items = items;
+            this.lightbox.currentIndex = idx >= 0 ? idx : 0;
+            this.lightbox.show = true;
+        },
+        closeLightbox() {
+            this.lightbox.show = false;
+            this.lightbox.items = [];
+        },
+        prevLightbox() {
+            if (this.lightbox.items.length === 0) return;
+            this.lightbox.currentIndex = (this.lightbox.currentIndex - 1 + this.lightbox.items.length) % this.lightbox.items.length;
+        },
+        nextLightbox() {
+            if (this.lightbox.items.length === 0) return;
+            this.lightbox.currentIndex = (this.lightbox.currentIndex + 1) % this.lightbox.items.length;
+        },
+        formatChatTime(dateStr) {
+            if (!dateStr) return '';
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            var hh = ('0' + d.getHours()).slice(-2);
+            var mm = ('0' + d.getMinutes()).slice(-2);
+            var dd = ('0' + d.getDate()).slice(-2);
+            var mo = ('0' + (d.getMonth() + 1)).slice(-2);
+            return hh + ':' + mm + ' ' + dd + '/' + mo + '/' + d.getFullYear();
+        },
+        clearHideTimeout(msg) {
+            if (!msg) return;
+            if (msg.hideTimeout) {
+                clearTimeout(msg.hideTimeout);
+                msg.hideTimeout = null;
+            }
+            this.$set(msg, 'showActions', true);
+            this.chatMessagesList.forEach(m => {
+                if (m !== msg && m.showActions) {
+                    if (m.hideTimeout) {
+                        clearTimeout(m.hideTimeout);
+                        m.hideTimeout = null;
+                    }
+                    this.$set(m, 'showActions', false);
+                }
+            });
+        },
+        startHideTimeout(msg) {
+            if (!msg) return;
+            if (msg.hideTimeout) {
+                clearTimeout(msg.hideTimeout);
+            }
+            const timeoutId = setTimeout(() => {
+                this.$set(msg, 'showActions', false);
+                msg.hideTimeout = null;
+            }, 2500);
+            msg.hideTimeout = timeoutId;
         }
     },
     mounted() {

@@ -178,6 +178,7 @@
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
+    <Compile Include="Models\TicketDiscussion.cs" />
     <Compile Include="Models\Tickets.cs" />
     <Compile Include="Models\ToggleItemDTO.cs" />
     <Compile Include="Models\UpdateLocation.cs" />

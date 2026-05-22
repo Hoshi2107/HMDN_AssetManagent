@@ -31,6 +31,7 @@ namespace HMS.Data
 
         public DbSet<Location> Locations { get; set; }
         public DbSet<Tickets> Tickets { get; set; }
+        public DbSet<TicketDiscussion> TicketDiscussions { get; set; }
         public DbSet<DepreciationLog> DepreciationLogs { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
@@ -57,6 +58,9 @@ namespace HMS.Data
 
             modelBuilder.Entity<Tickets>()
                 .ToTable("Tickets");
+
+            modelBuilder.Entity<TicketDiscussion>()
+                .ToTable("TicketDiscussions");
 
             // QUAN TRỌNG NHẤT
             modelBuilder.Entity<Inventory>()

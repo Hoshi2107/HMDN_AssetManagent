@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -19,7 +19,6 @@ namespace HMDN_QuanLyVatTu.Models
         [StringLength(20)]
         public string Status { get; set; }
 
-        [StringLength(500)]
         public string Note { get; set; }
 
         public int CreatedBy { get; set; }

@@ -492,7 +492,7 @@
 
     .dm-body-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr;
+        grid-template-columns: 1fr 350px;
         gap: 20px;
     }
 
@@ -661,7 +661,7 @@
 
     .dm-textarea {
         width: 100%;
-        height: 100px;
+        height: 65px;
         padding: 12px;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
@@ -709,6 +709,686 @@
             color: #0ea5e9;
             font-weight: 600;
         }
+
+    /* Chat Container Styles */
+    .chat-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        margin-top: 0;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        min-height: 520px;
+    }
+
+    .chat-header {
+        background: #f8fafc;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-header h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #f1f5f9;
+    }
+
+    .chat-message {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        max-width: 85%;
+        margin-bottom: 4px;
+        position: relative;
+    }
+
+    .chat-message.me {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .chat-msg-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid #e2e8f0;
+    }
+
+    .chat-message.me .chat-msg-avatar {
+        background: #0ea5e9;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    .chat-msg-bubble-wrap {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-msg-bubble {
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        position: relative;
+        word-break: break-word;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .chat-message:not(.me) .chat-msg-bubble {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+        border-top-left-radius: 0;
+    }
+
+    .chat-message.me .chat-msg-bubble {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        border-top-right-radius: 0;
+    }
+
+    .chat-msg-sender {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 3px;
+        display: block;
+    }
+
+    .chat-message.me .chat-msg-sender {
+        text-align: right;
+        color: #0284c7;
+    }
+
+    .chat-msg-time {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-top: 4px;
+        display: block;
+        text-align: right;
+    }
+
+    .chat-message.me .chat-msg-time {
+        color: #0369a1;
+        opacity: 0.8;
+    }
+
+    .chat-msg-image {
+        max-width: 100%;
+        max-height: 180px;
+        border-radius: 8px;
+        margin-top: 4px;
+        cursor: pointer;
+        display: block;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+    }
+
+    .chat-msg-image:hover {
+        transform: scale(1.02);
+    }
+
+    .chat-msg-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        margin-top: 4px;
+        text-decoration: none;
+        color: #0f172a;
+        transition: background-color 0.2s;
+    }
+
+    .chat-msg-file:hover {
+        background-color: #f1f5f9;
+        text-decoration: none;
+        color: #0f172a;
+    }
+
+    .chat-message.me .chat-msg-file {
+        background: rgba(14, 165, 233, 0.08);
+        border-color: rgba(14, 165, 233, 0.15);
+        color: #0369a1;
+    }
+
+    .chat-message.me .chat-msg-file:hover {
+        background: rgba(14, 165, 233, 0.15);
+    }
+
+    .chat-msg-file-icon {
+        font-size: 20px;
+    }
+
+    .chat-msg-file-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-msg-file-name {
+        font-size: 12px;
+        font-weight: 600;
+        word-break: break-all;
+    }
+
+    .chat-msg-file-size {
+        font-size: 10px;
+        color: #64748b;
+    }
+
+    .chat-message.me .chat-msg-file-size {
+        color: #0284c7;
+    }
+
+    .chat-input-area {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 20px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .chat-btn-attach {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 16px;
+    }
+
+    .chat-btn-attach:hover {
+        border-color: #0ea5e9;
+        color: #0ea5e9;
+        background: #f1f5f9;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #0f172a;
+        border-radius: 20px;
+        padding: 10px 18px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+        max-width: none !important;
+    }
+
+    .chat-input:focus {
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+    }
+
+    .chat-btn-send {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: #0ea5e9;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 15px;
+    }
+
+    .chat-btn-send:hover {
+        background: #0284c7;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    /* ====== REVOKED MESSAGE ====== */
+    .chat-message.revoked .chat-msg-bubble {
+        background: rgba(0, 0, 0, 0.02) !important;
+        border: 1px dashed #cbd5e1 !important;
+        color: #94a3b8 !important;
+        font-style: italic;
+        padding: 8px 14px;
+    }
+    .chat-message.revoked.me .chat-msg-bubble {
+        background: rgba(0, 0, 0, 0.02) !important;
+        border: 1px dashed #cbd5e1 !important;
+        color: #94a3b8 !important;
+    }
+    .chat-revoked-text {
+        font-size: 12.5px;
+        font-style: italic;
+        color: #94a3b8;
+    }
+
+    /* ====== HOVER ACTION MENU (3 buttons Zalo style) ====== */
+    .chat-msg-actions {
+        display: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 20px;
+        padding: 4px 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        z-index: 10;
+        align-items: center;
+    }
+
+    .chat-msg-actions.show {
+        display: flex !important;
+    }
+
+    .chat-message.me .chat-msg-actions {
+        left: -115px;
+    }
+
+    .chat-message:not(.me) .chat-msg-actions {
+        right: -115px;
+    }
+
+    .chat-message.revoked .chat-msg-actions {
+        display: none !important;
+    }
+
+    .btn-chat-action {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 0.2s;
+    }
+
+    .btn-chat-action:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .btn-chat-action.text-danger {
+        color: #ef4444;
+    }
+
+    .btn-chat-action.text-danger:hover {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* ====== VIDEO IN CHAT ====== */
+    .chat-msg-video-wrap {
+        position: relative;
+        max-width: 260px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 4px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .chat-msg-video-wrap video {
+        width: 100%;
+        display: block;
+        border-radius: 8px;
+        max-height: 180px;
+        object-fit: cover;
+    }
+    .chat-video-play-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.25);
+        transition: background 0.2s;
+    }
+    .chat-msg-video-wrap:hover .chat-video-play-overlay {
+        background: rgba(0,0,0,0.4);
+    }
+    .chat-video-play-overlay i {
+        font-size: 36px;
+        color: #ffffff;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* ====== ZALO MEDIA SIDEBAR ====== */
+    .zalo-media-sidebar {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .zalo-media-tabs {
+        display: flex;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 0;
+    }
+    .zalo-media-tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px 0;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+    .zalo-media-tab:hover {
+        color: #0ea5e9;
+    }
+    .zalo-media-tab.active {
+        color: #0ea5e9;
+        border-bottom-color: #0ea5e9;
+    }
+    .zalo-media-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 0;
+    }
+
+    /* Media Grid (Ảnh/Video) */
+    .zalo-media-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+    .zalo-media-item {
+        position: relative;
+        width: 100%;
+        padding-bottom: 100%;
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        background: #f1f5f9;
+    }
+    .zalo-media-item img,
+    .zalo-media-item video {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.2s;
+    }
+    .zalo-media-item:hover img,
+    .zalo-media-item:hover video {
+        transform: scale(1.05);
+    }
+    .zalo-media-video-badge {
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    .zalo-media-video-badge i {
+        font-size: 9px;
+    }
+
+    /* File List */
+    .zalo-file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .zalo-file-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        text-decoration: none;
+        color: #0f172a;
+        transition: all 0.2s;
+    }
+    .zalo-file-item:hover {
+        background: #f0f9ff;
+        border-color: #bae6fd;
+        text-decoration: none;
+        color: #0f172a;
+    }
+    .zalo-file-icon {
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .zalo-file-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .zalo-file-name {
+        font-size: 12.5px;
+        font-weight: 600;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .zalo-file-meta {
+        font-size: 10.5px;
+        color: #94a3b8;
+        margin-top: 2px;
+        display: block;
+    }
+
+    /* Link List */
+    .zalo-link-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .zalo-link-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+    .zalo-link-item:hover {
+        background: #f0f9ff;
+        border-color: #bae6fd;
+    }
+    .zalo-link-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #e0f2fe;
+        color: #0ea5e9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    .zalo-link-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .zalo-link-url {
+        font-size: 12px;
+        color: #0ea5e9;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-decoration: none;
+    }
+    .zalo-link-url:hover {
+        text-decoration: underline;
+    }
+    .zalo-link-sender {
+        font-size: 10.5px;
+        color: #94a3b8;
+        margin-top: 2px;
+        display: block;
+    }
+    .zalo-empty {
+        text-align: center;
+        padding: 24px 12px;
+        color: #94a3b8;
+        font-size: 12.5px;
+    }
+    .zalo-empty i {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 8px;
+        color: #cbd5e1;
+    }
+
+    /* ====== LIGHTBOX ====== */
+    .lightbox-modal {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.88);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+    }
+    .lightbox-close {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.12);
+        color: #ffffff;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 2001;
+    }
+    .lightbox-close:hover {
+        background: rgba(255,255,255,0.25);
+    }
+    .lightbox-content {
+        max-width: 85vw;
+        max-height: 85vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .lightbox-content img {
+        max-width: 85vw;
+        max-height: 85vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .lightbox-content video {
+        max-width: 85vw;
+        max-height: 85vh;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .lightbox-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.12);
+        color: #ffffff;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 2001;
+    }
+    .lightbox-nav:hover {
+        background: rgba(255,255,255,0.25);
+    }
+    .lightbox-nav.prev {
+        left: 20px;
+    }
+    .lightbox-nav.next {
+        right: 20px;
+    }
+    .lightbox-counter {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(255,255,255,0.7);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* ====== AUTO-LINK IN TEXT ====== */
+    .chat-text-link {
+        color: #0ea5e9;
+        text-decoration: underline;
+        word-break: break-all;
+    }
+    .chat-message.me .chat-text-link {
+        color: #e0f2fe;
+    }
 
     [v-cloak] {
         display: none;
@@ -811,15 +1491,17 @@
                     </div>
                 </div>
                 <div class="dm-header-right">
-                    <button class="dm-btn-reject" @@click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
-                    <button class="dm-btn-approve" @@click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
+                    <template v-if="selectedTicket && selectedTicket.Status !== 'REJECTED'">
+                        <button class="dm-btn-reject" @@click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
+                        <button class="dm-btn-approve" @@click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
+                    </template>
                 </div>
             </div>
 
             <div class="dm-content">
                 <div class="dm-body-grid" style="margin-bottom: 20px; align-items: stretch;">
-                    <div class="dm-main">
-                        <div class="dm-card" style="margin-bottom: 0; height: 100%; box-sizing: border-box;">
+                    <div class="dm-main" style="display: flex; flex-direction: column; gap: 20px; height: 100%;">
+                        <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box;">
                             <h3><i class="fa-solid fa-circle-info"></i> Thông tin chung</h3>
                             <div class="dm-info-grid">
                                 <div class="dm-info-item">
@@ -842,10 +1524,84 @@
                                     <p class="dm-priority">! Cao</p>
                                 </div>
                             </div>
-                            <div class="dm-note">
-                                <label>Lý do chi tiết</label>
-                                <p>${selectedTicket.Note || 'Căn cứ theo kế hoạch bổ sung trang thiết bị y tế. Đề nghị duyệt để phục vụ bệnh nhân cấp cứu kịp thời.'}</p>
+                        </div>
+                        <div class="chat-container">
+                            <div class="chat-header">
+                                <h4><i class="fa-solid fa-comments"></i> Lý do chi tiết & Thảo luận</h4>
+                                <span v-if="isUploadingChatFile" class="spinner-border spinner-border-sm text-primary" role="status"></span>
                             </div>
+                            <div class="chat-messages">
+                                <!-- Render message list -->
+                                <div v-for="(msg, index) in chatMessagesList" :key="index" class="chat-message" :class="{ me: msg.sender === 'Người duyệt', system: msg.isSystem, revoked: msg.isRevoked }" @@mouseenter="clearHideTimeout(msg)" @@mouseleave="startHideTimeout(msg)">
+                                    <!-- Avatar / Initials for non-system messages -->
+                                    <div v-if="!msg.isSystem" class="chat-msg-avatar">
+                                        ${ msg.sender === 'Người duyệt' ? 'ND' : (msg.sender ? msg.sender.substring(0, 2).toUpperCase() : 'U') }
+                                    </div>
+                                    <div class="chat-msg-bubble-wrap">
+                                        <span v-if="!msg.isSystem" class="chat-msg-sender">${msg.sender}</span>
+                                        <div class="chat-msg-bubble" style="position: relative;">
+                                            <!-- Revoked Message -->
+                                            <div v-if="msg.isRevoked" class="chat-revoked-text">
+                                                <i class="fa-solid fa-rotate-left" style="margin-right: 4px; font-size: 11px;"></i>
+                                                ${msg.sender} đã thu hồi một tin nhắn
+                                            </div>
+                                            <!-- Image Message -->
+                                            <div v-else-if="isImageMsg(msg.content)">
+                                                <img :src="getImageUrl(msg.content)" class="chat-msg-image" alt="Hình ảnh đính kèm" @@click="openLightbox(getImageUrl(msg.content), 'IMAGE')" />
+                                            </div>
+                                            <!-- Video Message -->
+                                            <div v-else-if="isVideoMsg(msg.content)" class="chat-msg-video-wrap" @@click="openLightbox(getVideoUrl(msg.content), 'VIDEO')">
+                                                <video :src="getVideoUrl(msg.content)" preload="metadata"></video>
+                                                <div class="chat-video-play-overlay">
+                                                    <i class="fa-solid fa-circle-play"></i>
+                                                </div>
+                                            </div>
+                                            <!-- File Message -->
+                                            <div v-else-if="isFileMsg(msg.content)">
+                                                <a :href="getFileData(msg.content).url" download class="chat-msg-file">
+                                                    <span class="chat-msg-file-icon">${getFileIcon(getFileData(msg.content).name)}</span>
+                                                    <div class="chat-msg-file-info">
+                                                        <span class="chat-msg-file-name">${getFileData(msg.content).name}</span>
+                                                        <span class="chat-msg-file-size">Nhấp để tải về</span>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <!-- Text Message (with auto-link) -->
+                                            <div v-else v-html="parseMessageContent(msg.content)"></div>
+                                            <span v-if="!msg.isSystem && msg.time && !msg.isRevoked" class="chat-msg-time">${msg.time}</span>
+                                            <!-- Hover Actions Menu (3 buttons Zalo style) -->
+                                            <div v-if="!msg.isSystem && msg.id > 0 && !msg.isRevoked" class="chat-msg-actions" :class="{ show: msg.showActions }">
+                                                <!-- Reply Button -->
+                                                <button class="btn-chat-action" @@click.stop="replyMessage(msg)" title="Phản hồi">
+                                                    <i class="fa-solid fa-reply"></i>
+                                                </button>
+                                                <!-- Forward Button -->
+                                                <button class="btn-chat-action" @@click.stop="forwardMessage(msg)" title="Chuyển tiếp">
+                                                    <i class="fa-solid fa-share"></i>
+                                                </button>
+                                                <!-- Revoke/Delete Button (Only for own messages) -->
+                                                <button v-if="msg.sender === 'Người duyệt'" class="btn-chat-action text-danger" @@click.stop="revokeMessage(msg)" title="Thu hồi/Xóa">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div v-if="chatMessagesList.length === 0" style="text-align: center; color: #94a3b8; padding: 20px; font-size: 13px;">
+                                    Không có thảo luận nào.
+                                </div>
+                            </div>
+                            <!-- Input area -->
+                            <div class="chat-input-area">
+                                <button class="chat-btn-attach" @@click="triggerAttachFile" title="Gửi hình ảnh / File đính kèm" :disabled="isUploadingChatFile">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <input type="text" ref="chatInput" class="chat-input" v-model="chatMessage" @@keyup.enter="sendChatMessage" placeholder="Nhập tin nhắn..." :disabled="isUploadingChatFile" />
+                                <button class="chat-btn-send" @@click="sendChatMessage" title="Gửi tin nhắn" :disabled="isUploadingChatFile">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <input type="file" ref="chatFileInput" @@change="handleChatFileUpload" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mov,.avi" style="display: none;" />
                         </div>
                     </div>
 
@@ -855,11 +1611,69 @@
                             <textarea class="dm-textarea" v-model="approvalNote" placeholder="Nhập lý do từ chối hoặc ghi chú (không bắt buộc)..." style="flex: 1; min-height: 80px; resize: none;"></textarea>
                         </div>
 
-                        <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box;">
-                            <h3><i class="fa-solid fa-paperclip"></i> Tài liệu đính kèm</h3>
-                            <div class="dm-upload-zone" style="padding: 16px 24px;">
-                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 20px; margin-bottom: 6px;"></i>
-                                <p style="font-size: 12px; margin: 0;">Kéo thả file vào đây hoặc <span>chọn file</span></p>
+                        <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box; flex: 2; display: flex; flex-direction: column; overflow: hidden;">
+                            <div class="zalo-media-sidebar">
+                                <div class="zalo-media-tabs">
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'media' }" @@click="activeMediaTab = 'media'">
+                                        <i class="fa-solid fa-image" style="margin-right: 4px;"></i> Ảnh/Video
+                                    </button>
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'file' }" @@click="activeMediaTab = 'file'">
+                                        <i class="fa-solid fa-file" style="margin-right: 4px;"></i> File
+                                    </button>
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'link' }" @@click="activeMediaTab = 'link'">
+                                        <i class="fa-solid fa-link" style="margin-right: 4px;"></i> Link
+                                    </button>
+                                </div>
+                                <div class="zalo-media-content">
+                                    <!-- Tab: Ảnh/Video -->
+                                    <div v-if="activeMediaTab === 'media'">
+                                        <div v-if="mediaFiles.length > 0" class="zalo-media-grid">
+                                            <div v-for="m in mediaFiles" :key="m.id + '-' + m.url" class="zalo-media-item" @@click="openLightbox(m.url, m.type)">
+                                                <img v-if="m.type === 'IMAGE'" :src="m.url" :alt="m.name" />
+                                                <template v-else>
+                                                    <video :src="m.url" preload="metadata"></video>
+                                                    <span class="zalo-media-video-badge"><i class="fa-solid fa-play"></i> Video</span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div v-else class="zalo-empty">
+                                            <i class="fa-regular fa-image"></i>
+                                            Chưa có ảnh/video nào
+                                        </div>
+                                    </div>
+                                    <!-- Tab: File -->
+                                    <div v-if="activeMediaTab === 'file'">
+                                        <div v-if="documentFiles.length > 0" class="zalo-file-list">
+                                            <a v-for="f in documentFiles" :key="f.id + '-' + f.url" :href="f.url" download class="zalo-file-item">
+                                                <span class="zalo-file-icon">${getFileIcon(f.name)}</span>
+                                                <div class="zalo-file-info">
+                                                    <span class="zalo-file-name">${f.name}</span>
+                                                    <span class="zalo-file-meta">${f.sender} · ${f.time}</span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div v-else class="zalo-empty">
+                                            <i class="fa-regular fa-file"></i>
+                                            Chưa có tài liệu nào
+                                        </div>
+                                    </div>
+                                    <!-- Tab: Link -->
+                                    <div v-if="activeMediaTab === 'link'">
+                                        <div v-if="linkFiles.length > 0" class="zalo-link-list">
+                                            <div v-for="lk in linkFiles" :key="lk.id + '-' + lk.url" class="zalo-link-item">
+                                                <div class="zalo-link-icon"><i class="fa-solid fa-link"></i></div>
+                                                <div class="zalo-link-info">
+                                                    <a :href="lk.url" target="_blank" class="zalo-link-url">${lk.url}</a>
+                                                    <span class="zalo-link-sender">${lk.sender} · ${lk.time}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-else class="zalo-empty">
+                                            <i class="fa-solid fa-link"></i>
+                                            Chưa có liên kết nào
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -940,6 +1754,20 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Lightbox Gallery -->
+    <div class="lightbox-modal" v-if="lightbox.show" @@click="closeLightbox">
+        <button class="lightbox-close" @@click.stop="closeLightbox"><i class="fa-solid fa-xmark"></i></button>
+        <button class="lightbox-nav prev" @@click.stop="prevLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="lightbox-content" @@click.stop>
+            <template v-if="lightbox.items.length > 0">
+                <img v-if="lightbox.items[lightbox.currentIndex].type === 'IMAGE'" :src="lightbox.items[lightbox.currentIndex].url" />
+                <video v-else :src="lightbox.items[lightbox.currentIndex].url" controls autoplay style="outline: none;"></video>
+            </template>
+        </div>
+        <button class="lightbox-nav next" @@click.stop="nextLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="lightbox-counter" v-if="lightbox.items.length > 1">${lightbox.currentIndex + 1} / ${lightbox.items.length}</div>
     </div>
 </div>
 
