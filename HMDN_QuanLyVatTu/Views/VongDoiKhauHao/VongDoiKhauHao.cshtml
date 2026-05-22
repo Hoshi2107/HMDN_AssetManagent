@@ -48,7 +48,13 @@
   .table-card { background: white; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
   .table-top { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
   .table-title { font-size: 14px; font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; }
+  .table-responsive { overflow-x: auto; width: 100%; }
+  .top-scrollbar { overflow-x: auto; width: 100%; }
+  .top-scrollbar::-webkit-scrollbar { height: 10px; }
+  .top-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+  .top-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
+  .top-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  table { width: 100%; border-collapse: collapse; min-width: 1200px; }
   thead th { background: #f8fafc; padding: 11px 16px; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; text-align: left; border-bottom: 1px solid var(--border); }
   tbody td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
   tbody tr:hover { background: #f8fafc; }
@@ -56,6 +62,20 @@
   .device-name { font-weight: 600; color: var(--text); }
   .money { font-family: monospace; font-size: 12.5px; font-weight: 500; text-align: right; }
   .th-money { text-align: right !important; }
+
+  /* PAGINATION & SORTING */
+  .sortable { cursor: pointer; user-select: none; transition: color .15s; }
+  .sortable:hover { color: var(--accent); }
+  .sort-icon { font-size: 10px; margin-left: 4px; color: #cbd5e1; }
+  .sort-icon.active { color: var(--accent); }
+  
+  .pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--border); background: white; flex-wrap: wrap; gap: 12px; }
+  .page-info { font-size: 12.5px; color: var(--muted); }
+  .page-controls { display: flex; gap: 6px; }
+  .page-btn { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; color: var(--text); min-width: 32px; text-align: center; }
+  .page-btn:hover:not(:disabled) { background: #f8fafc; color: var(--accent); }
+  .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
   /* BADGES */
   .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
@@ -185,13 +205,17 @@
         <div class="filter-group">
             <label>Năm tính khấu hao</label>
             <select class="filter-select" v-model="filterYear">
-                <option value="2024">Năm 2024</option>
-                <option value="2023">Năm 2023</option>
+                <option v-for="y in availableYears" :key="y" :value="y">Năm {{ y }}</option>
             </select>
         </div>
-        <button class="btn-filter" @@click="refreshData">
-            <i class="fa-solid fa-calculator"></i> Tính khấu hao tự động
-        </button>
+        <div style="display:flex; gap: 8px; align-items: center;">
+            <button class="btn-filter" @@click="refreshData">
+                <i class="fa-solid fa-calculator"></i> Tính KH tự động
+            </button>
+            <button class="btn-secondary" @@click="exportCSV" style="margin-top: 16px; display:flex; align-items:center; gap:6px; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;">
+                <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> Xuất Excel/CSV
+            </button>
+        </div>
     </div>
 
     <!-- TABLE -->
@@ -199,59 +223,85 @@
         <div class="table-top">
             <div class="table-title">Danh sách khấu hao tài sản</div>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Mã tài sản</th>
-                    <th>Tên thiết bị</th>
-                    <th>Ngày nhập</th>
-                    <th>Hạn BH</th>
-                    <th>Hạn sử dụng</th>
-                    <th>Trạng thái (LifeStatus)</th>
-                    <th class="th-money">Nguyên giá (VNĐ)</th>
-                    <th class="th-money">Khấu hao lũy kế</th>
-                    <th class="th-money">Giá trị còn lại</th>
-                    <th>Thay thế bởi</th>
-                    <th style="text-align:right">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="d in filteredDevices" :key="d.id">
-                    <td><span class="device-id">{{ d.id }}</span></td>
-                    <td><div class="device-name">{{ d.name }}</div></td>
-                    <td>{{ d.importDate }}</td>
-                    <td>{{ d.warrantyExpiry }}</td>
-                    <td>{{ d.expiryDate }}</td>
-                    <td>
-                        <span :class="['status-badge', 's-' + d.status]">
-                            {{ statusText(d.status) }}
-                        </span>
-                    </td>
-                    <td class="money">{{ formatMoney(d.openingValue) }}</td>
-                    <td class="money" style="color:var(--danger)">{{ formatMoney(d.depreciation) }}</td>
-                    <td class="money" style="color:var(--success)">{{ formatMoney(d.closingValue) }}</td>
-                    <td>
-                        <span v-if="d.replacedBy" class="replaced-link" title="Xem thiết bị thay thế">{{ d.replacedBy }}</span>
-                        <span v-else style="color:var(--muted)">-</span>
-                    </td>
-                    <td style="text-align:right">
-                        <div class="dropdown" :class="{show: activeDropdown === d.id}">
-                            <button class="action-btn" @@click.stop="toggleDropdown(d.id)">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" @@click="openStatusModal(d)">
-                                    <i class="fa-solid fa-rotate"></i> Cập nhật trạng thái
-                                </a>
-                                <a class="dropdown-item" @@click="openLogModal(d)">
-                                    <i class="fa-solid fa-file-invoice-dollar"></i> Xem LS Khấu hao
-                                </a>
+        
+        <!-- TOP SCROLLBAR -->
+        <div class="top-scrollbar" ref="topScroll" @@scroll="syncTopScroll">
+            <div class="top-scrollbar-content" :style="{ width: tableWidth + 'px', height: '1px' }"></div>
+        </div>
+
+        <div class="table-responsive" ref="bottomScroll" @@scroll="syncBottomScroll">
+            <table ref="mainTable">
+                <thead>
+                    <tr>
+                        <th @@click="sortBy('id')" class="sortable">Mã tài sản <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='id'}"></i></th>
+                        <th @@click="sortBy('name')" class="sortable">Tên thiết bị <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='name'}"></i></th>
+                        <th>Ngày nhập</th>
+                        <th>Hạn BH</th>
+                        <th>Hạn sử dụng</th>
+                        <th @@click="sortBy('status')" class="sortable">Trạng thái <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='status'}"></i></th>
+                        <th @@click="sortBy('openingValue')" class="th-money sortable">Nguyên giá (VNĐ) <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='openingValue'}"></i></th>
+                        <th @@click="sortBy('depreciation')" class="th-money sortable">Khấu hao lũy kế <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='depreciation'}"></i></th>
+                        <th @@click="sortBy('closingValue')" class="th-money sortable">Giá trị còn lại <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='closingValue'}"></i></th>
+                        <th>Thay thế bởi</th>
+                        <th style="text-align:right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="d in paginatedDevices" :key="d.id">
+                        <td><span class="device-id">{{ d.id }}</span></td>
+                        <td><div class="device-name">{{ d.name }}</div></td>
+                        <td>{{ d.importDate }}</td>
+                        <td>{{ d.warrantyExpiry }}</td>
+                        <td>{{ d.expiryDate }}</td>
+                        <td>
+                            <span :class="['status-badge', 's-' + d.status]">
+                                {{ statusText(d.status) }}
+                            </span>
+                        </td>
+                        <td class="money">{{ formatMoney(d.openingValue) }}</td>
+                        <td class="money" style="color:var(--danger)">{{ formatMoney(d.depreciation) }}</td>
+                        <td class="money" style="color:var(--success)">{{ formatMoney(d.closingValue) }}</td>
+                        <td>
+                            <span v-if="d.replacedBy" class="replaced-link" title="Xem thiết bị thay thế">{{ d.replacedBy }}</span>
+                            <span v-else style="color:var(--muted)">-</span>
+                        </td>
+                        <td style="text-align:right">
+                            <div class="dropdown" :class="{show: activeDropdown === d.id}">
+                                <button class="action-btn" @@click.stop="toggleDropdown(d.id)">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" @@click="openStatusModal(d)">
+                                        <i class="fa-solid fa-rotate"></i> Cập nhật trạng thái
+                                    </a>
+                                    <a class="dropdown-item" @@click="openLogModal(d)">
+                                        <i class="fa-solid fa-file-invoice-dollar"></i> Xem LS Khấu hao
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                        </td>
+                    </tr>
+                    <tr v-if="paginatedDevices.length === 0">
+                        <td colspan="11" style="text-align:center; padding: 30px; color: var(--muted);">
+                            <i class="fa-solid fa-inbox" style="font-size: 24px; margin-bottom: 8px; display: block;"></i>
+                            Không tìm thấy tài sản nào phù hợp.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- PAGINATION -->
+        <div class="pagination" v-if="processedDevices.length > 0">
+            <div class="page-info">
+                Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, processedDevices.length) }} trong số {{ processedDevices.length }} tài sản
+            </div>
+            <div class="page-controls">
+                <button class="page-btn" :disabled="currentPage === 1" @@click="currentPage--"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="page-btn" v-for="p in visiblePages" :key="p" :class="{active: currentPage === p}" @@click="currentPage = p">{{ p }}</button>
+                <button class="page-btn" :disabled="currentPage === totalPages" @@click="currentPage++"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: Cập nhật trạng thái -->
