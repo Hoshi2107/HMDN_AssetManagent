@@ -4,7 +4,17 @@ new Vue({
         searchQuery: '',
         filterStatus: '',
         filterYear: '2024',
+        availableYears: [],
         activeDropdown: null,
+        
+        sortKey: '',
+        sortAsc: true,
+        currentPage: 1,
+        pageSize: 15,
+        
+        tableWidth: 1200,
+        isSyncingTop: false,
+        isSyncingBottom: false,
 
         showStatusModal: false,
         showLogModal: false,
@@ -38,20 +48,92 @@ new Vue({
         mockLogs: []
     },
     computed: {
-        filteredDevices() {
+        processedDevices() {
             let list = this.devices;
             if(this.filterStatus) list = list.filter(d => d.status === this.filterStatus);
             if(this.searchQuery) {
                 const q = this.searchQuery.toLowerCase();
                 list = list.filter(d => d.id.toLowerCase().includes(q) || d.name.toLowerCase().includes(q));
             }
+            if (this.sortKey) {
+                list = list.sort((a, b) => {
+                    let valA = a[this.sortKey];
+                    let valB = b[this.sortKey];
+                    if (valA == null) valA = '';
+                    if (valB == null) valB = '';
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    if (valA < valB) return this.sortAsc ? -1 : 1;
+                    if (valA > valB) return this.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
             return list;
         },
+        paginatedDevices() {
+            const start = (this.currentPage - 1) * this.pageSize;
+            return this.processedDevices.slice(start, start + this.pageSize);
+        },
+        totalPages() {
+            return Math.ceil(this.processedDevices.length / this.pageSize) || 1;
+        },
+        visiblePages() {
+            let pages = [];
+            let start = Math.max(1, this.currentPage - 2);
+            let end = Math.min(this.totalPages, start + 4);
+            if (end - start < 4) start = Math.max(1, end - 4);
+            for(let i=start; i<=end; i++) pages.push(i);
+            return pages;
+        },
         totalClosingValue() {
-            return this.devices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
+            return this.processedDevices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
+        }
+    },
+    watch: {
+        processedDevices() { 
+            this.currentPage = 1; 
+        },
+        paginatedDevices() {
+            this.$nextTick(() => {
+                this.updateTableWidth();
+            });
         }
     },
     methods: {
+        sortBy(key) {
+            if (this.sortKey === key) {
+                this.sortAsc = !this.sortAsc;
+            } else {
+                this.sortKey = key;
+                this.sortAsc = true;
+            }
+        },
+        exportCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Mã tài sản,Tên thiết bị,Ngày nhập,Hạn BH,Hạn SD,Trạng thái,Nguyên giá,Khấu hao lũy kế,Giá trị còn lại,Thay thế bởi\n";
+            this.processedDevices.forEach(d => {
+                let row = [
+                    `"${d.id}"`,
+                    `"${d.name}"`,
+                    `"${d.importDate || ''}"`,
+                    `"${d.warrantyExpiry || ''}"`,
+                    `"${d.expiryDate || ''}"`,
+                    `"${this.statusText(d.status)}"`,
+                    d.openingValue || 0,
+                    d.depreciation || 0,
+                    d.closingValue || 0,
+                    `"${d.replacedBy || ''}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "DanhSachKhauHao_" + this.filterYear + ".csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        },
         countStatus(st) { return this.devices.filter(d => d.status === st).length; },
         statusText(st) {
             return { active:'Đang sử dụng', suspended:'Tạm ngưng', disposed:'Đã thanh lý', replaced:'Đã thay mới' }[st] || st;
@@ -63,6 +145,32 @@ new Vue({
             this.activeDropdown = this.activeDropdown === id ? null : id;
         },
         closeDropdowns() { this.activeDropdown = null; },
+
+        updateTableWidth() {
+            if (this.$refs.mainTable) {
+                this.tableWidth = this.$refs.mainTable.offsetWidth;
+            }
+        },
+        syncTopScroll() {
+            if (this.isSyncingBottom) {
+                this.isSyncingBottom = false;
+                return;
+            }
+            this.isSyncingTop = true;
+            if (this.$refs.bottomScroll && this.$refs.topScroll) {
+                this.$refs.bottomScroll.scrollLeft = this.$refs.topScroll.scrollLeft;
+            }
+        },
+        syncBottomScroll() {
+            if (this.isSyncingTop) {
+                this.isSyncingTop = false;
+                return;
+            }
+            this.isSyncingBottom = true;
+            if (this.$refs.topScroll && this.$refs.bottomScroll) {
+                this.$refs.topScroll.scrollLeft = this.$refs.bottomScroll.scrollLeft;
+            }
+        },
 
         openStatusModal(device) {
             this.selectedDevice = device;
@@ -248,9 +356,18 @@ new Vue({
         }
     },
     mounted() {
+        const currentYear = new Date().getFullYear();
+        for (let i = 0; i < 10; i++) {
+            this.availableYears.push(currentYear - i);
+        }
+        this.filterYear = currentYear.toString();
+
         document.addEventListener('click', this.closeDropdowns);
+        window.addEventListener('resize', this.updateTableWidth);
+        setTimeout(() => this.updateTableWidth(), 300);
     },
     beforeDestroy() {
         document.removeEventListener('click', this.closeDropdowns);
+        window.removeEventListener('resize', this.updateTableWidth);
     }
 });
