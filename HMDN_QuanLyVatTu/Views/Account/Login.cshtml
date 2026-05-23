@@ -1,0 +1,569 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập - Hệ thống Quản lý Thiết bị</title>
+    
+    <!-- Google Fonts: Inter & Outfit for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- FontAwesome 6 for premium modern icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    
+    <!-- Standalone Premium CSS -->
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-500: #64748b;
+            --slate-700: #334155;
+            --slate-900: #0f172a;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --danger-border: #fca5a5;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: var(--slate-900);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Responsive Split Screen Layout */
+        .split-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* Left side: Premium Image Display */
+        .image-side {
+            width: 60%;
+            position: relative;
+            background: url('/Content/images1/BenhvienLogin.jpg') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            align-items: flex-end;
+            padding: 40px;
+        }
+
+        /* Blueish/Purple Gradient overlay */
+        .image-side::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+/*            background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(15, 23, 42, 0.45) 100%);*/
+            z-index: 1;
+        }
+
+        /* Glassmorphism dot indicator to match the screenshot */
+        .dot-indicator-container {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background: #ffffff;
+        }
+
+        /* Right side: Login form */
+        .form-side {
+            width: 40%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 80px;
+            position: relative;
+        }
+
+        .form-container {
+            max-width: 440px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Header styling */
+        .login-header {
+            margin-bottom: 32px;
+        }
+
+        .login-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header p {
+            font-size: 14.5px;
+            color: var(--slate-500);
+            line-height: 1.5;
+        }
+
+        /* Input Group styling */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--slate-700);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i.field-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--slate-500);
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            font-size: 14.5px;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            outline: none;
+            background: var(--slate-50);
+            color: var(--slate-900);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #a0aec0;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+        }
+
+        .input-wrapper input:focus + i.field-icon {
+            color: var(--primary);
+        }
+
+        /* Password eye toggle toggle */
+        .eye-toggle {
+            position: absolute;
+            right: 16px;
+            cursor: pointer;
+            color: var(--slate-500);
+            font-size: 16px;
+            padding: 4px;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .eye-toggle:hover {
+            color: var(--slate-900);
+        }
+
+        /* Checkbox & Forgot password row */
+        .options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 24px 0;
+            font-size: 13.5px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--slate-700);
+            user-select: none;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        /* Action button */
+        .btn-submit {
+            width: 100%;
+            padding: 14px 24px;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: var(--primary-hover);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-submit:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-submit i.arrow-icon {
+            transition: transform 0.2s;
+        }
+
+        .btn-submit:hover i.arrow-icon {
+            transform: translateX(4px);
+        }
+
+        /* Error Alert banner */
+        .error-alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--danger);
+            font-size: 13.5px;
+            line-height: 1.5;
+            margin-bottom: 24px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error-alert i {
+            margin-top: 2px;
+            font-size: 16px;
+        }
+
+        /* Shake animation for errors */
+        .shake-element {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Footer IT support */
+        .support-footer {
+            margin-top: 40px;
+            border-top: 1px solid var(--slate-100);
+            padding-top: 24px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--slate-500);
+        }
+
+        .support-footer a {
+            color: var(--slate-700);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            transition: color 0.2s;
+        }
+
+        .support-footer a:hover {
+            color: var(--primary);
+        }
+
+        /* Keyframes Animations */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+            40%, 60% { transform: translate3d(3px, 0, 0); }
+        }
+
+        /* CSS spinner for loading */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive query for small screens */
+        @@media (max-width: 1024px) {
+            .image-side {
+                display: none;
+            }
+            .form-side {
+                width: 100%;
+                padding: 40px;
+            }
+        }
+        
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="split-container" v-cloak>
+        <!-- Left Side (Hospital Background View) -->
+        <div class="image-side">
+            <div class="dot-indicator-container">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+
+        <!-- Right Side (Form Authentication Area) -->
+        <div class="form-side">
+            <div class="form-container" :class="{ 'shake-element': hasError }">
+                <div class="login-header">
+                    <h1>Đăng nhập hệ thống</h1>
+                    <p>Vui lòng nhập thông tin tài khoản của bạn để truy cập hệ thống quản lý thiết bị.</p>
+                </div>
+
+                <!-- Error Alert Box -->
+                <div v-if="errorMessage" class="error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div>{{ errorMessage }}</div>
+                </div>
+
+                <!-- Main Login Form -->
+                <form @@submit.prevent="handleLogin">
+                    <!-- Username Input -->
+                    <div class="input-group">
+                        <label class="input-label" for="username">Tên đăng nhập</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="text" 
+                                id="username" 
+                                v-model="username" 
+                                placeholder="Nhập mã nhân viên hoặc email" 
+                                required 
+                                :disabled="isLoading" 
+                            />
+                            <i class="fa-regular fa-user field-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="input-group">
+                        <label class="input-label" for="password">Mật khẩu</label>
+                        <div class="input-wrapper">
+                            <input 
+                                :type="showPassword ? 'text' : 'password'" 
+                                id="password" 
+                                v-model="password" 
+                                placeholder="........" 
+                                required 
+                                :disabled="isLoading" 
+                            />
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <i 
+                                :class="showPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'" 
+                                class="eye-toggle" 
+                                @@click="showPassword = !showPassword"
+                            ></i>
+                        </div>
+                    </div>
+
+                    <!-- Checkbox options -->
+                    <div class="options-row">
+                        <label class="remember-me">
+                            <input type="checkbox" v-model="rememberMe" :disabled="isLoading" />
+                            Ghi nhớ đăng nhập
+                        </label>
+                        <a href="#" class="forgot-link" @@click.prevent="forgotPassword">Quên mật khẩu?</a>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button type="submit" class="btn-submit" :disabled="isLoading">
+                        <span v-if="isLoading" class="spinner"></span>
+                        <span v-else>Đăng nhập</span>
+                        <i v-if="!isLoading" class="fa-solid fa-arrow-right arrow-icon"></i>
+                    </button>
+                </form>
+
+                <!-- Help IT Support section -->
+                <div class="support-footer">
+                    <p>Gặp sự cố khi đăng nhập?</p>
+                    <a href="tel:02513818888">
+                        <i class="fa-solid fa-headset"></i> Liên hệ bộ phận Kỹ thuật / IT
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 2 CDN and jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                username: '',
+                password: '',
+                rememberMe: false,
+                showPassword: false,
+                errorMessage: '',
+                isLoading: false,
+                hasError: false
+            },
+            mounted() {
+                // Tự động tải lại tên đăng nhập đã lưu nếu người dùng chọn Ghi nhớ trước đó
+                const savedUsername = localStorage.getItem('saved_username');
+                if (savedUsername) {
+                    this.username = savedUsername;
+                    this.rememberMe = true;
+                }
+            },
+            methods: {
+                handleLogin() {
+                    this.errorMessage = '';
+                    this.isLoading = true;
+                    this.hasError = false;
+
+                    $.ajax({
+                        url: '/api/auth/login',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            Username: this.username,
+                            Password: this.password
+                        }),
+                        success: (res) => {
+                            this.isLoading = false;
+                            if (res.success) {
+                                // Xử lý ghi nhớ đăng nhập
+                                if (this.rememberMe) {
+                                    localStorage.setItem('saved_username', this.username);
+                                } else {
+                                    localStorage.removeItem('saved_username');
+                                }
+
+                                // Lưu thông tin người dùng và quyền vào session/local
+                                localStorage.setItem('current_user', JSON.stringify(res.user));
+
+                                // Chuyển hướng về trang chủ
+                                window.location.href = '/';
+                            } else {
+                                this.triggerError(res.message || 'Đăng nhập thất bại.');
+                            }
+                        },
+                        error: (xhr) => {
+                            this.isLoading = false;
+                            let msg = 'Lỗi kết nối máy chủ. Vui lòng thử lại sau.';
+                            try {
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    msg = xhr.responseJSON.message;
+                                } else if (xhr.responseText) {
+                                    const parsed = JSON.parse(xhr.responseText);
+                                    if (parsed && parsed.message) msg = parsed.message;
+                                }
+                            } catch(e) {}
+                            
+                            this.triggerError(msg);
+                        }
+                    });
+                },
+                triggerError(msg) {
+                    this.errorMessage = msg;
+                    this.hasError = true;
+                    // Reset class shake sau 400ms
+                    setTimeout(() => {
+                        this.hasError = false;
+                    }, 400);
+                },
+                forgotPassword() {
+                    alert('Tính năng khôi phục mật khẩu đang được nâng cấp. Vui lòng liên hệ bộ phận IT để được hỗ trợ cấp lại.');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1491,7 +1491,7 @@
                     </div>
                 </div>
                 <div class="dm-header-right">
-                    <template v-if="selectedTicket && selectedTicket.Status !== 'REJECTED'">
+                    <template v-if="selectedTicket && selectedTicket.Status === 'PENDING'">
                         <button class="dm-btn-reject" @@click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
                         <button class="dm-btn-approve" @@click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
                     </template>
