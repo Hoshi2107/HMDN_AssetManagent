@@ -619,6 +619,12 @@
                             }
                         </a>
                     </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "#" ? "active" : "")">
+                        <a href="@Url.Action("#","#")">
+                            <i class="fa-solid fa-box-archive nav-icon"></i>
+                            <span>Tạo phiếu</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
