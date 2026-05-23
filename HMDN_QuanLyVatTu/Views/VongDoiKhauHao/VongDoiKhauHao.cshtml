@@ -112,8 +112,25 @@
   .form-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
   .form-control { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13.5px; outline: none; transition: all .2s; }
   .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-  .btn-primary { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-light); }
+  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: all .2s; }
+  .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
+  .btn-sm { padding: 7px 12px; font-size: 12px; }
+
+  /* CHARTS & BATCH ACTIONS */
+  .charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+  .chart-title { font-size: 14.5px; font-weight: 600; color: var(--text); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .chart-container { position: relative; height: 240px; width: 100%; display: flex; justify-content: center; }
+
+  .batch-bar { background: #1e293b; color: white; border-radius: 10px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; animation: slideDown 0.3s ease; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+  .batch-count { font-size: 13.5px; font-weight: 500; }
+  .batch-actions { display: flex; gap: 10px; }
+  @@keyframes slideDown { from { transform: translateY(-15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  
+  .checkbox-cell { width: 40px; text-align: center; }
+  .custom-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 
   /* DEPRECIATION LOGS */
   .log-timeline { display: flex; flex-direction: column; gap: 12px; }
@@ -190,6 +207,35 @@
         </div>
     </div>
 
+    <!-- CHARTS -->
+    <div class="charts-grid" v-show="devices.length > 0">
+        <div class="chart-card">
+            <div class="chart-title">
+                <span><i class="fa-solid fa-chart-pie" style="color:var(--accent); margin-right:8px;"></i>Phân bổ trạng thái thiết bị</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">
+                <span><i class="fa-solid fa-chart-bar" style="color:var(--success); margin-right:8px;"></i>Tỷ trọng Giá trị còn lại vs Khấu hao</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="valueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- BATCH ACTIONS -->
+    <div class="batch-bar" v-if="selectedRows.length > 0">
+        <span class="batch-count">Đã chọn <b style="color:var(--accent-light); font-size: 15px; margin: 0 4px;">{{ selectedRows.length }}</b> tài sản</span>
+        <div class="batch-actions">
+            <button class="btn-secondary btn-sm" @@click="exportSelectedCSV" style="color: #1e293b; border: none;"><i class="fa-solid fa-file-csv" style="color:#10b981;"></i> Xuất CSV đã chọn</button>
+            <button class="btn-primary btn-sm" @@click="openBatchStatusModal" style="border: none;"><i class="fa-solid fa-rotate"></i> Cập nhật trạng thái</button>
+        </div>
+    </div>
+
     <!-- FILTERS -->
     <div class="filter-bar">
         <div class="filter-group">
@@ -203,9 +249,10 @@
             </select>
         </div>
         <div class="filter-group">
-            <label>Năm tính khấu hao</label>
+            <label>Năm hạn sử dụng</label>
             <select class="filter-select" v-model="filterYear">
-                <option v-for="y in availableYears" :key="y" :value="y">Năm {{ y }}</option>
+                <option value="">Tất cả các năm</option>
+                <option v-for="y in availableYears" :key="y" :value="y.toString()">Năm {{ y }}</option>
             </select>
         </div>
         <div style="display:flex; gap: 8px; align-items: center;">
@@ -233,6 +280,10 @@
             <table ref="mainTable">
                 <thead>
                     <tr>
+                        <th class="checkbox-cell">
+                            <input type="checkbox" class="custom-checkbox" 
+                            change="toggleSelectAll" :checked="isAllSelected">
+                        </th>
                         <th @@click="sortBy('id')" class="sortable">Mã tài sản <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='id'}"></i></th>
                         <th @@click="sortBy('name')" class="sortable">Tên thiết bị <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='name'}"></i></th>
                         <th>Ngày nhập</th>
@@ -247,7 +298,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="d in paginatedDevices" :key="d.id">
+                    <tr v-for="d in paginatedDevices" :key="d.id" :style="selectedRows.includes(d.id) ? 'background:#f8fafc;' : ''">
+                        <td class="checkbox-cell">
+                            <input type="checkbox" class="custom-checkbox" v-model="selectedRows" :value="d.id">
+                        </td>
                         <td><span class="device-id">{{ d.id }}</span></td>
                         <td><div class="device-name">{{ d.name }}</div></td>
                         <td>{{ d.importDate }}</td>
@@ -259,7 +313,15 @@
                             </span>
                         </td>
                         <td class="money">{{ formatMoney(d.openingValue) }}</td>
-                        <td class="money" style="color:var(--danger)">{{ formatMoney(d.depreciation) }}</td>
+                        <td style="min-width: 140px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px; font-size:11px;">
+                                <span style="color:var(--danger); font-weight:600; font-size: 12.5px; font-family: monospace;">{{ formatMoney(d.depreciation) }}</span>
+                                <span style="color:var(--text-muted); font-weight: 600;">{{ calcDepPercent(d) }}%</span>
+                            </div>
+                            <div style="width:100%; background:#f1f5f9; border-radius:4px; height:6px; overflow:hidden;">
+                                <div :style="{width: calcDepPercent(d) + '%', background: 'var(--danger)', height: '100%', transition: 'width 0.5s ease'}"></div>
+                            </div>
+                        </td>
                         <td class="money" style="color:var(--success)">{{ formatMoney(d.closingValue) }}</td>
                         <td>
                             <span v-if="d.replacedBy" class="replaced-link" title="Xem thiết bị thay thế">{{ d.replacedBy }}</span>
@@ -315,7 +377,12 @@
                 <div class="mb-3">
                     <label class="form-label">Thiết bị đang chọn</label>
                     <div class="form-control" style="background:#f8fafc;font-weight:600;color:var(--accent)">
-                        {{ selectedDevice?.id }} - {{ selectedDevice?.name }}
+                        <template v-if="selectedDevice">
+                            {{ selectedDevice.id }} - {{ selectedDevice.name }}
+                        </template>
+                        <template v-else>
+                            Nhiều thiết bị (Đang chọn {{ selectedRows.length }} thiết bị)
+                        </template>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -457,6 +524,16 @@
                         <label class="form-label">Đơn giá (VNĐ) <span style="color:var(--danger)">*</span></label>
                         <input type="number" class="form-control" placeholder="Nhập đơn giá..." v-model.number="formAddAsset.unitPrice" required>
                     </div>
+                    <!-- Tỷ lệ khấu hao (%) -->
+                    <div>
+                        <label class="form-label">Tỷ lệ khấu hao (%)</label>
+                        <input type="number" class="form-control" placeholder="Ví dụ: 25" v-model.number="formAddAsset.depreciationRate" min="0" max="100">
+                    </div>
+                    <!-- Thời gian khấu hao (Năm) -->
+                    <div>
+                        <label class="form-label">TG Khấu hao (Năm)</label>
+                        <input type="number" class="form-control" placeholder="Ví dụ: 4" v-model.number="formAddAsset.depreciationYears" min="1">
+                    </div>
                     <!-- Hạn bảo hành -->
                     <div>
                         <label class="form-label">Hạn bảo hành</label>
@@ -492,6 +569,7 @@
 
 @section scripts {
     <script src="~/Addon/vue/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         window.DevicesJsonData = @Html.Raw(ViewBag.DevicesJson ?? "[]");
         window.GroupsJsonData = @Html.Raw(ViewBag.GroupsJson ?? "[]");

@@ -49,6 +49,12 @@ namespace HMS.Models.Inventory
 
         public string LifeStatus { get; set; }
 
+        public DateTime? SuspendedAt { get; set; }
+
+        public string SuspendReason { get; set; }
+
+        public DateTime? ActivatedAt { get; set; }
+
         public int? ReplacedByInventoryId { get; set; }
 
         public string QrCode { get; set; }

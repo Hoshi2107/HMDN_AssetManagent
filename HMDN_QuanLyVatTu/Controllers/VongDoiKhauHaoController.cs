@@ -50,19 +50,105 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                _context.Database.ExecuteSqlCommand(
-                    "EXEC sp_VongDoiKhauHao_UpdateStatus @Id, @Status, @ReplacedBy, @Reason",
-                    new SqlParameter("@Id", id),
-                    new SqlParameter("@Status", status ?? (object)DBNull.Value),
-                    new SqlParameter("@ReplacedBy", replacedBy ?? (object)DBNull.Value),
-                    new SqlParameter("@Reason", reason ?? (object)DBNull.Value)
-                );
+                var asset = _context.Inventories.FirstOrDefault(x => x.Id == id);
+                if (asset == null) 
+                    return Json(new { success = false, message = "Không tìm thấy thiết bị này trong hệ thống!" });
+
+                asset.LifeStatus = status;
+
+                if (status == "replaced" && !string.IsNullOrEmpty(replacedBy))
+                {
+                    // Lấy Id của thiết bị mới từ AssetCode
+                    var newAsset = _context.Inventories.FirstOrDefault(x => x.AssetCode == replacedBy);
+                    if (newAsset != null)
+                    {
+                        asset.ReplacedByInventoryId = newAsset.Id;
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Mã thiết bị thay thế không tồn tại!" });
+                    }
+                }
+                else
+                {
+                    asset.ReplacedByInventoryId = null;
+                }
+
+                if (status == "suspended")
+                {
+                    asset.SuspendedAt = DateTime.Now;
+                    asset.SuspendReason = reason;
+                }
+                else if (status == "disposed")
+                {
+                    asset.Note = string.IsNullOrEmpty(asset.Note) ? reason : asset.Note + " | Lý do thanh lý: " + reason;
+                }
+                else if (status == "active")
+                {
+                    asset.ActivatedAt = DateTime.Now;
+                }
+
+                asset.UpdatedAt = DateTime.Now;
+                asset.UpdatedBy = 1; // Hệ thống / User hiện tại
+
+                _context.SaveChanges();
                 
-                return Json(new { success = true, message = "Cập nhật thành công!" });
+                return Json(new { success = true, message = "Đã cập nhật trạng thái vòng đời vào cơ sở dữ liệu!" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+                return Json(new { success = false, message = "Có lỗi lưu SQL: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public JsonResult BatchUpdateStatus(List<string> assetCodes, string status, string replacedBy, string reason)
+        {
+            try
+            {
+                if (assetCodes == null || !assetCodes.Any()) 
+                    return Json(new { success = false, message = "Chưa chọn thiết bị nào!" });
+
+                var assets = _context.Inventories.Where(x => assetCodes.Contains(x.AssetCode)).ToList();
+                
+                int? replacedById = null;
+                if (status == "replaced" && !string.IsNullOrEmpty(replacedBy))
+                {
+                    var newAsset = _context.Inventories.FirstOrDefault(x => x.AssetCode == replacedBy);
+                    if (newAsset != null) replacedById = newAsset.Id;
+                    else return Json(new { success = false, message = "Mã thiết bị thay thế không tồn tại!" });
+                }
+
+                foreach (var asset in assets)
+                {
+                    asset.LifeStatus = status;
+                    asset.ReplacedByInventoryId = replacedById;
+                    
+                    if (status == "suspended")
+                    {
+                        asset.SuspendedAt = DateTime.Now;
+                        asset.SuspendReason = reason;
+                    }
+                    else if (status == "disposed")
+                    {
+                        asset.Note = string.IsNullOrEmpty(asset.Note) ? reason : asset.Note + " | Lý do thanh lý: " + reason;
+                    }
+                    else if (status == "active")
+                    {
+                        asset.ActivatedAt = DateTime.Now;
+                    }
+
+                    asset.UpdatedAt = DateTime.Now;
+                    asset.UpdatedBy = 1;
+                }
+
+                _context.SaveChanges();
+                
+                return Json(new { success = true, message = $"Đã cập nhật trạng thái vòng đời cho {assets.Count} thiết bị!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Có lỗi lưu SQL: " + ex.Message });
             }
         }
 
