@@ -1,85 +1,65 @@
+using HMS.Data;
+using HMS.Services;
+using System;
+using System.Linq;
 using System.Net;
 using System.Web.Http;
-using HMS.Services;
+using System.Web.UI.WebControls;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
-    [RoutePrefix("api/auth")]
+    [RoutePrefix("api/authapi")]
     public class AuthAPIController : ApiController
     {
-        private readonly IAuthService _authService;
+        HospitalAssetDbContext db = new HospitalAssetDbContext();
 
-        // Constructor dùng cho Dependency Injection
-        public AuthAPIController(IAuthService authService)
-        {
-            _authService = authService;
-        }
-
-        // Constructor mặc định (fallback) nếu không cấu hình DI
-        public AuthAPIController() : this(new AuthService())
-        {
-        }
-
-        // POST api/auth/login
         [HttpPost]
         [Route("login")]
-        public IHttpActionResult Login([FromBody] LoginRequest request)
+        public IHttpActionResult Login(LoginVM model)
         {
-            if (request == null)
+            try
             {
-                return BadRequest("Dữ liệu đăng nhập không hợp lệ.");
-            }
+                var user = db.Users
+                    .FirstOrDefault(x =>
+                        x.Username == model.Username
+                        && x.IsActive);
 
-            var result = _authService.Login(request.Username, request.Password);
-
-            switch (result.Status)
-            {
-                case LoginStatus.Success:
-                    // Thành công: HTTP 200 (OK) kèm theo thông tin tài khoản và danh sách vai trò
+                if (user == null)
+                {
                     return Ok(new
                     {
-                        success = true,
-                        message = result.Message,
-                        user = result.User
+                        success = false,
+                        message = "Sai tài khoản hoặc mật khẩu"
                     });
+                }
 
-                case LoginStatus.Inactive:
-                    // Tài khoản bị khóa (IsActive = 0): HTTP 400 (Bad Request) kèm thông báo lỗi cụ thể
-                    return Content(HttpStatusCode.BadRequest, new
+                // TEST tạm
+                if (user.PasswordHash != model.Password)
+                {
+                    return Ok(new
                     {
                         success = false,
-                        message = result.Message
+                        message = "Sai mật khẩu"
                     });
+                }
 
-                case LoginStatus.NotFoundOrWrongPassword:
-                    // Tài khoản không tồn tại hoặc sai mật khẩu: HTTP 401 (Unauthorized)
-                    return Content(HttpStatusCode.Unauthorized, new
+                return Ok(new
+                {
+                    success = true,
+                    user = new
                     {
-                        success = false,
-                        message = result.Message
-                    });
-
-                case LoginStatus.InvalidInput:  
-                    return Content(HttpStatusCode.BadRequest, new
-                    {
-                        success = false,
-                        message = result.Message
-                    });
-
-                default:
-                    // Các lỗi hệ thống khác: HTTP 500 (Internal Server Error)
-                    return Content(HttpStatusCode.InternalServerError, new
-                    {
-                        success = false,
-                        message = result.Message
-                    });
+                        user.Id,
+                        user.Username,
+                        user.FullName
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
             }
         }
     }
 
-    public class LoginRequest
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
 }
+

@@ -178,6 +178,7 @@
     <Compile Include="Models\LocationDetailVM.cs" />
     <Compile Include="Models\LocationInventoryDetailVM.cs" />
     <Compile Include="Models\LocationListVM.cs" />
+    <Compile Include="Models\LoginVM.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
