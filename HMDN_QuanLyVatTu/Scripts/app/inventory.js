@@ -3,7 +3,14 @@
         label: 'Đang sử dụng',
         class: 's-active'
     },
-
+    maintenance_bv: {
+        label: 'BV bảo trì',
+        class: 's-maintenance_bv'
+    },
+    maintenance_hang: {
+        label: 'Hãng bảo hành',
+        class: 's-maintenance_hang'
+    },
     suspended: {
         label: 'Tạm ngưng',
         class: 's-suspended'
