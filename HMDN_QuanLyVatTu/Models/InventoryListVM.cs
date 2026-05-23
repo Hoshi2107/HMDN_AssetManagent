@@ -10,6 +10,8 @@ namespace HMS.Models.ViewModels
 
         public string ItemName { get; set; }
 
+        public string Model { get; set; }
+
         public string SerialNumber { get; set; }
 
         public string DepartmentName { get; set; }

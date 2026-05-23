@@ -77,7 +77,10 @@ var app = new Vue({
 
                         (x.ItemName || '') +
                         ' ' +
-                            
+
+                        (x.Model || '') +
+                        ' ' +
+
                         (x.SerialNumber || '') +
                         ' ' +
 
@@ -381,6 +384,10 @@ var app = new Vue({
     },
 
     watch: {
+
+        pageSize() {
+            this.currentPage = 1
+        },
 
         searchQuery() {
             this.currentPage = 1

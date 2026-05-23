@@ -82,6 +82,14 @@
                     </option>
                 </select>
 
+                <!-- Filter theo record -->
+                <select v-model="pageSize">
+                    <option :value="10">10</option>
+                    <option :value="15">15</option>
+                    <option :value="20">20</option>
+                    <option :value="50">50</option>
+                </select>
+
             </div>
 
             <!-- TABLE -->
@@ -93,6 +101,7 @@
                         <tr>
                             <th @@click="sortBy('id')">Mã</th>
                             <th>Tên</th>
+                            <th>Model</th>
                             <th>Serial</th>
                             <th>Khoa</th>
                             <th>Trạng thái</th>
@@ -108,11 +117,13 @@
 
                             <td>${ item.Id }</td>
 
-                            <td>${ item.ItemName }</td>
+                            <td>${ item.ItemName  || '—' }</td>
 
-                            <td>${ item.SerialNumber }</td>
+                            <td>${ item.Model || '—' }</td>
 
-                            <td>${ item.DepartmentName }</td>
+                            <td>${ item.SerialNumber  || '—' }</td>
+
+                            <td>${ item.DepartmentName  || 'Chưa được xếp' }</td>
 
                             @*<td>
                                 <span :class="statusClass(item.LifeStatus)">
