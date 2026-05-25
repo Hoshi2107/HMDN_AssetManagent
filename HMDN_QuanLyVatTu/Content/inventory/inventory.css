@@ -107,7 +107,7 @@
 .table-card {
     background: white;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: auto;
 }
 
 table {
@@ -169,16 +169,28 @@ td {
     justify-content: center;
     align-items: center;
     z-index: 999;
+/*    overflow-y: auto;*/
 }
 
-.device-modal {
+/*.device-modal {
     width: 900px;
     max-width: 95%;
     background: #fff;
     border-radius: 16px;
-    overflow: hidden;
+    overflow: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2);
+}*/
+
+.device-modal {
+    width: 1200px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0,0,0,.2);
 }
+
 
 .modal-header {
     padding: 20px;
@@ -188,14 +200,26 @@ td {
     border-bottom: 1px solid #eee;
 }
 
+/*.modal-body {
+    padding: 20px;
+}*/
+
 .modal-body {
     padding: 20px;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 
-.detail-grid {
+/*.detail-grid {
     display: grid;
     grid-template-columns: repeat(2,1fr);
     gap: 20px;
+}*/
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(250px, 1fr));
+    gap: 20px;
+    min-width: 1000px;
 }
 
     .detail-grid label {
@@ -228,3 +252,20 @@ td {
     .table-row:hover {
         background: #f5f8ff;
     }
+
+.modal-body::-webkit-scrollbar,
+.device-modal::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb,
+.device-modal::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 20px;
+}
+
+.modal-body::-webkit-scrollbar-track,
+.device-modal::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}

@@ -61,5 +61,25 @@ namespace HMS.Models.ViewModels
         public string CreatedByName { get; set; }
 
         public string ApprovedByName { get; set; }
+
+        public int? YearManufactured { get; set; }
+
+        public int? YearInUse { get; set; }
+
+        public int? UsageYears { get; set; }
+
+        public string AssetCategory { get; set; }
+
+        public string GroupAssetCode { get; set; }
+
+        public string AccountingCode { get; set; }
+
+        public string InsuranceCode { get; set; }
+
+        public string CountryManufactured { get; set; }
+
+        public string Manufacturer { get; set; }
+
+        public string SupplierName { get; set; }
     }
 }

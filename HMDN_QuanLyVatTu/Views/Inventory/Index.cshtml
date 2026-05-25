@@ -225,17 +225,17 @@
                                     <label>Trạng thái</label>
 
                                     @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                                        ${ statusLabel(selectedDevice.LifeStatus) }
-                                    </span>*@
+                ${ statusLabel(selectedDevice.LifeStatus) }
+            </span>*@
 
-                                <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
-                                      :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
+                                    <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                          :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
 
-                                    ${ getLifeStatusMeta(selectedDevice.LifeStatus).icon }
+                                        ${ getLifeStatusMeta(selectedDevice.LifeStatus).icon }
 
-                                    ${ getLifeStatusMeta(selectedDevice.LifeStatus).text }
+                                        ${ getLifeStatusMeta(selectedDevice.LifeStatus).text }
 
-                                </span>
+                                    </span>
                                 </div>
 
                                 <div>
@@ -248,6 +248,96 @@
                                 <div>
                                     <label>Phiếu</label>
                                     <p>${ selectedDevice.TicketCode }</p>
+                                </div>
+
+                                <div>
+                                    <label>Năm sản xuất</label>
+                                    <p>${ selectedDevice.YearManufactured || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Năm hoạt động</label>
+                                    <p>${ selectedDevice.YearInUse || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Năm sử dụng</label>
+                                    <p>${ selectedDevice.UsageYears || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Phân loại</label>
+                                    <p>${ selectedDevice.AssetCategory || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Mã tập đoàn</label>
+                                    <p>${ selectedDevice.GroupAssetCode || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Mã kế toán</label>
+                                    <p>${ selectedDevice.AccountingCode || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Mã bảo hiểm</label>
+                                    <p>${ selectedDevice.InsuranceCode || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Nước sản xuất</label>
+                                    <p>${ selectedDevice.CountryManufactured || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Nhà sản xuất</label>
+                                    <p>${ selectedDevice.Manufacturer || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Nhà cung cấp</label>
+                                    <p>${ selectedDevice.SupplierName || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Ngày nhập</label>
+                                    <p>${ selectedDevice.ImportDate || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Hết bảo hành</label>
+                                    <p>${ selectedDevice.WarrantyExpiry || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Khấu hao (%)</label>
+                                    <p>${ selectedDevice.DepreciationRate || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Số năm khấu hao</label>
+                                    <p>${ selectedDevice.DepreciationYears || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Giá trị còn lại</label>
+                                    <p>${ selectedDevice.ResidualValue || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Người tạo</label>
+                                    <p>${ selectedDevice.CreatedByName || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Người duyệt</label>
+                                    <p>${ selectedDevice.ApprovedByName || '—' }</p>
+                                </div>
+
+                                <div>
+                                    <label>Ngày tạo</label>
+                                    <p>${ selectedDevice.CreatedAt || '—' }</p>
                                 </div>
 
                             </div>
