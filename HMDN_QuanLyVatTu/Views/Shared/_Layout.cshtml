@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -622,6 +622,12 @@
                             {
                                 <span class="nav-badge">@ViewBag.PendingApprovals</span>
                             }
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
+                        <a href="@Url.Action("Index", "CreateTicket")">
+                            <i class="fa-solid fa-box-archive nav-icon"></i>
+                            <span>Tạo phiếu</span>
                         </a>
                     </li>
                 </ul>

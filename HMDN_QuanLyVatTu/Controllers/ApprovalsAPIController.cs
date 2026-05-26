@@ -73,10 +73,32 @@ namespace HMDN_QuanLyVatTu.Controllers
                 using (var db = new HospitalAssetDbContext())
                 {
                     // Check if ticket exists
-                    var exists = db.Tickets.Any(t => t.Id == request.TicketId);
-                    if (!exists)
+                    var ticket = db.Tickets.FirstOrDefault(t => t.Id == request.TicketId);
+                    if (ticket == null)
                     {
                         return Ok(new { success = false, message = "Không tìm thấy yêu cầu." });
+                    }
+
+                    // Preserve the original ticket Note (ReasonDetails) in TicketDiscussions before it gets overwritten by the approver's note
+                    if (!string.IsNullOrWhiteSpace(ticket.Note))
+                    {
+                        string trimmedNote = ticket.Note.Trim();
+                        bool alreadySaved = db.TicketDiscussions.Any(d => d.TicketId == ticket.Id && d.Message == trimmedNote);
+                        if (!alreadySaved)
+                        {
+                            var creator = db.Users.Find(ticket.CreatedBy);
+                            var reasonMsg = new TicketDiscussion
+                            {
+                                TicketId = ticket.Id,
+                                SenderName = creator != null ? creator.FullName : "Người yêu cầu",
+                                Message = trimmedNote,
+                                FileType = "TEXT",
+                                IsRevoked = false,
+                                CreatedAt = ticket.CreatedAt
+                            };
+                            db.TicketDiscussions.Add(reasonMsg);
+                            db.SaveChanges();
+                        }
                     }
 
                     db.Database.ExecuteSqlCommand(
@@ -161,10 +183,16 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    var ticketExists = db.Tickets.Any(t => t.Id == request.TicketId);
-                    if (!ticketExists)
+                    var ticket = db.Tickets.FirstOrDefault(t => t.Id == request.TicketId);
+                    if (ticket == null)
                     {
                         return Ok(new { success = false, message = "Không tìm thấy yêu cầu." });
+                    }
+
+                    // Logic bảo mật Server-side: Khóa nếu không phải IMPORT và không phải PENDING
+                    if (ticket.TicketType != "IMPORT" && ticket.Status != "PENDING")
+                    {
+                        return Ok(new { success = false, message = "Mục thảo luận này đã bị đóng." });
                     }
 
                     // Lưu vào bảng TicketDiscussions

@@ -740,6 +740,19 @@
         color: #0f172a;
     }
 
+    .chat-header-locked {
+        color: #a78bfa;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 600;
+    }
+
+    .chat-header-locked i {
+        color: #8b5cf6;
+    }
+
     .chat-messages {
         flex: 1;
         overflow-y: auto;
@@ -975,6 +988,49 @@
     .chat-btn-send:hover {
         background: #0284c7;
         box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+
+    /* ====== LOCKED DISCUSSION CHAT STYLES ====== */
+    .chat-input-area.chat-disabled {
+        position: relative;
+        cursor: not-allowed;
+        background: #f1f5f9 !important;
+        opacity: 0.85;
+    }
+    
+    .chat-input-area.chat-disabled * {
+        pointer-events: none !important;
+    }
+    
+    .chat-input-area.chat-disabled:hover::after {
+        content: "🔒 Đã đóng mục thảo luận";
+        position: absolute;
+        top: -38px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e293b;
+        color: #ffffff;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        z-index: 100;
+        pointer-events: none;
+    }
+    
+    .chat-input-area.chat-disabled:hover::before {
+        content: "";
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 6px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+        z-index: 100;
+        pointer-events: none;
     }
 
     /* ====== REVOKED MESSAGE ====== */
@@ -1528,7 +1584,12 @@
                         <div class="chat-container">
                             <div class="chat-header">
                                 <h4><i class="fa-solid fa-comments"></i> Lý do chi tiết & Thảo luận</h4>
-                                <span v-if="isUploadingChatFile" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span v-if="isChatLocked" class="chat-header-locked">
+                                        <i class="fa-solid fa-lock"></i> Đã đóng
+                                    </span>
+                                    <span v-if="isUploadingChatFile" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                </div>
                             </div>
                             <div class="chat-messages">
                                 <!-- Render message list -->
@@ -1569,8 +1630,8 @@
                                             <!-- Text Message (with auto-link) -->
                                             <div v-else v-html="parseMessageContent(msg.content)"></div>
                                             <span v-if="!msg.isSystem && msg.time && !msg.isRevoked" class="chat-msg-time">${msg.time}</span>
-                                            <!-- Hover Actions Menu (3 buttons Zalo style) -->
-                                            <div v-if="!msg.isSystem && msg.id > 0 && !msg.isRevoked" class="chat-msg-actions" :class="{ show: msg.showActions }">
+                                            <!-- Hover Actions Menu (3 buttons Zalo style) - HIDDEN when chat is locked -->
+                                            <div v-if="!msg.isSystem && msg.id > 0 && !msg.isRevoked && !isChatLocked" class="chat-msg-actions" :class="{ show: msg.showActions }">
                                                 <!-- Reply Button -->
                                                 <button class="btn-chat-action" @@click.stop="replyMessage(msg)" title="Phản hồi">
                                                     <i class="fa-solid fa-reply"></i>
@@ -1592,12 +1653,12 @@
                                 </div>
                             </div>
                             <!-- Input area -->
-                            <div class="chat-input-area">
-                                <button class="chat-btn-attach" @@click="triggerAttachFile" title="Gửi hình ảnh / File đính kèm" :disabled="isUploadingChatFile">
+                            <div class="chat-input-area" :class="{ 'chat-disabled': isChatLocked }">
+                                <button class="chat-btn-attach" @@click="triggerAttachFile" title="Gửi hình ảnh / File đính kèm" :disabled="isUploadingChatFile || isChatLocked">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
-                                <input type="text" ref="chatInput" class="chat-input" v-model="chatMessage" @@keyup.enter="sendChatMessage" placeholder="Nhập tin nhắn..." :disabled="isUploadingChatFile" />
-                                <button class="chat-btn-send" @@click="sendChatMessage" title="Gửi tin nhắn" :disabled="isUploadingChatFile">
+                                <input type="text" ref="chatInput" class="chat-input" v-model="chatMessage" @@keyup.enter="sendChatMessage" placeholder="Nhập tin nhắn..." :disabled="isUploadingChatFile || isChatLocked" />
+                                <button class="chat-btn-send" @@click="sendChatMessage" title="Gửi tin nhắn" :disabled="isUploadingChatFile || isChatLocked">
                                     <i class="fa-solid fa-paper-plane"></i>
                                 </button>
                             </div>

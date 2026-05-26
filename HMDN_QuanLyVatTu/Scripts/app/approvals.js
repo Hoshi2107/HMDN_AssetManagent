@@ -137,7 +137,7 @@ var app = new Vue({
             this.chatMessagesList.forEach(msg => {
                 if (msg.isRevoked || msg.isSystem) return;
                 if (this.isImageMsg(msg.content) || this.isFileMsg(msg.content) || this.isVideoMsg(msg.content)) return;
-                
+
                 let matches = msg.content.match(urlRegex);
                 if (matches) {
                     matches.forEach(url => {
@@ -151,6 +151,12 @@ var app = new Vue({
                 }
             });
             return links;
+        },
+        isChatLocked() {
+            if (!this.selectedTicket) return false;
+            // KHÓA chat khi Status là APPROVED hoặc REJECTED
+            // MỞ chat khi Status là PENDING
+            return this.selectedTicket.Status !== 'PENDING';
         }
     },
     methods: {
@@ -305,20 +311,7 @@ var app = new Vue({
                 success: (res) => {
                     let messages = [];
 
-                    // 1. Lấy "Lý do chi tiết" từ cột Note của bảng Tickets làm tin nhắn đầu tiên trong chat
-                    if (this.selectedTicket && this.selectedTicket.Note) {
-                        messages.push({
-                            id: 0,
-                            sender: this.creatorLabel(this.selectedTicket),
-                            content: this.selectedTicket.Note,
-                            time: this.formatDate(this.selectedTicket.CreatedAt),
-                            isSystem: false,
-                            isRevoked: false,
-                            rawFileType: 'TEXT'
-                        });
-                    }
-
-                    // 2. Nối tiếp các tin nhắn thảo luận từ bảng TicketDiscussions
+                    // 1. Nối tiếp các tin nhắn thảo luận từ bảng TicketDiscussions
                     if (Array.isArray(res)) {
                         const discussionMsgs = res.map(d => this.mapDiscussionToClient(d));
                         messages = messages.concat(discussionMsgs);
@@ -364,6 +357,7 @@ var app = new Vue({
         },
         // Gửi tin nhắn text → lưu vào TicketDiscussions
         sendChatMessage() {
+            if (this.isChatLocked) return;
             if (!this.chatMessage.trim() || !this.selectedTicket) return;
             const msgText = this.chatMessage.trim();
             this.chatMessage = '';
@@ -398,6 +392,7 @@ var app = new Vue({
         },
         // Upload file → lưu vào ~/Uploads + tạo dòng trong TicketDiscussions
         handleChatFileUpload(event) {
+            if (this.isChatLocked) return;
             const file = event.target.files[0];
             if (!file) return;
 
@@ -484,13 +479,14 @@ var app = new Vue({
             let temp = document.createElement('div');
             temp.innerText = content;
             let escaped = temp.innerHTML;
-            
+
             const urlRegex = /(https?:\/\/[^\s]+)/gi;
-            return escaped.replace(urlRegex, function(url) {
+            return escaped.replace(urlRegex, function (url) {
                 return '<a href="' + url + '" target="_blank" class="chat-text-link">' + url + '</a>';
             });
         },
         replyMessage(msg) {
+            if (this.isChatLocked) return;
             if (!msg) return;
             let preview = '';
             if (this.isImageMsg(msg.content)) {
@@ -503,7 +499,7 @@ var app = new Vue({
                 const plainText = msg.content || '';
                 preview = plainText.length > 50 ? plainText.substring(0, 50) + '...' : plainText;
             }
-            
+
             const prefix = `@Phản hồi ${msg.sender}: "${preview}" -> `;
             this.chatMessage = prefix + (this.chatMessage || '');
             this.$nextTick(() => {
@@ -513,6 +509,7 @@ var app = new Vue({
             });
         },
         forwardMessage(msg) {
+            if (this.isChatLocked) return;
             if (!msg) return;
             let contentToCopy = '';
             if (this.isImageMsg(msg.content)) {
@@ -534,6 +531,7 @@ var app = new Vue({
                 console.error('Không thể sao chép tin nhắn: ', err);
             });
 
+            if (this.isChatLocked) return;
             this.chatMessage = '[Chuyển tiếp]: ' + contentToCopy;
             this.$nextTick(() => {
                 if (this.$refs.chatInput) {
@@ -542,9 +540,10 @@ var app = new Vue({
             });
         },
         revokeMessage(msg) {
+            if (this.isChatLocked) return;
             if (!msg || !msg.id) return;
             if (!confirm('Bạn có chắc chắn muốn thu hồi tin nhắn này?')) return;
-            
+
             $.ajax({
                 url: '/api/approvals/RevokeChatMessage',
                 type: 'POST',

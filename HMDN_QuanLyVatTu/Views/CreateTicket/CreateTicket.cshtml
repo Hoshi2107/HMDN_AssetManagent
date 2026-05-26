@@ -1,0 +1,805 @@
+@{
+    ViewBag.Title = "Tạo phiếu mới (Yêu cầu)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --hm-navy: #0F2C59;
+        --hm-navy-light: #1E4A8A;
+        --hm-navy-dark: #071731;
+        --hm-bg: #f4f7fb;
+        --hm-border: #e2e8f0;
+        --hm-text: #1e293b;
+        --hm-text-sec: #64748b;
+        --hm-success: #10b981;
+        --hm-danger: #ef4444;
+        --hm-chat-bg: #f8fafc;
+        --hm-shadow: 0 4px 20px -2px rgba(15,44,89,.05), 0 2px 8px -1px rgba(0,0,0,.03);
+        --hm-tr: all .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    .ct-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding-bottom: 160px;
+        max-width: 1440px;
+        width: 100%;
+        margin: 0 auto;
+        animation: fadeIn .4s ease-out;
+    }
+    @@media(min-width:992px) {
+        .ct-container { grid-template-columns: 2.2fr 1fr; }
+    }
+    .dev-add-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 20px;
+    }
+    @@media(min-width:768px) {
+        .dev-add-grid {
+            grid-template-columns: 2.2fr 1.2fr 0.8fr 1.5fr auto;
+        }
+    }
+    .col-left, .col-right { display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── CARD ── */
+    .p-card {
+        background: #fff;
+        border: 1px solid var(--hm-border);
+        border-radius: 16px;
+        box-shadow: var(--hm-shadow);
+        overflow: hidden;
+        transition: var(--hm-tr);
+    }
+    .p-card:hover { box-shadow: 0 6px 24px -2px rgba(15,44,89,.08), 0 4px 12px -1px rgba(0,0,0,.04); }
+    .c-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--hm-border);
+    }
+    .c-icon {
+        display: flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 10px;
+        background: rgba(15,44,89,.08); color: var(--hm-navy);
+        font-size: 16px; font-weight: bold;
+    }
+    .c-title { font-size: 16px; font-weight: 600; color: var(--hm-navy); }
+    .c-body { padding: 24px; }
+
+    /* ── PAGE HEADER ── */
+    .pg-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+    .back-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: #fff; border: 1px solid var(--hm-border);
+        color: var(--hm-text-sec); cursor: pointer; transition: var(--hm-tr);
+    }
+    .back-btn:hover { background: var(--hm-navy); color: #fff; border-color: var(--hm-navy); transform: translateX(-3px); }
+    .pg-title { font-size: 22px; font-weight: 700; color: var(--hm-navy); }
+
+    /* ── FORM GRID ── */
+    .f-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @@media(min-width:576px) { .f-grid { grid-template-columns: 1fr 1fr; } }
+    @@media(min-width:1200px) { .f-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } }
+    .f-group { display: flex; flex-direction: column; gap: 8px; }
+    .f-label {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .8px; color: var(--hm-text-sec);
+    }
+    .f-input {
+        width: 100%; height: 44px; padding: 0 16px; border-radius: 10px;
+        border: 1.5px solid var(--hm-border); background: #fff;
+        font-size: 13.5px; color: var(--hm-text); font-weight: 500;
+        outline: none; transition: var(--hm-tr);
+    }
+    .f-input:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.1); }
+    .f-input:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; border-style: dashed; }
+    .icon-wrap { position: relative; display: flex; align-items: center; }
+    .icon-wrap i { position: absolute; left: 14px; color: var(--hm-navy); font-size: 14px; }
+    .icon-wrap input { padding-left: 40px; }
+
+    /* ── REASON TEXTAREA (EXPORT/TRANSFER) ── */
+    .reason-textarea {
+        width: 100%; min-height: 200px; border: 1.5px solid var(--hm-border);
+        border-radius: 12px; padding: 16px; font-size: 13.5px;
+        color: var(--hm-text); outline: none; resize: vertical;
+        transition: var(--hm-tr); background: #fff; line-height: 1.6;
+    }
+    .reason-textarea:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.1); }
+    .reason-hint { display: flex; gap: 8px; margin-top: 12px; color: var(--hm-text-sec); font-size: 12px; line-height: 1.4; }
+    .reason-hint i { color: var(--hm-navy); margin-top: 2px; }
+
+    /* ── CHAT CONTAINER ── */
+    .chat-wrap {
+        display: flex; flex-direction: column; height: 420px; background: var(--hm-chat-bg);
+        position: relative;
+    }
+    .chat-msgs {
+        flex: 1; overflow-y: auto; padding: 24px; display: flex;
+        flex-direction: column; gap: 20px; scrollbar-width: thin;
+    }
+    .chat-msgs::-webkit-scrollbar { width: 6px; }
+    .chat-msgs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .msg-item { display: flex; gap: 12px; align-items: flex-start; max-width: 85%; }
+    .msg-self { align-self: flex-start; }
+    .msg-peer { align-self: flex-end; flex-direction: row-reverse; }
+    .av-circle {
+        display: flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px; border-radius: 50%;
+        font-weight: 700; font-size: 13px; flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    }
+    .av-self { background: #e2e8f0; color: #475569; }
+    .av-peer { background: var(--hm-navy); color: #fff; }
+    .msg-cw { display: flex; flex-direction: column; gap: 4px; }
+    .msg-self .msg-cw { align-items: flex-start; }
+    .msg-peer .msg-cw { align-items: flex-end; }
+    .sender-txt { font-size: 11px; font-weight: 600; color: var(--hm-text-sec); }
+    .msg-bubble {
+        padding: 12px 16px; border-radius: 14px; font-size: 13px;
+        line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,.02); word-break: break-word;
+    }
+    .msg-self .msg-bubble { background: #fff; color: var(--hm-text); border: 1px solid var(--hm-border); border-top-left-radius: 2px; }
+    .msg-peer .msg-bubble { background: #eff6ff; color: #0d284f; border: 1px solid rgba(15,44,89,.1); border-top-right-radius: 2px; }
+    .msg-time { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .peer-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px; border-radius: 12px;
+        background: rgba(15,44,89,.08); color: var(--hm-navy);
+        font-size: 10px; font-weight: 700; margin-bottom: 4px;
+        text-transform: uppercase; letter-spacing: .5px;
+    }
+
+    /* Attachment */
+    .att-box {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 18px; border-radius: 12px; background: #fff;
+        border: 1px dashed #cbd5e1; cursor: pointer; transition: var(--hm-tr);
+    }
+    .att-box:hover { border-color: var(--hm-navy); background: rgba(15,44,89,.02); transform: translateY(-1px); }
+    .att-icon { font-size: 24px; color: #10b981; }
+    .att-info { display: flex; flex-direction: column; }
+    .att-name { font-size: 12px; font-weight: 600; color: var(--hm-text); }
+    .att-act { font-size: 10px; color: var(--hm-navy); font-weight: 500; }
+
+    /* System message */
+    .sys-row { align-self: center; margin: 8px 0; }
+    .sys-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 16px; border-radius: 20px;
+        background: #f1f5f9; border: 1px solid var(--hm-border);
+        color: var(--hm-text-sec); font-size: 11.5px; font-weight: 500;
+    }
+
+    /* Chat input */
+    .chat-input-bar {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 24px; background: #fff; border-top: 1px solid var(--hm-border);
+    }
+    .chat-add {
+        display: flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 50%;
+        background: #f1f5f9; border: none; color: var(--hm-text-sec);
+        font-size: 16px; cursor: pointer; transition: var(--hm-tr);
+    }
+    .chat-add:hover { background: #e2e8f0; color: var(--hm-text); transform: scale(1.05); }
+    .chat-inp {
+        flex: 1; height: 40px; border-radius: 20px;
+        border: 1.5px solid var(--hm-border); padding: 0 18px;
+        font-size: 13.5px; outline: none; transition: var(--hm-tr); background: #f8fafc;
+    }
+    .chat-inp:focus { border-color: var(--hm-navy); background: #fff; box-shadow: 0 0 0 2px rgba(15,44,89,.05); }
+    .chat-send {
+        display: flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border-radius: 50%;
+        background: var(--hm-navy); border: none; color: #fff;
+        font-size: 14px; cursor: pointer; transition: var(--hm-tr);
+        box-shadow: 0 2px 8px rgba(15,44,89,.2);
+    }
+    .chat-send:hover { background: var(--hm-navy-light); transform: translate(1px,-1px); box-shadow: 0 4px 12px rgba(15,44,89,.3); }
+    .chat-send:active { transform: scale(.95); }
+
+    /* ── LOCKED CHAT OVERLAY (EXPORT/TRANSFER) ── */
+    .chat-locked-wrapper { position: relative; }
+    .chat-locked-wrapper .chat-wrap { filter: opacity(.55); pointer-events: none; }
+    .chat-locked-wrapper .chat-input-bar { pointer-events: none; opacity: .35; }
+    .chat-lock-overlay {
+        position: absolute; inset: 0; z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+        cursor: not-allowed; border-radius: 0 0 16px 16px;
+        transition: var(--hm-tr);
+    }
+    .chat-lock-badge {
+        display: flex; align-items: center; gap: 10px;
+        padding: 14px 28px; border-radius: 14px;
+        background: rgba(255,255,255,.75); backdrop-filter: blur(6px);
+        border: 1px solid var(--hm-border);
+        color: var(--hm-text-sec); font-size: 14px; font-weight: 600;
+        opacity: 0; transform: scale(.9);
+        transition: opacity .25s ease, transform .25s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+    .chat-lock-overlay:hover .chat-lock-badge {
+        opacity: 1; transform: scale(1);
+    }
+    .chat-lock-badge i { color: var(--hm-danger); font-size: 16px; }
+
+    /* ── RIGHT COLUMN: ATTACHMENT BOX ── */
+    .attach-tabs { display: flex; border-bottom: 1px solid var(--hm-border); }
+    .attach-tab {
+        flex: 1; padding: 12px 0; text-align: center;
+        font-size: 12.5px; font-weight: 600; color: var(--hm-text-sec);
+        cursor: pointer; border-bottom: 2px solid transparent; transition: var(--hm-tr);
+    }
+    .attach-tab:hover { color: var(--hm-navy); }
+    .attach-tab.active { color: var(--hm-navy); border-bottom-color: var(--hm-navy); }
+    .attach-tab i { margin-right: 6px; }
+    .drop-zone {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 12px; padding: 36px 24px; margin: 20px;
+        border: 2px dashed var(--hm-border); border-radius: 14px;
+        color: var(--hm-text-sec); cursor: pointer; transition: var(--hm-tr);
+        min-height: 160px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+        border-color: var(--hm-navy); background: rgba(15,44,89,.02);
+    }
+    .drop-zone.drag-over { border-color: var(--hm-navy-light); background: rgba(15,44,89,.04); }
+    .drop-icon { font-size: 36px; color: #94a3b8; }
+    .drop-text { font-size: 13px; font-weight: 600; color: var(--hm-text); }
+    .drop-hint { font-size: 11px; color: #94a3b8; }
+    .file-list { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .file-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px; border-radius: 10px;
+        background: #f8fafc; border: 1px solid var(--hm-border); font-size: 12px;
+    }
+    .file-item i { color: var(--hm-success); font-size: 16px; }
+    .file-item .fname { flex: 1; font-weight: 600; color: var(--hm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-item .fsize { color: var(--hm-text-sec); font-size: 10px; }
+    .file-item .fremove {
+        background: none; border: none; color: #94a3b8; cursor: pointer;
+        font-size: 13px; transition: var(--hm-tr);
+    }
+    .file-item .fremove:hover { color: var(--hm-danger); }
+
+    /* ── NOTES AREA ── */
+    .notes-ta {
+        width: 100%; height: 120px; border: 1.5px solid var(--hm-border);
+        border-radius: 12px; padding: 16px; font-size: 13.5px;
+        color: var(--hm-text); outline: none; resize: none; transition: var(--hm-tr); background: #fff;
+    }
+    .notes-ta:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.1); }
+
+    /* ── BOTTOM BAR ── */
+    .bottom-bar {
+        position: fixed; bottom: 0; left: 0; right: 0; height: 72px;
+        background: #fff; border-top: 1px solid var(--hm-border);
+        display: flex; align-items: center; justify-content: flex-end;
+        gap: 24px; padding: 0 32px; z-index: 999;
+        box-shadow: 0 -4px 12px rgba(0,0,0,.03);
+    }
+    @@media(min-width:769px) { .bottom-bar { left: 230px; } }
+    .btn-cancel {
+        font-size: 13.5px; font-weight: 600; color: var(--hm-text-sec);
+        background: none; border: none; cursor: pointer; transition: var(--hm-tr);
+        padding: 8px 16px; border-radius: 8px;
+    }
+    .btn-cancel:hover { color: var(--hm-text); background: #f1f5f9; }
+    .btn-submit {
+        display: inline-flex; align-items: center; gap: 10px;
+        height: 44px; padding: 0 26px; border-radius: 22px;
+        background: var(--hm-navy); color: #fff; font-size: 13.5px;
+        font-weight: 600; border: none; cursor: pointer;
+        box-shadow: 0 4px 14px rgba(15,44,89,.25); transition: var(--hm-tr);
+    }
+    .btn-submit:hover { background: var(--hm-navy-light); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(15,44,89,.35); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit i { font-size: 12px; transition: var(--hm-tr); }
+    .btn-submit:hover i { transform: translateX(4px); }
+
+    @@keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
+<div id="app" v-cloak>
+    <!-- HEADER -->
+    <div class="pg-head">
+        <button class="back-btn" @@click="goBack" title="Quay lại"><i class="fa-solid fa-arrow-left"></i></button>
+        <div>
+            <h1 class="pg-title">Tạo phiếu mới (Yêu cầu)</h1>
+            <p style="font-size:12.5px;color:var(--hm-text-sec);margin-top:2px;">Tạo phiếu yêu cầu nghiệp vụ nhập kho, xuất kho hoặc điều chuyển vật tư y tế.</p>
+        </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="ct-container" style="margin-top:20px;">
+        <!-- ===== COLUMN LEFT ===== -->
+        <div class="col-left">
+
+            <!-- 1. GENERAL INFO -->
+            <div class="p-card">
+                <div class="c-head">
+                    <div class="c-icon"><i class="fa-solid fa-circle-info"></i></div>
+                    <span class="c-title">Thông tin chung</span>
+                </div>
+                <div class="c-body">
+                    <div class="f-grid">
+                        <div class="f-group">
+                            <label class="f-label">Loại yêu cầu</label>
+                            <select class="f-input" v-model="form.ticketType" style="cursor:pointer;">
+                                <option v-for="t in listLoaiYeuCau" :key="t.value" :value="t.value">${ t.text }</option>
+                            </select>
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Người tạo</label>
+                            <div class="icon-wrap">
+                                <i class="fa-solid fa-circle-user"></i>
+                                <input type="text" class="f-input" v-model="form.creator" disabled />
+                            </div>
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Phòng ban</label>
+                            <input type="text" class="f-input" v-model="form.department" disabled />
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Loại vật tư</label>
+                            <select class="f-input" v-model="form.assetType" style="cursor:pointer;">
+                                <option value="">Chọn loại vật tư...</option>
+                                <option v-for="t in listLoaiVatTu" :key="t" :value="t">${ t }</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1b. DANH SÁCH THIẾT BỊ YÊU CẦU -->
+            <div class="p-card">
+                <div class="c-head">
+                    <div class="c-icon"><i class="fa-solid fa-list-ol"></i></div>
+                    <span class="c-title">Danh sách thiết bị yêu cầu</span>
+                </div>
+                <div class="c-body">
+                    <!-- Inline form to add devices -->
+                    <div class="dev-add-grid">
+                        <div class="f-group">
+                            <label class="f-label">Tên Thiết Bị</label>
+                            <input type="text" class="f-input" v-model="newDevice.itemName" placeholder="Nhập tên thiết bị..." list="dbItemsDatalist" />
+                            <datalist id="dbItemsDatalist">
+                                <option v-for="item in dbItems" :key="item.Id" :value="item.Name"></option>
+                            </datalist>
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Số Serial (nếu có)</label>
+                            <input type="text" class="f-input" v-model="newDevice.serialNumber" placeholder="Nhập Serial" />
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Số lượng</label>
+                            <input type="number" class="f-input" v-model.number="newDevice.quantity" min="1" />
+                        </div>
+                        <div class="f-group">
+                            <label class="f-label">Ghi chú</label>
+                            <input type="text" class="f-input" v-model="newDevice.note" placeholder="Vị trí lắp đặt, lý do..." />
+                        </div>
+                        <div class="f-group">
+                            <button type="button" class="btn-submit" style="height: 44px; padding: 0 20px; border-radius: 10px; margin-top: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;" @@click="addDeviceToList">
+                                <i class="fa-solid fa-plus" style="margin: 0; font-size: 14px;"></i> Thêm
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Devices Table -->
+                    <div style="overflow-x: auto; margin-top: 20px; border: 1px solid var(--hm-border); border-radius: 12px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--hm-border); background: #f8fafc;">
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 60px;">STT</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Tên thiết bị</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 180px;">Mã/Serial</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px; text-align: center;">Số lượng</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px;">ĐVT</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Ghi chú</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 80px; text-align: center;">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(dev, idx) in form.devices" :key="idx" style="border-bottom: 1px solid var(--hm-border); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ idx + 1 }</td>
+                                    <td style="padding: 14px 16px; font-weight: 600; color: var(--hm-navy);">${ dev.itemName }</td>
+                                    <td style="padding: 14px 16px;">${ dev.serialNumber || '-' }</td>
+                                    <td style="padding: 14px 16px; font-weight: 600; text-align: center;">${ dev.quantity }</td>
+                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.unit || 'Cái' }</td>
+                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.note || '-' }</td>
+                                    <td style="padding: 14px 16px; text-align: center;">
+                                        <button type="button" style="background: none; border: none; color: var(--hm-danger); cursor: pointer; font-size: 14.5px; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" @@click="removeDeviceFromList(idx)" title="Xóa">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="form.devices.length === 0">
+                                    <td colspan="7" style="padding: 32px 16px; text-align: center; color: var(--hm-text-sec); font-style: italic;">
+                                        Chưa có thiết bị nào trong danh sách. Vui lòng thêm thiết bị bằng cách nhập tên và bấm nút "Thêm" ở trên.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. REASON TEXTAREA -->
+            <div class="p-card">
+                <div class="c-head">
+                    <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                    <span class="c-title">Lý do yêu cầu & Chi tiết</span>
+                </div>
+                <div class="c-body">
+                    <textarea class="reason-textarea"
+                              placeholder="Nhập chi tiết yêu cầu... (Ví dụ: Nhập kho/Xuất kho thiết bị Switch thay thế khẩn cấp tại Khoa Khám bệnh)"
+                              v-model="form.reasonDetails"></textarea>
+                    <div class="reason-hint">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>Gợi ý: Mô tả rõ mã thiết bị, vị trí lắp đặt và tình trạng hiện tại.</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== COLUMN RIGHT ===== -->
+        <div class="col-right">
+
+            <!-- 3. ATTACHMENT PANEL -->
+            <div class="p-card">
+                <div class="c-head">
+                    <div class="c-icon"><i class="fa-solid fa-paperclip"></i></div>
+                    <span class="c-title">Đính kèm</span>
+                </div>
+                <!-- Tabs -->
+                <div class="attach-tabs">
+                    <div :class="['attach-tab', attachTab === 'image' ? 'active' : '']" @@click="attachTab='image'">
+                        <i class="fa-regular fa-image"></i>Ảnh/Video
+                    </div>
+                    <div :class="['attach-tab', attachTab === 'file' ? 'active' : '']" @@click="attachTab='file'">
+                        <i class="fa-regular fa-file"></i>File
+                    </div>
+                </div>
+                <!-- Drop Zone -->
+                <div class="drop-zone"
+                     :class="{ 'drag-over': isDragging }"
+                     @@click="$refs.dropInput.click()"
+                     @@dragover.prevent="isDragging = true"
+                     @@dragleave.prevent="isDragging = false"
+                     @@drop.prevent="handleDrop">
+                    <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                    <span class="drop-text">Tải tệp lên hoặc kéo thả</span>
+                    <span class="drop-hint" v-if="attachTab === 'image'">Chỉ tải lên Ảnh, Video (PNG, JPG, MP4)</span>
+                    <span class="drop-hint" v-else>Chỉ tải lên Tài liệu (PDF, DOCX, XLSX, TXT, ZIP)</span>
+                </div>
+                <input type="file" ref="dropInput" style="display:none;" @@change="handleDropInput" multiple :accept="attachTab === 'image' ? 'image/*,video/*' : '.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt'" />
+                <!-- File lists filtered by active tab -->
+                <!-- Image list -->
+                <div class="file-list" v-if="attachTab === 'image' && attachedImages.length > 0">
+                    <div class="file-item" v-for="(f, i) in attachedImages" :key="i">
+                        <i class="fa-regular fa-image" style="color: var(--hm-navy); font-size: 16px;"></i>
+                        <span class="fname">${ f.name }</span>
+                        <span class="fsize">${ formatSize(f.size) }</span>
+                        <button class="fremove" @@click="removeImage(i)" title="Xóa"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+                <!-- File list -->
+                <div class="file-list" v-if="attachTab === 'file' && attachedFiles.length > 0">
+                    <div class="file-item" v-for="(f, i) in attachedFiles" :key="i">
+                        <i class="fa-regular fa-file" style="color: var(--hm-navy); font-size: 16px;"></i>
+                        <span class="fname">${ f.name }</span>
+                        <span class="fsize">${ formatSize(f.size) }</span>
+                        <button class="fremove" @@click="removeFile(i)" title="Xóa"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. ADDITIONAL NOTES -->
+            <div class="p-card">
+                <div class="c-head">
+                    <div class="c-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+                    <span class="c-title">Ghi chú bổ sung</span>
+                </div>
+                <div class="c-body">
+                    <textarea class="notes-ta" placeholder="Ghi chú ngắn cho bộ phận phê duyệt..." v-model="form.note"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+        <button class="btn-cancel" @@click="goBack">Hủy bỏ</button>
+        <button class="btn-submit" @@click="submitTicket" :disabled="isSubmitting">
+            <span v-if="isSubmitting">Đang gửi...</span>
+            <span v-else>Gửi yêu cầu</span>
+            <i class="fa-solid fa-play" v-if="!isSubmitting"></i>
+        </button>
+    </div>
+</div>
+
+@section scripts {
+    <script src="~/Addon/vue/vue.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            delimiters: ['${', '}'],
+            data: {
+                // Dropdown mapping: nhãn Tiếng Việt -> chuỗi lưu CSDL SQL Server
+                listLoaiYeuCau: [
+                    { text: 'Nhập kho', value: 'IMPORT' },
+                    { text: 'Xuất kho', value: 'EXPORT' },
+                    { text: 'Điều chuyển', value: 'TRANSFER' }
+                ],
+                listLoaiVatTu: ['Thiết bị y tế', 'Vật tư tiêu hao', 'Linh kiện thay thế', 'Khác'],
+
+                dbItems: [], // Danh sách mẫu thiết bị từ CSDL
+                newDevice: {
+                    itemName: '',
+                    serialNumber: '',
+                    quantity: 1,
+                    note: ''
+                },
+
+                // Form data: khởi tạo động từ Razor ViewBag hoặc LocalStorage
+                form: {
+                    ticketType: 'EXPORT',
+                    creator: 'Đang tải...',
+                    department: 'Đang tải...',
+                    userId: 1,
+                    assetType: '',
+                    note: '',
+                    reasonDetails: '',
+                    devices: [] // Danh sách thiết bị yêu cầu
+                },
+
+                isSubmitting: false,
+
+                // Attachment panel
+                attachTab: 'image',
+                isDragging: false,
+                attachedImages: [],
+                attachedFiles: []
+            },
+
+            methods: {
+                // ── Load dữ liệu từ server ──
+                loadUserInfo(userId) {
+                    var vm = this;
+                    fetch('/CreateTicket/GetUserInfo?userId=' + userId)
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res.success) {
+                                vm.form.creator = res.fullName;
+                                vm.form.department = res.departmentName;
+                            } else {
+                                vm.form.creator = 'Lỗi tải thông tin';
+                                vm.form.department = 'Lỗi tải phòng ban';
+                            }
+                        })
+                        .catch(function () {
+                            vm.form.creator = 'Lỗi kết nối';
+                            vm.form.department = 'Lỗi kết nối';
+                        });
+                },
+
+                loadDbItems() {
+                    var vm = this;
+                    fetch('/CreateTicket/GetAllItems')
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res.error) {
+                                console.error(res.error);
+                            } else {
+                                vm.dbItems = res;
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error('Không thể kết nối lấy danh mục thiết bị:', err);
+                        });
+                },
+
+                // ── Quản lý danh sách thiết bị yêu cầu ──
+                addDeviceToList() {
+                    if (!this.newDevice.itemName || !this.newDevice.itemName.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập tên thiết bị!', 'warning');
+                        return;
+                    }
+                    if (this.newDevice.quantity <= 0) {
+                        this.toast('Cảnh báo', 'Số lượng yêu cầu phải lớn hơn 0!', 'warning');
+                        return;
+                    }
+
+                    var vm = this;
+                    var trimmedName = this.newDevice.itemName.trim();
+                    
+                    var matchedItem = this.dbItems.find(function (x) {
+                        return x.Name.toLowerCase() === trimmedName.toLowerCase();
+                    });
+                    var unit = matchedItem ? matchedItem.Unit : 'Cái';
+
+                    var exists = this.form.devices.find(function (d) {
+                        return d.itemName.toLowerCase() === trimmedName.toLowerCase() && d.serialNumber === vm.newDevice.serialNumber;
+                    });
+
+                    if (exists) {
+                        exists.quantity += vm.newDevice.quantity;
+                    } else {
+                        this.form.devices.push({
+                            itemName: trimmedName,
+                            serialNumber: this.newDevice.serialNumber,
+                            quantity: this.newDevice.quantity,
+                            unit: unit,
+                            note: this.newDevice.note
+                        });
+                    }
+
+                    this.newDevice = {
+                        itemName: '',
+                        serialNumber: '',
+                        quantity: 1,
+                        note: ''
+                    };
+                },
+
+                removeDeviceFromList(idx) {
+                    this.form.devices.splice(idx, 1);
+                },
+
+                // ── Attachment Panel (Right) ──
+                handleDrop(e) {
+                    this.isDragging = false;
+                    var files = e.dataTransfer.files;
+                    this.processFiles(files);
+                },
+                handleDropInput(e) {
+                    var files = e.target.files;
+                    this.processFiles(files);
+                    e.target.value = '';
+                },
+                processFiles(fileList) {
+                    var skippedCount = 0;
+                    for (var i = 0; i < fileList.length; i++) {
+                        var file = fileList[i];
+                        var isImageOrVideo = file.type.startsWith('image/') || file.type.startsWith('video/');
+
+                        if (this.attachTab === 'image') {
+                            if (isImageOrVideo) {
+                                this.attachedImages.push(file);
+                            } else {
+                                skippedCount++;
+                            }
+                        } else if (this.attachTab === 'file') {
+                            if (!isImageOrVideo) {
+                                this.attachedFiles.push(file);
+                            } else {
+                                skippedCount++;
+                            }
+                        }
+                    }
+
+                    if (skippedCount > 0) {
+                        if (this.attachTab === 'image') {
+                            this.toast('Cảnh báo', 'Đã bỏ qua ' + skippedCount + ' tệp không phải là hình ảnh/video.', 'warning');
+                        } else {
+                            this.toast('Cảnh báo', 'Đã bỏ qua ' + skippedCount + ' tệp hình ảnh/video. Vui lòng tải chúng lên ở tab Ảnh/Video.', 'warning');
+                        }
+                    }
+                },
+                removeImage(idx) { this.attachedImages.splice(idx, 1); },
+                removeFile(idx) { this.attachedFiles.splice(idx, 1); },
+                formatSize(bytes) {
+                    if (bytes < 1024) return bytes + ' B';
+                    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                    return (bytes / 1048576).toFixed(1) + ' MB';
+                },
+
+                // ── Submit ──
+                submitTicket() {
+                    if (!this.form.assetType) {
+                        this.toast('Cảnh báo', 'Vui lòng chọn loại vật tư!', 'warning');
+                        return;
+                    }
+                    if (this.form.devices.length === 0) {
+                        this.toast('Cảnh báo', 'Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!', 'warning');
+                        return;
+                    }
+                    if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
+                        return;
+                    }
+
+                    this.isSubmitting = true;
+                    var payload = {
+                        TicketType: this.form.ticketType,
+                        Note: this.form.note,
+                        ReasonDetails: this.form.reasonDetails,
+                        UserId: this.form.userId,
+                        Devices: this.form.devices.map(function (d) {
+                            return {
+                                ItemName: d.itemName,
+                                SerialNumber: d.serialNumber,
+                                Quantity: d.quantity,
+                                Note: d.note
+                            };
+                        })
+                    };
+
+                    var formData = new FormData();
+                    formData.append('payload', JSON.stringify(payload));
+                    this.attachedImages.forEach(function (file) {
+                        formData.append('files', file);
+                    });
+                    this.attachedFiles.forEach(function (file) {
+                        formData.append('files', file);
+                    });
+
+                    var vm = this;
+                    fetch('/CreateTicket/CreateNewTicket', {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: formData
+                    })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        vm.isSubmitting = false;
+                        if (res.success) {
+                            vm.toast('Thành công', 'Tạo phiếu ' + res.ticketCode + ' thành công!', 'success');
+                            setTimeout(function () { window.location.href = '/Approvals/Index'; }, 1500);
+                        } else {
+                            vm.toast('Lỗi', res.message, 'danger');
+                        }
+                    })
+                    .catch(function (err) {
+                        vm.isSubmitting = false;
+                        console.error(err);
+                        vm.toast('Lỗi mạng', 'Không thể kết nối máy chủ.', 'danger');
+                    });
+                },
+
+                goBack() {
+                    if (confirm('Bạn có chắc chắn muốn hủy bỏ?')) window.location.href = '/Approvals/Index';
+                },
+
+                toast(title, msg, type) {
+                    if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                        window.MedEquip.toast(title, msg, type);
+                    } else {
+                        alert(title + ': ' + msg);
+                    }
+                }
+            },
+
+            mounted() {
+                // Đọc thông tin người dùng đăng nhập từ localStorage
+                var userStr = localStorage.getItem('current_user');
+                if (userStr) {
+                    try {
+                        var currentUser = JSON.parse(userStr);
+                        if (currentUser && currentUser.Id) {
+                            this.form.userId = currentUser.Id;
+                            this.loadUserInfo(currentUser.Id);
+                        } else {
+                            this.loadUserInfo(1); // Mặc định nếu không có Id
+                        }
+                    } catch (e) {
+                        this.loadUserInfo(1);
+                    }
+                } else {
+                    this.loadUserInfo(1); // Mặc định
+                }
+
+                // Tải danh mục thiết bị
+                this.loadDbItems();
+            }
+        });
+    </script>
+}
