@@ -598,6 +598,12 @@
 
                 <div class="nav-section-label">Vận hành</div>
                 <ul>
+                    <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
+                        <a href="@Url.Action("Create", "Tickets")">
+                            <i class="fa-solid fa-file-circle-plus nav-icon"></i>
+                            <span>Tạo phiếu</span>
+                        </a>
+                    </li>
                     <li class="nav-item @(ViewBag.ActiveNav == "Alerts" ? "active" : "")">
                         <a href="@Url.Action("Index","Alerts")">
                             <i class="fa-solid fa-bell nav-icon"></i>
@@ -616,12 +622,6 @@
                             {
                                 <span class="nav-badge">@ViewBag.PendingApprovals</span>
                             }
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "#" ? "active" : "")">
-                        <a href="@Url.Action("#","#")">
-                            <i class="fa-solid fa-box-archive nav-icon"></i>
-                            <span>Tạo phiếu</span>
                         </a>
                     </li>
                 </ul>
@@ -713,13 +713,13 @@
             }
         };
 
-        // ── Auto-highlight active nav (Đã nâng cấp phân biệt chính xác Controller & Action) ────────────────
+        // ── Auto-highlight active nav (Đã vá lỗi cú pháp đóng hàm hoàn chỉnh) ────────────────
         (function () {
             var currentPath = window.location.pathname.toLowerCase();
             var segments = currentPath.split('/').filter(Boolean);
             
             var currentController = segments[0] || '';
-            var currentAction = segments[1] || 'index'; // Mặc định là index nếu URL thiếu action
+            var currentAction = segments[1] || 'index';
 
             if (currentController) {
                 document.querySelectorAll('.nav-item a').forEach(function (a) {
@@ -729,7 +729,6 @@
                     var targetController = hrefSegments[0] || '';
                     var targetAction = hrefSegments[1] || 'index';
 
-                    // Kiểm tra khớp cả Controller lẫn Action để phân tách các mục có chung Controller
                     if (targetController === currentController && targetAction === currentAction) {
                         document.querySelectorAll('.nav-item').forEach(function (li) { li.classList.remove('active'); });
                         a.closest('.nav-item').classList.add('active');
