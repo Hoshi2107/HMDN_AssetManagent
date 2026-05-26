@@ -33,6 +33,7 @@ namespace HMS.Data
         public DbSet<Tickets> Tickets { get; set; }
         public DbSet<TicketDiscussion> TicketDiscussions { get; set; }
         public DbSet<DepreciationLog> DepreciationLogs { get; set; }
+        public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -71,6 +72,9 @@ namespace HMS.Data
 
             modelBuilder.Entity<DepreciationLog>()
                 .ToTable("DepreciationLogs");
+
+            modelBuilder.Entity<MaintenanceLog>()
+                .ToTable("MaintenanceLogs");
         }
 
     }

@@ -147,6 +147,8 @@
     <Compile Include="Controllers\DeviceController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\InventoryController.cs" />
+    <Compile Include="Controllers\MaintenanceController.cs" />
+    <Compile Include="Controllers\MaintenanceAPIController.cs" />
     <Compile Include="Controllers\LocationAPIController.cs" />
     <Compile Include="Controllers\LocationController.cs" />
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
@@ -218,6 +220,7 @@
     <Content Include="Content\images1\BenhvienLogin.jpg" />
     <Content Include="Content\images1\logobv.png" />
     <Content Include="Content\inventory\inventory.css" />
+    <Content Include="Content\maintenance\maintenance.css" />
     <Content Include="Content\location\location.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
@@ -226,6 +229,7 @@
     <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
     <Content Include="Scripts\app\inventory.js" />
+    <Content Include="Scripts\app\maintenance.js" />
     <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
@@ -265,6 +269,7 @@
     <Content Include="Views\Approvals\Index.cshtml" />
     <Content Include="Views\Category\Category.cshtml" />
     <Content Include="Views\Location\Location.cshtml" />
+    <Content Include="Views\Maintenance\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
