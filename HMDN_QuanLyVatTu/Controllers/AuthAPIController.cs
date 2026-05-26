@@ -21,7 +21,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 var user = db.Users
                     .FirstOrDefault(x =>
-                        x.Username == model.Username
+                        (x.Username == model.Username || x.Email == model.Username)
                         && x.IsActive);
 
                 if (user == null)

@@ -1,4 +1,4 @@
-﻿public class LoginVM
+public class LoginVM
 {
     public string Username { get; set; }
 

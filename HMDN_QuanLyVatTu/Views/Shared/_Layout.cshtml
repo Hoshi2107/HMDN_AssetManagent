@@ -126,40 +126,39 @@
         }
 
         .nav-section-label {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 700;
-            letter-spacing: 1.4px;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
             color: var(--text-muted);
-            padding: 12px 8px 5px;
+            padding: 9px 8px 3px;
             user-select: none;
         }
 
         .nav-item {
             position: relative;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .nav-item a {
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 9px 12px;
-            border-radius: 8px;
+            gap: 8px;
+            padding: 7.5px 10px;
+            border-radius: 6px;
             color: var(--text-secondary);
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 500;
             transition: background var(--transition),
                         color var(--transition),
-                        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        padding-left var(--transition);
+                        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
             white-space: nowrap;
         }
 
         .nav-item a .nav-icon {
             width: 16px;
             text-align: center;
-            font-size: 13px;
+            font-size: 12.5px;
             flex-shrink: 0;
             opacity: .75;
             transition: transform var(--transition), opacity var(--transition);
@@ -169,21 +168,20 @@
         .nav-item a:hover {
             background: var(--sidebar-hover);
             color: var(--text-primary);
-            padding-left: 16px;
         }
 
         .nav-item a:hover .nav-icon {
             opacity: 1;
-            transform: scale(1.12);
+            transform: scale(1.1);
         }
 
         /* [ACTIVE EFFECT] */
         .nav-item.active a {
             background: var(--accent-blue);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
             font-weight: 600;
-            transform: scale(1.02);
+            transform: scale(1.01);
         }
 
         .nav-item.active a .nav-icon {
@@ -198,17 +196,16 @@
             left: -10px;
             top: 50%;
             transform: translateY(-50%);
-            width: 4px;
-            height: 18px;
+            width: 3.5px;
+            height: 16px;
             background: var(--accent-cyan);
             border-radius: 0 4px 4px 0;
-            /* Đã sửa tên gọi đồng nhất với keyframe bên dưới */
             animation: activeIndicator 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         /* [MICRO-INTERACTION CLICK] */
         .nav-item a:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
         }
 
         .nav-badge {
@@ -498,12 +495,8 @@
                 padding: 10px;
             }
 
-            .nav-item a:hover {
-                padding-left: 10px; /* Chặn giật menu trên mobile */
-            }
-
             .nav-item.active::before {
-                left: 2px; /* Đưa gờ chỉ thị khít vào bên trong icon khi co menu */
+                left: 2px;
             }
 
             .staff-pill {
@@ -593,6 +586,12 @@
                         <a href="@Url.Action("Index","Maintenance")">
                             <i class="fa-solid fa-screwdriver-wrench nav-icon"></i>
                             <span>Sửa chữa</span>
+                        </a>
+                    </li>
+                    <li class="nav-item @(ViewBag.ActiveNav == "TiepNhanBaoHong" ? "active" : "")">
+                        <a href="@Url.Action("TiepNhanBaoHong","Maintenance")">
+                            <i class="fa-solid fa-triangle-exclamation nav-icon"></i>
+                            <span>Tiếp nhận báo hỏng</span>
                         </a>
                     </li>
                 </ul>
@@ -714,26 +713,26 @@
             }
         };
 
-        // ── Auto-highlight active nav from URL (Đã tối ưu cho cả Route con) ────────────────
+        // ── Auto-highlight active nav (Đã nâng cấp phân biệt chính xác Controller & Action) ────────────────
         (function () {
-            // Sửa logic: Luôn chạy quét URL để đảm bảo các trang con của Controller vẫn giữ được sáng đèn Menu
             var currentPath = window.location.pathname.toLowerCase();
             var segments = currentPath.split('/').filter(Boolean);
+            
             var currentController = segments[0] || '';
+            var currentAction = segments[1] || 'index'; // Mặc định là index nếu URL thiếu action
 
             if (currentController) {
-                var found = false;
                 document.querySelectorAll('.nav-item a').forEach(function (a) {
                     var href = (a.getAttribute('href') || '').toLowerCase();
                     var hrefSegments = href.split('/').filter(Boolean);
+                    
                     var targetController = hrefSegments[0] || '';
+                    var targetAction = hrefSegments[1] || 'index';
 
-                    // Nếu Controller của liên kết trùng với Controller trên URL, kích hoạt active
-                    if (targetController === currentController) {
-                        // Loại bỏ active cũ do backend gán sai trước khi gán mới
+                    // Kiểm tra khớp cả Controller lẫn Action để phân tách các mục có chung Controller
+                    if (targetController === currentController && targetAction === currentAction) {
                         document.querySelectorAll('.nav-item').forEach(function (li) { li.classList.remove('active'); });
                         a.closest('.nav-item').classList.add('active');
-                        found = true;
                     }
                 });
             }

@@ -1,4 +1,4 @@
-﻿new Vue({
+new Vue({
     el: '#app',
     data: {
         // 🌟 FIX BUG 1: Sử dụng 'email' thay vì 'username' để đồng bộ 100% với LoginViewModel bên C#
