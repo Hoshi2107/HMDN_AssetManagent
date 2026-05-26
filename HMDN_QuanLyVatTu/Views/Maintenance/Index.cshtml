@@ -1,0 +1,566 @@
+@{
+    ViewBag.Title = "Nhật ký sửa chữa";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/Content/maintenance/maintenance.css" rel="stylesheet" />
+
+<div id="app">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-icon blue">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ kpi.totalDevices }</h4>
+                <p>Tổng thiết bị</p>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon amber">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ kpi.devicesWithLogs }</h4>
+                <p>Có lịch sử sửa chữa</p>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon red">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ kpi.activeIssues }</h4>
+                <p>Đang có sự cố</p>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon green">
+                <i class="fa-solid fa-wrench"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ kpi.totalRepairs }</h4>
+                <p>Tổng lần sửa chữa</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="maint-header">
+        <div>
+            <h2>Nhật ký bệnh án thiết bị</h2>
+            <p>Hiển thị tất cả thiết bị — Click vào thiết bị để xem lịch sử sửa chữa</p>
+        </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="maint-filter">
+        <input type="text"
+               placeholder="Tìm theo tên thiết bị, serial, mã tài sản, khoa phòng..."
+               v-model="searchQuery" />
+
+        <select v-model="filterLogStatus">
+            <option value="">Tất cả thiết bị</option>
+            <option value="has_logs">Có lịch sử sửa chữa</option>
+            <option value="no_logs">Chưa từng sửa chữa</option>
+        </select>
+
+        <select v-model="filterDepartment">
+            <option value="">Tất cả khoa phòng</option>
+            <option v-for="dept in departmentList" :key="dept" :value="dept">${ dept }</option>
+        </select>
+
+        <select v-model="pageSize">
+            <option :value="10">10 dòng</option>
+            <option :value="15">15 dòng</option>
+            <option :value="20">20 dòng</option>
+            <option :value="50">50 dòng</option>
+        </select>
+    </div>
+
+    <!-- TABLE: DANH SÁCH THIẾT BỊ -->
+    <div class="maint-table-wrap">
+        <table v-if="filteredDevices.length > 0">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Mã TS</th>
+                    <th>Thiết bị</th>
+                    <th>Serial</th>
+                    <th>Khoa phòng</th>
+                    <th>Vị trí</th>
+                    <th>Trạng thái</th>
+                    <th>Số lần sửa</th>
+                    <th>Đang xử lý</th>
+                    <th>Lần sửa gần nhất</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="device in paginatedDevices"
+                    :key="device.Id"
+                    @@click="openHistory(device.Id)"
+                    :class="{ 'row-has-issue': device.OpenLogs > 0 || device.InProgressLogs > 0 }">
+
+                    <td><strong>#${ device.Id }</strong></td>
+
+                    <td>
+                        <span class="asset-code">${ device.AssetCode || '—' }</span>
+                    </td>
+
+                    <td>
+                        <div class="device-name">${ device.ItemName }</div>
+                    </td>
+
+                    <td>
+                        <small class="serial-text">${ device.SerialNumber || '—' }</small>
+                    </td>
+
+                    <td>${ device.DepartmentName }</td>
+
+                    <td>${ device.LocationName }</td>
+
+                    <td>
+                        <span class="badge-life" :class="'life-' + (device.LifeStatus || 'active')">
+                            ${ lifeStatusLabel(device.LifeStatus) }
+                        </span>
+                    </td>
+
+                    <td class="text-center">
+                        <span v-if="device.TotalLogs > 0" class="log-count">${ device.TotalLogs }</span>
+                        <span v-else class="no-log">0</span>
+                    </td>
+
+                    <td class="text-center">
+                        <span v-if="device.OpenLogs > 0 || device.InProgressLogs > 0"
+                              class="active-issues">
+                            ${ device.OpenLogs + device.InProgressLogs }
+                        </span>
+                        <span v-else class="no-issue">—</span>
+                    </td>
+
+                    <td>
+                        <span v-if="device.LastLogDate">${ device.LastLogDate }</span>
+                        <span v-else class="no-log">Chưa có</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Empty state -->
+        <div class="empty-state" v-else>
+            <i class="fa-solid fa-box-open"></i>
+            <p>Không tìm thấy thiết bị nào</p>
+        </div>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="maint-pagination" v-if="totalPages > 1">
+        <button @@click="currentPage--" :disabled="currentPage <= 1">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <button v-for="page in pages"
+                :key="page"
+                @@click="currentPage = page"
+                :class="{ active: currentPage === page }">
+            ${ page }
+        </button>
+
+        <button @@click="currentPage++" :disabled="currentPage >= totalPages">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+
+
+    <!-- ═══ MODAL: LỊCH SỬ SỬA CHỮA THIẾT BỊ ═══ -->
+    <div class="modal-overlay"
+         v-if="showHistoryModal"
+         @@click.self="showHistoryModal = false">
+
+        <div class="modal-panel modal-panel-xl">
+
+            <div class="modal-top">
+                <h3>
+                    <i class="fa-solid fa-file-medical" style="color:#2563eb;margin-right:8px"></i>
+                    Bệnh án thiết bị
+                </h3>
+                <button class="modal-close" @@click="showHistoryModal = false">×</button>
+            </div>
+
+            <!-- Loading -->
+            <div v-if="historyLoading" style="padding:40px;text-align:center;color:#94a3b8">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:24px"></i>
+                <p style="margin-top:10px">Đang tải...</p>
+            </div>
+
+            <div class="modal-body" v-if="selectedDevice && !historyLoading">
+
+                <!-- Thông tin thiết bị -->
+                <div class="device-info-card">
+                    <div class="device-info-header">
+                        <div class="device-icon">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div>
+                            <h4>${ selectedDevice.ItemName }</h4>
+                            <p class="device-meta">
+                                <span v-if="selectedDevice.AssetCode">
+                                    <i class="fa-solid fa-barcode"></i> ${ selectedDevice.AssetCode }
+                                </span>
+                                <span v-if="selectedDevice.SerialNumber">
+                                    <i class="fa-solid fa-hashtag"></i> ${ selectedDevice.SerialNumber }
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="device-info-grid">
+                        <div class="info-item">
+                            <label>Khoa phòng</label>
+                            <p>${ selectedDevice.DepartmentName || '—' }</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Vị trí</label>
+                            <p>${ selectedDevice.LocationName || '—' }</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Trạng thái</label>
+                            <p>
+                                <span class="badge-life" :class="'life-' + (selectedDevice.LifeStatus || 'active')">
+                                    ${ lifeStatusLabel(selectedDevice.LifeStatus) }
+                                </span>
+                            </p>
+                        </div>
+                        <div class="info-item">
+                            <label>Ngày nhập</label>
+                            <p>${ selectedDevice.ImportDate }</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Header lịch sử -->
+                <div class="history-header">
+                    <h4>
+                        <i class="fa-solid fa-clock-rotate-left" style="margin-right:6px"></i>
+                        Lịch sử sửa chữa
+                        <span class="log-total-badge">${ deviceLogs.length } ca</span>
+                    </h4>
+                    <button class="btn-create-sm" @@click="openCreateFromHistory()">
+                        <i class="fa-solid fa-plus"></i> Tạo ca mới
+                    </button>
+                </div>
+
+                <!-- Timeline lịch sử -->
+                <div class="history-timeline" v-if="deviceLogs.length > 0">
+                    <div class="timeline-item" v-for="log in deviceLogs" :key="log.Id"
+                         @@click="openDetail(log.Id)">
+                        <div class="timeline-dot" :class="'dot-' + log.Status"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-header-row">
+                                <strong>#${ log.Id } — ${ log.Title }</strong>
+                                <span class="badge-status-maint" :class="'badge-' + log.Status">
+                                    ${ statusLabel(log.Status) }
+                                </span>
+                            </div>
+                            <p class="timeline-desc" v-if="log.ErrorDescription">
+                                <i class="fa-solid fa-bug" style="color:#ef4444;margin-right:4px"></i>
+                                ${ log.ErrorDescription }
+                            </p>
+                            <p class="timeline-desc" v-if="log.ActionTaken">
+                                <i class="fa-solid fa-check" style="color:#22c55e;margin-right:4px"></i>
+                                ${ log.ActionTaken }
+                            </p>
+                            <div class="timeline-meta">
+                                <span>
+                                    <i class="fa-regular fa-calendar"></i>
+                                    ${ log.StartDate }
+                                    <template v-if="log.EndDate"> → ${ log.EndDate }</template>
+                                </span>
+                                <span class="badge-priority" :class="'prio-' + log.Priority">
+                                    ${ priorityLabel(log.Priority) }
+                                </span>
+                                <span v-if="log.Cost" class="cost-cell">
+                                    <i class="fa-solid fa-coins"></i> ${ formatCurrency(log.Cost) }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty history -->
+                <div class="empty-history" v-else>
+                    <i class="fa-solid fa-heart-pulse" style="font-size:36px;color:#22c55e"></i>
+                    <p>Thiết bị này chưa từng có ca sửa chữa nào</p>
+                    <small>Thiết bị đang hoạt động tốt</small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══ MODAL: CHI TIẾT CA SỬA CHỮA ═══ -->
+    <div class="modal-overlay"
+         v-if="showDetailModal"
+         @@click.self="showDetailModal = false">
+
+        <div class="modal-panel modal-panel-lg">
+
+            <div class="modal-top">
+                <h3>
+                    <i class="fa-solid fa-file-medical" style="color:#2563eb;margin-right:8px"></i>
+                    Chi tiết ca sửa chữa #${ detail.Id }
+                </h3>
+                <button class="modal-close" @@click="showDetailModal = false">×</button>
+            </div>
+
+            <div class="modal-body" v-if="detail">
+
+                <!-- Thông tin thiết bị -->
+                <div class="detail-grid-maint">
+                    <div class="field">
+                        <label>Thiết bị</label>
+                        <p>${ detail.DeviceName }</p>
+                    </div>
+                    <div class="field">
+                        <label>Serial</label>
+                        <p>${ detail.DeviceSerial || '—' }</p>
+                    </div>
+                    <div class="field">
+                        <label>Khoa phòng</label>
+                        <p>${ detail.DeviceDepartment || '—' }</p>
+                    </div>
+                    <div class="field">
+                        <label>Vị trí</label>
+                        <p>${ detail.DeviceLocation || '—' }</p>
+                    </div>
+                </div>
+
+                <!-- Thông tin ca sửa chữa -->
+                <div class="detail-section">
+                    <h4><i class="fa-solid fa-stethoscope" style="margin-right:6px"></i> Thông tin sửa chữa</h4>
+                    <div class="detail-grid-maint">
+                        <div class="field">
+                            <label>Tiêu đề</label>
+                            <p>${ detail.Title }</p>
+                        </div>
+                        <div class="field">
+                            <label>Trạng thái</label>
+                            <p>
+                                <span class="badge-status-maint" :class="'badge-' + detail.Status">
+                                    ${ statusLabel(detail.Status) }
+                                </span>
+                            </p>
+                        </div>
+                        <div class="field">
+                            <label>Mức ưu tiên</label>
+                            <p>
+                                <span class="badge-priority" :class="'prio-' + detail.Priority">
+                                    ${ priorityLabel(detail.Priority) }
+                                </span>
+                            </p>
+                        </div>
+                        <div class="field">
+                            <label>Ngày bắt đầu</label>
+                            <p>${ detail.StartDate }</p>
+                        </div>
+                        <div class="field">
+                            <label>Ngày kết thúc</label>
+                            <p>${ detail.EndDate || 'Chưa hoàn tất' }</p>
+                        </div>
+                        <div class="field">
+                            <label>Ngày tạo</label>
+                            <p>${ detail.CreatedAt }</p>
+                        </div>
+                        <div class="field field-full">
+                            <label>Mô tả lỗi</label>
+                            <p>${ detail.ErrorDescription || 'Không có mô tả' }</p>
+                        </div>
+                        <div class="field field-full">
+                            <label>Mô tả chi tiết</label>
+                            <p>${ detail.Description || 'Không có' }</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Xử lý & Chi phí -->
+                <div class="detail-section">
+                    <h4><i class="fa-solid fa-screwdriver-wrench" style="margin-right:6px"></i> Xử lý & Chi phí</h4>
+                    <div class="detail-grid-maint">
+                        <div class="field field-full">
+                            <label>Biện pháp xử lý</label>
+                            <p>${ detail.ActionTaken || 'Chưa có biện pháp' }</p>
+                        </div>
+                        <div class="field">
+                            <label>Linh kiện thay thế</label>
+                            <p>${ detail.PartReplaced || '—' }</p>
+                        </div>
+                        <div class="field">
+                            <label>Đơn vị sửa chữa</label>
+                            <p>${ detail.Vendor || 'Nội bộ' }</p>
+                        </div>
+                        <div class="field">
+                            <label>Chi phí</label>
+                            <p class="cost-cell">${ detail.Cost ? formatCurrency(detail.Cost) : 'Chưa phát sinh' }</p>
+                        </div>
+                        <div class="field" v-if="detail.ClosedAt">
+                            <label>Ngày đóng ca</label>
+                            <p>${ detail.ClosedAt }</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer actions -->
+            <div class="modal-footer" v-if="detail && detail.Status !== 'closed'">
+                <button class="btn-cancel" @@click="showDetailModal = false">Đóng</button>
+
+                <button class="btn-progress"
+                        v-if="detail.Status === 'open'"
+                        @@click="updateStatus(detail.Id, 'in_progress')">
+                    <i class="fa-solid fa-play"></i> Bắt đầu sửa
+                </button>
+
+                <button class="btn-close-log"
+                        v-if="detail.Status === 'in_progress'"
+                        @@click="showCloseForm = !showCloseForm">
+                    <i class="fa-solid fa-check"></i> Đóng ca sửa chữa
+                </button>
+            </div>
+
+            <!-- Form đóng ca (hiện khi click "Đóng ca") -->
+            <div style="padding:0 24px 20px" v-if="showCloseForm && detail && detail.Status === 'in_progress'">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px">
+                    <h4 style="margin:0 0 12px;font-size:13px;color:#15803d">
+                        <i class="fa-solid fa-clipboard-check"></i> Hoàn tất ca sửa chữa
+                    </h4>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Biện pháp đã xử lý</label>
+                            <textarea v-model="closeForm.ActionTaken"
+                                      placeholder="Mô tả biện pháp đã thực hiện..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Linh kiện thay thế</label>
+                            <input v-model="closeForm.PartReplaced"
+                                   placeholder="Ví dụ: Ổ cứng SSD 256GB" />
+                        </div>
+                        <div class="form-group">
+                            <label>Đơn vị sửa chữa</label>
+                            <input v-model="closeForm.Vendor"
+                                   placeholder="Ví dụ: Nội bộ, Công ty ABC" />
+                        </div>
+                        <div class="form-group">
+                            <label>Chi phí (VNĐ)</label>
+                            <input type="number" v-model.number="closeForm.Cost"
+                                   placeholder="0" />
+                        </div>
+                        <div class="form-group" style="justify-content:flex-end">
+                            <button class="btn-submit" @@click="closeLog()">
+                                <i class="fa-solid fa-check-double"></i> Xác nhận đóng ca
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══ MODAL: TẠO CA MỚI ═══ -->
+    <div class="modal-overlay"
+         v-if="showCreateModal"
+         @@click.self="showCreateModal = false">
+
+        <div class="modal-panel">
+
+            <div class="modal-top">
+                <h3>
+                    <i class="fa-solid fa-plus-circle" style="color:#2563eb;margin-right:8px"></i>
+                    Tạo ca sửa chữa mới
+                    <span v-if="createFromDevice" style="font-size:13px;color:#94a3b8;font-weight:400">
+                        — ${ createFromDevice.ItemName }
+                    </span>
+                </h3>
+                <button class="modal-close" @@click="showCreateModal = false">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-grid">
+
+                    <div class="form-group full" v-if="!createFromDevice">
+                        <label>Chọn thiết bị <span class="required">*</span></label>
+                        <select v-model="newLog.InventoryId">
+                            <option :value="0" disabled>— Chọn thiết bị —</option>
+                            <option v-for="d in deviceList"
+                                    :key="d.Id"
+                                    :value="d.Id">
+                                ${ d.ItemName } — ${ d.SerialNumber || 'N/A' } (${ d.DepartmentName || '' })
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full" v-if="createFromDevice">
+                        <label>Thiết bị</label>
+                        <div class="prefilled-device">
+                            <i class="fa-solid fa-microchip"></i>
+                            ${ createFromDevice.ItemName }
+                            <small v-if="createFromDevice.SerialNumber">(${ createFromDevice.SerialNumber })</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Tiêu đề <span class="required">*</span></label>
+                        <input v-model="newLog.Title"
+                               placeholder="Ví dụ: Máy tính không khởi động" />
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Mô tả lỗi</label>
+                        <textarea v-model="newLog.ErrorDescription"
+                                  placeholder="Mô tả chi tiết triệu chứng lỗi..."></textarea>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Mô tả chung</label>
+                        <textarea v-model="newLog.Description"
+                                  placeholder="Thông tin bổ sung..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mức ưu tiên</label>
+                        <select v-model="newLog.Priority">
+                            <option value="low">Thấp</option>
+                            <option value="normal">Bình thường</option>
+                            <option value="high">Cao</option>
+                            <option value="critical">Khẩn cấp</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ngày bắt đầu</label>
+                        <input type="date" v-model="newLog.StartDate" />
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" @@click="showCreateModal = false">Hủy</button>
+                <button class="btn-submit"
+                        @@click="createLog()"
+                        :disabled="!newLog.InventoryId || !newLog.Title">
+                    <i class="fa-solid fa-paper-plane"></i> Tạo ca sửa chữa
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script src="~/Addon/vue/vue.js"></script>
+    <script src="~/Scripts/app/maintenance.js"></script>
+}
