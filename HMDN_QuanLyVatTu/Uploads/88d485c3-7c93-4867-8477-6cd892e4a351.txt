@@ -1,0 +1,769 @@
+-- ============================================================
+--  HOSPITAL ASSET MANAGEMENT SYSTEM
+--  Database: SQL Server 2016+
+--  Encoding : UTF-8
+--  Created  : 2025
+-- ============================================================
+
+USE master;
+GO
+IF DB_ID('HospitalAssetDB') IS NOT NULL
+    DROP DATABASE HospitalAssetDB;
+GO
+CREATE DATABASE HospitalAssetDB
+    COLLATE Vietnamese_CI_AS;
+GO
+USE HospitalAssetDB;
+GO
+
+-- ============================================================
+--  SECTION 1 — AUTHENTICATION & USERS
+-- ============================================================
+
+CREATE TABLE Departments (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Code        NVARCHAR(20)  NOT NULL UNIQUE,
+    Name        NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(500) NULL,
+    IsActive    BIT           NOT NULL DEFAULT 1,
+    CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE Roles (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Code        VARCHAR(50)   NOT NULL UNIQUE,   -- 'admin','manager','technician','viewer'
+    Name        NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(300) NULL
+);
+
+INSERT INTO Roles (Code, Name) VALUES
+('admin',       N'Quản trị hệ thống'),
+('manager',     N'Quản lý vật tư'),
+('technician',  N'Kỹ thuật viên'),
+('approver',    N'Người duyệt'),
+('viewer',      N'Xem báo cáo');
+
+CREATE TABLE Users (
+    Id           INT IDENTITY(1,1) PRIMARY KEY,
+    Username     VARCHAR(100)  NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(256) NOT NULL,          -- BCrypt / SHA-256
+    FullName     NVARCHAR(200) NOT NULL,
+    Email        NVARCHAR(200) NULL UNIQUE,
+    Phone        VARCHAR(20)   NULL,
+    DepartmentId INT           NULL REFERENCES Departments(Id),
+    AvatarUrl    NVARCHAR(500) NULL,
+    IsActive     BIT           NOT NULL DEFAULT 1,
+    LastLoginAt  DATETIME2     NULL,
+    CreatedAt    DATETIME2     NOT NULL DEFAULT GETDATE(),
+    UpdatedAt    DATETIME2     NULL
+);
+
+CREATE TABLE UserRoles (
+    UserId  INT NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+    RoleId  INT NOT NULL REFERENCES Roles(Id)  ON DELETE CASCADE,
+    PRIMARY KEY (UserId, RoleId)
+);
+
+-- Session table (dùng cho Session Auth ASP.NET)
+CREATE TABLE UserSessions (
+    Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    UserId      INT           NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+    SessionKey  VARCHAR(128)  NOT NULL UNIQUE,    -- GUID hoặc random token
+    IpAddress   VARCHAR(45)   NULL,
+    UserAgent   NVARCHAR(500) NULL,
+    CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE(),
+    ExpiresAt   DATETIME2     NOT NULL,
+    IsRevoked   BIT           NOT NULL DEFAULT 0
+);
+
+-- ============================================================
+--  SECTION 2 — CATALOG: GROUPS & ITEMS
+-- ============================================================
+
+-- Nhóm sản phẩm (Máy tính, Máy in, Switch, Camera, UPS, Bàn ghế...)
+CREATE TABLE Groups (
+    Id             INT IDENTITY(1,1) PRIMARY KEY,
+    Code           VARCHAR(50)   NOT NULL UNIQUE,
+    Name           NVARCHAR(200) NOT NULL,
+    Icon           VARCHAR(100)  NULL,            -- css class hoặc tên icon
+    DefaultCycleId INT           NULL,            -- FK sẽ thêm sau
+    Description    NVARCHAR(500) NULL,
+    IsActive       BIT           NOT NULL DEFAULT 1,
+    SortOrder      INT           NOT NULL DEFAULT 0,
+    CreatedAt      DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+INSERT INTO Groups (Code, Name, Icon, SortOrder) VALUES
+('PC',       N'Máy tính',             'fa-desktop',       1),
+('PRINTER',  N'Máy in',               'fa-print',         2),
+('SWITCH',   N'Switch mạng',          'fa-network-wired', 3),
+('CAMERA',   N'Camera',               'fa-camera',        4),
+('UPS',      N'Bộ lưu điện (UPS)',    'fa-battery-full',  5),
+('FURNITURE',N'Bàn ghế',              'fa-chair',         6),
+('ELECTRIC', N'Thiết bị điện',        'fa-bolt',          7),
+('OFFICE',   N'Văn phòng phẩm',       'fa-pencil-alt',    8);
+
+-- Loại / Model sản phẩm (template, không phải vật thể thực)
+CREATE TABLE Items (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    GroupId     INT           NOT NULL REFERENCES Groups(Id),
+    Code        VARCHAR(100)  NOT NULL UNIQUE,    -- mã model nội bộ
+    Name        NVARCHAR(300) NOT NULL,
+    Brand       NVARCHAR(100) NULL,
+    Model       NVARCHAR(100) NULL,
+    Unit        NVARCHAR(50)  NOT NULL DEFAULT N'Cái',  -- Cái, Bộ, Hộp...
+    Description NVARCHAR(1000)NULL,
+    ImageUrl    NVARCHAR(500) NULL,
+    IsActive    BIT           NOT NULL DEFAULT 1,
+    CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE(),
+    UpdatedAt   DATETIME2     NULL
+);
+CREATE INDEX IX_Items_GroupId ON Items(GroupId);
+
+-- ============================================================
+--  SECTION 3 — ATTRIBUTE SYSTEM (3 tầng scope)
+-- ============================================================
+
+-- Định nghĩa thuộc tính — dùng chung 3 tầng: global / group / item
+CREATE TABLE AttributeDefinitions (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Scope       VARCHAR(10)   NOT NULL CHECK(Scope IN ('global','group','item')),
+    GroupId     INT           NULL REFERENCES Groups(Id),   -- khi Scope = 'group'
+    ItemId      INT           NULL REFERENCES Items(Id),    -- khi Scope = 'item'
+    FieldKey    VARCHAR(100)  NOT NULL,       -- key lập trình, VD: 'cpu_speed'
+    Label       NVARCHAR(200) NOT NULL,       -- hiển thị: 'Tốc độ CPU'
+    DataType    VARCHAR(20)   NOT NULL DEFAULT 'text'
+                              CHECK(DataType IN ('text','number','date','boolean','select')),
+    SelectOptions NVARCHAR(2000) NULL,        -- JSON array nếu DataType = 'select'
+    IsRequired  BIT           NOT NULL DEFAULT 0,
+    SortOrder   INT           NOT NULL DEFAULT 0,
+    IsActive    BIT           NOT NULL DEFAULT 1,
+    CONSTRAINT UQ_AttrDef UNIQUE (Scope, GroupId, ItemId, FieldKey)
+);
+
+-- Giá trị thuộc tính — gắn vào từng record tồn kho
+CREATE TABLE AttributeValues (
+    Id                 BIGINT IDENTITY(1,1) PRIMARY KEY,
+    InventoryId        INT           NOT NULL,   -- FK thêm sau
+    AttributeDefId     INT           NOT NULL REFERENCES AttributeDefinitions(Id),
+    ValueText          NVARCHAR(2000)NULL,
+    ValueNumber        DECIMAL(18,4) NULL,
+    ValueDate          DATE          NULL,
+    ValueBoolean       BIT           NULL,
+    UpdatedAt          DATETIME2     NULL
+);
+CREATE INDEX IX_AttrVal_Inventory ON AttributeValues(InventoryId);
+
+-- ============================================================
+--  SECTION 4 — CHECK CYCLES (Chu kỳ kiểm tra)
+-- ============================================================
+
+CREATE TABLE CheckCycles (
+    Id           INT IDENTITY(1,1) PRIMARY KEY,
+    Name         NVARCHAR(200) NOT NULL,
+    CycleType    VARCHAR(20)   NOT NULL CHECK(CycleType IN ('daily','weekly','monthly','yearly')),
+    -- RepeatOn: JSON array
+    --   weekly  → [1,3,5]       = thứ 2, 4, 6 (1=CN, 2=T2...7=T7)
+    --   monthly → [1,15]        = ngày 1 và 15 hàng tháng
+    --             hoặc [3,9]    = tháng 3 và tháng 9 (kết hợp với yearly)
+    --   yearly  → [3,9]         = tháng 3 và tháng 9
+    --   daily   → null (mỗi ngày)
+    RepeatOn     VARCHAR(200)  NULL,             -- JSON: "[1,3,5]"
+    IsRepeat     BIT           NOT NULL DEFAULT 1,  -- lặp lại vô hạn
+    RepeatCount  INT           NULL,             -- lặp bao nhiêu lần (null = vô hạn)
+    EndDate      DATE          NULL,             -- ngày kết thúc (null = không giới hạn)
+    Description  NVARCHAR(500) NULL,
+    IsActive     BIT           NOT NULL DEFAULT 1,
+    CreatedAt    DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+-- Ví dụ dữ liệu mẫu
+INSERT INTO CheckCycles (Name, CycleType, RepeatOn, IsRepeat, Description) VALUES
+(N'Kiểm tra hàng ngày',             'daily',   NULL,       1, N'Kiểm tra mỗi ngày làm việc'),
+(N'Kiểm tra hàng tuần (T2,T6)',     'weekly',  '[2,6]',    1, N'Mỗi thứ 2 và thứ 6'),
+(N'Bảo trì hàng tháng',             'monthly', '[1]',      1, N'Ngày đầu mỗi tháng'),
+(N'Kiểm định 3 tháng',              'monthly', '[1,4,7,10]',1,N'Tháng 1,4,7,10'),
+(N'Bảo dưỡng 6 tháng',              'monthly', '[3,9]',    1, N'Tháng 3 và tháng 9'),
+(N'Kiểm định năm',                  'yearly',  '[1]',      1, N'Tháng 1 hàng năm'),
+(N'Thay mực/vật tư định kỳ',        'monthly', '[1,15]',   1, N'Ngày 1 và 15 hàng tháng');
+
+-- Thêm FK cho Groups
+ALTER TABLE Groups
+    ADD CONSTRAINT FK_Groups_DefaultCycle
+    FOREIGN KEY (DefaultCycleId) REFERENCES CheckCycles(Id);
+
+-- ============================================================
+--  SECTION 5 — INVENTORY (Tồn kho / Tài sản thực tế)
+-- ============================================================
+
+CREATE TABLE Locations (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Code        VARCHAR(50)   NOT NULL UNIQUE,
+    Name        NVARCHAR(200) NOT NULL,           -- 'Phòng CNTT', 'Kho B', 'Phòng 301'
+    Floor       VARCHAR(20)   NULL,
+    Building    NVARCHAR(100) NULL,
+    DepartmentId INT          NULL REFERENCES Departments(Id),
+    IsActive    BIT           NOT NULL DEFAULT 1
+);
+
+-- Tình trạng: pending=Chờ duyệt, approved=Đã duyệt, rejected=Không duyệt
+-- LifeStatus: active=Đang dùng, suspended=Tạm ngưng, disposed=Thanh lý, replaced=Thay mới
+CREATE TABLE Inventory (
+    Id                  INT IDENTITY(1,1) PRIMARY KEY,
+    AssetCode           VARCHAR(50)   NOT NULL UNIQUE,   -- Mã tài sản nội bộ, VD: PC-2024-001
+    ItemId              INT           NOT NULL REFERENCES Items(Id),
+    SerialNumber        NVARCHAR(100) NULL,
+    Quantity            INT           NOT NULL DEFAULT 1,
+    LocationId          INT           NULL REFERENCES Locations(Id),
+    DepartmentId        INT           NULL REFERENCES Departments(Id),
+    ImportDate          DATE          NOT NULL,
+    ExpiryDate          DATE          NULL,              -- Hạn sử dụng
+    WarrantyExpiry      DATE          NULL,              -- Hạn bảo hành
+    CheckCycleId        INT           NULL REFERENCES CheckCycles(Id),
+    UnitPrice           DECIMAL(18,2) NOT NULL DEFAULT 0,
+    TotalPrice          DECIMAL(18,2) NOT NULL DEFAULT 0,
+    DepreciationRate    DECIMAL(5,2)  NULL,              -- % khấu hao / năm, null = không khấu hao
+    DepreciationYears   INT           NULL,              -- số năm khấu hao
+    ResidualValue       DECIMAL(18,2) NULL,              -- Giá trị còn lại hiện tại
+    -- Trạng thái duyệt
+    ApprovalStatus      VARCHAR(20)   NOT NULL DEFAULT 'pending'
+                        CHECK(ApprovalStatus IN ('pending','approved','rejected')),
+    ApprovalNote        NVARCHAR(500) NULL,
+    ApprovedBy          INT           NULL REFERENCES Users(Id),
+    ApprovedAt          DATETIME2     NULL,
+    -- Vòng đời
+    LifeStatus          VARCHAR(20)   NOT NULL DEFAULT 'active'
+                        CHECK(LifeStatus IN ('active','suspended','disposed','replaced')),
+    SuspendedAt         DATETIME2     NULL,
+    SuspendReason       NVARCHAR(500) NULL,
+    ActivatedAt         DATETIME2     NULL,
+    DisposedAt          DATETIME2     NULL,
+    DisposalReason      NVARCHAR(500) NULL,
+    ReplacedByInventoryId INT         NULL,              -- FK self-reference
+    -- QR
+    QrCode              NVARCHAR(500) NULL UNIQUE,       -- URL hoặc token QR
+    -- Audit
+    Note                NVARCHAR(1000)NULL,
+    CreatedBy           INT           NOT NULL REFERENCES Users(Id),
+    UpdatedBy           INT           NULL REFERENCES Users(Id),
+    CreatedAt           DATETIME2     NOT NULL DEFAULT GETDATE(),
+    UpdatedAt           DATETIME2     NULL
+);
+CREATE INDEX IX_Inventory_ItemId       ON Inventory(ItemId);
+CREATE INDEX IX_Inventory_LocationId   ON Inventory(LocationId);
+CREATE INDEX IX_Inventory_DepartmentId ON Inventory(DepartmentId);
+CREATE INDEX IX_Inventory_LifeStatus   ON Inventory(LifeStatus);
+CREATE INDEX IX_Inventory_ApprovalStatus ON Inventory(ApprovalStatus);
+
+-- FK ngược AttributeValues → Inventory
+ALTER TABLE AttributeValues
+    ADD CONSTRAINT FK_AttrVal_Inventory
+    FOREIGN KEY (InventoryId) REFERENCES Inventory(Id) ON DELETE CASCADE;
+
+-- Self-reference thay thế
+ALTER TABLE Inventory
+    ADD CONSTRAINT FK_Inventory_ReplacedBy
+    FOREIGN KEY (ReplacedByInventoryId) REFERENCES Inventory(Id);
+
+-- ============================================================
+--  SECTION 6 — DEPRECIATION (Khấu hao)
+-- ============================================================
+
+-- Lưu lịch sử tính khấu hao hàng năm
+CREATE TABLE DepreciationLogs (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id),
+    Year            INT           NOT NULL,
+    OpeningValue    DECIMAL(18,2) NOT NULL,
+    DepreciationAmt DECIMAL(18,2) NOT NULL,
+    ClosingValue    DECIMAL(18,2) NOT NULL,
+    Note            NVARCHAR(500) NULL,
+    CalculatedAt    DATETIME2     NOT NULL DEFAULT GETDATE(),
+    CalculatedBy    INT           NULL REFERENCES Users(Id),
+    CONSTRAINT UQ_Depreciation UNIQUE (InventoryId, Year)
+);
+
+-- ============================================================
+--  SECTION 7 — CHECKLIST DEFINITIONS (Hạng mục kiểm tra)
+-- ============================================================
+
+-- Template hạng mục (3 tầng: global / group / item)
+CREATE TABLE ChecklistDefinitions (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Scope       VARCHAR(10)   NOT NULL CHECK(Scope IN ('global','group','item')),
+    GroupId     INT           NULL REFERENCES Groups(Id),
+    ItemId      INT           NULL REFERENCES Items(Id),
+    CycleType   VARCHAR(20)   NULL CHECK(CycleType IN ('daily','weekly','monthly','yearly',NULL)),
+    -- null = áp dụng cho mọi chu kỳ
+    CheckName   NVARCHAR(300) NOT NULL,    -- 'Kiểm tra nguồn điện', 'Vệ sinh bộ lọc'
+    Description NVARCHAR(500) NULL,
+    IsRequired  BIT           NOT NULL DEFAULT 1,
+    SortOrder   INT           NOT NULL DEFAULT 0,
+    IsActive    BIT           NOT NULL DEFAULT 1,
+    CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+-- Dữ liệu mẫu: global checks
+INSERT INTO ChecklistDefinitions (Scope, CycleType, CheckName, SortOrder) VALUES
+('global', NULL,      N'Kiểm tra ngoại quan, trầy xước, hư hỏng vật lý', 1),
+('global', NULL,      N'Kiểm tra nguồn điện và đèn báo hiệu',             2),
+('global', NULL,      N'Kiểm tra nhãn mã tài sản còn nguyên vẹn',         3),
+('global', 'monthly', N'Vệ sinh thiết bị',                                 4),
+('global', 'yearly',  N'Kiểm định định kỳ theo quy định bệnh viện',        5);
+
+-- ============================================================
+--  SECTION 8 — CHECKLIST SCHEDULE & LOGS
+-- ============================================================
+
+-- Lịch kiểm tra được sinh ra tự động từ CheckCycles
+-- (hệ thống/background job tạo bản ghi này theo chu kỳ)
+CREATE TABLE ChecklistSchedules (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id),
+    ScheduledDate   DATE          NOT NULL,           -- ngày dự kiến kiểm tra
+    CycleType       VARCHAR(20)   NOT NULL,
+    Status          VARCHAR(20)   NOT NULL DEFAULT 'pending'
+                    CHECK(Status IN ('pending','done','overdue','skipped')),
+    DueDate         DATE          NOT NULL,           -- hạn chót phải hoàn thành
+    AssignedTo      INT           NULL REFERENCES Users(Id),
+    CreatedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_CkSched_InventoryId   ON ChecklistSchedules(InventoryId);
+CREATE INDEX IX_CkSched_ScheduledDate ON ChecklistSchedules(ScheduledDate);
+CREATE INDEX IX_CkSched_Status        ON ChecklistSchedules(Status);
+
+-- Kết quả 1 đợt kiểm tra (scan QR → tạo log này)
+CREATE TABLE ChecklistLogs (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    ScheduleId      INT           NULL REFERENCES ChecklistSchedules(Id),
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id),
+    CheckedBy       INT           NOT NULL REFERENCES Users(Id),
+    CheckedAt       DATETIME2     NOT NULL DEFAULT GETDATE(),
+    CycleType       VARCHAR(20)   NOT NULL,
+    OverallResult   VARCHAR(20)   NOT NULL DEFAULT 'pass'
+                    CHECK(OverallResult IN ('pass','fail','partial')),
+    Note            NVARCHAR(2000)NULL,
+    -- Thông tin QR scan
+    QrScannedAt     DATETIME2     NULL,
+    QrLocation      NVARCHAR(200) NULL,   -- GPS hoặc vị trí ghi lại lúc scan
+    ImageUrls       NVARCHAR(2000)NULL    -- JSON array ảnh chụp đính kèm
+);
+CREATE INDEX IX_CkLog_InventoryId ON ChecklistLogs(InventoryId);
+CREATE INDEX IX_CkLog_CheckedAt   ON ChecklistLogs(CheckedAt);
+
+-- Chi tiết từng hạng mục trong đợt kiểm tra
+CREATE TABLE ChecklistLogItems (
+    Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+    LogId           INT           NOT NULL REFERENCES ChecklistLogs(Id) ON DELETE CASCADE,
+    DefinitionId    INT           NOT NULL REFERENCES ChecklistDefinitions(Id),
+    IsPassed        BIT           NOT NULL DEFAULT 1,
+    Note            NVARCHAR(500) NULL
+);
+CREATE INDEX IX_CkLogItem_LogId ON ChecklistLogItems(LogId);
+
+-- ============================================================
+--  SECTION 9 — MAINTENANCE & REPAIR LOGS (Bảo trì / Sửa chữa)
+-- ============================================================
+
+CREATE TABLE MaintenanceLogs (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id),
+    MaintenanceType VARCHAR(30)   NOT NULL
+                    CHECK(MaintenanceType IN ('preventive','corrective','emergency','replacement_part')),
+    -- preventive  = bảo dưỡng định kỳ
+    -- corrective  = sửa chữa sau hỏng
+    -- emergency   = sửa khẩn cấp
+    -- replacement_part = thay linh kiện
+    Title           NVARCHAR(300) NOT NULL,
+    Description     NVARCHAR(2000)NULL,
+    ErrorDescription NVARCHAR(2000) NULL,   -- mô tả lỗi (nếu có)
+    ActionTaken     NVARCHAR(2000) NULL,    -- hành động đã thực hiện
+    Cost            DECIMAL(18,2) NULL,
+    PartReplaced    NVARCHAR(500) NULL,     -- linh kiện thay thế
+    Vendor          NVARCHAR(200) NULL,     -- đơn vị sửa chữa bên ngoài
+    StartDate       DATE          NOT NULL,
+    EndDate         DATE          NULL,
+    Status          VARCHAR(20)   NOT NULL DEFAULT 'open'
+                    CHECK(Status IN ('open','in_progress','closed','cancelled')),
+    Priority        VARCHAR(10)   NOT NULL DEFAULT 'normal'
+                    CHECK(Priority IN ('low','normal','high','critical')),
+    AssignedTo      INT           NULL REFERENCES Users(Id),
+    ReportedBy      INT           NOT NULL REFERENCES Users(Id),
+    ClosedBy        INT           NULL REFERENCES Users(Id),
+    ClosedAt        DATETIME2     NULL,
+    ImageUrls       NVARCHAR(2000)NULL,     -- JSON array ảnh
+    CreatedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_MaintLog_InventoryId ON MaintenanceLogs(InventoryId);
+CREATE INDEX IX_MaintLog_Status      ON MaintenanceLogs(Status);
+CREATE INDEX IX_MaintLog_StartDate   ON MaintenanceLogs(StartDate);
+
+-- Lịch sử trạng thái sửa chữa
+CREATE TABLE MaintenanceStatusLogs (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    MaintenanceLogId INT          NOT NULL REFERENCES MaintenanceLogs(Id) ON DELETE CASCADE,
+    OldStatus       VARCHAR(20)   NULL,
+    NewStatus       VARCHAR(20)   NOT NULL,
+    Note            NVARCHAR(500) NULL,
+    ChangedBy       INT           NOT NULL REFERENCES Users(Id),
+    ChangedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+-- ============================================================
+--  SECTION 10 — ALERTS & NOTIFICATIONS
+-- ============================================================
+
+-- Cấu hình rule cảnh báo
+CREATE TABLE AlertRules (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    Code            VARCHAR(100)  NOT NULL UNIQUE,
+    Name            NVARCHAR(300) NOT NULL,
+    AlertType       VARCHAR(50)   NOT NULL,
+    -- 'checklist_due'       = đến hạn kiểm tra (N ngày trước)
+    -- 'checklist_overdue'   = quá hạn checklist
+    -- 'multi_fault'         = lỗi nhiều lần trong khoảng thời gian
+    -- 'depreciation_end'    = gần hết khấu hao
+    -- 'expiry_soon'         = gần hết hạn sử dụng
+    -- 'warranty_expiry'     = gần hết bảo hành
+    ThresholdDays   INT           NULL,    -- cảnh báo trước N ngày
+    ThresholdCount  INT           NULL,    -- số lần lỗi (cho multi_fault)
+    ThresholdPeriodDays INT       NULL,    -- trong N ngày (cho multi_fault)
+    IsActive        BIT           NOT NULL DEFAULT 1,
+    Description     NVARCHAR(500) NULL
+);
+
+INSERT INTO AlertRules (Code, Name, AlertType, ThresholdDays, ThresholdCount, ThresholdPeriodDays) VALUES
+('CHECKLIST_DUE_3D',    N'Đến hạn kiểm tra (3 ngày)',     'checklist_due',      3,    NULL, NULL),
+('CHECKLIST_OVERDUE',   N'Quá hạn checklist',              'checklist_overdue',  0,    NULL, NULL),
+('MULTI_FAULT_3X',      N'Lỗi ≥ 3 lần trong 30 ngày',     'multi_fault',        NULL, 3,    30),
+('DEPRECIATION_END_30D',N'Gần hết khấu hao (30 ngày)',     'depreciation_end',   30,   NULL, NULL),
+('EXPIRY_SOON_60D',     N'Gần hết hạn sử dụng (60 ngày)', 'expiry_soon',        60,   NULL, NULL),
+('WARRANTY_EXPIRY_30D', N'Gần hết bảo hành (30 ngày)',     'warranty_expiry',    30,   NULL, NULL);
+
+-- Bảng cảnh báo thực tế phát sinh
+CREATE TABLE Alerts (
+    Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+    AlertRuleId     INT           NOT NULL REFERENCES AlertRules(Id),
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id),
+    Title           NVARCHAR(300) NOT NULL,
+    Body            NVARCHAR(1000)NULL,
+    Severity        VARCHAR(10)   NOT NULL DEFAULT 'warning'
+                    CHECK(Severity IN ('info','warning','danger')),
+    IsResolved      BIT           NOT NULL DEFAULT 0,
+    ResolvedBy      INT           NULL REFERENCES Users(Id),
+    ResolvedAt      DATETIME2     NULL,
+    CreatedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_Alerts_InventoryId  ON Alerts(InventoryId);
+CREATE INDEX IX_Alerts_IsResolved   ON Alerts(IsResolved);
+CREATE INDEX IX_Alerts_CreatedAt    ON Alerts(CreatedAt);
+
+-- Thông báo gửi tới từng user (popup realtime qua Socket.IO)
+CREATE TABLE Notifications (
+    Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+    UserId          INT           NOT NULL REFERENCES Users(Id),
+    AlertId         BIGINT        NULL REFERENCES Alerts(Id),
+    Type            VARCHAR(50)   NOT NULL,   -- 'alert','chat','system','approval'
+    Title           NVARCHAR(300) NOT NULL,
+    Body            NVARCHAR(1000)NULL,
+    Url             NVARCHAR(500) NULL,        -- link điều hướng khi click
+    IsRead          BIT           NOT NULL DEFAULT 0,
+    ReadAt          DATETIME2     NULL,
+    CreatedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_Notif_UserId    ON Notifications(UserId);
+CREATE INDEX IX_Notif_IsRead    ON Notifications(IsRead);
+CREATE INDEX IX_Notif_CreatedAt ON Notifications(CreatedAt);
+
+-- ============================================================
+--  SECTION 11 — QR CODES
+-- ============================================================
+
+CREATE TABLE QrCodes (
+    Id              INT IDENTITY(1,1) PRIMARY KEY,
+    InventoryId     INT           NOT NULL REFERENCES Inventory(Id) ON DELETE CASCADE,
+    Token           VARCHAR(128)  NOT NULL UNIQUE,   -- token ngẫu nhiên để sinh URL
+    QrImageUrl      NVARCHAR(500) NULL,              -- link ảnh QR đã generate
+    IsActive        BIT           NOT NULL DEFAULT 1,
+    GeneratedBy     INT           NOT NULL REFERENCES Users(Id),
+    GeneratedAt     DATETIME2     NOT NULL DEFAULT GETDATE(),
+    LastScannedAt   DATETIME2     NULL,
+    ScanCount       INT           NOT NULL DEFAULT 0
+);
+CREATE INDEX IX_QrCodes_InventoryId ON QrCodes(InventoryId);
+
+-- Log mỗi lần scan QR
+CREATE TABLE QrScanLogs (
+    Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+    QrCodeId        INT           NOT NULL REFERENCES QrCodes(Id),
+    ScannedBy       INT           NULL REFERENCES Users(Id),
+    IpAddress       VARCHAR(45)   NULL,
+    UserAgent       NVARCHAR(500) NULL,
+    GpsLocation     NVARCHAR(200) NULL,    -- "lat,lng" nếu có
+    ScannedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+
+-- ============================================================
+--  SECTION 12 — CHAT NỘI BỘ (Socket.IO)
+-- ============================================================
+
+CREATE TABLE ChatRooms (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Type        VARCHAR(20)   NOT NULL CHECK(Type IN ('direct','group','channel')),
+    Name        NVARCHAR(200) NULL,         -- null nếu direct
+    Description NVARCHAR(500) NULL,
+    CreatedBy   INT           NOT NULL REFERENCES Users(Id),
+    CreatedAt   DATETIME2     NOT NULL DEFAULT GETDATE(),
+    IsActive    BIT           NOT NULL DEFAULT 1
+);
+
+CREATE TABLE ChatRoomMembers (
+    RoomId      INT NOT NULL REFERENCES ChatRooms(Id) ON DELETE CASCADE,
+    UserId      INT NOT NULL REFERENCES Users(Id),
+    JoinedAt    DATETIME2 NOT NULL DEFAULT GETDATE(),
+    IsAdmin     BIT       NOT NULL DEFAULT 0,
+    PRIMARY KEY (RoomId, UserId)
+);
+
+CREATE TABLE ChatMessages (
+    Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+    RoomId      INT           NOT NULL REFERENCES ChatRooms(Id),
+    SenderId    INT           NOT NULL REFERENCES Users(Id),
+    Content     NVARCHAR(4000)NOT NULL,
+    MessageType VARCHAR(20)   NOT NULL DEFAULT 'text'
+                CHECK(MessageType IN ('text','image','file','system')),
+    FileUrl     NVARCHAR(500) NULL,
+    IsEdited    BIT           NOT NULL DEFAULT 0,
+    IsDeleted   BIT           NOT NULL DEFAULT 0,
+    SentAt      DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_ChatMsg_RoomId ON ChatMessages(RoomId);
+CREATE INDEX IX_ChatMsg_SentAt ON ChatMessages(SentAt);
+
+-- Trạng thái đã đọc tin nhắn
+CREATE TABLE ChatMessageReadStatus (
+    MessageId   BIGINT NOT NULL REFERENCES ChatMessages(Id) ON DELETE CASCADE,
+    UserId      INT    NOT NULL REFERENCES Users(Id),
+    ReadAt      DATETIME2 NOT NULL DEFAULT GETDATE(),
+    PRIMARY KEY (MessageId, UserId)
+);
+
+-- ============================================================
+--  SECTION 13 — AUDIT LOG (Nhật ký thao tác hệ thống)
+-- ============================================================
+
+CREATE TABLE AuditLogs (
+    Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+    UserId          INT           NULL REFERENCES Users(Id),
+    Action          VARCHAR(100)  NOT NULL,    -- 'CREATE','UPDATE','DELETE','APPROVE','SCAN_QR'
+    EntityType      VARCHAR(100)  NOT NULL,    -- 'Inventory','MaintenanceLog','ChecklistLog'
+    EntityId        NVARCHAR(50)  NOT NULL,
+    OldValues       NVARCHAR(MAX) NULL,        -- JSON snapshot trước
+    NewValues       NVARCHAR(MAX) NULL,        -- JSON snapshot sau
+    IpAddress       VARCHAR(45)   NULL,
+    UserAgent       NVARCHAR(500) NULL,
+    CreatedAt       DATETIME2     NOT NULL DEFAULT GETDATE()
+);
+CREATE INDEX IX_AuditLog_EntityType ON AuditLogs(EntityType, EntityId);
+CREATE INDEX IX_AuditLog_UserId     ON AuditLogs(UserId);
+CREATE INDEX IX_AuditLog_CreatedAt  ON AuditLogs(CreatedAt);
+
+-- ============================================================
+--  SECTION 14 — VIEWS HỖ TRỢ QUERY NHANH
+-- ============================================================
+
+-- View tổng hợp tài sản với thông tin nhóm, loại, vị trí
+CREATE VIEW vw_InventoryFull AS
+SELECT
+    inv.Id,
+    inv.AssetCode,
+    inv.SerialNumber,
+    inv.Quantity,
+    inv.ImportDate,
+    inv.ExpiryDate,
+    inv.WarrantyExpiry,
+    inv.UnitPrice,
+    inv.TotalPrice,
+    inv.DepreciationRate,
+    inv.DepreciationYears,
+    inv.ResidualValue,
+    inv.ApprovalStatus,
+    inv.LifeStatus,
+    inv.SuspendedAt,
+    inv.ActivatedAt,
+    inv.QrCode,
+    inv.Note,
+    inv.CreatedAt,
+    -- Item
+    it.Id    AS ItemId,
+    it.Code  AS ItemCode,
+    it.Name  AS ItemName,
+    it.Brand,
+    it.Model,
+    it.Unit,
+    -- Group
+    gr.Id    AS GroupId,
+    gr.Code  AS GroupCode,
+    gr.Name  AS GroupName,
+    -- Location
+    loc.Id   AS LocationId,
+    loc.Name AS LocationName,
+    loc.Floor,
+    loc.Building,
+    -- Department
+    dep.Id   AS DepartmentId,
+    dep.Name AS DepartmentName,
+    -- Cycle
+    cy.Id    AS CycleId,
+    cy.Name  AS CycleName,
+    cy.CycleType,
+    -- Users
+    uc.FullName  AS CreatedByName,
+    ua.FullName  AS ApprovedByName
+FROM Inventory inv
+    JOIN Items     it  ON inv.ItemId       = it.Id
+    JOIN Groups    gr  ON it.GroupId       = gr.Id
+    LEFT JOIN Locations   loc ON inv.LocationId   = loc.Id
+    LEFT JOIN Departments dep ON inv.DepartmentId = dep.Id
+    LEFT JOIN CheckCycles cy  ON inv.CheckCycleId = cy.Id
+    LEFT JOIN Users       uc  ON inv.CreatedBy    = uc.Id
+    LEFT JOIN Users       ua  ON inv.ApprovedBy   = ua.Id;
+
+-- View checklist quá hạn
+CREATE VIEW vw_OverdueChecklists AS
+SELECT
+    cs.Id          AS ScheduleId,
+    cs.InventoryId,
+    cs.ScheduledDate,
+    cs.DueDate,
+    cs.CycleType,
+    inv.AssetCode,
+    it.Name        AS ItemName,
+    gr.Name        AS GroupName,
+    loc.Name       AS LocationName,
+    DATEDIFF(DAY, cs.DueDate, GETDATE()) AS OverdueDays
+FROM ChecklistSchedules cs
+    JOIN Inventory inv ON cs.InventoryId = inv.Id
+    JOIN Items     it  ON inv.ItemId     = it.Id
+    JOIN Groups    gr  ON it.GroupId     = gr.Id
+    LEFT JOIN Locations loc ON inv.LocationId = loc.Id
+WHERE cs.Status = 'pending'
+  AND cs.DueDate < CAST(GETDATE() AS DATE);
+
+-- View tài sản gần hết hạn / bảo hành / khấu hao
+CREATE VIEW vw_ExpiryAlerts AS
+SELECT
+    inv.Id,
+    inv.AssetCode,
+    it.Name        AS ItemName,
+    gr.Name        AS GroupName,
+    dep.Name       AS DepartmentName,
+    inv.ExpiryDate,
+    inv.WarrantyExpiry,
+    inv.DepreciationRate,
+    DATEDIFF(DAY, GETDATE(), inv.ExpiryDate)       AS DaysUntilExpiry,
+    DATEDIFF(DAY, GETDATE(), inv.WarrantyExpiry)    AS DaysUntilWarrantyEnd
+FROM Inventory inv
+    JOIN Items     it  ON inv.ItemId       = it.Id
+    JOIN Groups    gr  ON it.GroupId       = gr.Id
+    LEFT JOIN Departments dep ON inv.DepartmentId = dep.Id
+WHERE inv.LifeStatus = 'active'
+  AND inv.ApprovalStatus = 'approved'
+  AND (
+      (inv.ExpiryDate      IS NOT NULL AND DATEDIFF(DAY, GETDATE(), inv.ExpiryDate)    <= 90)
+   OR (inv.WarrantyExpiry  IS NOT NULL AND DATEDIFF(DAY, GETDATE(), inv.WarrantyExpiry)<= 30)
+  );
+
+-- ============================================================
+--  SECTION 15 — STORED PROCEDURES TIỆN ÍCH
+-- ============================================================
+
+-- SP: Lấy tất cả hạng mục checklist cho 1 tài sản (merge 3 tầng)
+GO
+CREATE PROCEDURE sp_GetChecklistForInventory
+    @InventoryId INT,
+    @CycleType   VARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @ItemId INT, @GroupId INT;
+    SELECT @ItemId = inv.ItemId, @GroupId = gr.Id
+    FROM Inventory inv
+        JOIN Items  it ON inv.ItemId = it.Id
+        JOIN Groups gr ON it.GroupId = gr.Id
+    WHERE inv.Id = @InventoryId;
+
+    SELECT cd.*
+    FROM ChecklistDefinitions cd
+    WHERE cd.IsActive = 1
+      AND (cd.CycleType IS NULL OR @CycleType IS NULL OR cd.CycleType = @CycleType)
+      AND (
+            (cd.Scope = 'global')
+         OR (cd.Scope = 'group' AND cd.GroupId = @GroupId)
+         OR (cd.Scope = 'item'  AND cd.ItemId  = @ItemId)
+          )
+    ORDER BY cd.Scope, cd.SortOrder;
+END;
+GO
+
+-- SP: Sinh lịch kiểm tra cho tháng tiếp theo
+CREATE PROCEDURE sp_GenerateChecklistSchedules
+    @FromDate DATE,
+    @ToDate   DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Chỉ sinh cho tài sản đang active, đã duyệt, có chu kỳ kiểm tra
+    INSERT INTO ChecklistSchedules (InventoryId, ScheduledDate, CycleType, DueDate, Status)
+    SELECT
+        inv.Id,
+        gen.ScheduledDate,
+        cy.CycleType,
+        DATEADD(DAY, 3, gen.ScheduledDate) AS DueDate,  -- cho phép 3 ngày
+        'pending'
+    FROM Inventory inv
+        JOIN CheckCycles cy ON inv.CheckCycleId = cy.Id
+        -- Tạo sequence ngày trong khoảng (dùng tally table)
+        CROSS APPLY (
+            SELECT DATEADD(DAY, n.N, @FromDate) AS ScheduledDate
+            FROM (
+                SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS N
+                FROM sys.all_objects
+            ) n
+            WHERE DATEADD(DAY, n.N, @FromDate) <= @ToDate
+        ) gen
+    WHERE inv.LifeStatus = 'active'
+      AND inv.ApprovalStatus = 'approved'
+      -- Không tạo trùng
+      AND NOT EXISTS (
+          SELECT 1 FROM ChecklistSchedules cs2
+          WHERE cs2.InventoryId   = inv.Id
+            AND cs2.ScheduledDate = gen.ScheduledDate
+      );
+END;
+GO
+
+-- SP: Thống kê dashboard
+CREATE PROCEDURE sp_DashboardSummary
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Tổng tài sản theo nhóm
+    SELECT gr.Name AS GroupName, COUNT(*) AS Total,
+           SUM(CASE WHEN inv.LifeStatus = 'active'    THEN 1 ELSE 0 END) AS Active,
+           SUM(CASE WHEN inv.LifeStatus = 'suspended' THEN 1 ELSE 0 END) AS Suspended,
+           SUM(CASE WHEN inv.LifeStatus = 'disposed'  THEN 1 ELSE 0 END) AS Disposed
+    FROM Inventory inv
+        JOIN Items  it ON inv.ItemId = it.Id
+        JOIN Groups gr ON it.GroupId = gr.Id
+    WHERE inv.ApprovalStatus = 'approved'
+    GROUP BY gr.Id, gr.Name
+    ORDER BY gr.Name;
+END;
+GO
+
+-- ============================================================
+--  END OF SCHEMA
+-- ============================================================
+PRINT 'HospitalAssetDB schema created successfully.';
+GO

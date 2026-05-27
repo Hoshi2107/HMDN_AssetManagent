@@ -336,12 +336,13 @@ var app = new Vue({
         // Ánh xạ dữ liệu từ DB sang Model Client của chat để tương thích Index.cshtml
         mapDiscussionToClient(d) {
             let content = d.Message;
-            if (d.FileType === 'IMAGE') {
-                content = '[IMAGE: ' + d.FilePath + ']';
-            } else if (d.FileType === 'FILE') {
-                content = '[FILE: ' + d.FilePath + '|' + d.FileName + ']';
-            } else if (d.FileType === 'VIDEO') {
-                content = '[VIDEO: ' + d.FilePath + '|' + d.FileName + ']';
+            let fileType = d.FileType ? d.FileType.trim().toUpperCase() : '';
+            if (fileType === 'IMAGE') {
+                content = '[IMAGE: ' + (d.FilePath || '') + ']';
+            } else if (fileType === 'FILE') {
+                content = '[FILE: ' + (d.FilePath || '') + '|' + (d.FileName || '') + ']';
+            } else if (fileType === 'VIDEO') {
+                content = '[VIDEO: ' + (d.FilePath || '') + '|' + (d.FileName || '') + ']';
             }
             return {
                 id: d.Id,
@@ -350,7 +351,7 @@ var app = new Vue({
                 time: this.formatChatTime(d.CreatedAt),
                 isSystem: false,
                 isRevoked: d.IsRevoked || false,
-                rawFileType: d.FileType,
+                rawFileType: fileType,
                 rawFilePath: d.FilePath,
                 rawFileName: d.FileName
             };
@@ -628,6 +629,19 @@ var app = new Vue({
                 msg.hideTimeout = null;
             }, 2500);
             msg.hideTimeout = timeoutId;
+        },
+        getReasonDetails() {
+            if (!this.chatMessagesList || this.chatMessagesList.length === 0) return '';
+            const firstTextMsg = this.chatMessagesList.find(m => !m.isSystem && !m.isRevoked && m.rawFileType === 'TEXT' && m.sender !== 'Người duyệt');
+            return firstTextMsg ? firstTextMsg.content : '';
+        },
+        getAdditionalNote() {
+            if (!this.selectedTicket) return '';
+            const reason = this.getReasonDetails();
+            if (this.selectedTicket.Note && this.selectedTicket.Note.trim() === reason.trim()) {
+                return '';
+            }
+            return this.selectedTicket.Note;
         }
     },
     mounted() {

@@ -81,6 +81,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             public string TicketType { get; set; }
             public string Note { get; set; }
             public int UserId { get; set; }
+            public string SenderName { get; set; }  // Tên người yêu cầu (dùng cho TicketDiscussions)
             public string ReasonDetails { get; set; }
             public System.Collections.Generic.List<TicketItemDto> Devices { get; set; }
         }
@@ -127,12 +128,17 @@ namespace HMDN_QuanLyVatTu.Controllers
                 db.SaveChanges(); // Generates ticket.Id
 
                 // 1.5. Save reason details as a text message in TicketDiscussions if present
+                // Xác định tên người gửi: ưu tiên payload.SenderName, fallback sang user.FullName
+                string resolvedSenderName = !string.IsNullOrWhiteSpace(payload.SenderName)
+                    ? payload.SenderName.Trim()
+                    : (user != null ? user.FullName : "Người yêu cầu");
+
                 if (!string.IsNullOrWhiteSpace(payload.ReasonDetails))
                 {
                     var reasonMsg = new TicketDiscussion
                     {
                         TicketId = ticket.Id,
-                        SenderName = user != null ? user.FullName : "Người yêu cầu",
+                        SenderName = resolvedSenderName,
                         Message = payload.ReasonDetails.Trim(),
                         FileType = "TEXT",
                         IsRevoked = false,
@@ -199,14 +205,15 @@ namespace HMDN_QuanLyVatTu.Controllers
                             Quantity = device.Quantity,
                             IdTicket = ticket.Id,
                             ApprovalStatus = "PENDING",
-                            LifeStatus = "NEW",
+                            LifeStatus = "active",
                             ImportDate = DateTime.Now,
                             UnitPrice = 0,
                             TotalPrice = 0,
                             CreatedBy = payload.UserId,
                             CreatedAt = DateTime.Now,
                             Note = device.Note,
-                            DepartmentId = userDeptId
+                            DepartmentId = userDeptId,
+                            QrCode = "QR-" + Guid.NewGuid().ToString("N").ToUpper()
                         };
                         db.Inventories.Add(inventory);
                     }
@@ -251,7 +258,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         var discussion = new TicketDiscussion
                         {
                             TicketId = ticket.Id,
-                            SenderName = user != null ? user.FullName : "Người dùng",
+                            SenderName = resolvedSenderName,  // Dùng tên thực của người yêu cầu
                             Message = null,
                             FilePath = relativePath,
                             FileName = originalFileName,

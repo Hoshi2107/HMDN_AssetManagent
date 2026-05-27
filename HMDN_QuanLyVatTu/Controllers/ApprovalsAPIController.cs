@@ -43,11 +43,32 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    var data = db.Database
-                        .SqlQuery<TicketDetailVM>(
-                            "EXEC sp_Approvals_GetTicketDetails @TicketId",
-                            new SqlParameter("@TicketId", ticketId)
-                        )
+                    // Dùng EF trực tiếp, project sang anonymous type trước để tránh lỗi EF projection
+                    var data = db.Inventories
+                        .Where(x => x.IdTicket == ticketId)
+                        .Select(x => new
+                        {
+                            x.Id,
+                            ItemName = x.Item != null ? x.Item.Name : "N/A",
+                            x.SerialNumber,
+                            x.Quantity,
+                            x.LifeStatus,
+                            x.ApprovalStatus,
+                            x.ApprovalNote,
+                            x.ApprovedQuantity
+                        })
+                        .ToList()
+                        .Select(x => new TicketDetailVM
+                        {
+                            Id = x.Id,
+                            ItemName = x.ItemName,
+                            SerialNumber = x.SerialNumber,
+                            Quantity = x.Quantity,
+                            LifeStatus = x.LifeStatus,
+                            ApprovalStatus = x.ApprovalStatus,
+                            ApprovalNote = x.ApprovalNote,
+                            ApprovedQuantity = x.ApprovedQuantity
+                        })
                         .ToList();
                     return Ok(data);
                 }

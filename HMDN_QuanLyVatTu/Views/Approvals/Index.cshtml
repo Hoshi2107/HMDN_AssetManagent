@@ -1778,6 +1778,24 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Thông tin bổ sung từ phiếu yêu cầu -->
+                <div class="dm-card" style="margin-top: 20px; margin-bottom: 0;">
+                    <h3><i class="fa-solid fa-file-signature"></i> Thông tin bổ sung từ phiếu yêu cầu</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 12px 0 0 0;">
+                        <div v-if="getReasonDetails()" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Lý do yêu cầu & Chi tiết</label>
+                            <p style="font-size: 13px; color: #0f172a; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 0; white-space: pre-wrap; word-break: break-word;">${ getReasonDetails() }</p>
+                        </div>
+                        <div v-if="getAdditionalNote()" style="display: flex; flex-direction: column; gap: 6px;">
+                            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Ghi chú bổ sung</label>
+                            <p style="font-size: 13px; color: #0f172a; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 0; white-space: pre-wrap; word-break: break-word;">${ getAdditionalNote() }</p>
+                        </div>
+                        <div v-if="!getReasonDetails() && !getAdditionalNote()" style="color: #94a3b8; font-style: italic; font-size: 13px; padding: 12px 0;">
+                            Không có thông tin bổ sung từ người tạo phiếu.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
