@@ -647,15 +647,7 @@
                 {
                     <div class="nav-section-label">Vận hành</div>
                     <ul>
-                        @if (HasModule("CreateTicket"))
-                        {
-                            <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
-                                <a href="@Url.Action("Create", "Tickets")">
-                                    <i class="fa-solid fa-file-circle-plus nav-icon"></i>
-                                    <span>Tạo phiếu</span>
-                                </a>
-                            </li>
-                        }
+                        
                         @if (HasModule("Alerts"))
                         {
                             <li class="nav-item @(ViewBag.ActiveNav == "Alerts" ? "active" : "")">
