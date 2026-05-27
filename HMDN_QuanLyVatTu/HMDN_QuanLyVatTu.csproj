@@ -142,6 +142,7 @@
     <Compile Include="Controllers\ApprovalsAPIController.cs" />
     <Compile Include="Controllers\ApprovalsController.cs" />
     <Compile Include="Controllers\AuthAPIController.cs" />
+    <Compile Include="Controllers\CustomAuthorizeAttribute.cs" />
     <Compile Include="Controllers\CategoryAPIController.cs" />
     <Compile Include="Controllers\CategoryController.cs" />
     <Compile Include="Controllers\CreateTicketController.cs" />
@@ -181,7 +182,9 @@
     <Compile Include="Models\LocationDetailVM.cs" />
     <Compile Include="Models\LocationInventoryDetailVM.cs" />
     <Compile Include="Models\LocationListVM.cs" />
+    <Compile Include="Models\LoginResponseDTO.cs" />
     <Compile Include="Models\LoginVM.cs" />
+    <Compile Include="Models\ModulePermissionDTO.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />

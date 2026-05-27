@@ -1,7 +1,8 @@
-﻿using System.Web.Mvc;
+using System.Web.Mvc;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
+    [CustomAuthorize("Locations")]
     public class LocationController : Controller
     {
         // GET: Location

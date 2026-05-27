@@ -517,7 +517,6 @@
                             Password: this.password
                         }),
                         success: (res) => {
-                            this.isLoading = false;
                             if (res.success) {
                                 // Xử lý ghi nhớ đăng nhập
                                 if (this.rememberMe) {
@@ -526,12 +525,34 @@
                                     localStorage.removeItem('saved_username');
                                 }
 
-                                // Lưu thông tin người dùng và quyền vào session/local
+                                // Lưu thông tin người dùng và quyền vào local
                                 localStorage.setItem('current_user', JSON.stringify(res.user));
 
-                                // Chuyển hướng về trang chủ
-                                window.location.href = '/inventory/index';
+                                // Gọi AJAX đồng bộ mảng quyền và họ tên vào Session C# (Server Side)
+                                $.ajax({
+                                    url: '/Account/SetLoginSession',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify({
+                                        modules: res.modules,
+                                        fullName: res.user.FullName
+                                    }),
+                                    success: (sessionRes) => {
+                                        this.isLoading = false;
+                                        if (res.modules && res.modules.length > 0) {
+                                            // Chuyển hướng tới phân hệ đầu tiên được cấp quyền
+                                            window.location.href = res.modules[0].url;
+                                        } else {
+                                            window.location.href = '/inventory/index';
+                                        }
+                                    },
+                                    error: () => {
+                                        this.isLoading = false;
+                                        this.triggerError('Lỗi đồng bộ phiên làm việc máy chủ (Session Error).');
+                                    }
+                                });
                             } else {
+                                this.isLoading = false;
                                 this.triggerError(res.message || 'Đăng nhập thất bại.');
                             }
                         },

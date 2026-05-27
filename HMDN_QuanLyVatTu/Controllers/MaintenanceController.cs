@@ -2,6 +2,7 @@ using System.Web.Mvc;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
+    [CustomAuthorize("Maintenance")]
     public class MaintenanceController : Controller
     {
         // GET: Maintenance

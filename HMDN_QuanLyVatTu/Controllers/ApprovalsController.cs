@@ -6,6 +6,7 @@ using HMDN_QuanLyVatTu.Models;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
+    [CustomAuthorize("Approvals")]
     public class ApprovalsController : Controller
     {
         private HospitalAssetDbContext db = new HospitalAssetDbContext();

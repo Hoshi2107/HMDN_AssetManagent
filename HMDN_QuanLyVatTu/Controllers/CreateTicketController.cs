@@ -8,6 +8,7 @@ using HMS.Models.Inventory;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
+    [CustomAuthorize("CreateTicket")]
     public class CreateTicketController : Controller
     {
         private HospitalAssetDbContext db = new HospitalAssetDbContext();

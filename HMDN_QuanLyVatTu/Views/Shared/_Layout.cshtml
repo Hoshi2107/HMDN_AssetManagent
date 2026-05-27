@@ -1,3 +1,11 @@
+@{
+    var userModules = Session["UserModules"] as List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO>;
+    bool HasModule(string code)
+    {
+        if (userModules == null) return false;
+        return System.Linq.Enumerable.Any(userModules, m => string.Equals(m.code, code, System.StringComparison.OrdinalIgnoreCase));
+    }
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -520,135 +528,198 @@
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-label">Tổng quan</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Analytics" ? "active" : "")">
-                        <a href="@Url.Action("Index","Analytics")">
-                            <i class="fa-solid fa-chart-pie nav-icon"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("Analytics"))
+                {
+                    <div class="nav-section-label">Tổng quan</div>
+                    <ul>
+                        <li class="nav-item @(ViewBag.ActiveNav == "Analytics" ? "active" : "")">
+                            <a href="@Url.Action("Index","Analytics")">
+                                <i class="fa-solid fa-chart-pie nav-icon"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
+                }
 
-                <div class="nav-section-label">Tài sản & Kho</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Inventory" ? "active" : "")">
-                        <a href="@Url.Action("Index","Inventory")">
-                            <i class="fa-solid fa-box-archive nav-icon"></i>
-                            <span>Tổng tài sản</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Catalog" ? "active" : "")">
-                        <a href="@Url.Action("Category","Category")">
-                            <i class="fa-solid fa-layer-group nav-icon"></i>
-                            <span>Danh mục</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Locations" ? "active" : "")">
-                        <a href="@Url.Action("Location","Location")">
-                            <i class="fa-solid fa-map-pin nav-icon"></i>
-                            <span>Vị trí</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "QrCodes" ? "active" : "")">
-                        <a href="@Url.Action("Index","QrCodes")">
-                            <i class="fa-solid fa-qrcode nav-icon"></i>
-                            <span>QR Code</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("Inventory") || HasModule("Catalog") || HasModule("Locations") || HasModule("QrCodes"))
+                {
+                    <div class="nav-section-label">Tài sản & Kho</div>
+                    <ul>
+                        @if (HasModule("Inventory"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Inventory" ? "active" : "")">
+                                <a href="@Url.Action("Index","Inventory")">
+                                    <i class="fa-solid fa-box-archive nav-icon"></i>
+                                    <span>Tổng tài sản</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Catalog"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Catalog" ? "active" : "")">
+                                <a href="@Url.Action("Category","Category")">
+                                    <i class="fa-solid fa-layer-group nav-icon"></i>
+                                    <span>Danh mục</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Locations"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Locations" ? "active" : "")">
+                                <a href="@Url.Action("Location","Location")">
+                                    <i class="fa-solid fa-map-pin nav-icon"></i>
+                                    <span>Vị trí</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("QrCodes"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "QrCodes" ? "active" : "")">
+                                <a href="@Url.Action("Index","QrCodes")">
+                                    <i class="fa-solid fa-qrcode nav-icon"></i>
+                                    <span>QR Code</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
 
-                <div class="nav-section-label">Vòng đời</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Lifecycle" ? "active" : "")">
-                        <a href="@Url.Action("Index","Lifecycle")">
-                            <i class="fa-solid fa-rotate nav-icon"></i>
-                            <span>Trạng thái</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
-                        <a href="@Url.Action("VongDoiKhauHao", "VongDoiKhauHao")">
-                            <i class="fa-solid fa-recycle nav-icon"></i>
-                            <span>Vòng đời & Khấu hao</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("Lifecycle") || HasModule("VongDoiKhauHao"))
+                {
+                    <div class="nav-section-label">Vòng đời</div>
+                    <ul>
+                        @if (HasModule("Lifecycle"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Lifecycle" ? "active" : "")">
+                                <a href="@Url.Action("Index","Lifecycle")">
+                                    <i class="fa-solid fa-rotate nav-icon"></i>
+                                    <span>Trạng thái</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("VongDoiKhauHao"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
+                                <a href="@Url.Action("VongDoiKhauHao", "VongDoiKhauHao")">
+                                    <i class="fa-solid fa-recycle nav-icon"></i>
+                                    <span>Vòng đời & Khấu hao</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
 
-                <div class="nav-section-label">Bảo trì</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Checklists" ? "active" : "")">
-                        <a href="@Url.Action("Index","Checklists")">
-                            <i class="fa-solid fa-list-check nav-icon"></i>
-                            <span>Checklist</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Maintenance" ? "active" : "")">
-                        <a href="@Url.Action("Index","Maintenance")">
-                            <i class="fa-solid fa-screwdriver-wrench nav-icon"></i>
-                            <span>Sửa chữa</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "TiepNhanBaoHong" ? "active" : "")">
-                        <a href="@Url.Action("TiepNhanBaoHong","Maintenance")">
-                            <i class="fa-solid fa-triangle-exclamation nav-icon"></i>
-                            <span>Tiếp nhận báo hỏng</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("Checklists") || HasModule("Maintenance") || HasModule("TiepNhanBaoHong"))
+                {
+                    <div class="nav-section-label">Bảo trì</div>
+                    <ul>
+                        @if (HasModule("Checklists"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Checklists" ? "active" : "")">
+                                <a href="@Url.Action("Index","Checklists")">
+                                    <i class="fa-solid fa-list-check nav-icon"></i>
+                                    <span>Checklist</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Maintenance"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Maintenance" ? "active" : "")">
+                                <a href="@Url.Action("Index","Maintenance")">
+                                    <i class="fa-solid fa-screwdriver-wrench nav-icon"></i>
+                                    <span>Sửa chữa</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("TiepNhanBaoHong"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "TiepNhanBaoHong" ? "active" : "")">
+                                <a href="@Url.Action("TiepNhanBaoHong","Maintenance")">
+                                    <i class="fa-solid fa-triangle-exclamation nav-icon"></i>
+                                    <span>Tiếp nhận báo hỏng</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
 
-                <div class="nav-section-label">Vận hành</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
-                        <a href="@Url.Action("Create", "Tickets")">
-                            <i class="fa-solid fa-file-circle-plus nav-icon"></i>
-                            <span>Tạo phiếu</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Alerts" ? "active" : "")">
-                        <a href="@Url.Action("Index","Alerts")">
-                            <i class="fa-solid fa-bell nav-icon"></i>
-                            <span>Cảnh báo</span>
-                            @if (ViewBag.AlertCount != null && (int)ViewBag.AlertCount > 0)
-                            {
-                                <span class="nav-badge">@ViewBag.AlertCount</span>
-                            }
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Approvals" ? "active" : "")">
-                        <a href="@Url.Action("Index","Approvals")">
-                            <i class="fa-solid fa-clipboard-check nav-icon"></i>
-                            <span>Phê duyệt</span>
-                            @if (ViewBag.PendingApprovals != null && (int)ViewBag.PendingApprovals > 0)
-                            {
-                                <span class="nav-badge">@ViewBag.PendingApprovals</span>
-                            }
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
-                        <a href="@Url.Action("Index", "CreateTicket")">
-                            <i class="fa-solid fa-box-archive nav-icon"></i>
-                            <span>Tạo phiếu</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("CreateTicket") || HasModule("Alerts") || HasModule("Approvals"))
+                {
+                    <div class="nav-section-label">Vận hành</div>
+                    <ul>
+                        @if (HasModule("CreateTicket"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
+                                <a href="@Url.Action("Create", "Tickets")">
+                                    <i class="fa-solid fa-file-circle-plus nav-icon"></i>
+                                    <span>Tạo phiếu</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Alerts"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Alerts" ? "active" : "")">
+                                <a href="@Url.Action("Index","Alerts")">
+                                    <i class="fa-solid fa-bell nav-icon"></i>
+                                    <span>Cảnh báo</span>
+                                    @if (ViewBag.AlertCount != null && (int)ViewBag.AlertCount > 0)
+                                    {
+                                        <span class="nav-badge">@ViewBag.AlertCount</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Approvals"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Approvals" ? "active" : "")">
+                                <a href="@Url.Action("Index","Approvals")">
+                                    <i class="fa-solid fa-clipboard-check nav-icon"></i>
+                                    <span>Phê duyệt</span>
+                                    @if (ViewBag.PendingApprovals != null && (int)ViewBag.PendingApprovals > 0)
+                                    {
+                                        <span class="nav-badge">@ViewBag.PendingApprovals</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("CreateTicket"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
+                                <a href="@Url.Action("Index", "CreateTicket")">
+                                    <i class="fa-solid fa-box-archive nav-icon"></i>
+                                    <span>Tạo phiếu</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
             </nav>
 
             <div class="sidebar-footer">
-                <div class="nav-section-label">Hệ thống</div>
-                <ul>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Settings" ? "active" : "")">
-                        <a href="@Url.Action("Index","Settings")">
-                            <i class="fa-solid fa-gear nav-icon"></i>
-                            <span>Cài đặt</span>
-                        </a>
-                    </li>
-                    <li class="nav-item @(ViewBag.ActiveNav == "Support" ? "active" : "")">
-                        <a href="@Url.Action("Index","Support")">
-                            <i class="fa-solid fa-circle-question nav-icon"></i>
-                            <span>Hỗ trợ</span>
-                        </a>
-                    </li>
-                </ul>
+                @if (HasModule("Settings") || HasModule("Support"))
+                {
+                    <div class="nav-section-label">Hệ thống</div>
+                    <ul>
+                        @if (HasModule("Settings"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Settings" ? "active" : "")">
+                                <a href="@Url.Action("Index","Settings")">
+                                    <i class="fa-solid fa-gear nav-icon"></i>
+                                    <span>Cài đặt</span>
+                                </a>
+                            </li>
+                        }
+                        @if (HasModule("Support"))
+                        {
+                            <li class="nav-item @(ViewBag.ActiveNav == "Support" ? "active" : "")">
+                                <a href="@Url.Action("Index","Support")">
+                                    <i class="fa-solid fa-circle-question nav-icon"></i>
+                                    <span>Hỗ trợ</span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                }
                 <div class="staff-pill">
                     <div class="staff-avatars">
                         <img src="https://i.pravatar.cc/40?img=11" alt="Staff 1" />
@@ -667,8 +738,18 @@
         <div class="page-wrapper">
             <header class="page-topbar">
                 <span class="topbar-title">@(ViewBag.PageTitle ?? ViewBag.Title ?? "")</span>
-                <div class="topbar-actions">
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 12px;">
                     @RenderSection("topbar_actions", required: false)
+                    @if (Session["FullName"] != null)
+                    {
+                        <div class="user-profile-chip" style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--body-bg); border-radius: 20px; border: 1px solid var(--border); font-size: 12.5px;">
+                            <i class="fa-solid fa-circle-user" style="color: var(--accent-blue); font-size: 15px;"></i>
+                            <span style="font-weight: 600; color: #1e2a3a;">@Session["FullName"]</span>
+                            <a href="/Account/Logout" title="Đăng xuất" style="margin-left: 6px; color: var(--accent-red); display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(239, 68, 68, 0.08); transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.08)'">
+                                <i class="fa-solid fa-arrow-right-from-bracket" style="font-size: 10px;"></i>
+                            </a>
+                        </div>
+                    }
                 </div>
             </header>
 

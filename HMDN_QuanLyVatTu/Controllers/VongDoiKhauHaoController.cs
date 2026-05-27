@@ -9,6 +9,7 @@ using System.Data.SqlClient;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
+    [CustomAuthorize("VongDoiKhauHao")]
     public class VongDoiKhauHaoController : Controller
     {
         private HospitalAssetDbContext _context = new HospitalAssetDbContext();
