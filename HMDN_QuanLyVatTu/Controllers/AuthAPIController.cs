@@ -140,6 +140,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("Approvals");
                     allowedCodes.Add("Settings");
                     allowedCodes.Add("Support");
+                    allowedCodes.Add("CreateTicket");
                 }
                 else if (string.Equals(role, "technician", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "ktv", StringComparison.OrdinalIgnoreCase))
                 {
