@@ -14,10 +14,11 @@ namespace HMDN_QuanLyVatTu.Controllers
 
         // POST: Account/SetLoginSession
         [HttpPost]
-        public ActionResult SetLoginSession(List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO> modules, string fullName)
+        public ActionResult SetLoginSession(List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO> modules, string fullName, int userId = 0)
         {
             Session["UserModules"] = modules;
             Session["FullName"] = fullName;
+            Session["UserId"] = userId;
             return Json(new { success = true });
         }
 

@@ -52,7 +52,8 @@ new Vue({
                             contentType: 'application/json',
                             data: JSON.stringify({
                                 modules: res.modules, // Gửi mảng chứa code, name, url, permissions
-                                fullName: res.user.FullName
+                                fullName: res.user.FullName,
+                                userId: res.user.Id
                             }),
                             success: (sessionRes) => {
                                 this.isLoading = false;

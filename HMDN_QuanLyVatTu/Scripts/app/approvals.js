@@ -42,7 +42,24 @@ var app = new Vue({
         sort: {
             key: '',
             dir: 1
-        }
+        },
+        // Thông tin user đang đăng nhập (đọc từ localStorage do login.js đã lưu)
+        currentUser: (function() {
+            try {
+                // Ưu tiên đọc từ SERVER_SESSION nếu có thông tin hợp lệ
+                if (window.SERVER_SESSION && window.SERVER_SESSION.userId > 0) {
+                    return {
+                        Id: window.SERVER_SESSION.userId,
+                        FullName: window.SERVER_SESSION.fullName || 'Người dùng',
+                        roles: []
+                    };
+                }
+                var u = localStorage.getItem('current_user');
+                return u ? JSON.parse(u) : { Id: 0, FullName: 'Người dùng', roles: [] };
+            } catch(e) {
+                return { Id: 0, FullName: 'Người dùng', roles: [] };
+            }
+        })()
     },
     computed: {
         filteredTickets() {
@@ -281,8 +298,10 @@ var app = new Vue({
             });
         },
         loadTickets() {
+            // Truyền userId để backend lọc phân quyền
+            var userId = (this.currentUser && this.currentUser.Id) ? this.currentUser.Id : 0;
             $.ajax({
-                url: '/api/approvals/GetTickets',
+                url: '/api/approvals/GetTickets?userId=' + userId,
                 type: 'GET',
                 dataType: 'json',
                 cache: false,
@@ -344,6 +363,13 @@ var app = new Vue({
             } else if (fileType === 'VIDEO') {
                 content = '[VIDEO: ' + (d.FilePath || '') + '|' + (d.FileName || '') + ']';
             }
+
+            // Xác định tin nhắn này có phải do user hiện tại gửi không
+            // Bằng cách so sánh tên người gửi với FullName của current user
+            var myName = this.currentUser && this.currentUser.FullName ? this.currentUser.FullName.trim() : '';
+            var senderName = d.SenderName ? d.SenderName.trim() : '';
+            var isOwnerMsg = myName !== '' && senderName === myName;
+
             return {
                 id: d.Id,
                 sender: d.SenderName,
@@ -353,8 +379,21 @@ var app = new Vue({
                 isRevoked: d.IsRevoked || false,
                 rawFileType: fileType,
                 rawFilePath: d.FilePath,
-                rawFileName: d.FileName
+                rawFileName: d.FileName,
+                isOwnerMsg: isOwnerMsg  // true = tin nhắn của user đang đăng nhập
             };
+        },
+        // Lấy tên người gửi hiện tại từ localStorage
+        getCurrentSenderName() {
+            if (this.currentUser && this.currentUser.FullName && this.currentUser.FullName.trim() !== '') {
+                return this.currentUser.FullName.trim();
+            }
+            return 'Người dùng';
+        },
+        // Kiểm tra user hiện tại có phải người tạo phiếu đang xem không
+        isTicketCreator() {
+            if (!this.selectedTicket || !this.currentUser) return false;
+            return this.currentUser.Id === this.selectedTicket.CreatedBy;
         },
         // Gửi tin nhắn text → lưu vào TicketDiscussions
         sendChatMessage() {
@@ -363,13 +402,16 @@ var app = new Vue({
             const msgText = this.chatMessage.trim();
             this.chatMessage = '';
 
+            // Lấy tên thực của user đang đăng nhập thay vì hardcode 'Người duyệt'
+            const senderName = this.getCurrentSenderName();
+
             $.ajax({
                 url: '/api/approvals/SendChatMessage',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
                     TicketId: this.selectedTicket.Id,
-                    SenderName: 'Người duyệt',
+                    SenderName: senderName,
                     Message: msgText
                 }),
                 success: (res) => {
@@ -406,8 +448,8 @@ var app = new Vue({
 
             var formData = new FormData();
             formData.append('fileUpload', file);
-            formData.append('ticketId', this.selectedTicket.Id);   // Gửi kèm ticketId
-            formData.append('senderName', 'Người duyệt');          // Gửi kèm tên người gửi
+            formData.append('ticketId', this.selectedTicket.Id);              // Gửi kèm ticketId
+            formData.append('senderName', this.getCurrentSenderName());       // Tên thực của user đăng nhập
 
             this.isUploadingChatFile = true;
 
@@ -632,7 +674,14 @@ var app = new Vue({
         },
         getReasonDetails() {
             if (!this.chatMessagesList || this.chatMessagesList.length === 0) return '';
-            const firstTextMsg = this.chatMessagesList.find(m => !m.isSystem && !m.isRevoked && m.rawFileType === 'TEXT' && m.sender !== 'Người duyệt');
+            // Lấy tin nhắn text đầu tiên của người tạo phiếu (không phải msg hệ thống)
+            // Xác định bằng cách tìm tin nhắn mà SenderName đúng với tên người tạo phiếu
+            if (!this.selectedTicket) return '';
+            const creatorName = this.selectedTicket.CreatedByName || this.selectedTicket.CreatedByUsername || '';
+            const firstTextMsg = this.chatMessagesList.find(m =>
+                !m.isSystem && !m.isRevoked && m.rawFileType === 'TEXT' &&
+                (creatorName === '' || m.sender === creatorName)
+            );
             return firstTextMsg ? firstTextMsg.content : '';
         },
         getAdditionalNote() {

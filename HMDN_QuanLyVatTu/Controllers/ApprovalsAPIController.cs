@@ -1,5 +1,6 @@
 using HMDN_QuanLyVatTu.Models;
 using HMS.Data;
+using HMS.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -13,18 +14,69 @@ namespace HMDN_QuanLyVatTu.Controllers
     [RoutePrefix("api/approvals")]
     public class ApprovalsAPIController : ApiController
     {
-        // GET api/approvals/GetTickets
+        // GET api/approvals/GetTickets?userId=X
         [HttpGet]
         [Route("GetTickets")]
-        public IHttpActionResult GetTickets()
+        public IHttpActionResult GetTickets(int userId = 0)
         {
             try
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    var data = db.Database
-                        .SqlQuery<ApprovalsListVM>("EXEC sp_Approvals_GetTickets")
+                    // Lấy toàn bộ phiếu trước
+                    var allData = db.Tickets
+                        .OrderByDescending(x => x.CreatedAt)
                         .ToList();
+
+                    var users = db.Users.ToList().ToDictionary(u => u.Id);
+                    var departments = db.Departments.ToList().ToDictionary(d => d.Id);
+
+                    IEnumerable<Tickets> filteredData;
+
+                    // PHÂN QUYỀN: Admin (Id == 1) xem tất cả, user khác chỉ xem phiếu của mình
+                    if (userId == 1)
+                    {
+                        filteredData = allData; // Admin: xem toàn bộ
+                    }
+                    else if (userId > 1)
+                    {
+                        filteredData = allData.Where(t => t.CreatedBy == userId); // User: chỉ phiếu của mình
+                    }
+                    else
+                    {
+                        // userId = 0 (chưa đăng nhập hoặc không truyền) → không trả về gì
+                        filteredData = Enumerable.Empty<Tickets>();
+                    }
+
+                    var data = filteredData.Select(t =>
+                    {
+                        users.TryGetValue(t.CreatedBy, out var creator);
+                        Department dept = null;
+                        if (creator != null && creator.DepartmentId.HasValue)
+                        {
+                            departments.TryGetValue(creator.DepartmentId.Value, out dept);
+                        }
+
+                        return new ApprovalsListVM
+                        {
+                            Id = t.Id,
+                            TicketCode = t.TicketCode,
+                            TicketType = t.TicketType,
+                            Status = t.Status,
+                            Note = t.Note,
+                            CreatedBy = t.CreatedBy,
+                            CreatedByName = creator != null ? creator.FullName : null,
+                            CreatedByUsername = creator != null ? creator.Username : null,
+                            DepartmentName = dept != null ? dept.Name : null,
+                            CreatedAt = t.CreatedAt,
+                            CheckedBy = t.CheckedBy,
+                            CheckedAt = t.CheckedAt,
+                            ApprovedBy = t.ApprovedBy,
+                            ApprovedAt = t.ApprovedAt,
+                            TransactionDate = t.TransactionDate
+                        };
+                    }).ToList();
+
                     return Ok(data);
                 }
             }
