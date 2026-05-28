@@ -186,6 +186,7 @@
     <Compile Include="Models\LocationInventoryDetailVM.cs" />
     <Compile Include="Models\LocationListVM.cs" />
     <Compile Include="Models\LoginResponseDTO.cs" />
+    <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\LoginVM.cs" />
     <Compile Include="Models\ModulePermissionDTO.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
@@ -193,6 +194,7 @@
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\SuspendedDeviceVM.cs" />
+    <Compile Include="Models\TicketAttachment.cs" />
     <Compile Include="Models\TicketDiscussion.cs" />
     <Compile Include="Models\TicketDropdown.cs" />
     <Compile Include="Models\Tickets.cs" />
@@ -208,6 +210,8 @@
   <ItemGroup>
     <Content Include="Addon\vue\vue.js" />
     <Content Include="Addon\vue\vue_dev.js" />
+    <Content Include="bin\HMDN_QuanLyVatTu.dll" />
+    <Content Include="bin\HMDN_QuanLyVatTu.pdb" />
     <Content Include="Content\analytics\analytics-module.css" />
     <Content Include="Content\bootstrap-grid.css" />
     <Content Include="Content\bootstrap-grid.min.css" />
@@ -258,6 +262,16 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="SQL\add_revocation_column.sql" />
+    <Content Include="Uploads\37384b07-36a2-4e65-a251-bc0f9b220a16.jpg" />
+    <Content Include="Uploads\48014dbc-050e-40a6-9cd1-3faf053538e5.jpg" />
+    <Content Include="Uploads\4a56ce49-a64f-4f90-b9af-b77488be3e8a.jpg" />
+    <Content Include="Uploads\88d485c3-7c93-4867-8477-6cd892e4a351.txt" />
+    <Content Include="Uploads\a06c1b54-77e5-4947-9e3d-8c2cc717dab7.jpg" />
+    <Content Include="Uploads\a5eebd5a-d222-42d0-a93c-6daa0280cfd1.jpg" />
+    <Content Include="Uploads\b939c490-edb2-436d-b55d-562d675a77e0.jpg" />
+    <Content Include="Uploads\d6a26ac8-f9b6-4f7d-b869-924ddeaeff06.jpg" />
+    <Content Include="Uploads\f90fd9df-bae8-4970-8ada-e63803baf239.jpg" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -279,10 +293,12 @@
     <Content Include="Views\Category\Category.cshtml" />
     <Content Include="Views\Location\Location.cshtml" />
     <Content Include="Views\Maintenance\Index.cshtml" />
+    <Content Include="Views\CreateTicket\CreateTicket.cshtml" />
+    <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
+    <Content Include="Uploads\web.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Views\CreateTicket\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
