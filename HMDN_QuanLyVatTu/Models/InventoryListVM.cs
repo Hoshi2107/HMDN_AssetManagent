@@ -9,7 +9,7 @@ namespace HMS.Models.ViewModels
         public string AssetCode { get; set; }
 
         public string ItemName { get; set; }
-
+        public string TicketCode { get; set; }
         public string Model { get; set; }
 
         public string SerialNumber { get; set; }

@@ -159,12 +159,15 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Approvals.cs" />
+    <Compile Include="Models\ChangeStatusVM.cs" />
     <Compile Include="Models\ChecklistProgressModel.cs" />
+    <Compile Include="Models\CreateInventoryVM.cs" />
     <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
     <Compile Include="Models\DashboardGroupSummary.cs" />
     <Compile Include="Models\DashboardOverviewModel.cs" />
     <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\DropdownVM.cs" />
     <Compile Include="Models\FilterLookupModel.cs" />
     <Compile Include="Models\Group.cs" />
     <Compile Include="Models\GroupCreateDTO.cs" />
@@ -189,7 +192,9 @@
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
     <Compile Include="Models\Role.cs" />
+    <Compile Include="Models\SuspendedDeviceVM.cs" />
     <Compile Include="Models\TicketDiscussion.cs" />
+    <Compile Include="Models\TicketDropdown.cs" />
     <Compile Include="Models\Tickets.cs" />
     <Compile Include="Models\ToggleItemDTO.cs" />
     <Compile Include="Models\UpdateLocation.cs" />

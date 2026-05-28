@@ -14,6 +14,10 @@
     suspended: {
         label: 'Tạm ngưng',
         class: 's-suspended'
+    },
+    Send_for_warranty: {
+        label: 'Gửi về bảo hành',
+        class: 's-Send_for_warranty'
     }
 }
 
@@ -24,6 +28,83 @@ var app = new Vue({
 
     data: {
         STATUS: STATUS,
+
+        groupsData: [],
+
+        checkCycles: [],
+
+        //ImportDate: null,
+        //ExpiryDate: null,
+        //WarrantyExpiry: null,
+
+        createForm: {
+
+            AssetCode: '',
+
+            ItemId: '',
+
+            SerialNumber: '',
+
+            DepartmentId: '',
+
+            LocationId: '',
+
+            ImportDate: null,
+
+            UnitPrice: 0,
+
+            Quantity: 1,
+
+            CreatedBy: 1,
+
+            IdTicket: null,
+
+            ExpiryDate: null,
+            WarrantyExpiry: null,
+            CheckCycleId: null,
+
+            DepreciationRate: null,
+            DepreciationYears: null,
+            ResidualValue: null,
+
+            ApprovedQuantity: null,
+
+            YearManufactured: null,
+            YearInUse: null,
+            UsageYears: null,
+
+            AssetCategory: '',
+            GroupAssetCode: '',
+            AccountingCode: '',
+            InsuranceCode: '',
+
+            CountryManufactured: '',
+            Manufacturer: '',
+            SupplierName: '',
+
+            QrCode: '',
+            Note: ''
+        },
+
+        items: [],
+
+        departments: [],
+
+        locationsData: [],
+
+        tickets: [],
+
+        showAddOptionModal: false,
+
+        showQrModal: false,
+
+        showManualModal: false,
+
+        showSuspendModal: false,
+
+        suspendReason: '',
+
+        selectedSuspendId: null,
 
         searchQuery: '',
 
@@ -80,6 +161,9 @@ var app = new Vue({
 
                         (x.Model || '') +
                         ' ' +
+
+                        (x.TicketCode || '') +
+                        ' '+
 
                         (x.SerialNumber || '') +
                         ' ' +
@@ -227,6 +311,54 @@ var app = new Vue({
 
     methods: {
 
+        loadDropdowns() {
+
+            // ITEMS
+            $.get('/api/device/items', (res) => {
+
+                this.items = res
+
+            })
+
+            // DEPARTMENTS
+            $.get('/api/device/departments', (res) => {
+
+                this.departments = res
+
+            })
+
+            // LOCATIONS
+            $.get('/api/device/locations', (res) => {
+
+                this.locationsData = res
+
+            })
+
+            // TICKETS
+            $.get('/api/device/tickets', (res) => {
+
+                this.tickets = res
+
+            })
+
+            // GROUPS
+            $.get('/api/device/groups', (res) => {
+
+                this.groupsData = res
+
+            })
+
+            // CHECK CYCLES
+            $.get('/api/device/checkcycles')
+                .done((res) => {
+
+                    console.log('checkcycles', res)
+
+                    this.checkCycles = res
+
+                })
+        },
+
         getLifeStatusMeta(status) {
 
             switch (status) {
@@ -263,6 +395,13 @@ var app = new Vue({
                         icon: "🏭"
                     }
 
+                case "Send_for_warranty":
+                    return {
+                        text: "Gửi bảo hành",
+                        bg: "#dbeafe",
+                        color: "#2563eb",
+                        icon: "📦"
+                    }
                 default:
                     return {
                         text: "Không xác định",
@@ -271,6 +410,43 @@ var app = new Vue({
                         icon: "❓"
                     }
             }
+        },
+
+        changeStatus(item) {
+
+            $.ajax({
+
+                url: '/api/device/status',
+
+                type: 'POST',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify({
+
+                    Id: item.Id,
+                    Status: item.LifeStatus
+
+                }),
+
+                success: () => {
+
+                    //console.log('updated')
+                    //alert('Đã chuyển sang trạng thái ' + getLifeStatusMeta(item.LifeStatus).text)
+                    const statusText =
+                        this.getLifeStatusMeta(item.LifeStatus).text
+
+                    alert(`Đã chuyển sang trạng thái: ${statusText}`)
+
+                },
+
+                error: () => {
+
+                    alert('Đổi trạng thái thất bại')
+
+                    this.loadDevices()
+                }
+            })
         },
 
         statusLabel(status) {
@@ -297,6 +473,15 @@ var app = new Vue({
 
             window.location.href =
                 '/Inventory/Detail'
+        },
+
+        openSuspendModal(device) {
+
+            this.selectedSuspendId = device.Id
+
+            this.suspendReason = ''
+
+            this.showSuspendModal = true
         },
 
         //Pagination
@@ -380,6 +565,121 @@ var app = new Vue({
                     alert('Không load được chi tiết')
                 }
             })
+        },
+
+        submitSuspend() {
+
+            if (!this.suspendReason.trim()) {
+
+                alert('Nhập lý do lỗi')
+
+                return
+            }
+
+            $.ajax({
+
+                url: '/api/device/suspend',
+
+                type: 'POST',
+
+                data: {
+                    id: this.selectedSuspendId,
+                    reason: this.suspendReason
+                },
+
+                success: (res) => {
+
+                    alert('Đã chuyển sang trạng thái tạm ngưng')
+
+                    this.showSuspendModal = false
+
+                    this.showModal = false
+
+                    this.loadDevices()
+                },
+
+                error: () => {
+
+                    alert('Có lỗi xảy ra')
+                }
+            })
+
+        },
+
+        //createInventory() {
+
+        //    $.ajax({
+
+        //        url: '/api/device/create',
+
+        //        type: 'POST',
+
+        //        contentType: 'application/json',
+
+        //        data: JSON.stringify(this.createForm),
+
+        //        success: () => {
+
+        //            alert('Thêm thiết bị thành công')
+
+        //            this.showManualModal = false
+
+        //            this.loadDevices()
+        //        },
+
+        //        error: () => {
+
+        //            alert('Thêm thất bại')
+        //        }
+        //    })
+        //},
+        createInventory() {
+
+            if (!this.createForm.ImportDate)
+                this.createForm.ImportDate = null
+
+            if (!this.createForm.ExpiryDate)
+                this.createForm.ExpiryDate = null
+
+            if (!this.createForm.WarrantyExpiry)
+                this.createForm.WarrantyExpiry = null
+
+            $.ajax({
+                url: '/api/device/create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.createForm),
+
+                success: () => {
+
+                    alert('Thêm thiết bị thành công')
+
+                    this.showManualModal = false
+
+                    this.loadDevices()
+                },
+
+                error: (err) => {
+
+                    console.log(err)
+
+                    alert('Thêm thất bại')
+                }
+            })
+        },
+
+        openQrModal() {
+
+            this.showAddOptionModal = false
+
+            this.showQrModal = true
+        },
+
+        openManualModal() {
+
+            this.showAddOptionModal = false
+
+            this.showManualModal = true
         }
     },
 
@@ -407,6 +707,8 @@ var app = new Vue({
     },
 
     mounted() {
+
+        this.loadDropdowns()
 
         this.loadDevices()
     }

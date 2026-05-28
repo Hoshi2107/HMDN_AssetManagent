@@ -269,3 +269,102 @@ td {
 .device-modal::-webkit-scrollbar-track {
     background: #f1f5f9;
 }
+
+.action-group {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.small-modal {
+    width: 500px;
+}
+
+.btn-danger:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.status-dropdown {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    cursor: pointer;
+}
+
+.add-option-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.add-option-card {
+    border: none;
+    border-radius: 16px;
+    padding: 30px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: .2s;
+}
+
+    .add-option-card:hover {
+        transform: translateY(-3px);
+        background: #eef2ff;
+    }
+
+    .add-option-card .icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+
+.qr-box {
+    height: 300px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.large-modal {
+    width: 1000px;
+    max-width: 100%;
+}

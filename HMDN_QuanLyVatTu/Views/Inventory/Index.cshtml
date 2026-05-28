@@ -20,9 +20,13 @@
                        v-model="searchQuery">
             </div>
 
-            <div class="user-chip">
-                Admin
-            </div>
+
+            <button class="btn-primary"
+                    @@click="showAddOptionModal = true">
+
+                Thêm thiết bị
+
+            </button>
 
         </header>
 
@@ -31,15 +35,11 @@
 
             <div class="page-header">
 
-                <div>
+                @*<div>
                     <h2>Danh sách thiết bị</h2>
                     <p>Quản lý kho thiết bị y tế</p>
-                </div>
+                </div>*@
 
-                <button class="btn-primary"
-                        @@click="goDetail()">
-                    Thêm thiết bị
-                </button>
 
             </div>
 
@@ -104,6 +104,7 @@
                             <th>Model</th>
                             <th>Serial</th>
                             <th>Khoa</th>
+                            <th>Phiếu</th>
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
@@ -125,22 +126,39 @@
 
                             <td>${ item.DepartmentName  || 'Chưa được xếp' }</td>
 
-                            @*<td>
-                                <span :class="statusClass(item.LifeStatus)">
-                                    ${ statusLabel(item.LifeStatus) }
-                                </span>
-                            </td>*@
+                            <td>${ item.TicketCode || '—' }</td>
 
-                            <td>
+                            <td @@click.stop>
 
-                                <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
-                                      :style="{background:getLifeStatusMeta(item.LifeStatus).bg,color:getLifeStatusMeta(item.LifeStatus).color}">
+                                <select class="status-dropdown"
+                                        v-model="item.LifeStatus"
+                                        @@change="changeStatus(item)">
 
-                                    ${ getLifeStatusMeta(item.LifeStatus).icon }
+                                    <option value="active">
+                                        Đang hoạt động
+                                    </option>
 
-                                    ${ getLifeStatusMeta(item.LifeStatus).text }
+                                    <option value="maintenance_bv">
+                                        BV bảo trì
+                                    </option>
 
-                                </span>
+                                    <option value="maintenance_hang">
+                                        Hãng bảo hành
+                                    </option>
+
+                                    <option value="Send_for_warranty">
+                                        Gửi về bảo hành
+                                    </option>
+
+                                    <!-- suspended KHÔNG CHO CHỌN -->
+                                    <option v-if="item.LifeStatus == 'suspended'"
+                                            value="suspended">
+
+                                        Tạm ngưng
+
+                                    </option>
+
+                                </select>
 
                             </td>
 
@@ -225,8 +243,8 @@
                                     <label>Trạng thái</label>
 
                                     @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                ${ statusLabel(selectedDevice.LifeStatus) }
-            </span>*@
+                                    ${ statusLabel(selectedDevice.LifeStatus) }
+                                </span>*@
 
                                     <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
                                           :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
@@ -352,6 +370,64 @@
 
                             </div>
 
+                            <div class="action-group">
+
+                                <button class="btn-danger"
+                                        :disabled="selectedDevice.LifeStatus == 'suspended'"
+                                        @@click="openSuspendModal(selectedDevice)">
+                                    Check có lỗi
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- MODAL CHECK LỖI -->
+                    <div class="modal-overlay"
+                         v-if="showSuspendModal"
+                         @@click.self="showSuspendModal = false">
+
+                        <div class="device-modal small-modal">
+
+                            <div class="modal-header">
+                                <h3>Check lỗi thiết bị</h3>
+
+                                <button class="close-btn"
+                                        @@click="showSuspendModal = false">
+                                    ×
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <div class="form-group">
+                                    <label>Lý do lỗi</label>
+
+                                    <textarea v-model="suspendReason"
+                                              rows="5"
+                                              placeholder="Nhập lý do lỗi thiết bị..."
+                                              class="form-textarea">
+                                    </textarea>
+                                </div>
+
+                                <div class="modal-actions">
+
+                                    <button class="btn-secondary"
+                                            @@click="showSuspendModal = false">
+                                        Hủy
+                                    </button>
+
+                                    <button class="btn-danger"
+                                            @@click="submitSuspend()">
+                                        Xác nhận tạm ngưng
+                                    </button>
+
+                                </div>
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -362,25 +438,550 @@
             </div>
             <div class="pagination">
 
-            <button @@click="prevPage"
-                    :disabled="currentPage == 1">
+                <button @@click="prevPage"
+                        :disabled="currentPage == 1">
 
-                Prev
-            </button>
+                    Prev
+                </button>
 
-            <button v-for="page in pages"
-                    :key="page"
-                    @@click="changePage(page)"
-                    :class="{ active: currentPage == page }">
+                <button v-for="page in pages"
+                        :key="page"
+                        @@click="changePage(page)"
+                        :class="{ active: currentPage == page }">
 
-                ${ page }
-            </button>
+                    ${ page }
+                </button>
 
-            <button @@click="nextPage"
-                    :disabled="currentPage == totalPages">
+                <button @@click="nextPage"
+                        :disabled="currentPage == totalPages">
 
-                Next
-            </button>
+                    Next
+                </button>
+
+            </div>
+
+            <!-- MODAL CHỌN KIỂU THÊM -->
+            <div class="modal-overlay"
+                 v-if="showAddOptionModal"
+                 @@click.self="showAddOptionModal = false">
+
+                <div class="device-modal small-modal">
+
+                    <div class="modal-header">
+
+                        <h3>Chọn cách thêm thiết bị</h3>
+
+                        <button class="close-btn"
+                                @@click="showAddOptionModal = false">
+
+                            ×
+
+                        </button>
+
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="add-option-grid">
+
+                            <button class="add-option-card"
+                                    @@click="openQrModal()">
+
+                                <div class="icon">📷</div>
+
+                                <h4>Quét QR</h4>
+
+                                <p>Thêm nhanh bằng mã QR</p>
+
+                            </button>
+
+                            <button class="add-option-card"
+                                    @@click="openManualModal()">
+
+                                <div class="icon">⌨️</div>
+
+                                <h4>Manual</h4>
+
+                                <p>Nhập thông tin thủ công</p>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- MODAL QR -->
+            <div class="modal-overlay"
+                 v-if="showQrModal"
+                 @@click.self="showQrModal = false">
+
+                <div class="device-modal">
+
+                    <div class="modal-header">
+
+                        <h3>Quét QR thiết bị</h3>
+
+                        <button class="close-btn"
+                                @@click="showQrModal = false">
+
+                            ×
+
+                        </button>
+
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="qr-box">
+
+                            Camera scan QR ở đây
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- MODAL MANUAL -->
+            <div class="modal-overlay"
+                 v-if="showManualModal"
+                 @@click.self="showManualModal = false">
+
+                <div class="device-modal large-modal">
+
+                    <!-- HEADER -->
+                    <div class="modal-header">
+
+                        <h3>Thêm thiết bị thủ công</h3>
+
+                        <button class="close-btn"
+                                @@click="showManualModal = false">
+                            ×
+                        </button>
+
+                    </div>
+
+                    <!-- BODY -->
+                    <div class="modal-body">
+
+                        <div class="detail-grid">
+
+                            <!-- Asset Code -->
+                            <div class="form-group">
+
+                                <label>Mã tài sản</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.AssetCode">
+
+                            </div>
+
+                            <!-- Item -->
+                            <div class="form-group">
+
+                                <label>Thiết bị</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.ItemId">
+
+                                    <option value="">
+                                        Chọn thiết bị
+                                    </option>
+
+                                    <option v-for="item in items"
+                                            :key="item.Id"
+                                            :value="item.Id">
+
+                                        ${ item.Name }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Serial -->
+                            <div class="form-group">
+
+                                <label>Serial Number</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.SerialNumber">
+
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="form-group">
+
+                                <label>Số lượng</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.Quantity">
+
+                            </div>
+
+                            <!-- Department -->
+                            <div class="form-group">
+
+                                <label>Khoa</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.DepartmentId">
+
+                                    <option value="">
+                                        Chọn khoa
+                                    </option>
+
+                                    <option v-for="dep in departments"
+                                            :key="dep.Id"
+                                            :value="dep.Id">
+
+                                        ${ dep.Name }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Location -->
+                            <div class="form-group">
+
+                                <label>Vị trí</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.LocationId">
+
+                                    <option value="">
+                                        Chọn vị trí
+                                    </option>
+
+                                    <option v-for="loc in locationsData"
+                                            :key="loc.Id"
+                                            :value="loc.Id">
+
+                                        ${ loc.Name }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Import Date -->
+                            <div class="form-group">
+
+                                <label>Ngày nhập</label>
+
+                                <input type="date"
+                                       class="form-control"
+                                       v-model="createForm.ImportDate">
+
+                            </div>
+
+                            <!-- Expiry -->
+                            <div class="form-group">
+
+                                <label>Ngày hết hạn</label>
+
+                                <input type="date"
+                                       class="form-control"
+                                       v-model="createForm.ExpiryDate">
+
+                            </div>
+
+                            <!-- Warranty -->
+                            <div class="form-group">
+
+                                <label>Hết bảo hành</label>
+
+                                <input type="date"
+                                       class="form-control"
+                                       v-model="createForm.WarrantyExpiry">
+
+                            </div>
+
+                            <!-- Unit Price -->
+                            <div class="form-group">
+
+                                <label>Đơn giá</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.UnitPrice">
+
+                            </div>
+
+                            <!-- Ticket -->
+                            <div class="form-group">
+
+                                <label>Phiếu</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.IdTicket">
+
+                                    <option :value="null">
+                                        Không có
+                                    </option>
+
+                                    <option v-for="ticket in tickets"
+                                            :key="ticket.Id"
+                                            :value="ticket.Id">
+
+                                        ${ ticket.TicketCode }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Check Cycle -->
+                            @*<div class="form-group">
+
+            <label>Chu kỳ kiểm tra</label>
+
+            <input type="number"
+                   class="form-control"
+                   v-model="createForm.CheckCycleId">
+
+        </div>*@
+                            <div class="form-group">
+
+                                <label>Chu kỳ kiểm tra</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.CheckCycleId">
+
+                                    <option :value="null">
+                                        Chọn chu kỳ
+                                    </option>
+
+                                    <option v-for="cycle in checkCycles"
+                                            :key="cycle.Id"
+                                            :value="cycle.Id">
+
+                                        ${ cycle.Name }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Depreciation Rate -->
+                            <div class="form-group">
+
+                                <label>Khấu hao (%)</label>
+
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control"
+                                       v-model="createForm.DepreciationRate">
+
+                            </div>
+
+                            <!-- Depreciation Years -->
+                            <div class="form-group">
+
+                                <label>Số năm khấu hao</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.DepreciationYears">
+
+                            </div>
+
+                            <!-- Residual -->
+                            <div class="form-group">
+
+                                <label>Giá trị còn lại</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.ResidualValue">
+
+                            </div>
+
+                            <!-- Year Manufactured -->
+                            <div class="form-group">
+
+                                <label>Năm sản xuất</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.YearManufactured">
+
+                            </div>
+
+                            <!-- Year In Use -->
+                            <div class="form-group">
+
+                                <label>Năm sử dụng</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.YearInUse">
+
+                            </div>
+
+                            <!-- Usage Years -->
+                            <div class="form-group">
+
+                                <label>Số năm hoạt động</label>
+
+                                <input type="number"
+                                       class="form-control"
+                                       v-model="createForm.UsageYears">
+
+                            </div>
+
+                            <!-- Category -->
+                            <div class="form-group">
+
+                                <label>Loại tài sản</label>
+
+                                <select class="form-control"
+                                        v-model="createForm.AssetCategory">
+
+                                    <option value="">
+                                        Chọn loại tài sản
+                                    </option>
+
+                                    <option v-for="g in groupsData"
+                                            :key="g.Id"
+                                            :value="g.Name">
+
+                                        ${ g.Name }
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <!-- Group Asset -->
+                            <div class="form-group">
+
+                                <label>Mã tập đoàn</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.GroupAssetCode">
+
+                            </div>
+
+                            <!-- Accounting -->
+                            <div class="form-group">
+
+                                <label>Mã kế toán</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.AccountingCode">
+
+                            </div>
+
+                            <!-- Insurance -->
+                            <div class="form-group">
+
+                                <label>Mã bảo hiểm</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.InsuranceCode">
+
+                            </div>
+
+                            <!-- Country -->
+                            <div class="form-group">
+
+                                <label>Nước sản xuất</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.CountryManufactured">
+
+                            </div>
+
+                            <!-- Manufacturer -->
+                            <div class="form-group">
+
+                                <label>Nhà sản xuất</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.Manufacturer">
+
+                            </div>
+
+                            <!-- Supplier -->
+                            <div class="form-group">
+
+                                <label>Nhà cung cấp</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.SupplierName">
+
+                            </div>
+
+                            <!-- QR -->
+                            <div class="form-group">
+
+                                <label>QR Code</label>
+
+                                <input type="text"
+                                       class="form-control"
+                                       v-model="createForm.QrCode">
+
+                            </div>
+
+                        </div>
+
+                        <!-- NOTE -->
+                        <div class="form-group mt-3">
+
+                            <label>Ghi chú</label>
+
+                            <textarea class="form-control"
+                                      rows="4"
+                                      v-model="createForm.Note">
+                </textarea>
+
+                        </div>
+
+                        <!-- ACTION -->
+                        <div class="modal-actions mt-3">
+
+                            <button class="btn-secondary"
+                                    @@click="showManualModal = false">
+
+                                Hủy
+
+                            </button>
+
+                            <button class="btn-primary"
+                                    @@click="createInventory()">
+
+                                Lưu thiết bị
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </div>
         </main>
