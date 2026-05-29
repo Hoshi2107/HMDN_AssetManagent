@@ -346,8 +346,8 @@
                             <input type="text" class="f-input" v-model="form.department" disabled />
                         </div>
                         <div class="f-group">
-                            <label class="f-label">Loại vật tư</label>
-                            <select class="f-input" v-model="form.assetType" style="cursor:pointer;">
+                            <label class="f-label" style="white-space: nowrap;">Loại vật tư <span v-if="form.ticketType !== 'HoTro'" style="color: var(--hm-danger);">*</span><span v-else style="color: var(--hm-text-sec); text-transform: none; font-weight: normal;"> (Không bắt buộc)</span></label>
+                            <select class="f-input" v-model="form.assetType" style="cursor:pointer;" :disabled="form.ticketType === 'HoTro'">
                                 <option value="">Chọn loại vật tư...</option>
                                 <option v-for="t in listLoaiVatTu" :key="t" :value="t">${ t }</option>
                             </select>
@@ -360,7 +360,7 @@
             <div class="p-card">
                 <div class="c-head">
                     <div class="c-icon"><i class="fa-solid fa-list-ol"></i></div>
-                    <span class="c-title">Danh sách thiết bị yêu cầu</span>
+                    <span class="c-title">Danh sách thiết bị yêu cầu <span v-if="form.ticketType === 'HoTro'" style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
                 </div>
                 <div class="c-body">
                     <!-- Inline form to add devices -->
@@ -434,11 +434,11 @@
             <div class="p-card">
                 <div class="c-head">
                     <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                    <span class="c-title">Lý do yêu cầu & Chi tiết</span>
+                    <span class="c-title">Lý do yêu cầu & Chi tiết <span style="color: var(--hm-danger);">*</span></span>
                 </div>
                 <div class="c-body">
                     <textarea class="reason-textarea"
-                              placeholder="Nhập chi tiết yêu cầu... (Ví dụ: Nhập kho/Xuất kho thiết bị Switch thay thế khẩn cấp tại Khoa Khám bệnh)"
+                              :placeholder="form.ticketType === 'HoTro' ? 'Nhập chi tiết yêu cầu hỗ trợ kỹ thuật hoặc báo lỗi thiết bị/phần mềm... (Bắt buộc)' : 'Nhập chi tiết yêu cầu... (Ví dụ: Nhập kho/Xuất kho thiết bị Switch thay thế khẩn cấp tại Khoa Khám bệnh)'"
                               v-model="form.reasonDetails"></textarea>
                     <div class="reason-hint">
                         <i class="fa-solid fa-circle-exclamation"></i>
@@ -456,7 +456,7 @@
             <div class="p-card">
                 <div class="c-head">
                     <div class="c-icon"><i class="fa-solid fa-paperclip"></i></div>
-                    <span class="c-title">Đính kèm</span>
+                    <span class="c-title" style="white-space: nowrap;">Đính kèm <span v-if="form.ticketType === 'HoTro'" style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">* (Ít nhất 1 file minh chứng)</span></span>
                 </div>
                 <!-- Tabs -->
                 <div class="attach-tabs">
@@ -541,7 +541,8 @@
                 listLoaiYeuCau: [
                     { text: 'Nhập kho', value: 'IMPORT' },
                     { text: 'Xuất kho', value: 'EXPORT' },
-                    { text: 'Điều chuyển', value: 'TRANSFER' }
+                    { text: 'Điều chuyển', value: 'TRANSFER' },
+                    { text: 'Hỗ trợ', value: 'HoTro' }
                 ],
                 listLoaiVatTu: ['Thiết bị y tế', 'Vật tư tiêu hao', 'Linh kiện thay thế', 'Khác'],
 
@@ -765,17 +766,29 @@
                         } catch (e) { /* ignore */ }
                     }
 
-                    if (!this.form.assetType) {
-                        this.toast('Cảnh báo', 'Vui lòng chọn loại vật tư!', 'warning');
-                        return;
-                    }
-                    if (this.form.devices.length === 0) {
-                        this.toast('Cảnh báo', 'Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!', 'warning');
-                        return;
-                    }
-                    if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
-                        this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
-                        return;
+                    // Dynamic Validation based on ticket type
+                    if (this.form.ticketType === 'HoTro') {
+                        if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
+                            this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu hỗ trợ!', 'warning');
+                            return;
+                        }
+                        if (this.attachedImages.length === 0 && this.attachedFiles.length === 0) {
+                            this.toast('Cảnh báo', 'Vui lòng đính kèm ít nhất một hình ảnh, video hoặc tập tin tài liệu làm minh chứng!', 'warning');
+                            return;
+                        }
+                    } else {
+                        if (!this.form.assetType) {
+                            this.toast('Cảnh báo', 'Vui lòng chọn loại vật tư!', 'warning');
+                            return;
+                        }
+                        if (this.form.devices.length === 0) {
+                            this.toast('Cảnh báo', 'Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!', 'warning');
+                            return;
+                        }
+                        if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
+                            this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
+                            return;
+                        }
                     }
 
                     this.isSubmitting = true;
@@ -783,6 +796,7 @@
 
                     var payload = {
                         TicketType: this.form.ticketType,
+                        AssetType: this.form.ticketType === 'HoTro' ? null : this.form.assetType,
                         Note: this.form.note,
                         ReasonDetails: this.form.reasonDetails,
                         UserId: this.form.userId,
@@ -842,6 +856,13 @@
                         window.MedEquip.toast(title, msg, type);
                     } else {
                         alert(title + ': ' + msg);
+                    }
+                }
+            },
+            watch: {
+                'form.ticketType': function (newVal) {
+                    if (newVal === 'HoTro') {
+                        this.form.assetType = '';
                     }
                 }
             },

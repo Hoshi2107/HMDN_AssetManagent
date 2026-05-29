@@ -79,6 +79,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public class CreateTicketPayload
         {
             public string TicketType { get; set; }
+            public string AssetType { get; set; }
             public string Note { get; set; }
             public int UserId { get; set; }
             public string SenderName { get; set; }  // Tên người yêu cầu (dùng cho TicketDiscussions)
@@ -103,6 +104,34 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (payload == null)
                 {
                     return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                }
+
+                // --- Backend Validation Sync ---
+                if (payload.TicketType == "HoTro")
+                {
+                    if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
+                    {
+                        return Json(new { success = false, message = "Lý do và chi tiết yêu cầu hỗ trợ không được để trống!" });
+                    }
+                    if (request.Files.Count == 0)
+                    {
+                        return Json(new { success = false, message = "Vui lòng đính kèm ít nhất một hình ảnh, video hoặc tài liệu làm minh chứng cho yêu cầu hỗ trợ!" });
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(payload.AssetType))
+                    {
+                        return Json(new { success = false, message = "Vui lòng chọn loại vật tư!" });
+                    }
+                    if (payload.Devices == null || payload.Devices.Count == 0 || payload.Devices.All(d => string.IsNullOrWhiteSpace(d.ItemName)))
+                    {
+                        return Json(new { success = false, message = "Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!" });
+                    }
+                    if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
+                    {
+                        return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
+                    }
                 }
 
                 // Get user's department
@@ -284,6 +313,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             string prefix = "PX";
             if (ticketType == "IMPORT") prefix = "PN";
             else if (ticketType == "TRANSFER") prefix = "DC";
+            else if (ticketType == "HoTro") prefix = "HT";
 
             int count = db.Tickets.Count(t => t.TicketType == ticketType);
             return prefix + (count + 1).ToString("D4");
