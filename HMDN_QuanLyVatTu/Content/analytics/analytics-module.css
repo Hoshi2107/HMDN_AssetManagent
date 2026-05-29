@@ -1,7 +1,11 @@
-﻿/**
+/**
  * Hệ thống Quản lý Vật tư Bệnh viện - CSS Module Thống kê
  * Tối ưu hóa hiển thị, chống giật v-cloak và sửa màu trạng thái tương phản cao
  */
+
+#analytics-module-hub {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
 
 /* Khử giật giao diện khi Vue.js chưa biên dịch xong */
 [v-cloak] {
@@ -15,9 +19,9 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-    #analytics-module-hub .card:hover {
-        box-shadow: 0 6px 16px rgba(0, 0, 0, .06) !important;
-    }
+#analytics-module-hub .card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .06) !important;
+}
 
 /* Các thành phần chữ bổ trợ trong Card KPI */
 .card-kpi-title {
@@ -69,18 +73,18 @@
     font-size: 13px !important;
 }
 
-    .table-analytics th {
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        font-size: 11px !important;
-        letter-spacing: 0.3px;
-        border-bottom: 2px solid #dee2e6 !important;
-    }
+.table-analytics th {
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #dee2e6 !important;
+}
 
-    .table-analytics td {
-        vertical-align: middle !important;
-        padding: 12px 8px !important;
-    }
+.table-analytics td {
+    vertical-align: middle !important;
+    padding: 12px 8px !important;
+}
 
 /* =========================================================================
    HỆ THỐNG MÀU BADGE TRẠNG THÁI CHUẨN - KHÔNG DÙNG STYLE INLINE DƯ THỪA
@@ -166,7 +170,278 @@
         margin-bottom: 10px;
     }
 
-    .table-analytics th, .table-analytics td {
+    .table-analytics th,
+    .table-analytics td {
         white-space: nowrap;
     }
 }
+
+
+/* =========================================================================
+   INTERACTIVE KPI CARDS & GRID LAYOUT
+   ========================================================================= */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1400px) {
+    .kpi-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Các tone màu Gradient chuyên nghiệp (Enterprise Tone) */
+.bg-kpi-total {
+    background: linear-gradient(135deg, #1e293b, #3b82f6) !important;
+}
+
+.bg-kpi-active {
+    background: linear-gradient(135deg, #0f5132, #10b981) !important;
+}
+
+.bg-kpi-broken {
+    background: linear-gradient(135deg, #842029, #ef4444) !important;
+}
+
+.bg-kpi-maint {
+    background: linear-gradient(135deg, #78350f, #f59e0b) !important;
+}
+
+.bg-kpi-value {
+    background: linear-gradient(135deg, #31108c, #6366f1) !important;
+}
+
+.text-white-muted {
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 11px !important;
+    font-weight: 600;
+}
+
+.kpi-card-clickable {
+    cursor: pointer !important;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04) !important;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    color: #ffffff !important;
+}
+
+.kpi-card-clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Glassmorphism quét sáng nhẹ nhàng, tinh tế (subtle glass effect) */
+.kpi-card-clickable::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    transform: rotate(45deg);
+    transition: transform 0.6s ease;
+    pointer-events: none;
+}
+
+.kpi-card-clickable:hover::before {
+    transform: translate(25%, 25%) rotate(45deg);
+}
+
+/* Icon box trong card */
+.kpi-icon-box {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+    transition: transform 0.25s ease !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.kpi-card-clickable:hover .kpi-icon-box {
+    transform: scale(1.1);
+}
+
+/* Bảng dữ liệu - Hover dòng trỏ chuột tay kèm chỉ báo viền trái */
+.table-analytics tbody tr {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.table-analytics tbody tr:hover {
+    background-color: rgba(59, 130, 246, 0.04) !important;
+    border-left: 3px solid #3b82f6;
+}
+
+/* Active filter indicator styling */
+.filter-indicator-bar {
+    background-color: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+
+.filter-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #ffffff;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.2s ease;
+}
+
+.filter-badge:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+}
+
+.filter-badge .filter-remove-btn {
+    color: #94a3b8;
+    margin-left: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: color 0.2s ease;
+}
+
+.filter-badge .filter-remove-btn:hover {
+    color: #ef4444;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+.outline-none {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Style cho Readonly Modal chi tiết thiết bị */
+.modal-readonly-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.modal-readonly-value {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #1e293b;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    min-height: 33px;
+    display: flex;
+    align-items: center;
+}
+
+.modal-header-accent {
+    border-bottom: 2px solid #3b82f6 !important;
+    background-color: #f8fafc;
+}
+
+/* Extra small button utility class */
+.btn-xs {
+    padding: 0.15rem 0.4rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+}
+
+/* Filter Panel inside Modal */
+.filter-panel {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+}
+
+.filter-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+}
+
+.filter-select {
+    border-radius: 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 500;
+    color: #334155;
+    background-color: #ffffff !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.filter-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+}
+
+.btn-reset-filters {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    transition: all 0.15s ease;
+}
+
+.btn-reset-filters:hover {
+    background-color: #e2e8f0 !important;
+    color: #1e293b !important;
+    border-color: #94a3b8 !important;
+}
+
+/* Styled Chevron Pagination Buttons */
+.btn-pagination {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
+    color: #475569 !important;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background-color: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #1e293b !important;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}

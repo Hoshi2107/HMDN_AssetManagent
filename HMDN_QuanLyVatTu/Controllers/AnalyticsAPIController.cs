@@ -1,4 +1,4 @@
-﻿using HMDN_QuanLyVatTu.Models;
+using HMDN_QuanLyVatTu.Models;
 using HMS.Data;
 using System;
 using System.Collections.Generic;
@@ -160,7 +160,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         // API 6: Báo cáo chi tiết tồn kho tài sản y tế - Lọc động 4 trạng thái dưới SQL
         [HttpGet]
         [Route("inventory-report")]
-        public IHttpActionResult GetInventoryReport(int? departmentId, int? groupId, int? year, string status = null)
+        public IHttpActionResult GetInventoryReport(int? departmentId = null, int? groupId = null, int? year = null, string status = null)
         {
             try
             {
