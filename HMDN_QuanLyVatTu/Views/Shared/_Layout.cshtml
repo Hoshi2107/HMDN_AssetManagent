@@ -125,6 +125,7 @@
             flex: 1;
             padding: 8px 10px;
             overflow-y: auto;
+            overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
@@ -138,14 +139,14 @@
         }
 
         .nav-section {
-            margin-bottom: 4px;
+            margin-bottom: 10px;
         }
 
         .nav-section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 9px 8px 6px;
+            padding: 6px 8px 4px;
             cursor: pointer;
             user-select: none;
             color: var(--text-muted);
@@ -191,7 +192,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 7.5px 10px;
+            padding: 6.5px 10px;
             border-radius: 6px;
             color: var(--text-secondary);
             font-size: 13.5px;
@@ -750,12 +751,9 @@
                         </ul>
                     </div>
                 }
-            </nav>
-
-            <div class="sidebar-footer">
                 @if (HasModule("Settings") || HasModule("Support"))
                 {
-                    <div class="nav-section">
+                    <div class="nav-section" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 10px;">
                         <div class="nav-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
                             <div class="nav-section-label" style="padding: 0;">Hệ thống</div>
                             <i class="fa-solid fa-chevron-down nav-section-toggle"></i>
@@ -782,8 +780,7 @@
                         </ul>
                     </div>
                 }
-
-            </div>
+            </nav>
         </aside>
 
         <div class="page-wrapper">
