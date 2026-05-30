@@ -536,6 +536,13 @@ new Vue({
         this.availableYears.sort((a,b) => b - a);
         this.filterYear = '';
 
+        // Tự động lọc thiết bị nếu trỏ từ Alerts Center qua searchCode
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('searchCode');
+        if (code) {
+            this.searchQuery = code.trim();
+        }
+
         document.addEventListener('click', this.closeDropdowns);
         window.addEventListener('resize', this.updateTableWidth);
         setTimeout(() => this.updateTableWidth(), 300);

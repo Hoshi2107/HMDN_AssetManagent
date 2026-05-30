@@ -48,7 +48,13 @@ var app = new Vue({
 
         // Trạng thái tải dữ liệu
         loading: false,
-        saving: false
+        saving: false,
+
+        // Trạng thái xử lý của từng alert (để disable button tránh click đúp)
+        processingAlerts: {},
+
+        // Số lượng nhập kho nhanh cho từng consumable alert
+        restockQuantities: {}
     },
 
     computed: {
@@ -223,17 +229,174 @@ var app = new Vue({
         // 4. Xử lý cảnh báo (Đánh dấu đã giải quyết)
         resolveAlert: function (id) {
             var vm = this;
+            if (vm.processingAlerts[id]) return;
+            Vue.set(vm.processingAlerts, id, true);
 
             $.ajax({
                 url: '/api/alerts/resolve/' + id,
                 type: 'POST',
                 success: function (res) {
                     vm.showToast('Thành công', 'Đã xác nhận xử lý cảnh báo.', 'success');
+                    Vue.delete(vm.processingAlerts, id);
                     vm.loadAlerts(); // Tải lại danh sách
                 },
                 error: function (xhr) {
                     console.error('Lỗi xử lý cảnh báo:', xhr.responseText);
-                    vm.showToast('Lỗi', 'Không thể xử lý cảnh báo.', 'danger');
+                    vm.showToast('Lỗi', xhr.responseJSON?.message || 'Không thể xử lý cảnh báo.', 'danger');
+                    Vue.delete(vm.processingAlerts, id);
+                }
+            });
+        },
+
+        // 4.1. Đề xuất thanh lý thiết bị
+        liquidateAsset: function (alert) {
+            var vm = this;
+            var id = alert.Id;
+            if (vm.processingAlerts[id]) return;
+
+            if (!confirm('Bạn có chắc chắn muốn đề xuất thanh lý thiết bị ' + alert.ItemName + ' (' + alert.AssetCode + ') không? Trạng thái thiết bị sẽ chuyển sang "Thanh lý".')) {
+                return;
+            }
+
+            Vue.set(vm.processingAlerts, id, true);
+
+            $.ajax({
+                url: '/api/alerts/liquidate/' + id,
+                type: 'POST',
+                success: function (res) {
+                    vm.showToast('Thành công', res.message || 'Đã đề xuất thanh lý thiết bị thành công.', 'success');
+                    Vue.delete(vm.processingAlerts, id);
+                    vm.loadAlerts();
+                },
+                error: function (xhr) {
+                    console.error('Lỗi đề xuất thanh lý:', xhr.responseText);
+                    var errMsg = xhr.responseJSON?.Message || xhr.responseJSON?.message || 'Không thể thanh lý thiết bị.';
+                    vm.showToast('Không thể thực hiện', errMsg, 'danger');
+                    Vue.delete(vm.processingAlerts, id);
+                }
+            });
+        },
+
+        // 4.2. Gia hạn bảo hành nhanh (12 tháng)
+        extendWarranty: function (alert) {
+            var vm = this;
+            var id = alert.Id;
+            if (vm.processingAlerts[id]) return;
+
+            Vue.set(vm.processingAlerts, id, true);
+
+            $.ajax({
+                url: '/api/alerts/extend-warranty/' + id,
+                type: 'POST',
+                success: function (res) {
+                    vm.showToast('Thành công', res.message || 'Đã gia hạn bảo hành thêm 12 tháng.', 'success');
+                    Vue.delete(vm.processingAlerts, id);
+                    vm.loadAlerts();
+                },
+                error: function (xhr) {
+                    console.error('Lỗi gia hạn bảo hành:', xhr.responseText);
+                    vm.showToast('Lỗi', xhr.responseJSON?.message || 'Không thể gia hạn bảo hành.', 'danger');
+                    Vue.delete(vm.processingAlerts, id);
+                }
+            });
+        },
+
+        // 4.3. Hoàn thành hoặc bỏ qua checklist
+        completeChecklist: function (alert, status) {
+            var vm = this;
+            var id = alert.Id;
+            if (vm.processingAlerts[id]) return;
+
+            var actionName = status === 'done' ? 'hoàn thành kiểm tra' : 'bỏ qua lần này';
+            if (!confirm('Xác nhận ' + actionName + ' cho thiết bị ' + alert.ItemName + '?')) {
+                return;
+            }
+
+            Vue.set(vm.processingAlerts, id, true);
+
+            $.ajax({
+                url: '/api/alerts/complete-checklist/' + id + '?status=' + status,
+                type: 'POST',
+                success: function (res) {
+                    vm.showToast('Thành công', res.message || 'Cập nhật trạng thái checklist thành công.', 'success');
+                    Vue.delete(vm.processingAlerts, id);
+                    vm.loadAlerts();
+                },
+                error: function (xhr) {
+                    console.error('Lỗi cập nhật checklist:', xhr.responseText);
+                    vm.showToast('Lỗi', xhr.responseJSON?.message || 'Không thể cập nhật checklist.', 'danger');
+                    Vue.delete(vm.processingAlerts, id);
+                }
+            });
+        },
+
+        // 4.4. Nhập kho nhanh vật tư tiêu hao
+        restockConsumable: function (alert, quantity) {
+            var vm = this;
+            var id = alert.Id;
+            var qty = parseInt(quantity);
+            if (isNaN(qty) || qty <= 0) {
+                vm.showToast('Lỗi nhập liệu', 'Vui lòng nhập số lượng lớn hơn 0.', 'warning');
+                return;
+            }
+
+            if (vm.processingAlerts[id]) return;
+            Vue.set(vm.processingAlerts, id, true);
+
+            $.ajax({
+                url: '/api/alerts/restock/' + id + '?quantity=' + qty,
+                type: 'POST',
+                success: function (res) {
+                    vm.showToast('Thành công', res.message || 'Đã nhập kho nhanh thành công.', 'success');
+                    Vue.delete(vm.processingAlerts, id);
+                    // Reset input
+                    Vue.delete(vm.restockQuantities, id);
+                    vm.loadAlerts();
+                },
+                error: function (xhr) {
+                    console.error('Lỗi nhập kho nhanh:', xhr.responseText);
+                    vm.showToast('Lỗi', xhr.responseJSON?.message || 'Không thể nhập kho.', 'danger');
+                    Vue.delete(vm.processingAlerts, id);
+                }
+            });
+        },
+
+        // 4.5. Xác nhận tất cả cảnh báo đang hiển thị
+        resolveAllVisible: function () {
+            var vm = this;
+            if (!vm.filteredAlerts.length) return;
+
+            if (!confirm('Bạn có chắc chắn muốn xác nhận xử lý tất cả ' + vm.filteredAlerts.length + ' cảnh báo đang hiển thị không?')) {
+                return;
+            }
+
+            vm.loading = true;
+            var ids = vm.filteredAlerts.map(function (a) { return a.Id; });
+
+            // Set processing for all visible alerts
+            ids.forEach(function (id) {
+                Vue.set(vm.processingAlerts, id, true);
+            });
+
+            $.ajax({
+                url: '/api/alerts/resolve-multiple',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(ids),
+                success: function (res) {
+                    vm.showToast('Thành công', 'Đã xác nhận xử lý tất cả cảnh báo đang hiển thị.', 'success');
+                    ids.forEach(function (id) {
+                        Vue.delete(vm.processingAlerts, id);
+                    });
+                    vm.loadAlerts(); // Tải lại danh sách
+                },
+                error: function (xhr) {
+                    console.error('Lỗi xác nhận tất cả cảnh báo:', xhr.responseText);
+                    vm.showToast('Lỗi', 'Không thể xác nhận xử lý tất cả cảnh báo.', 'danger');
+                    ids.forEach(function (id) {
+                        Vue.delete(vm.processingAlerts, id);
+                    });
+                    vm.loading = false;
                 }
             });
         },
@@ -293,7 +456,7 @@ var app = new Vue({
                 vm.resolveAlert(alert.Id);
             } else if (actionType === 'view') {
                 // Xem chi tiết tài sản
-                window.location.href = '/Inventory/Index?searchCode=' + alert.AssetCode;
+                window.location.href = '/Inventory/Index?searchCode=' + alert.AssetCode + '&inventoryId=' + alert.InventoryId;
             }
         },
 
