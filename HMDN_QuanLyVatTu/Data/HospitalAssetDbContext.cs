@@ -34,6 +34,8 @@ namespace HMS.Data
         public DbSet<TicketDiscussion> TicketDiscussions { get; set; }
         public DbSet<DepreciationLog> DepreciationLogs { get; set; }
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
+        public DbSet<AlertRule> AlertRules { get; set; }
+        public DbSet<Alert> Alerts { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
@@ -75,6 +77,12 @@ namespace HMS.Data
 
             modelBuilder.Entity<MaintenanceLog>()
                 .ToTable("MaintenanceLogs");
+
+            modelBuilder.Entity<AlertRule>()
+                .ToTable("AlertRules");
+
+            modelBuilder.Entity<Alert>()
+                .ToTable("Alerts");
         }
 
     }

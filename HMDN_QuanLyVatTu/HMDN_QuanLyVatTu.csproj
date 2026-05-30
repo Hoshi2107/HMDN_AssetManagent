@@ -154,6 +154,10 @@
     <Compile Include="Controllers\LocationAPIController.cs" />
     <Compile Include="Controllers\LocationController.cs" />
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
+    <Compile Include="Controllers\AlertsController.cs" />
+    <Compile Include="Controllers\AlertsAPIController.cs" />
+    <Compile Include="Models\AlertRule.cs" />
+    <Compile Include="Models\Alert.cs" />
     <Compile Include="Data\HospitalAssetDbContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -235,6 +239,7 @@
     <Content Include="Content\inventory\inventory.css" />
     <Content Include="Content\maintenance\maintenance.css" />
     <Content Include="Content\location\location.css" />
+    <Content Include="Content\alerts\alerts.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
@@ -246,6 +251,7 @@
     <Content Include="Scripts\app\maintenance.js" />
     <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
+    <Content Include="Scripts\app\alerts.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -295,6 +301,7 @@
     <Content Include="Views\Location\Location.cshtml" />
     <Content Include="Views\Maintenance\Index.cshtml" />
     <Content Include="Views\CreateTicket\CreateTicket.cshtml" />
+    <Content Include="Views\Alerts\Index.cshtml" />
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
     <Content Include="Uploads\web.config" />
   </ItemGroup>
