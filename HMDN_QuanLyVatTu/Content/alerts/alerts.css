@@ -726,3 +726,78 @@ input:checked + .switch-slider:before {
         grid-template-columns: 1fr;
     }
 }
+
+/* Card Quick Dismiss Checkmark Button */
+.alert-dismiss-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14.5px;
+    transition: all 0.2s ease-in-out;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.alert-dismiss-btn:hover {
+    background: #f1f5f9;
+    color: var(--accent-green);
+    transform: scale(1.18);
+}
+
+/* Direct Action Danger / Liquidate Button Style */
+.btn-action-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+}
+.btn-action-danger:hover {
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+    transform: translateY(-1.5px);
+}
+
+/* Direct Action Success / Extend / Restock Button Style */
+.btn-action-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+.btn-action-success:hover {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    transform: translateY(-1.5px);
+}
+
+/* Disabled styling for regular buttons */
+.btn-alert-action:disabled {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Inline Restock Layout */
+.inline-restock-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+.restock-input {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    text-align: center;
+}
+.restock-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}

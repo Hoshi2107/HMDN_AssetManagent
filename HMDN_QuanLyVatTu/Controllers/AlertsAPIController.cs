@@ -156,6 +156,232 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        // 4.5. POST: api/alerts/resolve-multiple
+        [HttpPost]
+        [Route("resolve-multiple")]
+        public IHttpActionResult ResolveMultipleAlerts([FromBody] List<long> ids)
+        {
+            if (ids == null || !ids.Any()) return BadRequest("Danh sách ID không hợp lệ.");
+
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var alerts = db.Alerts.Where(a => ids.Contains(a.Id) && !a.IsResolved).ToList();
+                    if (!alerts.Any()) return Content(System.Net.HttpStatusCode.OK, new { success = true, message = "Không có cảnh báo nào cần xử lý." }, Configuration.Formatters.JsonFormatter);
+
+                    var userId = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    foreach (var alert in alerts)
+                    {
+                        alert.IsResolved = true;
+                        alert.ResolvedAt = DateTime.Now;
+                        alert.ResolvedBy = userId;
+                    }
+
+                    db.SaveChanges();
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = "Xác nhận xử lý hàng loạt thành công." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // 4.6. POST: api/alerts/liquidate/{id}
+        [HttpPost]
+        [Route("liquidate/{id}")]
+        public IHttpActionResult LiquidateAsset(long id)
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var alert = db.Alerts.Find(id);
+                    if (alert == null) return NotFound();
+
+                    if (alert.IsResolved)
+                    {
+                        return BadRequest("Cảnh báo này đã được xử lý từ trước.");
+                    }
+
+                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (inventory == null) return NotFound();
+
+                    // Check active maintenance tasks (Status is not 'closed')
+                    bool hasActiveMaintenance = db.MaintenanceLogs.Any(l => l.InventoryId == alert.InventoryId && l.Status != "closed");
+
+                    // Check active ticket/operational tasks (tickets that are linked to this inventory and are not approved or rejected)
+                    bool hasActiveTickets = false;
+                    if (inventory.IdTicket.HasValue)
+                    {
+                        var ticket = db.Tickets.Find(inventory.IdTicket.Value);
+                        if (ticket != null && ticket.Status != "APPROVED" && ticket.Status != "REJECTED")
+                        {
+                            hasActiveTickets = true;
+                        }
+                    }
+
+                    if (hasActiveMaintenance || hasActiveTickets)
+                    {
+                        string msg = "Không thể thanh lý thiết bị y tế này vì đang có ";
+                        if (hasActiveMaintenance && hasActiveTickets)
+                            msg += "ca bảo trì chưa đóng và phiếu yêu cầu chưa duyệt.";
+                        else if (hasActiveMaintenance)
+                            msg += "ca bảo trì chưa đóng.";
+                        else
+                            msg += "phiếu yêu cầu chưa duyệt.";
+
+                        return BadRequest(msg);
+                    }
+
+                    // Perform liquidation
+                    inventory.LifeStatus = "disposed";
+                    inventory.SuspendedAt = DateTime.Now;
+                    inventory.SuspendReason = "Thanh lý thiết bị do lỗi lặp lại nhiều lần (Trung tâm Cảnh báo)";
+                    inventory.UpdatedAt = DateTime.Now;
+                    inventory.UpdatedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    // Resolve the alert
+                    alert.IsResolved = true;
+                    alert.ResolvedAt = DateTime.Now;
+                    alert.ResolvedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    db.SaveChanges();
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = "Đã đề xuất thanh lý thiết bị và đóng cảnh báo thành công." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // 4.7. POST: api/alerts/extend-warranty/{id}
+        [HttpPost]
+        [Route("extend-warranty/{id}")]
+        public IHttpActionResult ExtendWarranty(long id)
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var alert = db.Alerts.Find(id);
+                    if (alert == null) return NotFound();
+
+                    if (alert.IsResolved)
+                    {
+                        return BadRequest("Cảnh báo này đã được xử lý từ trước.");
+                    }
+
+                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (inventory != null)
+                    {
+                        DateTime currentExpiry = inventory.WarrantyExpiry ?? DateTime.Today;
+                        if (currentExpiry < DateTime.Today)
+                        {
+                            currentExpiry = DateTime.Today;
+                        }
+                        inventory.WarrantyExpiry = currentExpiry.AddYears(1);
+                        inventory.UpdatedAt = DateTime.Now;
+                        inventory.UpdatedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+                    }
+
+                    alert.IsResolved = true;
+                    alert.ResolvedAt = DateTime.Now;
+                    alert.ResolvedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    db.SaveChanges();
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = "Đã gia hạn bảo hành thêm 12 tháng thành công." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // 4.8. POST: api/alerts/complete-checklist/{id}
+        [HttpPost]
+        [Route("complete-checklist/{id}")]
+        public IHttpActionResult CompleteChecklist(long id, [FromUri] string status = "done")
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var alert = db.Alerts.Find(id);
+                    if (alert == null) return NotFound();
+
+                    if (alert.IsResolved)
+                    {
+                        return BadRequest("Cảnh báo này đã được xử lý từ trước.");
+                    }
+
+                    var today = DateTime.Today;
+                    db.Database.ExecuteSqlCommand(
+                        "UPDATE ChecklistSchedules SET Status = @status WHERE InventoryId = @invId AND Status = 'pending' AND DueDate < @today",
+                        new System.Data.SqlClient.SqlParameter("@status", status),
+                        new System.Data.SqlClient.SqlParameter("@invId", alert.InventoryId),
+                        new System.Data.SqlClient.SqlParameter("@today", today)
+                    );
+
+                    alert.IsResolved = true;
+                    alert.ResolvedAt = DateTime.Now;
+                    alert.ResolvedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    db.SaveChanges();
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = $"Đã cập nhật trạng thái checklist thành '{status}' và đóng cảnh báo." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // 4.9. POST: api/alerts/restock/{id}
+        [HttpPost]
+        [Route("restock/{id}")]
+        public IHttpActionResult RestockConsumable(long id, [FromUri] int quantity)
+        {
+            if (quantity <= 0) return BadRequest("Số lượng nhập kho phải lớn hơn 0.");
+
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var alert = db.Alerts.Find(id);
+                    if (alert == null) return NotFound();
+
+                    if (alert.IsResolved)
+                    {
+                        return BadRequest("Cảnh báo này đã được xử lý từ trước.");
+                    }
+
+                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (inventory != null)
+                    {
+                        inventory.Quantity += quantity;
+                        inventory.UpdatedAt = DateTime.Now;
+                        inventory.UpdatedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+                    }
+
+                    alert.IsResolved = true;
+                    alert.ResolvedAt = DateTime.Now;
+                    alert.ResolvedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
+
+                    db.SaveChanges();
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = $"Đã nhập kho thêm {quantity} đơn vị vật tư tiêu hao thành công." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
         // 5. GET: api/alerts/check-new
         [HttpGet]
         [Route("check-new")]

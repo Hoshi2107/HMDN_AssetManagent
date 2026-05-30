@@ -1,4 +1,4 @@
-﻿const STATUS = {
+const STATUS = {
     active: {
         label: 'Đang sử dụng',
         class: 's-active'
@@ -519,6 +519,17 @@ var app = new Vue({
                 success: (res) => {
 
                     this.devices = res
+
+                    // Tự động mở chi tiết thiết bị nếu trỏ từ Alerts Center qua inventoryId
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const invId = urlParams.get('inventoryId');
+                    if (invId) {
+                        const targetId = parseInt(invId);
+                        const device = this.devices.find(d => d.Id === targetId);
+                        if (device) {
+                            this.openDetail(targetId);
+                        }
+                    }
                 },
 
                 error: () => {
@@ -707,9 +718,14 @@ var app = new Vue({
     },
 
     mounted() {
-
         this.loadDropdowns()
-
         this.loadDevices()
+
+        // Tự động lọc thiết bị nếu trỏ từ Alerts Center qua searchCode
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('searchCode');
+        if (code) {
+            this.searchQuery = code.trim();
+        }
     }
 })

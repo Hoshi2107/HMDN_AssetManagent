@@ -212,6 +212,24 @@ var app = new Vue({
                     vm.devices = res;
                     vm.calculateKPI();
                     vm.loading = false;
+
+                    // Tự động xử lý query parameters trỏ từ Alerts Center qua
+                    var urlParams = new URLSearchParams(window.location.search);
+                    var invId = urlParams.get('inventoryId');
+                    var trigger = urlParams.get('triggerCreate');
+                    if (invId) {
+                        var targetId = parseInt(invId);
+                        var device = vm.devices.find(function (d) { return d.Id === targetId; });
+                        if (device) {
+                            vm.searchQuery = device.AssetCode;
+                            if (trigger === '1') {
+                                vm.newLog.InventoryId = targetId;
+                                vm.createFromDevice = device;
+                                vm.showCreateModal = true;
+                                vm.loadDeviceDropdown();
+                            }
+                        }
+                    }
                 },
                 error: function (xhr) {
                     console.error('Lỗi tải danh sách thiết bị:', xhr.responseText);
