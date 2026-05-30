@@ -32,6 +32,7 @@ var app = new Vue({
         // Modal lịch sử thiết bị
         showHistoryModal: false,
         selectedDevice: null,
+        summaryData: {},
         deviceLogs: [],
         historyLoading: false,
 
@@ -51,6 +52,7 @@ var app = new Vue({
         createFromDevice: null, // pre-fill khi tạo từ modal lịch sử
         newLog: {
             InventoryId: 0,
+            MaintenanceType: 'corrective',
             Title: '',
             ErrorDescription: '',
             Description: '',
@@ -165,6 +167,15 @@ var app = new Vue({
             return map[priority] || priority;
         },
 
+        maintenanceTypeLabel: function (type) {
+            var map = {
+                'corrective': 'Sửa chữa đột xuất',
+                'preventive': 'Bảo trì định kỳ',
+                'replacement_part': 'Thay thế linh kiện'
+            };
+            return map[type] || type || 'N/A';
+        },
+
         lifeStatusLabel: function (status) {
             var map = {
                 'active': 'Đang sử dụng',
@@ -224,6 +235,12 @@ var app = new Vue({
                 type: 'GET',
                 success: function (res) {
                     vm.selectedDevice = res.Device;
+                    vm.summaryData = {
+                        TotalMaintenanceCost: res.TotalMaintenanceCost,
+                        TotalLogs: res.TotalLogs,
+                        LastMaintenanceDate: res.LastMaintenanceDate,
+                        Uptime: res.Uptime
+                    };
                     vm.deviceLogs = res.Logs;
                     vm.historyLoading = false;
                 },
@@ -369,7 +386,7 @@ var app = new Vue({
                     ActionTaken: vm.closeForm.ActionTaken,
                     PartReplaced: vm.closeForm.PartReplaced,
                     Vendor: vm.closeForm.Vendor,
-                    Cost: vm.closeForm.Cost
+                    Cost: vm.closeForm.Cost ? Number(vm.closeForm.Cost.toString().replace(/[^0-9]/g, '')) : null
                 }),
                 success: function (res) {
                     if (res.success) {
@@ -399,6 +416,7 @@ var app = new Vue({
         resetNewLog: function () {
             this.newLog = {
                 InventoryId: 0,
+                MaintenanceType: 'corrective',
                 Title: '',
                 ErrorDescription: '',
                 Description: '',

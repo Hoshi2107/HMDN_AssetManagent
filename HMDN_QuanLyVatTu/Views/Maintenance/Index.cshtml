@@ -3,7 +3,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<link href="~/Content/maintenance/maintenance.css" rel="stylesheet" />
+<link href="~/Content/maintenance/maintenance.css?v=@DateTime.Now.Ticks.ToString()" rel="stylesheet" />
 
 <div id="app">
 
@@ -91,6 +91,8 @@
                     <th>Serial</th>
                     <th>Khoa phòng</th>
                     <th>Vị trí</th>
+                    <th>Nguyên giá</th>
+                    <th>Tổng phí sửa</th>
                     <th>Trạng thái</th>
                     <th>Số lần sửa</th>
                     <th>Đang xử lý</th>
@@ -120,6 +122,15 @@
                     <td>${ device.DepartmentName }</td>
 
                     <td>${ device.LocationName }</td>
+
+                    <td>${ formatCurrency(device.UnitPrice) }</td>
+
+                    <td>
+                        <strong v-if="device.TotalMaintenanceCost > 0" style="color:#b91c1c">
+                            ${ formatCurrency(device.TotalMaintenanceCost) }
+                        </strong>
+                        <span v-else class="no-log">0 ₫</span>
+                    </td>
 
                     <td>
                         <span class="badge-life" :class="'life-' + (device.LifeStatus || 'active')">
@@ -179,120 +190,234 @@
          v-if="showHistoryModal"
          @@click.self="showHistoryModal = false">
 
-        <div class="modal-panel modal-panel-xl">
+        <div class="modal-panel modal-panel-fullscreen" style="background:#f8fafc">
 
-            <div class="modal-top">
-                <h3>
-                    <i class="fa-solid fa-file-medical" style="color:#2563eb;margin-right:8px"></i>
-                    Bệnh án thiết bị
-                </h3>
+            <div class="modal-top" style="background:#fff; border-bottom:none">
+                <h3>Nhật ký bệnh án thiết bị</h3>
                 <button class="modal-close" @@click="showHistoryModal = false">×</button>
             </div>
 
             <!-- Loading -->
-            <div v-if="historyLoading" style="padding:40px;text-align:center;color:#94a3b8">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size:24px"></i>
-                <p style="margin-top:10px">Đang tải...</p>
+            <div v-if="historyLoading" style="padding:100px;text-align:center;color:#94a3b8">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:32px"></i>
+                <p style="margin-top:16px; font-weight:500">Đang tải hồ sơ thiết bị...</p>
             </div>
 
-            <div class="modal-body" v-if="selectedDevice && !historyLoading">
+            <div class="modal-body" v-if="selectedDevice && !historyLoading" style="padding:0; display:flex; flex-direction:column">
 
-                <!-- Thông tin thiết bị -->
-                <div class="device-info-card">
-                    <div class="device-info-header">
-                        <div class="device-icon">
-                            <i class="fa-solid fa-microchip"></i>
+                <!-- Header (Title & Actions) -->
+                <div class="profile-header" style="background:#fff">
+                    <div class="profile-header-left">
+                        <div class="profile-icon">
+                            <i class="fa-solid fa-x-ray"></i>
                         </div>
                         <div>
-                            <h4>${ selectedDevice.ItemName }</h4>
-                            <p class="device-meta">
-                                <span v-if="selectedDevice.AssetCode">
-                                    <i class="fa-solid fa-barcode"></i> ${ selectedDevice.AssetCode }
-                                </span>
-                                <span v-if="selectedDevice.SerialNumber">
-                                    <i class="fa-solid fa-hashtag"></i> ${ selectedDevice.SerialNumber }
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                    <div class="device-info-grid">
-                        <div class="info-item">
-                            <label>Khoa phòng</label>
-                            <p>${ selectedDevice.DepartmentName || '—' }</p>
-                        </div>
-                        <div class="info-item">
-                            <label>Vị trí</label>
-                            <p>${ selectedDevice.LocationName || '—' }</p>
-                        </div>
-                        <div class="info-item">
-                            <label>Trạng thái</label>
-                            <p>
-                                <span class="badge-life" :class="'life-' + (selectedDevice.LifeStatus || 'active')">
-                                    ${ lifeStatusLabel(selectedDevice.LifeStatus) }
-                                </span>
-                            </p>
-                        </div>
-                        <div class="info-item">
-                            <label>Ngày nhập</label>
-                            <p>${ selectedDevice.ImportDate }</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Header lịch sử -->
-                <div class="history-header">
-                    <h4>
-                        <i class="fa-solid fa-clock-rotate-left" style="margin-right:6px"></i>
-                        Lịch sử sửa chữa
-                        <span class="log-total-badge">${ deviceLogs.length } ca</span>
-                    </h4>
-                    <button class="btn-create-sm" @@click="openCreateFromHistory()">
-                        <i class="fa-solid fa-plus"></i> Tạo ca mới
-                    </button>
-                </div>
-
-                <!-- Timeline lịch sử -->
-                <div class="history-timeline" v-if="deviceLogs.length > 0">
-                    <div class="timeline-item" v-for="log in deviceLogs" :key="log.Id"
-                         @@click="openDetail(log.Id)">
-                        <div class="timeline-dot" :class="'dot-' + log.Status"></div>
-                        <div class="timeline-content">
-                            <div class="timeline-header-row">
-                                <strong>#${ log.Id } — ${ log.Title }</strong>
-                                <span class="badge-status-maint" :class="'badge-' + log.Status">
-                                    ${ statusLabel(log.Status) }
-                                </span>
+                            <div class="profile-title">
+                                <h2>
+                                    ${ selectedDevice.ItemName }
+                                    <span class="badge-status-maint" style="background:#d1fae5; color:#065f46">
+                                        Đang hoạt động
+                                    </span>
+                                </h2>
                             </div>
-                            <p class="timeline-desc" v-if="log.ErrorDescription">
-                                <i class="fa-solid fa-bug" style="color:#ef4444;margin-right:4px"></i>
-                                ${ log.ErrorDescription }
-                            </p>
-                            <p class="timeline-desc" v-if="log.ActionTaken">
-                                <i class="fa-solid fa-check" style="color:#22c55e;margin-right:4px"></i>
-                                ${ log.ActionTaken }
-                            </p>
-                            <div class="timeline-meta">
+                            <div class="profile-meta">
                                 <span>
-                                    <i class="fa-regular fa-calendar"></i>
-                                    ${ log.StartDate }
-                                    <template v-if="log.EndDate"> → ${ log.EndDate }</template>
+                                    <i class="fa-solid fa-barcode" style="color:#94a3b8"></i> 
+                                    SN: ${ selectedDevice.SerialNumber || '—' }
                                 </span>
-                                <span class="badge-priority" :class="'prio-' + log.Priority">
-                                    ${ priorityLabel(log.Priority) }
+                                <span>
+                                    <i class="fa-solid fa-hospital-user" style="color:#94a3b8"></i> 
+                                    Khoa: ${ selectedDevice.DepartmentName || '—' }
                                 </span>
-                                <span v-if="log.Cost" class="cost-cell">
-                                    <i class="fa-solid fa-coins"></i> ${ formatCurrency(log.Cost) }
+                                <span>
+                                    <i class="fa-solid fa-location-dot" style="color:#94a3b8"></i> 
+                                    Phòng: ${ selectedDevice.LocationName || '—' }
                                 </span>
                             </div>
                         </div>
                     </div>
+                    <div class="profile-header-actions">
+                        <button class="btn-outline">
+                            <i class="fa-solid fa-pen"></i> Chỉnh sửa
+                        </button>
+                        <button class="btn-outline">
+                            <i class="fa-solid fa-file-pdf"></i> PDF/Excel
+                        </button>
+                        <button class="btn-create" @@click="openCreateFromHistory()" style="padding:9px 20px">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Thêm phiếu báo hỏng
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Empty history -->
-                <div class="empty-history" v-else>
-                    <i class="fa-solid fa-heart-pulse" style="font-size:36px;color:#22c55e"></i>
-                    <p>Thiết bị này chưa từng có ca sửa chữa nào</p>
-                    <small>Thiết bị đang hoạt động tốt</small>
+                <!-- KPI Cards -->
+                <div class="profile-kpi-grid" style="background:#fff">
+                    <div class="profile-kpi-card">
+                        <h5>Tổng chi phí bảo trì</h5>
+                        <p>${ formatCurrency(summaryData.TotalMaintenanceCost) || '0 ₫' }</p>
+                    </div>
+                    <div class="profile-kpi-card">
+                        <h5>Số lần sửa chữa</h5>
+                        <p>${ summaryData.TotalLogs } phiếu</p>
+                    </div>
+                    <div class="profile-kpi-card">
+                        <h5>Bảo dưỡng gần nhất</h5>
+                        <p>${ summaryData.LastMaintenanceDate || 'Chưa có' }</p>
+                    </div>
+                    <div class="profile-kpi-card">
+                        <h5>Thời gian hoạt động</h5>
+                        <p class="text-green">${ summaryData.Uptime } <i class="fa-solid fa-arrow-trend-up" style="font-size:14px"></i></p>
+                    </div>
+                </div>
+
+                <!-- 2-Column Layout -->
+                <div class="profile-layout-2col">
+                    
+                    <!-- LEFT COLUMN: Timeline -->
+                    <div class="profile-timeline-section">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; border-bottom:1px solid #e2e8f0; padding-bottom:12px">
+                            <h3 style="margin:0; border:none; padding:0">Lịch sử bảo trì & Sửa chữa</h3>
+                            <div style="display:flex; gap:10px">
+                                <button class="btn-outline" style="padding:6px 12px; font-size:12px">Tất cả loại hình <i class="fa-solid fa-chevron-down"></i></button>
+                                <button class="btn-outline" style="padding:6px 12px; font-size:12px">Tất cả trạng thái <i class="fa-solid fa-chevron-down"></i></button>
+                            </div>
+                        </div>
+
+                        <div v-if="deviceLogs.length > 0">
+                            <div class="timeline-card-rich" :class="'tcr-' + log.Status" v-for="log in deviceLogs" :key="log.Id">
+                                <div class="tcr-header">
+                                    <div>
+                                        <div class="tcr-title">
+                                            <h4>
+                                                ${ log.Title }
+                                                <span class="badge-status-maint" style="background:#f1f5f9; color:#475569; font-size:10px; border:1px solid #cbd5e1">
+                                                    ${ maintenanceTypeLabel(log.MaintenanceType).toUpperCase() }
+                                                </span>
+                                            </h4>
+                                        </div>
+                                        <div class="tcr-title-meta">
+                                            <span><i class="fa-regular fa-calendar"></i> ${ log.StartDate } <template v-if="log.EndDate">- ${ log.EndDate }</template></span>
+                                            <span><i class="fa-solid fa-ticket"></i> #JOB-${ new Date(log.StartDate).getFullYear() }-${ log.Id }</span>
+                                        </div>
+                                    </div>
+                                    <div class="tcr-status">
+                                        <span class="badge-status-maint" :class="'badge-' + log.Status">
+                                            ${ statusLabel(log.Status) }
+                                        </span>
+                                        <div class="text-danger" v-if="log.Priority === 'critical' || log.Priority === 'high'">
+                                            <i class="fa-solid fa-circle-exclamation"></i> Khẩn cấp
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tcr-body">
+                                    <div class="tcr-col">
+                                        <h6 v-if="log.ErrorDescription">Mô tả hư hỏng:</h6>
+                                        <p v-if="log.ErrorDescription">${ log.ErrorDescription }</p>
+                                        
+                                        <h6 v-if="log.ActionTaken">Nội dung xử lý:</h6>
+                                        <p v-if="log.ActionTaken">${ log.ActionTaken }</p>
+
+                                        <p v-if="!log.ErrorDescription && !log.ActionTaken" style="color:#94a3b8; font-style:italic">Không có ghi chú</p>
+                                    </div>
+                                    <div class="tcr-col-right">
+                                        <div class="tcr-detail-row">
+                                            <span>Chi phí:</span>
+                                            <strong class="text-blue">${ log.Cost ? formatCurrency(log.Cost) : '—' }</strong>
+                                        </div>
+                                        <div class="tcr-detail-row" style="margin-top:12px">
+                                            <span>Đơn vị thực hiện:</span>
+                                            <strong>${ log.Vendor || 'Bệnh viện (Nội bộ)' }</strong>
+                                        </div>
+                                        <div class="tcr-detail-row" style="margin-top:12px; align-items:flex-start">
+                                            <span>Vật tư thay thế:</span>
+                                            <strong style="text-align:right">${ log.PartReplaced || '—' }</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tcr-footer">
+                                    <div class="tcr-people">
+                                        <div class="tcr-person" v-if="log.ReportedBy">
+                                            <div class="tcr-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+                                            <div class="tcr-person-info">
+                                                <span>Người báo</span>
+                                                <strong>User #${ log.ReportedBy }</strong>
+                                            </div>
+                                        </div>
+                                        <div class="tcr-person" v-if="log.AssignedTo">
+                                            <div class="tcr-avatar" style="background:#dbeafe; color:#2563eb"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                                            <div class="tcr-person-info">
+                                                <span>Kỹ thuật viên</span>
+                                                <strong>Tech #${ log.AssignedTo }</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tcr-action-link" @@click="openDetail(log.Id)">
+                                        Xem chi tiết phiếu <i class="fa-solid fa-chevron-right" style="font-size:10px"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty history -->
+                        <div class="empty-history" v-else style="background:#fff; border-radius:12px; border:1px solid #e2e8f0; margin-top:20px; padding:60px 20px">
+                            <i class="fa-solid fa-shield-heart" style="font-size:48px;color:#10b981;margin-bottom:16px"></i>
+                            <p style="font-size:16px; color:#1e2a3a">Thiết bị này chưa từng có lịch sử sửa chữa</p>
+                            <small style="font-size:14px">Máy vẫn đang vận hành tốt</small>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Details & Media -->
+                    <div>
+                        <!-- Thông tin chi tiết -->
+                        <div class="widget-card">
+                            <h4>Thông tin chi tiết</h4>
+                            <div class="info-list">
+                                <div class="info-row">
+                                    <span>Model / Thương hiệu</span>
+                                    <strong>${ selectedDevice.Model } / ${ selectedDevice.Brand }</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span>Năm sản xuất / Đưa vào SD</span>
+                                    <strong>${ selectedDevice.ManufactureYear } / ${ selectedDevice.ImportDate ? selectedDevice.ImportDate.substring(0,4) : '—' }</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span>Xuất xứ</span>
+                                    <strong>${ selectedDevice.Origin }</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span>Hết hạn bảo hành</span>
+                                    <strong class="text-red">${ selectedDevice.WarrantyExpiry }</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hình ảnh & Minh chứng -->
+                        <div class="widget-card">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f5f9">
+                                <h4 style="margin:0; border:none; padding:0">Hình ảnh & Minh chứng</h4>
+                            </div>
+                            <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; margin-bottom:16px; transition: all 0.2s" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'" onclick="document.getElementById('fileUploadInput').click()">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; color: #94a3b8; margin-bottom: 12px"></i>
+                                <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500">Kéo thả ảnh vào đây hoặc nhấn để tải lên</p>
+                                <p style="margin: 4px 0 0; font-size: 11px; color: #94a3b8">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</p>
+                                <input type="file" id="fileUploadInput" style="display: none" accept="image/*,application/pdf" multiple />
+                            </div>
+                            <button class="btn-vendor" style="background:#fff; border-color:#cbd5e1; color:#475569">Xem tất cả tài liệu đính kèm</button>
+                        </div>
+
+                        <!-- Đơn vị bảo trì ủy quyền -->
+                        <div class="widget-card">
+                            <h4 style="display:flex; align-items:center; gap:8px">
+                                <i class="fa-solid fa-shield-halved" style="color:#2563eb"></i>
+                                Đơn vị bảo trì ủy quyền
+                            </h4>
+                            <div class="vendor-info">
+                                <h5>Hãng APC Vietnam Co., Ltd</h5>
+                                <p>Hotline: 1800-2023</p>
+                                <button class="btn-vendor">Liên hệ hỗ trợ kỹ thuật</button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
@@ -344,6 +469,10 @@
                         <div class="field">
                             <label>Tiêu đề</label>
                             <p>${ detail.Title }</p>
+                        </div>
+                        <div class="field">
+                            <label>Loại bảo trì</label>
+                            <p>${ maintenanceTypeLabel(detail.MaintenanceType) }</p>
                         </div>
                         <div class="field">
                             <label>Trạng thái</label>
@@ -453,8 +582,8 @@
                         </div>
                         <div class="form-group">
                             <label>Chi phí (VNĐ)</label>
-                            <input type="number" v-model.number="closeForm.Cost"
-                                   placeholder="0" />
+                            <input type="text" v-model="closeForm.Cost"
+                                   placeholder="Ví dụ: 1.500.000" />
                         </div>
                         <div class="form-group" style="justify-content:flex-end">
                             <button class="btn-submit" @@click="closeLog()">
@@ -516,6 +645,15 @@
                                placeholder="Ví dụ: Máy tính không khởi động" />
                     </div>
 
+                    <div class="form-group">
+                        <label>Loại bảo trì</label>
+                        <select v-model="newLog.MaintenanceType">
+                            <option value="corrective">Sửa chữa đột xuất / Báo hỏng</option>
+                            <option value="preventive">Bảo trì định kỳ</option>
+                            <option value="replacement_part">Thay thế linh kiện</option>
+                        </select>
+                    </div>
+
                     <div class="form-group full">
                         <label>Mô tả lỗi</label>
                         <textarea v-model="newLog.ErrorDescription"
@@ -562,5 +700,5 @@
 
 @section scripts {
     <script src="~/Addon/vue/vue.js"></script>
-    <script src="~/Scripts/app/maintenance.js"></script>
+    <script src="~/Scripts/app/maintenance.js?v=@DateTime.Now.Ticks.ToString()"></script>
 }

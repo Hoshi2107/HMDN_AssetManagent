@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing.Printing;
 using System.Linq;
@@ -11,6 +11,8 @@ namespace HMDN_QuanLyVatTu.Models
         public int Id { get; set; }
 
         public int InventoryId { get; set; }
+
+        public string MaintenanceType { get; set; } = "corrective";
 
         public string Title { get; set; }
 
