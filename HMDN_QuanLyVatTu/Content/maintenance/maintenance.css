@@ -941,7 +941,7 @@
 }
 
 .profile-header {
-    padding: 24px 32px 0;
+    padding: 16px 24px 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -949,34 +949,34 @@
 
 .profile-header-left {
     display: flex;
-    gap: 20px;
+    gap: 16px;
 }
 
 .profile-icon {
-    width: 64px;
-    height: 64px;
+    width: 54px;
+    height: 54px;
     background: #eff6ff;
     color: #3b82f6;
-    border-radius: 16px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 24px;
     flex-shrink: 0;
 }
 
 .profile-title {
-    margin-bottom: 12px;
+    margin-bottom: 6px;
 }
 
 .profile-title h2 {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 800;
     color: #0f172a;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .profile-title .badge-status-maint {
@@ -986,9 +986,10 @@
 
 .profile-meta {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     font-size: 13px;
     color: #475569;
+    white-space: nowrap;
 }
 
 .profile-meta span {
@@ -1026,15 +1027,15 @@
 .profile-kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    padding: 24px 32px;
+    gap: 12px;
+    padding: 16px 24px;
     border-bottom: 1px solid #e2e8f0;
 }
 
 .profile-kpi-card {
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 10px;
+    padding: 12px;
     background: #fff;
 }
 
@@ -1043,12 +1044,12 @@
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: .5px;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     font-weight: 600;
 }
 
 .profile-kpi-card p {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #0f172a;
     margin: 0;
@@ -1059,8 +1060,8 @@
 .profile-layout-2col {
     display: grid;
     grid-template-columns: 6.5fr 3.5fr;
-    gap: 32px;
-    padding: 24px 32px;
+    gap: 24px;
+    padding: 16px 24px;
     background: #f8fafc;
     flex: 1;
     overflow-y: auto;
