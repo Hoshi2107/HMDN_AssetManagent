@@ -137,6 +137,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("VongDoiKhauHao");
                     allowedCodes.Add("Maintenance");
                     allowedCodes.Add("TiepNhanBaoHong");
+                    allowedCodes.Add("Alerts");
                     allowedCodes.Add("Approvals");
                     allowedCodes.Add("Settings");
                     allowedCodes.Add("Support");

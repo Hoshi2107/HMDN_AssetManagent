@@ -1,0 +1,447 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Trung tâm Cảnh báo";
+}
+
+<link rel="stylesheet" href="@Url.Content("~/Content/alerts/alerts.css")" />
+
+<div id="app" class="alerts-container" v-cloak>
+    
+    <!-- ── MÀN HÌNH 1: TRUNG TÂM CẢNH BÁO ── -->
+    <div v-if="activeView === 'alerts'">
+        
+        <!-- Header phụ & Tìm kiếm nhanh -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <p class="text-muted m-0" style="font-size: 13px;">
+                    Quản lý và xử lý kịp thời các sự cố thiết bị y tế toàn hệ thống để chuyển từ quản lý bị động sang chủ động.
+                </p>
+            </div>
+            
+            <div class="position-relative" style="min-width: 280px;">
+                <input type="text" 
+                       class="form-control form-control-custom" 
+                       placeholder="Tìm kiếm cảnh báo, thiết bị..." 
+                       v-model="searchQuery"
+                       style="padding-right: 36px;" />
+                <i class="fa-solid fa-magnifying-glass position-absolute text-muted" 
+                   style="right: 12px; top: 11px; pointer-events: none; font-size: 13px;"></i>
+            </div>
+        </div>
+
+        <!-- Tabs lọc & Thao tác cấu hình -->
+        <div class="alerts-tab-header">
+            <div class="alerts-tabs">
+                <button class="alert-tab-btn" :class="{ active: activeTab === 'all' }" v-on:click="setTab('all')">
+                    Tất cả <span class="badge-pill">${ counts.All }</span>
+                </button>
+                <button class="alert-tab-btn" :class="{ active: activeTab === 'danger' }" v-on:click="setTab('danger')">
+                    <i class="fa-solid fa-circle text-danger" style="font-size: 8px;"></i>
+                    Khẩn cấp <span class="badge-pill">${ counts.Danger }</span>
+                </button>
+                <button class="alert-tab-btn" :class="{ active: activeTab === 'warning' }" v-on:click="setTab('warning')">
+                    <i class="fa-solid fa-circle text-warning" style="font-size: 8px;"></i>
+                    Cảnh báo <span class="badge-pill">${ counts.Warning }</span>
+                </button>
+                <button class="alert-tab-btn" :class="{ active: activeTab === 'info' }" v-on:click="setTab('info')">
+                    <i class="fa-solid fa-circle text-info" style="font-size: 8px;"></i>
+                    Thông tin <span class="badge-pill">${ counts.Info }</span>
+                </button>
+            </div>
+            
+            <div>
+                <button class="btn-ghost topbar-btn font-weight-bold" v-on:click="setView('config')" style="padding: 7px 16px; border-radius: 20px; font-size: 13px;">
+                    <i class="fa-solid fa-sliders mr-1"></i> Cấu hình quy tắc
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-5">
+            <div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 2rem; height: 2rem;"></div>
+            <p class="text-muted mt-2 font-weight-bold" style="font-size: 13px;">Đang tải danh sách cảnh báo...</p>
+        </div>
+
+        <!-- Danh sách cảnh báo thực tế -->
+        <div v-else class="alerts-list">
+            <div v-for="alert in filteredAlerts" 
+                 :key="alert.Id" 
+                 class="alert-card" 
+                 :class="'alert-' + alert.Severity">
+                
+                <!-- Left circular icon -->
+                <div class="alert-icon-wrapper">
+                    <i :class="severityIcon(alert.Severity)"></i>
+                </div>
+                
+                <!-- Main details -->
+                <div class="alert-card-content">
+                    <div class="alert-card-header">
+                        <div class="alert-device-title">
+                            <span>${ alert.ItemName }</span>
+                            <span class="alert-device-id">ID: ${ alert.AssetCode }</span>
+                        </div>
+                        <span class="alert-severity-badge">${ severityLabel(alert.Severity) }</span>
+                    </div>
+                    
+                    <div class="alert-body-text" v-text="alert.Body"></div>
+                    
+                    <div class="alert-card-footer">
+                        <div class="alert-footer-item">
+                            <i class="fa-regular fa-clock"></i>
+                            <span>Ghi nhận: ${ alert.CreatedTimeStr } - ${ alert.CreatedAtStr }</span>
+                        </div>
+                        <div class="alert-footer-item" v-if="alert.LocationName || alert.DepartmentName">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>${ alert.DepartmentName } (${ alert.LocationName })</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Action buttons -->
+                <div class="alert-card-actions">
+                    <!-- Action primary dynamic base on rule type -->
+                    <button class="btn-alert-action btn-action-primary" 
+                            v-if="alert.RuleCode === 'MULTI_FAULT_3X'"
+                            v-on:click="handleAction(alert, 'repair')">
+                        Xử lý ngay
+                    </button>
+                    <button class="btn-alert-action btn-action-primary" 
+                            v-else-if="alert.RuleCode === 'WARRANTY_EXPIRY_30D'"
+                            v-on:click="handleAction(alert, 'warranty')">
+                        Gia hạn ngay
+                    </button>
+                    <button class="btn-alert-action btn-action-primary" 
+                            v-else-if="alert.RuleCode === 'CHECKLIST_OVERDUE'"
+                            v-on:click="handleAction(alert, 'checklist')">
+                        Lên lịch
+                    </button>
+                    <button class="btn-alert-action btn-action-primary" 
+                            v-else-if="alert.RuleCode === 'CONSUMABLES_LOW' || alert.Title === 'Vật tư tiêu hao sắp hết'"
+                            v-on:click="handleAction(alert, 'order')">
+                        Đặt hàng ngay
+                    </button>
+                    <button class="btn-alert-action btn-action-primary" 
+                            v-else
+                            v-on:click="resolveAlert(alert.Id)">
+                        Đã xử lý
+                    </button>
+
+                    <!-- Action secondary -->
+                    <button class="btn-alert-action btn-action-secondary" 
+                            v-if="alert.RuleCode === 'WARRANTY_EXPIRY_30D' || alert.RuleCode === 'CONSUMABLES_LOW' || alert.Title === 'Vật tư tiêu hao sắp hết'"
+                            v-on:click="handleAction(alert, 'ignore')">
+                        Bỏ qua
+                    </button>
+                    <button class="btn-alert-action btn-action-secondary" 
+                            v-else
+                            v-on:click="handleAction(alert, 'view')">
+                        Xem chi tiết
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div v-if="filteredAlerts.length === 0" class="alerts-empty-state">
+                <i class="fa-solid fa-bell-slash empty-icon"></i>
+                <div class="empty-title">Không có cảnh báo hoạt động</div>
+                <p class="m-0 text-muted" style="font-size: 13px;">Tất cả thiết bị y tế trong hệ thống đều đang hoạt động bình thường.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── MÀN HÌNH 2: CẤU HÌNH QUY TẮC CẢNH BÁO ── -->
+    <div v-if="activeView === 'config'">
+        
+        <!-- Header Breadcrumb & Actions -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb m-0 bg-transparent p-0" style="font-size: 12px;">
+                        <li class="breadcrumb-item text-secondary font-weight-bold">Cấu hình hệ thống</li>
+                        <li class="breadcrumb-item text-primary font-weight-bold active" aria-current="page">Quy tắc Cảnh báo</li>
+                    </ol>
+                </nav>
+                <h4 class="font-weight-bold mt-1 mb-0 text-dark" style="font-size: 19px;">Cấu hình Quy tắc Cảnh báo</h4>
+                <p class="text-muted m-0" style="font-size: 12.5px;">Thiết lập ngưỡng kích hoạt và phương thức thông báo cho toàn hệ thống.</p>
+            </div>
+            
+            <div class="config-actions-bar">
+                <button class="topbar-btn btn-ghost font-weight-bold" v-on:click="setView('alerts')" :disabled="saving">Hủy bỏ</button>
+                <button class="topbar-btn btn-primary font-weight-bold" v-on:click="saveConfig" :disabled="saving">
+                    <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
+                    Lưu cấu hình
+                </button>
+            </div>
+        </div>
+
+        <div class="config-grid">
+            
+            <!-- 1. Quy tắc lỗi lặp lại (Multi-fault) -->
+            <div class="config-card">
+                <div>
+                    <div class="config-header">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-danger-light">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Quy tắc lỗi lặp lại (Multi-fault)</div>
+                                <div class="config-desc">Tự động gắn cờ thiết bị có tần suất hỏng hóc cao.</div>
+                            </div>
+                        </div>
+                        <label class="switch-control">
+                            <input type="checkbox" v-model="configForm.multiFault.isActive">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div v-show="configForm.multiFault.isActive" style="animation: fadeIn 0.2s;">
+                        <div class="slider-group">
+                            <div class="slider-labels">
+                                <span class="text-secondary">Cảnh báo khi hỏng hóc vượt ngưỡng</span>
+                                <span class="slider-val-tag">${ configForm.multiFault.count } lần / ${ configForm.multiFault.period } ngày</span>
+                            </div>
+                            <input type="range" 
+                                   class="custom-range-slider" 
+                                   min="1" 
+                                   max="10" 
+                                   v-model="configForm.multiFault.count" />
+                            <div class="d-flex justify-content-between text-muted mt-1" style="font-size: 10px; font-weight: 600;">
+                                <span>1 lần</span>
+                                <span>10 lần</span>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field-col">
+                                <label class="field-label">Mức độ ưu tiên</label>
+                                <select class="form-control-custom" v-model="configForm.multiFault.severity">
+                                    <option value="danger">Cao (High)</option>
+                                    <option value="warning">Trung bình</option>
+                                    <option value="info">Thấp</option>
+                                </select>
+                            </div>
+                            <div class="field-col">
+                                <label class="field-label">Đối tượng áp dụng</label>
+                                <select class="form-control-custom">
+                                    <option value="all">Tất cả thiết bị</option>
+                                    <option value="critical">Chỉ thiết bị hồi sức/phẫu thuật</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Bảo hành -->
+            <div class="config-card">
+                <div>
+                    <div class="config-header">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-success-light">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Bảo hành & Hạn dùng</div>
+                                <div class="config-desc">Cảnh báo trước khi hết hạn để lên kế hoạch gia hạn hoặc thay thế.</div>
+                            </div>
+                        </div>
+                        <label class="switch-control">
+                            <input type="checkbox" v-model="configForm.warranty.isActive">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div v-show="configForm.warranty.isActive" style="animation: fadeIn 0.2s;">
+                        <div class="field-row">
+                            <div class="field-col">
+                                <label class="field-label">Thời gian thông báo trước (ngày)</label>
+                                <input type="number" 
+                                       class="form-control-custom" 
+                                       v-model="configForm.warranty.days" 
+                                       min="5" 
+                                       max="180" />
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex align-items-center mt-3 gap-2">
+                            <input type="checkbox" id="kembc" v-model="configForm.warranty.costReport" style="width: 15px; height: 15px; cursor: pointer;">
+                            <label for="kembc" class="m-0 font-weight-bold text-secondary" style="font-size: 12px; cursor: pointer;">Kèm báo cáo dự toán chi phí thay thế</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Bảo trì định kỳ -->
+            <div class="config-card">
+                <div>
+                    <div class="config-header">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-info-light">
+                                <i class="fa-solid fa-screwdriver-wrench"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Bảo trì định kỳ</div>
+                                <div class="config-desc">Đánh giá hạn và tolerance trễ hạn checklist bảo dưỡng.</div>
+                            </div>
+                        </div>
+                        <label class="switch-control">
+                            <input type="checkbox" v-model="configForm.maintenance.isActive">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div v-show="configForm.maintenance.isActive" style="animation: fadeIn 0.2s;">
+                        <div class="field-row">
+                            <div class="field-col">
+                                <label class="field-label">Tần suất kiểm tra mặc định</label>
+                                <select class="form-control-custom" v-model="configForm.maintenance.cycle">
+                                    <option value="daily">Hàng ngày</option>
+                                    <option value="weekly">Hàng tuần</option>
+                                    <option value="monthly">Hàng quý (3 tháng)</option>
+                                    <option value="yearly">Hàng năm</option>
+                                </select>
+                            </div>
+                            <div class="field-col">
+                                <label class="field-label">Dung sai trễ hạn tối đa</label>
+                                <select class="form-control-custom" v-model="configForm.maintenance.tolerance">
+                                    <option :value="3">Tối đa 3 ngày</option>
+                                    <option :value="5">Tối đa 5 ngày</option>
+                                    <option :value="10">Tối đa 10 ngày</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Vật tư tiêu hao -->
+            <div class="config-card">
+                <div>
+                    <div class="config-header">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-warning-light">
+                                <i class="fa-solid fa-boxes-packing"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Vật tư tiêu hao</div>
+                                <div class="config-desc">Đặt ngưỡng tồn tối thiểu để kích hoạt cảnh báo mua sắm vật tư.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stock-threshold-list">
+                        <div class="stock-threshold-row">
+                            <div class="stock-item-info">
+                                <i class="fa-solid fa-print text-muted"></i>
+                                <span>Mực in & Giấy in</span>
+                            </div>
+                            <div class="stock-limit-input">
+                                <span class="stock-unit-label">Ngưỡng tối thiểu:</span>
+                                <input type="number" 
+                                       class="form-control-custom stock-input-mini" 
+                                       v-model="configForm.consumables.printer" />
+                                <span class="stock-unit-label">%</span>
+                            </div>
+                        </div>
+                        <div class="stock-threshold-row">
+                            <div class="stock-item-info">
+                                <i class="fa-solid fa-battery-full text-muted"></i>
+                                <span>Pin & Phụ kiện rời</span>
+                            </div>
+                            <div class="stock-limit-input">
+                                <span class="stock-unit-label">Ngưỡng tối thiểu:</span>
+                                <input type="number" 
+                                       class="form-control-custom stock-input-mini" 
+                                       v-model="configForm.consumables.battery" />
+                                <span class="stock-unit-label">bộ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Phương thức thông báo -->
+            <div class="config-card config-fullwidth">
+                <div>
+                    <div class="config-header mb-3">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-info-light">
+                                <i class="fa-regular fa-paper-plane"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Phương thức thông báo</div>
+                                <div class="config-desc">Lựa chọn các kênh truyền thông tin cảnh báo tới các kỹ thuật viên và cấp quản lý.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notification-methods">
+                        <div class="notify-method-card" 
+                             :class="{ active: configForm.methods.email }"
+                             v-on:click="configForm.methods.email = !configForm.methods.email">
+                            <i class="fa-regular fa-envelope notify-icon"></i>
+                            <div class="notify-info">
+                                <div class="notify-name">Email</div>
+                                <div class="notify-sub">Toàn bộ quản trị viên</div>
+                            </div>
+                            <div class="notify-check">
+                                <i class="fa-solid fa-check" v-show="configForm.methods.email"></i>
+                            </div>
+                        </div>
+
+                        <div class="notify-method-card" 
+                             :class="{ active: configForm.methods.sms }"
+                             v-on:click="configForm.methods.sms = !configForm.methods.sms">
+                            <i class="fa-solid fa-mobile-screen-button notify-icon"></i>
+                            <div class="notify-info">
+                                <div class="notify-name">SMS</div>
+                                <div class="notify-sub">Chỉ cảnh báo khẩn cấp</div>
+                            </div>
+                            <div class="notify-check">
+                                <i class="fa-solid fa-check" v-show="configForm.methods.sms"></i>
+                            </div>
+                        </div>
+
+                        <div class="notify-method-card" 
+                             :class="{ active: configForm.methods.webPush }"
+                             v-on:click="configForm.methods.webPush = !configForm.methods.webPush">
+                            <i class="fa-regular fa-bell notify-icon"></i>
+                            <div class="notify-info">
+                                <div class="notify-name">Web Push</div>
+                                <div class="notify-sub">Trình duyệt máy tính</div>
+                            </div>
+                            <div class="notify-check">
+                                <i class="fa-solid fa-check" v-show="configForm.methods.webPush"></i>
+                            </div>
+                        </div>
+
+                        <div class="notify-method-card" 
+                             :class="{ active: configForm.methods.socket }"
+                             v-on:click="configForm.methods.socket = !configForm.methods.socket">
+                            <i class="fa-solid fa-bolt notify-icon"></i>
+                            <div class="notify-info">
+                                <div class="notify-name">Socket.IO</div>
+                                <div class="notify-sub">Thông báo nội ứng dụng</div>
+                            </div>
+                            <div class="notify-check">
+                                <i class="fa-solid fa-check" v-show="configForm.methods.socket"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="@Url.Content("~/Scripts/app/alerts.js")"></script>
+}
