@@ -81,5 +81,25 @@ namespace HMS.Models.ViewModels
         public string Manufacturer { get; set; }
 
         public string SupplierName { get; set; }
+        //just add
+        public int ItemId { get; set; }
+
+        public int? DepartmentId { get; set; }
+
+        public int? LocationId { get; set; }
+
+        public int? CheckCycleId { get; set; }
+
+        public int? IdTicket { get; set; }
+
+        public string QrCode { get; set; }
+
+        public decimal? DepreciationRate { get; set; }
+
+        public int? DepreciationYears { get; set; }
+
+        public decimal? ResidualValue { get; set; }
+
+        public DateTime? ExpiryDate { get; set; }
     }
 }
