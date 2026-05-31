@@ -591,6 +591,9 @@ var app = new Vue({
                         const targetId = parseInt(invId);
                         const device = this.devices.find(d => d.Id === targetId);
                         if (device) {
+                            if (!this.searchQuery && device.AssetCode) {
+                                this.searchQuery = device.AssetCode;
+                            }
                             this.openDetail(targetId);
                         }
                     }

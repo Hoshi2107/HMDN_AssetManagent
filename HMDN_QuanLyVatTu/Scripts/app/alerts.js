@@ -404,32 +404,18 @@ var app = new Vue({
         // 5. Chạy quét cảnh báo khẩn cấp realtime (Toast Popup)
         checkRealtimeAlerts: function () {
             var vm = this;
-
             $.ajax({
                 url: '/api/alerts/check-new',
                 type: 'GET',
                 success: function (res) {
                     if (res && res.length > 0) {
-                        // Duyệt qua danh sách cảnh báo mới và bắn thông báo popup
-                        res.forEach(function (alert) {
-                            var toastType = alert.Severity === 'danger' ? 'danger' :
-                                            alert.Severity === 'warning' ? 'warning' : 'success';
-                            
-                            vm.showToast(
-                                alert.Title,
-                                alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
-                                toastType
-                            );
-                        });
-
-                        // Nếu đang ở màn hình cảnh báo, tải lại danh sách để đồng bộ UI
-                        if (vm.activeView === 'alerts') {
+                        // Trên màn hình Trung tâm cảnh báo, nếu tổng số cảnh báo chưa xử lý thay đổi thì tự động tải lại UI
+                        if (vm.activeView === 'alerts' && res.length !== vm.alerts.length) {
                             vm.loadAlerts();
                         }
                     }
                 },
                 error: function (xhr) {
-                    // Fail silently for realtime polling
                     console.warn('Lỗi polling cảnh báo realtime:', xhr.responseText);
                 }
             });
@@ -461,9 +447,9 @@ var app = new Vue({
         },
 
         // Hiển thị Toast thông báo sử dụng thư viện chung MedEquip.toast
-        showToast: function (title, msg, type) {
+        showToast: function (title, msg, type, alertObj) {
             if (window.MedEquip && window.MedEquip.toast) {
-                window.MedEquip.toast(title, msg, type);
+                window.MedEquip.toast(title, msg, type, alertObj);
             } else {
                 alert(title + ': ' + msg);
             }

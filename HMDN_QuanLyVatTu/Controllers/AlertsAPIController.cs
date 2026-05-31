@@ -394,33 +394,28 @@ namespace HMDN_QuanLyVatTu.Controllers
                     // Chạy chẩn đoán (Lazy-Evaluation)
                     CheckAndRunDiagnostics(db);
 
-                    // Lấy tất cả cảnh báo chưa xử lý và chưa được thông báo (IsNotified = false)
-                    var unnotified = db.Alerts
+                    // Lấy tất cả cảnh báo chưa xử lý mới nhất
+                    var activeAlerts = db.Alerts
                         .Include(a => a.AlertRule)
                         .Include(a => a.Inventory)
                         .Include(a => a.Inventory.Item)
-                        .Where(a => !a.IsResolved && !a.IsNotified)
+                        .Where(a => !a.IsResolved)
                         .OrderByDescending(a => a.CreatedAt)
+                        .Take(15)
                         .ToList();
 
-                    if (unnotified.Any())
-                    {
-                        foreach (var alert in unnotified)
-                        {
-                            alert.IsNotified = true;
-                        }
-                        db.SaveChanges();
-                    }
-
-                    var result = unnotified.Select(a => new
+                    var result = activeAlerts.Select(a => new
                     {
                         Id = a.Id,
                         Title = a.Title,
                         Body = a.Body,
                         Severity = a.Severity,
-                        AssetCode = a.Inventory.AssetCode,
-                        ItemName = a.Inventory.Item.Name,
-                        CreatedAtStr = a.CreatedAt.ToString("HH:mm")
+                        AssetCode = a.Inventory != null ? a.Inventory.AssetCode : "",
+                        ItemName = (a.Inventory != null && a.Inventory.Item != null) ? a.Inventory.Item.Name : "Thiết bị",
+                        CreatedAtStr = a.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                        CreatedAtFriendly = FormatDateFriendly(a.CreatedAt),
+                        RuleCode = a.AlertRule != null ? a.AlertRule.Code : "",
+                        InventoryId = a.InventoryId
                     }).ToList();
 
                     return Content(System.Net.HttpStatusCode.OK, result, Configuration.Formatters.JsonFormatter);

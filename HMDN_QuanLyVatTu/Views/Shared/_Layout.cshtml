@@ -527,8 +527,137 @@
         .toast-body { flex: 1; }
         .toast-title { font-size: 13px; font-weight: 700; color: #1e2a3a; margin-bottom: 3px; }
         .toast-msg { font-size: 12px; color: #64748b; line-height: 1.4; }
-        .toast-close { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; padding: 0; flex-shrink: 0; }
         .toast-close:hover { color: #1e2a3a; }
+
+        /* ── TOAST MOCKUP STYLE (MATCH MOCKUP) ── */
+        .toast-mockup {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            min-width: 320px;
+            max-width: 400px;
+            position: relative;
+            animation: slideIn .3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s ease;
+            border-left: 4px solid #cbd5e1;
+        }
+
+        .toast-mockup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .toast-mockup-danger {
+            border-left: 4px solid var(--accent-red);
+        }
+        .toast-mockup-warning {
+            border-left: 4px solid var(--accent-amber);
+        }
+        .toast-mockup-success, .toast-mockup-info {
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .toast-mockup-left {
+            flex-shrink: 0;
+        }
+
+        .toast-mockup-icon-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .toast-mockup-icon-circle.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+            animation: pulse-red 2s infinite;
+        }
+
+        .toast-mockup-icon-circle.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-amber);
+        }
+
+        .toast-mockup-icon-circle.success, .toast-mockup-icon-circle.info {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .toast-mockup-body {
+            flex: 1;
+            min-width: 0;
+            padding-right: 12px;
+        }
+
+        .toast-mockup-badge {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+
+        .toast-mockup-danger .toast-mockup-badge {
+            color: var(--accent-red);
+        }
+        .toast-mockup-warning .toast-mockup-badge {
+            color: var(--accent-amber);
+        }
+        .toast-mockup-success .toast-mockup-badge, .toast-mockup-info .toast-mockup-badge {
+            color: var(--accent-blue);
+        }
+
+        .toast-mockup-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .toast-mockup-msg {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .toast-mockup-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 14px;
+            padding: 4px;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            transition: all 0.2s;
+        }
+
+        .toast-mockup-close:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        @@keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
 
         /* ── KEYFRAMES ── */
         @@keyframes slideIn {
@@ -812,6 +941,132 @@
                 <span class="topbar-title">@(ViewBag.PageTitle ?? ViewBag.Title ?? "")</span>
                 <div class="topbar-actions" style="display: flex; align-items: center; gap: 12px;">
                     @RenderSection("topbar_actions", required: false)
+                    
+                    @if (HasModule("Alerts"))
+                    {
+                        <!-- Notification Bell Dropdown -->
+                        <style>
+                            .notification-dropdown-wrap {
+                                position: relative;
+                            }
+                            .notification-item {
+                                display: flex;
+                                align-items: flex-start;
+                                gap: 10px;
+                                padding: 12px 16px;
+                                border-bottom: 1px solid var(--border);
+                                cursor: pointer;
+                                transition: background 0.15s;
+                                text-align: left;
+                            }
+                            .notification-item:hover {
+                                background: #f8fafc;
+                            }
+                            .notification-item.unread {
+                                background: rgba(37, 99, 235, 0.04);
+                            }
+                            .notification-item.unread:hover {
+                                background: rgba(37, 99, 235, 0.08);
+                            }
+                            .notification-item-icon {
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 12px;
+                                flex-shrink: 0;
+                                margin-top: 2px;
+                            }
+                            .notification-item-icon.danger {
+                                background: #fee2e2;
+                                color: var(--accent-red);
+                            }
+                            .notification-item-icon.warning {
+                                background: #fffbeb;
+                                color: var(--accent-amber);
+                            }
+                            .notification-item-icon.info {
+                                background: #e0f2fe;
+                                color: var(--accent-blue);
+                            }
+                            .notification-item-content {
+                                flex: 1;
+                                min-width: 0;
+                            }
+                            .notification-item-title {
+                                font-size: 12px;
+                                font-weight: 700;
+                                color: #1e2a3a;
+                                margin-bottom: 2px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }
+                            .notification-item-body {
+                                font-size: 11.5px;
+                                color: #64748b;
+                                line-height: 1.4;
+                                margin-bottom: 4px;
+                                display: -webkit-box;
+                                -webkit-line-clamp: 2;
+                                -webkit-box-orient: vertical;
+                                overflow: hidden;
+                            }
+                            .notification-item-time {
+                                font-size: 10px;
+                                color: #94a3b8;
+                                font-weight: 500;
+                            }
+                            @@keyframes notificationFadeIn {
+                                from { opacity: 0; transform: translateY(8px); }
+                                to { opacity: 1; transform: translateY(0); }
+                            }
+                            .notification-badge {
+                                position: absolute;
+                                top: -4px;
+                                right: -4px;
+                                background: var(--accent-red);
+                                color: white;
+                                font-size: 9px;
+                                font-weight: 700;
+                                width: 15px;
+                                height: 15px;
+                                border-radius: 50%;
+                                display: none;
+                                align-items: center;
+                                justify-content: center;
+                                border: 1.5px solid #fff;
+                                z-index: 2;
+                            }
+                            .notification-badge.show {
+                                display: flex !important;
+                            }
+                        </style>
+                        <div class="notification-dropdown-wrap">
+                            <button id="notification-bell-btn" class="topbar-icon-btn" style="position: relative; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
+                                <i class="fa-solid fa-bell"></i>
+                                <span id="notification-badge" class="notification-badge">0</span>
+                            </button>
+                            <div id="notification-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-md); z-index: 1000; overflow: hidden; animation: notificationFadeIn 0.2s ease;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
+                                    <span style="font-weight: 700; font-size: 13px; color: #1e2a3a;">Cảnh báo mới nhất</span>
+                                    <button id="mark-all-read-btn" style="background: none; border: none; color: var(--accent-blue); font-size: 11.5px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
+                                </div>
+                                <div id="notification-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column;">
+                                    <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">
+                                        <i class="fa-solid fa-bell-slash" style="font-size: 20px; display: block; margin-bottom: 6px;"></i>
+                                        Không có cảnh báo chưa xử lý
+                                    </div>
+                                </div>
+                                <div style="padding: 10px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc;">
+                                    <a href="/Alerts/Index" style="font-size: 12.5px; font-weight: 600; color: var(--accent-blue); display: block;">Xem tất cả cảnh báo</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
                     @if (Session["FullName"] != null)
                     {
                         <div class="user-profile-chip" style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--body-bg); border-radius: 20px; border: 1px solid var(--border); font-size: 12.5px;">
@@ -837,28 +1092,92 @@
     @Scripts.Render("~/bundles/bootstrap")
 
     <script>
+        // ── Redirect utility ──────────────────────────────────
+        window.getAlertRedirectUrl = function (alert) {
+            if (!alert) return '/Alerts/Index';
+            var code = alert.RuleCode || alert.ruleCode || '';
+            var invId = alert.InventoryId || alert.inventoryId || 0;
+            var assetCode = alert.AssetCode || alert.assetCode || '';
+            
+            if (code === 'MULTI_FAULT_3X') {
+                return '/Maintenance/Index?inventoryId=' + invId + '&triggerCreate=1';
+            }
+            if (code === 'WARRANTY_EXPIRY_30D') {
+                return '/VongDoiKhauHao/VongDoiKhauHao?searchCode=' + assetCode + '&inventoryId=' + invId;
+            }
+            if (code === 'CHECKLIST_OVERDUE') {
+                return '/Checklists/Index?inventoryId=' + invId;
+            }
+            if (code === 'CONSUMABLES_LOW') {
+                return '/Inventory/Index?searchCode=' + assetCode + '&inventoryId=' + invId;
+            }
+            if (code === 'EXPIRY_SOON_60D' || code === 'DEPRECIATION_END_30D') {
+                return '/VongDoiKhauHao/VongDoiKhauHao?searchCode=' + assetCode + '&inventoryId=' + invId;
+            }
+            return '/Alerts/Index';
+        };
+
+        // ── Relevance utility ─────────────────────────────────
+        window.isAlertRelevantToCurrentPage = function (alert) {
+            if (!alert) return false;
+            var path = window.location.pathname.toLowerCase();
+            var code = alert.RuleCode || alert.ruleCode || '';
+
+            if (path.indexOf('/alerts') !== -1) {
+                return false;
+            }
+            if (path.indexOf('/inventory') !== -1) {
+                return code === 'CONSUMABLES_LOW';
+            }
+            if (path.indexOf('/maintenance') !== -1) {
+                return code === 'MULTI_FAULT_3X';
+            }
+            if (path.indexOf('/checklists') !== -1) {
+                return code === 'CHECKLIST_OVERDUE';
+            }
+            if (path.indexOf('/vongdoikhauhao') !== -1) {
+                return code === 'WARRANTY_EXPIRY_30D' || code === 'EXPIRY_SOON_60D' || code === 'DEPRECIATION_END_30D';
+            }
+            return false;
+        };
+
         // ── Toast utility ──────────────────────────────────────
         window.MedEquip = window.MedEquip || {};
 
-        MedEquip.toast = function (title, message, type) {
+        MedEquip.toast = function (title, message, type, alertObj) {
             type = type || 'warning';
-            var icons = {
-                danger: 'fa-triangle-exclamation',
-                warning: 'fa-circle-exclamation',
-                success: 'fa-circle-check'
-            };
+            
+            var redirectUrl = '';
+            if (alertObj) {
+                redirectUrl = window.getAlertRedirectUrl(alertObj);
+            }
+
             var id = 'toast-' + Date.now();
-            var html = '<div class="toast toast-' + type + '" id="' + id + '">'
-                + '<i class="fa-solid ' + icons[type] + ' toast-icon"></i>'
-                + '<div class="toast-body">'
-                + '<div class="toast-title">' + title + '</div>'
-                + '<div class="toast-msg">' + message + '</div>'
+            
+            var badgeText = 'THÔNG BÁO MỚI';
+            if (type === 'danger') badgeText = 'CẢNH BÁO KHẨN CẤP';
+            else if (type === 'warning') badgeText = 'CẢNH BÁO MỚI';
+            else if (type === 'info' || type === 'success') badgeText = 'THÔNG TIN MỚI';
+
+            var onclickAttr = redirectUrl ? ' onclick="window.location.href=\'' + redirectUrl + '\'; event.stopPropagation();" style="cursor: pointer;"' : '';
+
+            var html = '<div class="toast-mockup toast-mockup-' + type + '" id="' + id + '"' + onclickAttr + '>'
+                + '<div class="toast-mockup-left">'
+                + '  <div class="toast-mockup-icon-circle ' + type + '">'
+                + '    <i class="fa-solid ' + (type === 'danger' || type === 'warning' ? 'fa-bell' : 'fa-info') + '"></i>'
+                + '  </div>'
                 + '</div>'
-                + '<button class="toast-close" onclick="MedEquip.closeToast(\'' + id + '\')">'
-                + '<i class="fa-solid fa-xmark"></i>'
+                + '<div class="toast-mockup-body">'
+                + '  <div class="toast-mockup-badge">' + badgeText + '</div>'
+                + '  <div class="toast-mockup-title">' + title + '</div>'
+                + '  <div class="toast-mockup-msg">' + message + '</div>'
+                + '</div>'
+                + '<button class="toast-mockup-close" onclick="MedEquip.closeToast(\'' + id + '\'); event.stopPropagation();">'
+                + '  <i class="fa-solid fa-xmark"></i>'
                 + '</button></div>';
+
             document.getElementById('toast-container').insertAdjacentHTML('beforeend', html);
-            setTimeout(function () { MedEquip.closeToast(id); }, 6000);
+            setTimeout(function () { MedEquip.closeToast(id); }, 7000);
         };
 
         MedEquip.closeToast = function (id) {
@@ -899,26 +1218,163 @@
     @if (HasModule("Alerts"))
     {
         <script>
-            // ── Realtime Alert Polling for authorized users ────────────────
-            (function () {
+            $(document).ready(function () {
+                var currentUserId = @(Session["UserId"] ?? 0);
+                if (!currentUserId) {
+                    var userStr = localStorage.getItem('current_user');
+                    if (userStr) {
+                        try {
+                            var u = JSON.parse(userStr);
+                            if (u && u.Id) currentUserId = u.Id;
+                        } catch (e) {}
+                    }
+                }
+                if (!currentUserId) currentUserId = 1; // Fallback so it always runs
+
+                var seenKey = 'seen_alerts_' + currentUserId;
+                var readKey = 'read_alerts_' + currentUserId;
+
+                // Load arrays: seenAlerts is page-load-scoped (resets on F5/refresh), readAlerts from localStorage (persistent)
+                var seenAlerts = [];
+                var readAlerts = JSON.parse(localStorage.getItem(readKey) || '[]');
+
+                function saveLocalStorage() {
+                    localStorage.setItem(readKey, JSON.stringify(readAlerts));
+                }
+
+                // Click to toggle dropdown
+                $('#notification-bell-btn').on('click', function (e) {
+                    e.stopPropagation();
+                    $('#notification-dropdown').toggle();
+                    
+                    // Mark all loaded alerts as "read" when opening
+                    markAllAsRead();
+                });
+
+                $(document).on('click', function () {
+                    $('#notification-dropdown').hide();
+                });
+
+                $('#notification-dropdown').on('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                $('#mark-all-read-btn').on('click', function () {
+                    markAllAsRead();
+                });
+
+                function markAllAsRead() {
+                    var items = $('#notification-list .notification-item');
+                    var hasChange = false;
+                    items.each(function () {
+                        var id = $(this).data('id');
+                        if (id && readAlerts.indexOf(id) === -1) {
+                            readAlerts.push(id);
+                            hasChange = true;
+                        }
+                        $(this).removeClass('unread');
+                    });
+                    if (hasChange) {
+                        saveLocalStorage();
+                        updateBadge();
+                    }
+                }
+
+                function updateBadge() {
+                    var unreadCount = 0;
+                    $('#notification-list .notification-item').each(function () {
+                        var id = $(this).data('id');
+                        if (id && readAlerts.indexOf(id) === -1) {
+                            unreadCount++;
+                        }
+                    });
+
+                    if (unreadCount > 0) {
+                        $('#notification-badge').text(unreadCount).addClass('show');
+                    } else {
+                        $('#notification-badge').removeClass('show');
+                    }
+                }
+
+                function renderAlertsList(alerts) {
+                    var listContainer = $('#notification-list');
+                    if (!alerts || alerts.length === 0) {
+                        listContainer.html(
+                            '<div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">' +
+                            '<i class="fa-solid fa-bell-slash" style="font-size: 20px; display: block; margin-bottom: 6px;"></i>' +
+                            'Không có cảnh báo chưa xử lý' +
+                            '</div>'
+                        );
+                        return;
+                    }
+
+                    var html = '';
+                    alerts.forEach(function (alert) {
+                        var isUnread = readAlerts.indexOf(alert.Id) === -1;
+                        var unreadClass = isUnread ? ' unread' : '';
+                        var iconClass = alert.Severity === 'danger' ? 'danger' :
+                                        alert.Severity === 'warning' ? 'warning' : 'info';
+                        var iconHtml = alert.Severity === 'danger' ? '<i class="fa-solid fa-triangle-exclamation"></i>' :
+                                       alert.Severity === 'warning' ? '<i class="fa-solid fa-circle-exclamation"></i>' :
+                                       '<i class="fa-solid fa-circle-info"></i>';
+
+                        var redirectUrl = window.getAlertRedirectUrl(alert);
+                        html += '<div class="notification-item' + unreadClass + '" data-id="' + alert.Id + '" onclick="window.location.href=\'' + redirectUrl + '\'; event.stopPropagation();">' +
+                            '<div class="notification-item-icon ' + iconClass + '">' + iconHtml + '</div>' +
+                            '<div class="notification-item-content">' +
+                            '<div class="notification-item-title">' + alert.Title + '</div>' +
+                            '<div class="notification-item-body">' + (alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.')) + '</div>' +
+                            '<div class="notification-item-time">' + alert.CreatedAtFriendly + '</div>' +
+                            '</div>' +
+                            '</div>';
+                    });
+
+                    listContainer.html(html);
+                    updateBadge();
+                }
+
                 function checkRealtimeAlerts() {
                     $.ajax({
                         url: '/api/alerts/check-new',
                         type: 'GET',
                         success: function (res) {
+                            console.log('[DEBUG-ALERTS] checkRealtimeAlerts, found: ' + (res ? res.length : 0) + ' active alerts.');
                             if (res && res.length > 0) {
+                                var hasNew = false;
                                 res.forEach(function (alert) {
-                                    var toastType = alert.Severity === 'danger' ? 'danger' :
-                                                    alert.Severity === 'warning' ? 'warning' : 'success';
-                                    
-                                    if (window.MedEquip && window.MedEquip.toast) {
-                                        window.MedEquip.toast(
-                                            alert.Title,
-                                            alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
-                                            toastType
-                                        );
+                                    var relevant = window.isAlertRelevantToCurrentPage(alert);
+                                    var seen = seenAlerts.indexOf(alert.Id) !== -1;
+                                    console.log('[DEBUG-ALERTS] ID: ' + alert.Id + ' (' + alert.RuleCode + ') -> Relevant: ' + relevant + ', Already Seen: ' + seen);
+
+                                    // If not seen yet, show toast (only if relevant to current page)
+                                    if (relevant) {
+                                        if (!seen) {
+                                            seenAlerts.push(alert.Id);
+                                            hasNew = true;
+
+                                            var toastType = alert.Severity === 'danger' ? 'danger' :
+                                                            alert.Severity === 'warning' ? 'warning' : 'success';
+
+                                            if (window.MedEquip && window.MedEquip.toast) {
+                                                window.MedEquip.toast(
+                                                    alert.Title,
+                                                    alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
+                                                    toastType,
+                                                    alert
+                                                );
+                                            }
+                                        }
                                     }
                                 });
+
+                                if (hasNew) {
+                                    saveLocalStorage();
+                                }
+
+                                // Render list in dropdown
+                                renderAlertsList(res);
+                            } else {
+                                renderAlertsList([]);
                             }
                         },
                         error: function (xhr) {
@@ -927,16 +1383,10 @@
                     });
                 }
 
-                $(document).ready(function () {
-                    if (window.location.pathname.toLowerCase().indexOf('/alerts') === -1) {
-                        // Chạy kiểm tra lần đầu sau 2 giây để tránh làm chậm tải trang chính
-                        setTimeout(checkRealtimeAlerts, 2000);
-                        
-                        // Định kỳ 15 giây
-                        setInterval(checkRealtimeAlerts, 15000);
-                    }
-                });
-            })();
+                // Chạy kiểm tra lần đầu sau 1 giây, sau đó chạy mỗi 15 giây
+                setTimeout(checkRealtimeAlerts, 1000);
+                setInterval(checkRealtimeAlerts, 15000);
+            });
         </script>
     }
 
