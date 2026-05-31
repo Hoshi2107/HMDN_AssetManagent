@@ -17,6 +17,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    
+    @Scripts.Render("~/bundles/jquery")
+    <script src="~/Addon/vue/vue.js"></script>
+    <script>
+        window.userModules = @Html.Raw(Session["UserModules"] != null ? Newtonsoft.Json.JsonConvert.SerializeObject(Session["UserModules"]) : "[]");
+        window.hasPermission = function (moduleCode, permission) {
+            if (!window.userModules || !window.userModules.length) return false;
+            var mod = window.userModules.find(function (m) {
+                return m.code && m.code.toLowerCase() === moduleCode.toLowerCase();
+            });
+            if (!mod || !mod.permissions) return false;
+            return mod.permissions.map(function(p) { return p.toLowerCase(); }).indexOf(permission.toLowerCase()) !== -1;
+        };
+
+        if (window.Vue) {
+            Vue.mixin({
+                methods: {
+                    hasPermission: function(moduleCode, permission) {
+                        return window.hasPermission(moduleCode, permission);
+                    }
+                }
+            });
+        }
+    </script>
     <style>
         :root {
             --sidebar-bg: #0f1623;
@@ -810,7 +834,6 @@
 
     <div id="toast-container"></div>
 
-    @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
 
     <script>
@@ -872,6 +895,50 @@
             }
         })();
     </script>
+
+    @if (HasModule("Alerts"))
+    {
+        <script>
+            // ── Realtime Alert Polling for authorized users ────────────────
+            (function () {
+                function checkRealtimeAlerts() {
+                    $.ajax({
+                        url: '/api/alerts/check-new',
+                        type: 'GET',
+                        success: function (res) {
+                            if (res && res.length > 0) {
+                                res.forEach(function (alert) {
+                                    var toastType = alert.Severity === 'danger' ? 'danger' :
+                                                    alert.Severity === 'warning' ? 'warning' : 'success';
+                                    
+                                    if (window.MedEquip && window.MedEquip.toast) {
+                                        window.MedEquip.toast(
+                                            alert.Title,
+                                            alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
+                                            toastType
+                                        );
+                                    }
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            console.warn('Lỗi polling cảnh báo realtime:', xhr.responseText);
+                        }
+                    });
+                }
+
+                $(document).ready(function () {
+                    if (window.location.pathname.toLowerCase().indexOf('/alerts') === -1) {
+                        // Chạy kiểm tra lần đầu sau 2 giây để tránh làm chậm tải trang chính
+                        setTimeout(checkRealtimeAlerts, 2000);
+                        
+                        // Định kỳ 15 giây
+                        setInterval(checkRealtimeAlerts, 15000);
+                    }
+                });
+            })();
+        </script>
+    }
 
     @RenderSection("scripts", required: false)
 </body>

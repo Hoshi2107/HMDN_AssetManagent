@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Inventory";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -22,6 +22,7 @@
 
 
             <button class="btn-primary"
+                    v-if="hasPermission('Inventory', 'CREATE')"
                     @@click="showAddOptionModal = true">
 
                 Thêm thiết bị
@@ -131,6 +132,7 @@
                             <td @@click.stop>
 
                                 <select class="status-dropdown"
+                                        :disabled="!hasPermission('Inventory', 'EDIT')"
                                         v-model="item.LifeStatus"
                                         @@change="changeStatus(item)">
 
@@ -375,11 +377,13 @@
                                 <div class="action-group">
 
                                     <button class="btn-primary"
+                                            v-if="hasPermission('Inventory', 'EDIT')"
                                             @@click="openEditModal(selectedDevice.Id)">
                                         Sửa
                                     </button>
 
                                     <button class="btn-danger"
+                                            v-if="hasPermission('Inventory', 'EDIT')"
                                             :disabled="selectedDevice.LifeStatus == 'suspended'"
                                             @@click="openSuspendModal(selectedDevice)">
                                         Check có lỗi
@@ -1428,10 +1432,5 @@
     </div>
 
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-<script src="~/Addon/vue/vue.js"></script>
-<script src="~/Addon/vue/vue_dev.js"></script>
 
 <script src="~/Scripts/app/inventory.js"></script>

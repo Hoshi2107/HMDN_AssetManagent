@@ -240,7 +240,7 @@
                         <button class="btn-outline">
                             <i class="fa-solid fa-file-pdf"></i> PDF/Excel
                         </button>
-                        <button class="btn-create" @@click="openCreateFromHistory()" style="padding:9px 20px">
+                        <button class="btn-create" v-if="hasPermission('Maintenance', 'CREATE')" @@click="openCreateFromHistory()" style="padding:9px 20px">
                             <i class="fa-solid fa-triangle-exclamation"></i> Thêm phiếu báo hỏng
                         </button>
                     </div>
@@ -543,13 +543,13 @@
                 <button class="btn-cancel" @@click="showDetailModal = false">Đóng</button>
 
                 <button class="btn-progress"
-                        v-if="detail.Status === 'open'"
+                        v-if="detail.Status === 'open' && hasPermission('Maintenance', 'EDIT')"
                         @@click="updateStatus(detail.Id, 'in_progress')">
                     <i class="fa-solid fa-play"></i> Bắt đầu sửa
                 </button>
 
                 <button class="btn-close-log"
-                        v-if="detail.Status === 'in_progress'"
+                        v-if="detail.Status === 'in_progress' && hasPermission('Maintenance', 'EDIT')"
                         @@click="showCloseForm = !showCloseForm">
                     <i class="fa-solid fa-check"></i> Đóng ca sửa chữa
                 </button>
@@ -696,6 +696,5 @@
 </div>
 
 @section scripts {
-    <script src="~/Addon/vue/vue.js"></script>
     <script src="~/Scripts/app/maintenance.js?v=@DateTime.Now.Ticks.ToString()"></script>
 }

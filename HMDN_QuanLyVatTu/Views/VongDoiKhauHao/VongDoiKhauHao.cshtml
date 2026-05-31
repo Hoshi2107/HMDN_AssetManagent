@@ -157,7 +157,7 @@
                 <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:11px; color:var(--muted)"></i>
                 <input type="text" placeholder="Tìm kiếm thiết bị khấu hao..." v-model="searchQuery" style="width:100%; padding:9px 16px 9px 36px; border:1px solid var(--border); border-radius:8px; outline:none; font-size:13px; background:white;">
             </div>
-            <button class="btn-primary" @@click="openAddAssetModal" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; transition: background .15s; height: 38px;">
+            <button class="btn-primary" v-if="hasPermission('VongDoiKhauHao', 'CREATE')" @@click="openAddAssetModal" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; transition: background .15s; height: 38px;">
                 <i class="fa-solid fa-plus"></i> Thêm tài sản
             </button>
         </div>
@@ -232,7 +232,7 @@
         <span class="batch-count">Đã chọn <b style="color:var(--accent-light); font-size: 15px; margin: 0 4px;">{{ selectedRows.length }}</b> tài sản</span>
         <div class="batch-actions">
             <button class="btn-secondary btn-sm" @@click="exportSelectedCSV" style="color: #1e293b; border: none;"><i class="fa-solid fa-file-csv" style="color:#10b981;"></i> Xuất CSV đã chọn</button>
-            <button class="btn-primary btn-sm" @@click="openBatchStatusModal" style="border: none;"><i class="fa-solid fa-rotate"></i> Cập nhật trạng thái</button>
+            <button class="btn-primary btn-sm" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" @@click="openBatchStatusModal" style="border: none;"><i class="fa-solid fa-rotate"></i> Cập nhật trạng thái</button>
         </div>
     </div>
 
@@ -333,7 +333,7 @@
                                     <i class="fa-solid fa-ellipsis-vertical"></i>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" @@click="openStatusModal(d)">
+                                    <a class="dropdown-item" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" @@click="openStatusModal(d)">
                                         <i class="fa-solid fa-rotate"></i> Cập nhật trạng thái
                                     </a>
                                     <a class="dropdown-item" @@click="openLogModal(d)">
@@ -568,7 +568,6 @@
 </div>
 
 @section scripts {
-    <script src="~/Addon/vue/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         window.DevicesJsonData = @Html.Raw(ViewBag.DevicesJson ?? "[]");

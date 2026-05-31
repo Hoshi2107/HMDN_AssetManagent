@@ -51,12 +51,15 @@
             
             <div class="d-flex align-items-center gap-2">
                 <button class="btn-ghost topbar-btn font-weight-bold text-success" 
-                        v-if="filteredAlerts.length > 0" 
+                        v-if="hasPermission('Alerts', 'EDIT') && filteredAlerts.length > 0" 
                         v-on:click="resolveAllVisible" 
                         style="padding: 7px 16px; border-radius: 20px; font-size: 13px;">
                     <i class="fa-solid fa-check-double mr-1"></i> Xác nhận tất cả (${ filteredAlerts.length })
                 </button>
-                <button class="btn-ghost topbar-btn font-weight-bold" v-on:click="setView('config')" style="padding: 7px 16px; border-radius: 20px; font-size: 13px;">
+                <button class="btn-ghost topbar-btn font-weight-bold" 
+                        v-if="hasPermission('Alerts', 'EDIT')" 
+                        v-on:click="setView('config')" 
+                        style="padding: 7px 16px; border-radius: 20px; font-size: 13px;">
                     <i class="fa-solid fa-sliders mr-1"></i> Cấu hình quy tắc
                 </button>
             </div>
@@ -76,7 +79,7 @@
                  :class="'alert-' + alert.Severity">
                 
                 <!-- Dismiss button in top-right corner of card -->
-                <button class="alert-dismiss-btn" v-on:click="resolveAlert(alert.Id)" title="Xác nhận đã xử lý">
+                <button class="alert-dismiss-btn" v-if="hasPermission('Alerts', 'EDIT')" v-on:click="resolveAlert(alert.Id)" title="Xác nhận đã xử lý">
                     <i class="fa-solid fa-check"></i>
                 </button>
                 
@@ -111,92 +114,102 @@
                 
                 <!-- Right Action buttons -->
                 <div class="alert-card-actions">
-                    <!-- 1. MULTI_FAULT_3X (Fault count too high) -->
-                    <template v-if="alert.RuleCode === 'MULTI_FAULT_3X'">
-                        <button class="btn-alert-action btn-action-danger" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="liquidateAsset(alert)">
-                            <i class="fa-solid fa-dumpster mr-1" v-if="!processingAlerts[alert.Id]"></i>
-                            <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
-                            Thanh lý thiết bị
-                        </button>
-                        <button class="btn-alert-action btn-action-secondary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="handleAction(alert, 'repair')">
-                            Sửa chữa
-                        </button>
-                    </template>
-
-                    <!-- 2. WARRANTY_EXPIRY_30D (Warranty about to expire) -->
-                    <template v-else-if="alert.RuleCode === 'WARRANTY_EXPIRY_30D'">
-                        <button class="btn-alert-action btn-action-success" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="extendWarranty(alert)">
-                            <i class="fa-solid fa-circle-plus mr-1" v-if="!processingAlerts[alert.Id]"></i>
-                            <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
-                            Gia hạn nhanh
-                        </button>
-                        <button class="btn-alert-action btn-action-secondary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="handleAction(alert, 'warranty')">
-                            Gia hạn thủ công
-                        </button>
-                    </template>
-
-                    <!-- 3. CHECKLIST_OVERDUE (Maintenance checklists) -->
-                    <template v-else-if="alert.RuleCode === 'CHECKLIST_OVERDUE'">
-                        <button class="btn-alert-action btn-action-primary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="completeChecklist(alert, 'done')">
-                            <i class="fa-solid fa-check mr-1" v-if="!processingAlerts[alert.Id]"></i>
-                            <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
-                            Đã kiểm tra
-                        </button>
-                        <button class="btn-alert-action btn-action-secondary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="completeChecklist(alert, 'skipped')">
-                            Bỏ qua lần này
-                        </button>
-                    </template>
-
-                    <!-- 4. CONSUMABLES_LOW (Consumables stock low) -->
-                    <template v-else-if="alert.RuleCode === 'CONSUMABLES_LOW' || alert.Title === 'Vật tư tiêu hao sắp hết'">
-                        <!-- Inline Restock controls -->
-                        <div class="inline-restock-group mb-1">
-                            <input type="number" 
-                                   class="form-control-custom restock-input" 
-                                   placeholder="SL" 
-                                   min="1" 
-                                   v-model.number="restockQuantities[alert.Id]"
-                                   :disabled="processingAlerts[alert.Id]"
-                                   style="width: 50px; height: 32px; padding: 4px 6px; font-size: 11.5px; border-radius: 8px; text-align: center; margin-right: 4px;" />
-                            <button class="btn-alert-action btn-action-success restock-btn" 
+                    <template v-if="hasPermission('Alerts', 'EDIT')">
+                        <!-- 1. MULTI_FAULT_3X (Fault count too high) -->
+                        <template v-if="alert.RuleCode === 'MULTI_FAULT_3X'">
+                            <button class="btn-alert-action btn-action-danger" 
                                     :disabled="processingAlerts[alert.Id]"
-                                    v-on:click="restockConsumable(alert, restockQuantities[alert.Id] || 10)"
-                                    style="padding: 6px 10px; font-size: 11.5px; border-radius: 8px; width: auto; height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1;">
-                                <i class="fa-solid fa-plus" v-if="!processingAlerts[alert.Id]"></i>
-                                <span v-else class="spinner-border spinner-border-sm" style="width: 10px; height: 10px;"></span>
-                                Nhập kho
+                                    v-on:click="liquidateAsset(alert)">
+                                <i class="fa-solid fa-dumpster mr-1" v-if="!processingAlerts[alert.Id]"></i>
+                                <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
+                                Thanh lý thiết bị
                             </button>
-                        </div>
-                        <button class="btn-alert-action btn-action-secondary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="handleAction(alert, 'order')">
-                            Đặt hàng
-                        </button>
-                    </template>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'repair')">
+                                Sửa chữa
+                            </button>
+                        </template>
 
-                    <!-- 5. Default Fallback action -->
+                        <!-- 2. WARRANTY_EXPIRY_30D (Warranty about to expire) -->
+                        <template v-else-if="alert.RuleCode === 'WARRANTY_EXPIRY_30D'">
+                            <button class="btn-alert-action btn-action-success" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="extendWarranty(alert)">
+                                <i class="fa-solid fa-circle-plus mr-1" v-if="!processingAlerts[alert.Id]"></i>
+                                <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
+                                Gia hạn nhanh
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'warranty')">
+                                Gia hạn thủ công
+                            </button>
+                        </template>
+
+                        <!-- 3. CHECKLIST_OVERDUE (Maintenance checklists) -->
+                        <template v-else-if="alert.RuleCode === 'CHECKLIST_OVERDUE'">
+                            <button class="btn-alert-action btn-action-primary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="completeChecklist(alert, 'done')">
+                                <i class="fa-solid fa-check mr-1" v-if="!processingAlerts[alert.Id]"></i>
+                                <span v-else class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
+                                Đã kiểm tra
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="completeChecklist(alert, 'skipped')">
+                                Bỏ qua lần này
+                            </button>
+                        </template>
+
+                        <!-- 4. CONSUMABLES_LOW (Consumables stock low) -->
+                        <template v-else-if="alert.RuleCode === 'CONSUMABLES_LOW' || alert.Title === 'Vật tư tiêu hao sắp hết'">
+                            <!-- Inline Restock controls -->
+                            <div class="inline-restock-group mb-1">
+                                <input type="number" 
+                                       class="form-control-custom restock-input" 
+                                       placeholder="SL" 
+                                       min="1" 
+                                       v-model.number="restockQuantities[alert.Id]"
+                                       :disabled="processingAlerts[alert.Id]"
+                                       style="width: 50px; height: 32px; padding: 4px 6px; font-size: 11.5px; border-radius: 8px; text-align: center; margin-right: 4px;" />
+                                <button class="btn-alert-action btn-action-success restock-btn" 
+                                        :disabled="processingAlerts[alert.Id]"
+                                        v-on:click="restockConsumable(alert, restockQuantities[alert.Id] || 10)"
+                                        style="padding: 6px 10px; font-size: 11.5px; border-radius: 8px; width: auto; height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex: 1;">
+                                    <i class="fa-solid fa-plus" v-if="!processingAlerts[alert.Id]"></i>
+                                    <span v-else class="spinner-border spinner-border-sm" style="width: 10px; height: 10px;"></span>
+                                    Nhập kho
+                                </button>
+                            </div>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'order')">
+                                Đặt hàng
+                            </button>
+                        </template>
+
+                        <!-- 5. Default Fallback action -->
+                        <template v-else>
+                            <button class="btn-alert-action btn-action-primary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="resolveAlert(alert.Id)">
+                                <span v-if="processingAlerts[alert.Id]" class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
+                                Đã xử lý
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'view')">
+                                Xem chi tiết
+                            </button>
+                        </template>
+                    </template>
                     <template v-else>
-                        <button class="btn-alert-action btn-action-primary" 
-                                :disabled="processingAlerts[alert.Id]"
-                                v-on:click="resolveAlert(alert.Id)">
-                            <span v-if="processingAlerts[alert.Id]" class="spinner-border spinner-border-sm mr-1" style="width: 12px; height: 12px;"></span>
-                            Đã xử lý
-                        </button>
                         <button class="btn-alert-action btn-action-secondary" 
                                 :disabled="processingAlerts[alert.Id]"
-                                v-on:click="handleAction(alert, 'view')">
+                                v-on:click="handleAction(alert, 'view')"
+                                style="width: 100%;">
                             Xem chi tiết
                         </button>
                     </template>
@@ -504,6 +517,5 @@
 </div>
 
 @section scripts {
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script src="@Url.Content("~/Scripts/app/alerts.js")"></script>
 }
