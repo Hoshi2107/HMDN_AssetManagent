@@ -427,6 +427,29 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        // 6. POST: api/alerts/diagnostics
+        [HttpPost]
+        [Route("diagnostics")]
+        public IHttpActionResult TriggerDiagnostics()
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    RunDiagnosticsEngine(db);
+                    lock (_scanLock)
+                    {
+                        _lastScanTime = DateTime.Now;
+                    }
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = "Chạy Engine chẩn đoán cảnh báo thành công." }, Configuration.Formatters.JsonFormatter);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
         #region Diagnostic Engine Core
         private void CheckAndRunDiagnostics(HospitalAssetDbContext db)
         {

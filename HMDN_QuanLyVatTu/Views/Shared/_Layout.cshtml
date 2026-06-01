@@ -1344,13 +1344,11 @@
                         url: '/api/alerts/check-new',
                         type: 'GET',
                         success: function (res) {
-                            console.log('[DEBUG-ALERTS] checkRealtimeAlerts, found: ' + (res ? res.length : 0) + ' active alerts.');
                             if (res && res.length > 0) {
                                 var hasNew = false;
                                 res.forEach(function (alert) {
                                     var relevant = window.isAlertRelevantToCurrentPage(alert);
                                     var seen = seenAlerts.indexOf(alert.Id) !== -1;
-                                    console.log('[DEBUG-ALERTS] ID: ' + alert.Id + ' (' + alert.RuleCode + ') -> Relevant: ' + relevant + ', Already Seen: ' + seen);
 
                                     // If not seen yet, show toast (only if relevant to current page)
                                     if (relevant) {

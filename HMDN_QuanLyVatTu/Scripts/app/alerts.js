@@ -12,6 +12,9 @@ var app = new Vue({
         // Trạng thái màn hình: 'alerts' (Trung tâm cảnh báo), 'config' (Cấu hình quy tắc)
         activeView: 'alerts',
 
+        // Tab cấu hình quy tắc hiện tại: 'rules', 'consumables', 'routing', 'logs'
+        configTab: 'rules',
+
         // Danh sách cảnh báo thực tế
         alerts: [],
 
@@ -34,10 +37,13 @@ var app = new Vue({
 
         // Lưu tạm cấu hình đang chỉnh sửa
         configForm: {
-            multiFault: { id: 0, code: 'MULTI_FAULT_3X', isActive: true, count: 3, period: 30, severity: 'danger' },
-            warranty: { id: 0, code: 'WARRANTY_EXPIRY_30D', isActive: true, days: 30, severity: 'warning', costReport: true },
-            maintenance: { id: 0, code: 'CHECKLIST_OVERDUE', isActive: true, days: 0, cycle: 'monthly', tolerance: 5 },
-            consumables: { printer: 10, battery: 5 },
+            checklistDue: { id: 0, code: 'CHECKLIST_DUE_3D', isActive: true, days: 3, overrides: [] },
+            maintenance: { id: 0, code: 'CHECKLIST_OVERDUE', isActive: true, tolerance: 5, overrides: [] },
+            multiFault: { id: 0, code: 'MULTI_FAULT_3X', isActive: true, count: 3, period: 30, overrides: [] },
+            depreciation: { id: 0, code: 'DEPRECIATION_END_30D', isActive: true, days: 30, overrides: [] },
+            expiry: { id: 0, code: 'EXPIRY_SOON_60D', isActive: true, days: 60, overrides: [] },
+            warranty: { id: 0, code: 'WARRANTY_EXPIRY_30D', isActive: true, days: 30, costReport: true, overrides: [] },
+            consumables: { id: 0, code: 'CONSUMABLES_LOW', isActive: true, printer: 10, battery: 5, office: 15, cdha: 20, hscc: 8, phongmo: 12, xetnghiem: 25 },
             methods: {
                 email: true,
                 sms: false,
@@ -45,6 +51,28 @@ var app = new Vue({
                 socket: true
             }
         },
+
+        // Nhóm thiết bị khả dụng để cấu hình đặc thù
+        deviceGroups: [
+            { code: 'CRITICAL', name: 'Thiết bị hồi sức/phẫu thuật' },
+            { code: 'IMAGING', name: 'Thiết bị chẩn đoán hình ảnh' },
+            { code: 'LAB', name: 'Thiết bị xét nghiệm' },
+            { code: 'OFFICE', name: 'Thiết bị văn phòng' }
+        ],
+
+        // Phân phối nhận cảnh báo theo vai trò (Tech, Stock keeper, Head dept, Director)
+        roleRouting: {
+            'MULTI_FAULT_3X': ['tech', 'head'],
+            'WARRANTY_EXPIRY_30D': ['tech'],
+            'CHECKLIST_OVERDUE': ['tech', 'head'],
+            'CHECKLIST_DUE_3D': ['tech'],
+            'CONSUMABLES_LOW': ['stock'],
+            'EXPIRY_SOON_60D': ['tech', 'director'],
+            'DEPRECIATION_END_30D': ['director']
+        },
+
+        // Lịch sử logs thay đổi cấu hình
+        configLogs: [],
 
         // Trạng thái tải dữ liệu
         loading: false,
@@ -142,32 +170,119 @@ var app = new Vue({
             var vm = this;
             vm.loading = true;
 
+            // Load role routing và history logs từ localStorage
+            var savedRouting = localStorage.getItem('role_routing_config');
+            if (savedRouting) {
+                try { vm.roleRouting = JSON.parse(savedRouting); } catch (e) {}
+            }
+            var savedLogs = localStorage.getItem('config_change_logs');
+            if (savedLogs) {
+                try { vm.configLogs = JSON.parse(savedLogs); } catch (e) {}
+            } else {
+                // Seed some realistic change logs
+                vm.configLogs = [
+                    { time: '01/06/2026 08:30', user: 'Nguyễn Văn Quản Trị', action: 'Thiết lập trễ checklist tối đa (5 ngày)' },
+                    { time: '30/05/2026 14:15', user: 'Nguyễn Văn Quản Trị', action: 'Bật quy tắc cảnh báo vật tư tiêu hao' }
+                ];
+                localStorage.setItem('config_change_logs', JSON.stringify(vm.configLogs));
+            }
+
             $.ajax({
                 url: '/api/alerts/rules',
                 type: 'GET',
                 success: function (res) {
                     vm.rules = res;
                     
-                    // Map dữ liệu từ database vào form cấu hình
-                    var ruleFault = res.find(function (r) { return r.Code === 'MULTI_FAULT_3X'; });
-                    if (ruleFault) {
-                        vm.configForm.multiFault.id = ruleFault.Id;
-                        vm.configForm.multiFault.isActive = ruleFault.IsActive;
-                        vm.configForm.multiFault.count = ruleFault.ThresholdCount || 3;
-                        vm.configForm.multiFault.period = ruleFault.ThresholdPeriodDays || 30;
-                    }
+                    // Helper to parse Description JSON
+                    var parseDesc = function (desc) {
+                        if (!desc) return { text: '', overrides: [] };
+                        var trimmed = desc.trim();
+                        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                            try { return JSON.parse(trimmed); } catch (e) {}
+                        }
+                        return { text: desc, overrides: [] };
+                    };
 
-                    var ruleWarranty = res.find(function (r) { return r.Code === 'WARRANTY_EXPIRY_30D'; });
-                    if (ruleWarranty) {
-                        vm.configForm.warranty.id = ruleWarranty.Id;
-                        vm.configForm.warranty.isActive = ruleWarranty.IsActive;
-                        vm.configForm.warranty.days = ruleWarranty.ThresholdDays || 30;
+                    // Map dữ liệu từ database vào form cấu hình
+                    var ruleCheckDue = res.find(function (r) { return r.Code === 'CHECKLIST_DUE_3D'; });
+                    if (ruleCheckDue) {
+                        vm.configForm.checklistDue.id = ruleCheckDue.Id;
+                        vm.configForm.checklistDue.isActive = ruleCheckDue.IsActive;
+                        vm.configForm.checklistDue.days = ruleCheckDue.ThresholdDays !== null ? ruleCheckDue.ThresholdDays : 3;
+                        var d = parseDesc(ruleCheckDue.Description);
+                        vm.configForm.checklistDue.overrides = d.overrides || [];
                     }
 
                     var ruleMaint = res.find(function (r) { return r.Code === 'CHECKLIST_OVERDUE'; });
                     if (ruleMaint) {
                         vm.configForm.maintenance.id = ruleMaint.Id;
                         vm.configForm.maintenance.isActive = ruleMaint.IsActive;
+                        vm.configForm.maintenance.tolerance = ruleMaint.ThresholdDays !== null ? ruleMaint.ThresholdDays : 5;
+                        var d = parseDesc(ruleMaint.Description);
+                        vm.configForm.maintenance.overrides = d.overrides || [];
+                    }
+
+                    var ruleFault = res.find(function (r) { return r.Code === 'MULTI_FAULT_3X'; });
+                    if (ruleFault) {
+                        vm.configForm.multiFault.id = ruleFault.Id;
+                        vm.configForm.multiFault.isActive = ruleFault.IsActive;
+                        vm.configForm.multiFault.count = ruleFault.ThresholdCount !== null ? ruleFault.ThresholdCount : 3;
+                        vm.configForm.multiFault.period = ruleFault.ThresholdPeriodDays !== null ? ruleFault.ThresholdPeriodDays : 30;
+                        var d = parseDesc(ruleFault.Description);
+                        vm.configForm.multiFault.overrides = d.overrides || [];
+                    }
+
+                    var ruleDeprec = res.find(function (r) { return r.Code === 'DEPRECIATION_END_30D'; });
+                    if (ruleDeprec) {
+                        vm.configForm.depreciation.id = ruleDeprec.Id;
+                        vm.configForm.depreciation.isActive = ruleDeprec.IsActive;
+                        vm.configForm.depreciation.days = ruleDeprec.ThresholdDays !== null ? ruleDeprec.ThresholdDays : 30;
+                        var d = parseDesc(ruleDeprec.Description);
+                        vm.configForm.depreciation.overrides = d.overrides || [];
+                    }
+
+                    var ruleExpiry = res.find(function (r) { return r.Code === 'EXPIRY_SOON_60D'; });
+                    if (ruleExpiry) {
+                        vm.configForm.expiry.id = ruleExpiry.Id;
+                        vm.configForm.expiry.isActive = ruleExpiry.IsActive;
+                        vm.configForm.expiry.days = ruleExpiry.ThresholdDays !== null ? ruleExpiry.ThresholdDays : 60;
+                        var d = parseDesc(ruleExpiry.Description);
+                        vm.configForm.expiry.overrides = d.overrides || [];
+                    }
+
+                    var ruleWarranty = res.find(function (r) { return r.Code === 'WARRANTY_EXPIRY_30D'; });
+                    if (ruleWarranty) {
+                        vm.configForm.warranty.id = ruleWarranty.Id;
+                        vm.configForm.warranty.isActive = ruleWarranty.IsActive;
+                        vm.configForm.warranty.days = ruleWarranty.ThresholdDays !== null ? ruleWarranty.ThresholdDays : 30;
+                        var d = parseDesc(ruleWarranty.Description);
+                        vm.configForm.warranty.overrides = d.overrides || [];
+                    }
+
+                    var ruleConsumables = res.find(function (r) { return r.Code === 'CONSUMABLES_LOW'; });
+                    if (ruleConsumables) {
+                        vm.configForm.consumables.id = ruleConsumables.Id;
+                        vm.configForm.consumables.isActive = ruleConsumables.IsActive;
+                        vm.configForm.consumables.printer = ruleConsumables.ThresholdCount !== null ? ruleConsumables.ThresholdCount : 10;
+                        vm.configForm.consumables.battery = ruleConsumables.ThresholdDays !== null ? ruleConsumables.ThresholdDays : 5;
+                        vm.configForm.consumables.office = 15;
+                        vm.configForm.consumables.cdha = 20;
+                        vm.configForm.consumables.hscc = 8;
+                        vm.configForm.consumables.phongmo = 12;
+                        vm.configForm.consumables.xetnghiem = 25;
+
+                        if (ruleConsumables.Description) {
+                            var d = parseDesc(ruleConsumables.Description);
+                            if (d && d.thresholds) {
+                                if (d.thresholds.PRINTER !== undefined) vm.configForm.consumables.printer = d.thresholds.PRINTER;
+                                if (d.thresholds.UPS !== undefined) vm.configForm.consumables.battery = d.thresholds.UPS;
+                                if (d.thresholds.OFFICE !== undefined) vm.configForm.consumables.office = d.thresholds.OFFICE;
+                                if (d.thresholds.CDHA !== undefined) vm.configForm.consumables.cdha = d.thresholds.CDHA;
+                                if (d.thresholds.HSCC !== undefined) vm.configForm.consumables.hscc = d.thresholds.HSCC;
+                                if (d.thresholds.PHONGMO !== undefined) vm.configForm.consumables.phongmo = d.thresholds.PHONGMO;
+                                if (d.thresholds.XETNGHIEM !== undefined) vm.configForm.consumables.xetnghiem = d.thresholds.XETNGHIEM;
+                            }
+                        }
                     }
 
                     vm.loading = false;
@@ -188,25 +303,94 @@ var app = new Vue({
             // Xây dựng danh sách các rule để gửi lên API
             var updatedRules = [
                 {
+                    Id: vm.configForm.checklistDue.id,
+                    IsActive: vm.configForm.checklistDue.isActive,
+                    ThresholdDays: parseInt(vm.configForm.checklistDue.days),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo nhắc lịch bảo trì sắp đến hạn kiểm tra định kỳ.',
+                        overrides: vm.configForm.checklistDue.overrides
+                    })
+                },
+                {
+                    Id: vm.configForm.maintenance.id,
+                    IsActive: vm.configForm.maintenance.isActive,
+                    ThresholdDays: parseInt(vm.configForm.maintenance.tolerance),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo khi kế hoạch checklist bảo trì của thiết bị quá hạn.',
+                        overrides: vm.configForm.maintenance.overrides
+                    })
+                },
+                {
                     Id: vm.configForm.multiFault.id,
                     IsActive: vm.configForm.multiFault.isActive,
                     ThresholdCount: parseInt(vm.configForm.multiFault.count),
                     ThresholdPeriodDays: parseInt(vm.configForm.multiFault.period),
-                    Description: 'Cảnh báo tự động đề xuất thanh lý khi thiết bị hỏng vượt ngưỡng tần suất.'
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo tự động đề xuất thanh lý khi thiết bị hỏng vượt ngưỡng tần suất.',
+                        overrides: vm.configForm.multiFault.overrides
+                    })
+                },
+                {
+                    Id: vm.configForm.depreciation.id,
+                    IsActive: vm.configForm.depreciation.isActive,
+                    ThresholdDays: parseInt(vm.configForm.depreciation.days),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo khi chu kỳ khấu hao của thiết bị sắp kết thúc.',
+                        overrides: vm.configForm.depreciation.overrides
+                    })
+                },
+                {
+                    Id: vm.configForm.expiry.id,
+                    IsActive: vm.configForm.expiry.isActive,
+                    ThresholdDays: parseInt(vm.configForm.expiry.days),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo thiết bị y tế gần hết thời hạn sử dụng hữu ích.',
+                        overrides: vm.configForm.expiry.overrides
+                    })
                 },
                 {
                     Id: vm.configForm.warranty.id,
                     IsActive: vm.configForm.warranty.isActive,
                     ThresholdDays: parseInt(vm.configForm.warranty.days),
-                    Description: 'Cảnh báo tự động gia hạn bảo dưỡng/bảo hành trước thời hạn.'
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo thời gian bảo hành chính hãng sắp hết hạn.',
+                        overrides: vm.configForm.warranty.overrides
+                    })
                 },
                 {
-                    Id: vm.configForm.maintenance.id,
-                    IsActive: vm.configForm.maintenance.isActive,
-                    ThresholdDays: 0,
-                    Description: 'Cảnh báo khi kế hoạch checklist của thiết bị quá hạn.'
+                    Id: vm.configForm.consumables.id,
+                    IsActive: vm.configForm.consumables.isActive,
+                    ThresholdCount: parseInt(vm.configForm.consumables.printer),
+                    ThresholdDays: parseInt(vm.configForm.consumables.battery),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo khi lượng tồn kho của vật tư tiêu hao xuống dưới mức tối thiểu.',
+                        thresholds: {
+                            PRINTER: parseInt(vm.configForm.consumables.printer),
+                            UPS: parseInt(vm.configForm.consumables.battery),
+                            OFFICE: parseInt(vm.configForm.consumables.office),
+                            CDHA: parseInt(vm.configForm.consumables.cdha),
+                            HSCC: parseInt(vm.configForm.consumables.hscc),
+                            PHONGMO: parseInt(vm.configForm.consumables.phongmo),
+                            XETNGHIEM: parseInt(vm.configForm.consumables.xetnghiem)
+                        }
+                    })
                 }
             ];
+
+            // Save role routing và generate log mới
+            localStorage.setItem('role_routing_config', JSON.stringify(vm.roleRouting));
+
+            // Log update
+            var nowStr = new Date().toLocaleString('vi-VN', { hour12: false }).replace(/:[^:]*$/, '');
+            var logText = 'Cập nhật tham số quy tắc thành công';
+            vm.configLogs.unshift({
+                time: nowStr,
+                user: 'Nguyễn Văn Quản Trị',
+                action: logText
+            });
+            // Keep top 10 logs
+            if (vm.configLogs.length > 10) vm.configLogs = vm.configLogs.slice(0, 10);
+            localStorage.setItem('config_change_logs', JSON.stringify(vm.configLogs));
 
             $.ajax({
                 url: '/api/alerts/rules',
@@ -446,6 +630,21 @@ var app = new Vue({
             }
         },
 
+        // Click vào card để chuyển hướng đến chi tiết thiết bị (trừ khi click vào nút hoặc input)
+        onCardClick: function (alert, event) {
+            var target = event.target;
+            if (target.closest('.alert-dismiss-btn') || 
+                target.closest('.alert-card-actions') || 
+                target.closest('.inline-restock-group') || 
+                target.closest('button') || 
+                target.closest('input') || 
+                target.closest('select') || 
+                target.closest('a')) {
+                return;
+            }
+            this.handleAction(alert, 'view');
+        },
+
         // Hiển thị Toast thông báo sử dụng thư viện chung MedEquip.toast
         showToast: function (title, msg, type, alertObj) {
             if (window.MedEquip && window.MedEquip.toast) {
@@ -453,6 +652,59 @@ var app = new Vue({
             } else {
                 alert(title + ': ' + msg);
             }
+        },
+
+        // Thêm cấu hình đắc thù theo nhóm thiết bị
+        addOverride: function (ruleKey) {
+            var vm = this;
+            var group = vm.deviceGroups[0]; // Mặc định nhóm đầu
+            var newOverride = {};
+            
+            if (ruleKey === 'multiFault') {
+                newOverride = { groupCode: group.code, groupName: group.name, count: 3, period: 30 };
+            } else if (ruleKey === 'maintenance') {
+                newOverride = { groupCode: group.code, groupName: group.name, tolerance: 5 };
+            } else {
+                newOverride = { groupCode: group.code, groupName: group.name, days: 30 };
+            }
+
+            vm.configForm[ruleKey].overrides.push(newOverride);
+        },
+
+        // Xóa cấu hình đặc thù
+        removeOverride: function (ruleKey, index) {
+            this.configForm[ruleKey].overrides.splice(index, 1);
+        },
+
+        // Cập nhật tên nhóm khi người dùng đổi select
+        onOverrideGroupChange: function (ruleKey, index, groupCode) {
+            var vm = this;
+            var gr = vm.deviceGroups.find(function(g) { return g.code === groupCode; });
+            if (gr) {
+                vm.configForm[ruleKey].overrides[index].groupName = gr.name;
+            }
+        },
+
+        // Ép chạy Engine chẩn đoán khẩn cấp và làm mới cảnh báo
+        forceScan: function () {
+            var vm = this;
+            vm.saving = true;
+            vm.showToast('Bắt đầu quét', 'Đang khởi chạy Engine chẩn đoán khẩn cấp...', 'info');
+
+            $.ajax({
+                url: '/api/alerts/diagnostics',
+                type: 'POST',
+                success: function (res) {
+                    vm.saving = false;
+                    vm.showToast('Thành công', 'Đã quét và cập nhật danh sách cảnh báo mới nhất.', 'success');
+                    vm.setView('alerts');
+                },
+                error: function (xhr) {
+                    console.error('Lỗi khởi chạy chẩn đoán:', xhr.responseText);
+                    vm.showToast('Lỗi', 'Không thể khởi chạy quét cảnh báo.', 'danger');
+                    vm.saving = false;
+                }
+            });
         }
     },
 

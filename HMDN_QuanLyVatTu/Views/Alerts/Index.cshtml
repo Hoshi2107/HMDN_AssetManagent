@@ -76,7 +76,8 @@
             <div v-for="alert in filteredAlerts" 
                  :key="alert.Id" 
                  class="alert-card" 
-                 :class="'alert-' + alert.Severity">
+                 :class="'alert-' + alert.Severity"
+                 v-on:click="onCardClick(alert, $event)">
                 
                 <!-- Dismiss button in top-right corner of card -->
                 <button class="alert-dismiss-btn" v-if="hasPermission('Alerts', 'EDIT')" v-on:click="resolveAlert(alert.Id)" title="Xác nhận đã xử lý">
@@ -245,6 +246,9 @@
             
             <div class="config-actions-bar">
                 <button class="topbar-btn btn-ghost font-weight-bold" v-on:click="setView('alerts')" :disabled="saving">Hủy bỏ</button>
+                <button class="topbar-btn btn-outline-success font-weight-bold mr-2" v-on:click="forceScan" :disabled="saving" style="border-radius: 20px; padding: 7px 16px; font-size: 13px;">
+                    <i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Quét cảnh báo ngay
+                </button>
                 <button class="topbar-btn btn-primary font-weight-bold" v-on:click="saveConfig" :disabled="saving">
                     <span v-if="saving" class="spinner-border spinner-border-sm mr-1"></span>
                     Lưu cấu hình
@@ -252,10 +256,30 @@
             </div>
         </div>
 
+        <!-- Sub-tabs Segmented Control -->
+        <div class="config-tabs-nav mb-4" style="animation: fadeIn 0.2s;">
+            <button class="config-tab-btn" :class="{ active: configTab === 'rules' }" v-on:click="configTab = 'rules'">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Quy tắc chẩn đoán</span>
+            </button>
+            <button class="config-tab-btn" :class="{ active: configTab === 'consumables' }" v-on:click="configTab = 'consumables'">
+                <i class="fa-solid fa-boxes-packing"></i>
+                <span>Vật tư tiêu hao</span>
+            </button>
+            <button class="config-tab-btn" :class="{ active: configTab === 'routing' }" v-on:click="configTab = 'routing'">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Kênh & Vai trò</span>
+            </button>
+            <button class="config-tab-btn" :class="{ active: configTab === 'logs' }" v-on:click="configTab = 'logs'">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Nhật ký thay đổi</span>
+            </button>
+        </div>
+
         <div class="config-grid">
             
             <!-- 1. Quy tắc lỗi lặp lại (Multi-fault) -->
-            <div class="config-card">
+            <div class="config-card" v-show="configTab === 'rules'">
                 <div>
                     <div class="config-header">
                         <div class="config-title-group">
@@ -264,7 +288,7 @@
                             </div>
                             <div>
                                 <div class="config-title">Quy tắc lỗi lặp lại (Multi-fault)</div>
-                                <div class="config-desc">Tự động gắn cờ thiết bị có tần suất hỏng hóc cao.</div>
+                                <div class="config-desc">Đề xuất thanh lý khi thiết bị có tần suất hỏng hóc cao.</div>
                             </div>
                         </div>
                         <label class="switch-control">
@@ -274,10 +298,11 @@
                     </div>
 
                     <div v-show="configForm.multiFault.isActive" style="animation: fadeIn 0.2s;">
+                        <!-- Ngưỡng số lần hỏng hóc -->
                         <div class="slider-group">
                             <div class="slider-labels">
-                                <span class="text-secondary">Cảnh báo khi hỏng hóc vượt ngưỡng</span>
-                                <span class="slider-val-tag">${ configForm.multiFault.count } lần / ${ configForm.multiFault.period } ngày</span>
+                                <span class="text-secondary">Ngưỡng số lần hỏng hóc chung</span>
+                                <span class="slider-val-tag">${ configForm.multiFault.count } lần</span>
                             </div>
                             <input type="range" 
                                    class="custom-range-slider" 
@@ -290,29 +315,56 @@
                             </div>
                         </div>
 
-                        <div class="field-row">
-                            <div class="field-col">
-                                <label class="field-label">Mức độ ưu tiên</label>
-                                <select class="form-control-custom" v-model="configForm.multiFault.severity">
-                                    <option value="danger">Cao (High)</option>
-                                    <option value="warning">Trung bình</option>
-                                    <option value="info">Thấp</option>
-                                </select>
+                        <!-- Thời gian theo dõi lỗi -->
+                        <div class="slider-group mt-3">
+                            <div class="slider-labels">
+                                <span class="text-secondary">Thời gian theo dõi tần suất lỗi chung</span>
+                                <span class="slider-val-tag">${ configForm.multiFault.period } ngày</span>
                             </div>
-                            <div class="field-col">
-                                <label class="field-label">Đối tượng áp dụng</label>
-                                <select class="form-control-custom">
-                                    <option value="all">Tất cả thiết bị</option>
-                                    <option value="critical">Chỉ thiết bị hồi sức/phẫu thuật</option>
-                                </select>
+                            <input type="range" 
+                                   class="custom-range-slider" 
+                                   min="5" 
+                                   max="120" 
+                                   v-model="configForm.multiFault.period" />
+                            <div class="d-flex justify-content-between text-muted mt-1" style="font-size: 10px; font-weight: 600;">
+                                <span>5 ngày</span>
+                                <span>120 ngày</span>
+                            </div>
+                        </div>
+
+                        <!-- Cấu hình đắc thù nhóm thiết bị -->
+                        <div class="mt-3 border-top pt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-secondary" style="font-size: 12px;"><i class="fa-solid fa-layer-group mr-1"></i> Ngưỡng đắc thù theo nhóm thiết bị</span>
+                                <button class="btn btn-sm btn-outline-primary" style="font-size: 11px; border-radius: 12px; padding: 2px 10px;" v-on:click="addOverride('multiFault')">
+                                    <i class="fa-solid fa-plus mr-1"></i> Thêm nhóm
+                                </button>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div v-for="(ov, idx) in configForm.multiFault.overrides" :key="idx" class="override-row-item">
+                                    <select class="form-control-custom" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('multiFault', idx, ov.groupCode)" style="width: 150px;">
+                                        <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                    </select>
+                                    <span class="text-muted">Hỏng &ge;</span>
+                                    <input type="number" class="form-control-custom text-center" v-model.number="ov.count" min="1" max="10" style="width: 45px;" />
+                                    <span class="text-muted">lần trong</span>
+                                    <input type="number" class="form-control-custom text-center" v-model.number="ov.period" min="5" max="120" style="width: 50px;" />
+                                    <span class="text-muted">ngày</span>
+                                    <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('multiFault', idx)" title="Xóa đặc thù">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                                <div v-if="configForm.multiFault.overrides.length === 0" class="text-muted text-center py-2" style="font-size: 11px; border: 1px dashed var(--border); border-radius: 8px;">
+                                    Áp dụng chung cho toàn bộ nhóm thiết bị.
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Bảo hành -->
-            <div class="config-card">
+            <!-- 2. Bảo hành thiết bị -->
+            <div class="config-card" v-show="configTab === 'rules'">
                 <div>
                     <div class="config-header">
                         <div class="config-title-group">
@@ -320,8 +372,8 @@
                                 <i class="fa-solid fa-shield-halved"></i>
                             </div>
                             <div>
-                                <div class="config-title">Bảo hành & Hạn dùng</div>
-                                <div class="config-desc">Cảnh báo trước khi hết hạn để lên kế hoạch gia hạn hoặc thay thế.</div>
+                                <div class="config-title">Hạn bảo hành thiết bị</div>
+                                <div class="config-desc">Cảnh báo trước khi hết hạn bảo hành để lên kế hoạch gia hạn.</div>
                             </div>
                         </div>
                         <label class="switch-control">
@@ -333,7 +385,7 @@
                     <div v-show="configForm.warranty.isActive" style="animation: fadeIn 0.2s;">
                         <div class="field-row">
                             <div class="field-col">
-                                <label class="field-label">Thời gian thông báo trước (ngày)</label>
+                                <label class="field-label">Thời gian thông báo trước chung (ngày)</label>
                                 <input type="number" 
                                        class="form-control-custom" 
                                        v-model="configForm.warranty.days" 
@@ -341,8 +393,34 @@
                                        max="180" />
                             </div>
                         </div>
+
+                        <!-- Cấu hình đắc thù nhóm thiết bị -->
+                        <div class="mt-3 border-top pt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="font-weight-bold text-secondary" style="font-size: 12px;"><i class="fa-solid fa-layer-group mr-1"></i> Ngưỡng đắc thù theo nhóm thiết bị</span>
+                                <button class="btn btn-sm btn-outline-primary" style="font-size: 11px; border-radius: 12px; padding: 2px 10px;" v-on:click="addOverride('warranty')">
+                                    <i class="fa-solid fa-plus mr-1"></i> Thêm nhóm
+                                </button>
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <div v-for="(ov, idx) in configForm.warranty.overrides" :key="idx" class="override-row-item">
+                                    <select class="form-control-custom" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('warranty', idx, ov.groupCode)" style="width: 150px;">
+                                        <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                    </select>
+                                    <span class="text-muted">Báo trước:</span>
+                                    <input type="number" class="form-control-custom text-center" v-model.number="ov.days" min="5" max="180" style="width: 45px;" />
+                                    <span class="text-muted">ngày</span>
+                                    <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('warranty', idx)" title="Xóa đặc thù">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                                <div v-if="configForm.warranty.overrides.length === 0" class="text-muted text-center py-2" style="font-size: 11px; border: 1px dashed var(--border); border-radius: 8px;">
+                                    Áp dụng chung cho toàn bộ nhóm thiết bị.
+                                </div>
+                            </div>
+                        </div>
                         
-                        <div class="d-flex align-items-center mt-3 gap-2">
+                        <div class="d-flex align-items-center mt-3 gap-2 border-top pt-2">
                             <input type="checkbox" id="kembc" v-model="configForm.warranty.costReport" style="width: 15px; height: 15px; cursor: pointer;">
                             <label for="kembc" class="m-0 font-weight-bold text-secondary" style="font-size: 12px; cursor: pointer;">Kèm báo cáo dự toán chi phí thay thế</label>
                         </div>
@@ -350,8 +428,103 @@
                 </div>
             </div>
 
-            <!-- 3. Bảo trì định kỳ -->
-            <div class="config-card">
+            <!-- 3. Khấu hao & Hạn sử dụng (Lifecycle) -->
+            <div class="config-card" v-show="configTab === 'rules'">
+                <div>
+                    <div class="config-header">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-info-light">
+                                <i class="fa-solid fa-hourglass-half"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Khấu hao & Hạn sử dụng</div>
+                                <div class="config-desc">Giám sát hạn sử dụng hữu ích và chu kỳ khấu hao tài sản.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3 mt-3">
+                        <!-- Expiry Rule -->
+                        <div class="p-3 border rounded bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Gần hết hạn sử dụng (Expiry)</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.expiry.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.expiry.isActive" style="animation: fadeIn 0.2s;">
+                                <div class="field-row mt-2">
+                                    <div class="field-col">
+                                        <label class="field-label text-muted" style="font-size: 11px;">Thời gian thông báo trước (ngày)</label>
+                                        <input type="number" 
+                                               class="form-control-custom" 
+                                               v-model="configForm.expiry.days" 
+                                               min="5" 
+                                               max="365" />
+                                    </div>
+                                </div>
+                                <!-- Overrides -->
+                                <div class="mt-2 border-top pt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary" style="font-size: 11px; font-weight: 700;">Đặc thù nhóm</span>
+                                        <button class="btn btn-link btn-sm p-0" style="font-size: 10.5px;" v-on:click="addOverride('expiry')">+ Thêm</button>
+                                    </div>
+                                    <div v-for="(ov, idx) in configForm.expiry.overrides" :key="idx" class="override-row-item">
+                                        <select class="form-control-custom" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('expiry', idx, ov.groupCode)" style="width: 110px;">
+                                            <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                        </select>
+                                        <input type="number" class="form-control-custom text-center" v-model.number="ov.days" style="width: 45px;" />
+                                        <span>ngày</span>
+                                        <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('expiry', idx)"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Depreciation Rule -->
+                        <div class="p-3 border rounded bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Gần hết chu kỳ khấu hao (Depreciation)</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.depreciation.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.depreciation.isActive" style="animation: fadeIn 0.2s;">
+                                <div class="field-row mt-2">
+                                    <div class="field-col">
+                                        <label class="field-label text-muted" style="font-size: 11px;">Thời gian thông báo trước (ngày)</label>
+                                        <input type="number" 
+                                               class="form-control-custom" 
+                                               v-model="configForm.depreciation.days" 
+                                               min="5" 
+                                               max="180" />
+                                    </div>
+                                </div>
+                                <!-- Overrides -->
+                                <div class="mt-2 border-top pt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary" style="font-size: 11px; font-weight: 700;">Đặc thù nhóm</span>
+                                        <button class="btn btn-link btn-sm p-0" style="font-size: 10.5px;" v-on:click="addOverride('depreciation')">+ Thêm</button>
+                                    </div>
+                                    <div v-for="(ov, idx) in configForm.depreciation.overrides" :key="idx" class="override-row-item">
+                                        <select class="form-control-custom" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('depreciation', idx, ov.groupCode)" style="width: 110px;">
+                                            <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                        </select>
+                                        <input type="number" class="form-control-custom text-center" v-model.number="ov.days" style="width: 45px;" />
+                                        <span>ngày</span>
+                                        <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('depreciation', idx)"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Lịch bảo trì & Checklist -->
+            <div class="config-card" v-show="configTab === 'rules'">
                 <div>
                     <div class="config-header">
                         <div class="config-title-group">
@@ -359,42 +532,99 @@
                                 <i class="fa-solid fa-screwdriver-wrench"></i>
                             </div>
                             <div>
-                                <div class="config-title">Bảo trì định kỳ</div>
-                                <div class="config-desc">Đánh giá hạn và tolerance trễ hạn checklist bảo dưỡng.</div>
+                                <div class="config-title">Lịch bảo trì & Checklist</div>
+                                <div class="config-desc">Định cấu hình các mốc nhắc nhở kiểm định định kỳ và tolerance trễ hạn.</div>
                             </div>
                         </div>
-                        <label class="switch-control">
-                            <input type="checkbox" v-model="configForm.maintenance.isActive">
-                            <span class="switch-slider"></span>
-                        </label>
                     </div>
 
-                    <div v-show="configForm.maintenance.isActive" style="animation: fadeIn 0.2s;">
-                        <div class="field-row">
-                            <div class="field-col">
-                                <label class="field-label">Tần suất kiểm tra mặc định</label>
-                                <select class="form-control-custom" v-model="configForm.maintenance.cycle">
-                                    <option value="daily">Hàng ngày</option>
-                                    <option value="weekly">Hàng tuần</option>
-                                    <option value="monthly">Hàng quý (3 tháng)</option>
-                                    <option value="yearly">Hàng năm</option>
-                                </select>
+                    <div class="d-flex flex-column gap-3 mt-3">
+                        <!-- Checklist Due Rule -->
+                        <div class="p-3 border rounded bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Nhắc lịch sắp đến hạn kiểm tra</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.checklistDue.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
                             </div>
-                            <div class="field-col">
-                                <label class="field-label">Dung sai trễ hạn tối đa</label>
-                                <select class="form-control-custom" v-model="configForm.maintenance.tolerance">
-                                    <option :value="3">Tối đa 3 ngày</option>
-                                    <option :value="5">Tối đa 5 ngày</option>
-                                    <option :value="10">Tối đa 10 ngày</option>
-                                </select>
+                            <div v-show="configForm.checklistDue.isActive" style="animation: fadeIn 0.2s;">
+                                <div class="field-row mt-2">
+                                    <div class="field-col">
+                                        <label class="field-label text-muted" style="font-size: 11px;">Thời gian thông báo trước (ngày)</label>
+                                        <input type="number" 
+                                               class="form-control-custom" 
+                                               v-model="configForm.checklistDue.days" 
+                                               min="1" 
+                                               max="14" />
+                                    </div>
+                                </div>
+                                <!-- Overrides -->
+                                <div class="mt-2 border-top pt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary" style="font-size: 11px; font-weight: 700;">Đặc thù nhóm</span>
+                                        <button class="btn btn-link btn-sm p-0" style="font-size: 10.5px;" v-on:click="addOverride('checklistDue')">+ Thêm</button>
+                                    </div>
+                                    <div v-for="(ov, idx) in configForm.checklistDue.overrides" :key="idx" class="override-row-item">
+                                        <select class="form-control-custom py-1" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('checklistDue', idx, ov.groupCode)" style="width: 100px;">
+                                            <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                        </select>
+                                        <input type="number" class="form-control-custom text-center py-1" v-model.number="ov.days" style="width: 45px;" />
+                                        <span>ngày</span>
+                                        <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('checklistDue', idx)"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checklist Overdue Rule -->
+                        <div class="p-3 border rounded bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Cảnh báo quá hạn checklist</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.maintenance.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.maintenance.isActive" style="animation: fadeIn 0.2s;">
+                                <div class="field-row mt-2">
+                                    <div class="field-col">
+                                        <label class="field-label text-muted" style="font-size: 11px;">Dung sai trễ hạn tối đa</label>
+                                        <select class="form-control-custom" v-model="configForm.maintenance.tolerance">
+                                            <option :value="0">Báo ngay lập tức (0 ngày)</option>
+                                            <option :value="3">Tối đa 3 ngày trễ</option>
+                                            <option :value="5">Tối đa 5 ngày trễ</option>
+                                            <option :value="10">Tối đa 10 ngày trễ</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Overrides -->
+                                <div class="mt-2 border-top pt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-secondary" style="font-size: 11px; font-weight: 700;">Đặc thù nhóm</span>
+                                        <button class="btn btn-link btn-sm p-0" style="font-size: 10.5px;" v-on:click="addOverride('maintenance')">+ Thêm</button>
+                                    </div>
+                                    <div v-for="(ov, idx) in configForm.maintenance.overrides" :key="idx" class="override-row-item">
+                                        <select class="form-control-custom py-1" v-model="ov.groupCode" v-on:change="onOverrideGroupChange('maintenance', idx, ov.groupCode)" style="width: 100px;">
+                                            <option v-for="g in deviceGroups" :value="g.code">${ g.name }</option>
+                                        </select>
+                                        <select class="form-control-custom py-1" v-model.number="ov.tolerance" style="width: 110px;">
+                                            <option :value="0">0 ngày</option>
+                                            <option :value="3">3 ngày trễ</option>
+                                            <option :value="5">5 ngày trễ</option>
+                                            <option :value="10">10 ngày trễ</option>
+                                        </select>
+                                        <button class="btn btn-sm text-danger ml-auto p-0" v-on:click="removeOverride('maintenance', idx)"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. Vật tư tiêu hao -->
-            <div class="config-card">
+            <!-- 5. Vật tư tiêu hao -->
+            <div class="config-card config-fullwidth" v-show="configTab === 'consumables'">
                 <div>
                     <div class="config-header">
                         <div class="config-title-group">
@@ -403,44 +633,122 @@
                             </div>
                             <div>
                                 <div class="config-title">Vật tư tiêu hao</div>
-                                <div class="config-desc">Đặt ngưỡng tồn tối thiểu để kích hoạt cảnh báo mua sắm vật tư.</div>
+                                <div class="config-desc">Cấu hình tồn kho an toàn để tự động cảnh báo bổ sung vật tư rời.</div>
                             </div>
                         </div>
+                        <label class="switch-control">
+                            <input type="checkbox" v-model="configForm.consumables.isActive">
+                            <span class="switch-slider"></span>
+                        </label>
                     </div>
 
-                    <div class="stock-threshold-list">
-                        <div class="stock-threshold-row">
-                            <div class="stock-item-info">
-                                <i class="fa-solid fa-print text-muted"></i>
-                                <span>Mực in & Giấy in</span>
+                    <div v-show="configForm.consumables.isActive" style="animation: fadeIn 0.2s;">
+                        <div class="stock-threshold-list mt-3">
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-print text-muted"></i>
+                                    <span>Mực in & Giấy in</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.printer" 
+                                           min="1" />
+                                    <span class="stock-unit-label">cuộn/hộp</span>
+                                </div>
                             </div>
-                            <div class="stock-limit-input">
-                                <span class="stock-unit-label">Ngưỡng tối thiểu:</span>
-                                <input type="number" 
-                                       class="form-control-custom stock-input-mini" 
-                                       v-model="configForm.consumables.printer" />
-                                <span class="stock-unit-label">%</span>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-battery-full text-muted"></i>
+                                    <span>Pin & Phụ kiện rời (UPS)</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.battery" 
+                                           min="1" />
+                                    <span class="stock-unit-label">bộ</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="stock-threshold-row">
-                            <div class="stock-item-info">
-                                <i class="fa-solid fa-battery-full text-muted"></i>
-                                <span>Pin & Phụ kiện rời</span>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-pen-nib text-muted"></i>
+                                    <span>Văn phòng phẩm chung</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.office" 
+                                           min="1" />
+                                    <span class="stock-unit-label">hộp/tệp</span>
+                                </div>
                             </div>
-                            <div class="stock-limit-input">
-                                <span class="stock-unit-label">Ngưỡng tối thiểu:</span>
-                                <input type="number" 
-                                       class="form-control-custom stock-input-mini" 
-                                       v-model="configForm.consumables.battery" />
-                                <span class="stock-unit-label">bộ</span>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-wave-square text-muted"></i>
+                                    <span>Gel siêu âm & Điện cực ECG</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.cdha" 
+                                           min="1" />
+                                    <span class="stock-unit-label">chai/bộ</span>
+                                </div>
+                            </div>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-lightbulb text-muted"></i>
+                                    <span>Bóng đèn máy y tế & Cảm biến</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.hscc" 
+                                           min="1" />
+                                    <span class="stock-unit-label">cái</span>
+                                </div>
+                            </div>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-lungs text-muted"></i>
+                                    <span>Dây thở & Ống thở máy thở</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.phongmo" 
+                                           min="1" />
+                                    <span class="stock-unit-label">bộ</span>
+                                </div>
+                            </div>
+                            <div class="stock-threshold-row">
+                                <div class="stock-item-info">
+                                    <i class="fa-solid fa-filter text-muted"></i>
+                                    <span>Màng lọc & Phụ kiện xét nghiệm</span>
+                                </div>
+                                <div class="stock-limit-input">
+                                    <span class="stock-unit-label">Mức tối thiểu:</span>
+                                    <input type="number" 
+                                           class="form-control-custom stock-input-mini" 
+                                           v-model="configForm.consumables.xetnghiem" 
+                                           min="1" />
+                                    <span class="stock-unit-label">hộp/cái</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Phương thức thông báo -->
-            <div class="config-card config-fullwidth">
+            <!-- 6. Phương thức thông báo -->
+            <div class="config-card config-fullwidth" v-show="configTab === 'routing'">
                 <div>
                     <div class="config-header mb-3">
                         <div class="config-title-group">
@@ -449,7 +757,7 @@
                             </div>
                             <div>
                                 <div class="config-title">Phương thức thông báo</div>
-                                <div class="config-desc">Lựa chọn các kênh truyền thông tin cảnh báo tới các kỹ thuật viên và cấp quản lý.</div>
+                                <div class="config-desc">Các kênh truyền đạt tin báo sự cố tới kỹ thuật viên và tổ trưởng lâm sàng.</div>
                             </div>
                         </div>
                     </div>
@@ -458,7 +766,7 @@
                         <div class="notify-method-card" 
                              :class="{ active: configForm.methods.email }"
                              v-on:click="configForm.methods.email = !configForm.methods.email">
-                            <i class="fa-regular fa-envelope notify-icon"></i>
+                             <i class="fa-regular fa-envelope notify-icon"></i>
                             <div class="notify-info">
                                 <div class="notify-name">Email</div>
                                 <div class="notify-sub">Toàn bộ quản trị viên</div>
@@ -510,12 +818,121 @@
                 </div>
             </div>
 
-        </div>
+            <!-- 7. Phân vai trò nhận thông báo (Role Routing) -->
+            <div class="config-card config-fullwidth" v-show="configTab === 'routing'">
+                <div>
+                    <div class="config-header mb-3">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-info-light">
+                                <i class="fa-solid fa-users-gear"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Phân phối cảnh báo theo Vai trò (Alert Routing)</div>
+                                <div class="config-desc">Định cấu hình các vai trò nhận thông báo cho từng loại sự cố (kết hợp email, chuông báo).</div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="table-responsive">
+                        <table class="table config-table" style="font-size: 12.5px;">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Loại quy tắc cảnh báo</th>
+                                    <th class="text-center" style="width: 18%;">Kỹ thuật viên (Tech)</th>
+                                    <th class="text-center" style="width: 18%;">Quản lý kho (Stock)</th>
+                                    <th class="text-center" style="width: 18%;">Trưởng khoa lâm sàng</th>
+                                    <th class="text-center" style="width: 18%;">Ban Giám đốc</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Lỗi lặp lại nhiều lần (Multi-fault)</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.MULTI_FAULT_3X" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.MULTI_FAULT_3X" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.MULTI_FAULT_3X" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.MULTI_FAULT_3X" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sắp hết hạn bảo hành</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.WARRANTY_EXPIRY_30D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.WARRANTY_EXPIRY_30D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.WARRANTY_EXPIRY_30D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.WARRANTY_EXPIRY_30D" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Quá hạn checklist bảo trì</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_OVERDUE" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_OVERDUE" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_OVERDUE" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_OVERDUE" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Checklist sắp đến hạn</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_DUE_3D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_DUE_3D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_DUE_3D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_DUE_3D" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vật tư tiêu hao sắp hết</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thiết bị sắp hết hạn sử dụng</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.EXPIRY_SOON_60D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.EXPIRY_SOON_60D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.EXPIRY_SOON_60D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.EXPIRY_SOON_60D" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thiết bị sắp hết khấu hao</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="director"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Lịch sử logs thay đổi cấu hình (Audit Log) -->
+            <div class="config-card config-fullwidth" v-show="configTab === 'logs'">
+                <div>
+                    <div class="config-header mb-3">
+                        <div class="config-title-group">
+                            <div class="config-icon-box bg-secondary-light">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                            <div>
+                                <div class="config-title">Nhật ký thay đổi Cấu hình (Audit Log)</div>
+                                <div class="config-desc">Lịch sử điều chỉnh tham số, ngưỡng và trạng thái quy tắc cảnh báo của các quản trị viên hệ thống.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-logs p-2" style="max-height: 250px; overflow-y: auto;">
+                        <div v-for="(log, idx) in configLogs" :key="idx" class="d-flex align-items-start gap-3 mb-3 border-bottom pb-2" style="font-size: 12.5px; line-height: 1.4;">
+                            <div class="text-muted font-weight-bold" style="min-width: 125px;">${ log.time }</div>
+                            <div class="badge badge-info px-2 py-1" style="font-size: 10px; border-radius: 8px;">${ log.user }</div>
+                            <div class="text-dark font-weight-bold flex-grow-1">${ log.action }</div>
+                        </div>
+                        <div v-if="configLogs.length === 0" class="text-muted text-center py-4">
+                            Không tìm thấy nhật ký thay đổi nào.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 </div>
 
 @section scripts {
-    <script src="@Url.Content("~/Scripts/app/alerts.js")"></script>
+    <script src="@Url.Content("~/Scripts/app/alerts.js?v=" + DateTime.Now.Ticks)"></script>
 }
