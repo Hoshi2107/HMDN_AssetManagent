@@ -28,6 +28,7 @@ namespace HMS.Data
         public DbSet<Item> Items { get; set; }
 
         public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<InventoryAttachment> InventoryAttachments { get; set; }
 
         public DbSet<Location> Locations { get; set; }
         public DbSet<Tickets> Tickets { get; set; }
@@ -68,6 +69,9 @@ namespace HMS.Data
             // QUAN TRỌNG NHẤT
             modelBuilder.Entity<Inventory>()
                 .ToTable("Inventory");
+
+            modelBuilder.Entity<InventoryAttachment>()
+                .ToTable("InventoryAttachments");
 
             modelBuilder.Entity<Location>()
                 .ToTable("Locations");

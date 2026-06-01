@@ -3,6 +3,7 @@ using HMS.Data;
 using System;
 using System.Data.Entity;
 using System.Linq;
+using System.Net.Http;
 using System.Web.Http;
 
 namespace HMDN_QuanLyVatTu.Controllers
@@ -37,6 +38,7 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     // Project trực tiếp trong query để tránh lazy-load
                     var inventories = db.Inventories
+                        .Where(inv => inv.ApprovalStatus == "approved")
                         .OrderByDescending(inv => inv.CreatedAt)
                         .Select(inv => new
                         {
@@ -438,6 +440,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 using (var db = new HospitalAssetDbContext())
                 {
                     var devices = db.Inventories
+                        .Where(inv => inv.ApprovalStatus == "approved")
                         .Select(inv => new
                         {
                             inv.Id,
@@ -456,6 +459,132 @@ namespace HMDN_QuanLyVatTu.Controllers
                 return InternalServerError(ex);
             }
         }
+
+        // POST api/maintenance/upload-attachment
+        [HttpPost]
+        [Route("upload-attachment")]
+        public IHttpActionResult UploadAttachment()
+        {
+            try
+            {
+                var httpRequest = System.Web.HttpContext.Current.Request;
+                if (httpRequest.Files.Count == 0)
+                {
+                    return BadRequest("Không có file nào được tải lên.");
+                }
+
+                if (!int.TryParse(httpRequest.Form["InventoryId"], out int inventoryId))
+                {
+                    return BadRequest("InventoryId không hợp lệ.");
+                }
+
+                using (var db = new HospitalAssetDbContext())
+                {
+                    foreach (string file in httpRequest.Files)
+                    {
+                        var postedFile = httpRequest.Files[file];
+                        if (postedFile != null && postedFile.ContentLength > 0)
+                        {
+                            using (var binaryReader = new System.IO.BinaryReader(postedFile.InputStream))
+                            {
+                                byte[] fileData = binaryReader.ReadBytes(postedFile.ContentLength);
+
+                                var attachment = new HMS.Models.Inventory.InventoryAttachment
+                                {
+                                    InventoryId = inventoryId,
+                                    FileName = System.IO.Path.GetFileName(postedFile.FileName),
+                                    FileType = postedFile.ContentType,
+                                    FileSize = postedFile.ContentLength,
+                                    FileData = fileData,
+                                    UploadedAt = DateTime.Now
+                                };
+
+                                db.InventoryAttachments.Add(attachment);
+                            }
+                        }
+                    }
+                    db.SaveChanges();
+                    return Ok(new { success = true, message = "Tải file lên thành công." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // GET api/maintenance/attachments/{inventoryId}
+        [HttpGet]
+        [Route("attachments/{inventoryId}")]
+        public IHttpActionResult GetAttachments(int inventoryId)
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var files = db.InventoryAttachments
+                        .Where(a => a.InventoryId == inventoryId)
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.FileName,
+                            a.FileSize,
+                            a.FileType,
+                            UploadedAt = a.UploadedAt
+                        })
+                        .OrderByDescending(a => a.UploadedAt)
+                        .ToList()
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.FileName,
+                            a.FileSize,
+                            a.FileType,
+                            UploadedAt = a.UploadedAt.ToString("yyyy-MM-dd HH:mm")
+                        });
+
+                    return Ok(files);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // GET api/maintenance/download-attachment/{id}
+        [HttpGet]
+        [Route("download-attachment/{id}")]
+        public System.Net.Http.HttpResponseMessage DownloadAttachment(int id)
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var attachment = db.InventoryAttachments.Find(id);
+                    if (attachment == null)
+                    {
+                        return Request.CreateResponse(System.Net.HttpStatusCode.NotFound);
+                    }
+
+                    var result = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                    {
+                        Content = new System.Net.Http.ByteArrayContent(attachment.FileData)
+                    };
+                    result.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+                    {
+                        FileName = attachment.FileName
+                    };
+                    result.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(attachment.FileType);
+
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(System.Net.HttpStatusCode.InternalServerError, ex);
+            }
+        }
     }
 
     // DTO cho cập nhật trạng thái
@@ -467,5 +596,28 @@ namespace HMDN_QuanLyVatTu.Controllers
         public decimal? Cost { get; set; }
         public string PartReplaced { get; set; }
         public string Vendor { get; set; }
+        // POST api/maintenance/update-status/{id}
+        [HttpPost]
+        [Route("update-status/{id}")]
+        public IHttpActionResult UpdateLifeStatus(int id, [FromBody] string newStatus)
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var inventory = db.Inventories.FirstOrDefault(i => i.Id == id);
+                    if (inventory == null) return NotFound();
+
+                    inventory.LifeStatus = newStatus;
+                    db.SaveChanges();
+
+                    return Ok(new { success = true, message = "Cập nhật trạng thái thành công" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
     }
 }

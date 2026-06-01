@@ -16,6 +16,8 @@ var app = new Vue({
         searchQuery: '',
         filterLogStatus: '', // '' = tất cả, 'has_logs' = có lịch sử, 'no_logs' = chưa có
         filterDepartment: '',
+        filterLifeStatus: '', // Bộ lọc trạng thái hoạt động
+        showRepairedDevices: false,
 
         // Phân trang
         currentPage: 1,
@@ -64,7 +66,15 @@ var app = new Vue({
         deviceList: [],
 
         // Loading state
-        loading: false
+        loading: false,
+
+        // Top scrollbar
+        tableScrollWidth: 0,
+        ignoreScroll: false,
+
+        // Attachments
+        attachments: [],
+        uploading: false
     },
 
     computed: {
@@ -73,17 +83,34 @@ var app = new Vue({
             var vm = this;
             var list = vm.devices.slice();
 
-            // Tìm kiếm
+            // Lọc theo chế độ xem
+            if (vm.showRepairedDevices) {
+                // Chỉ hiển thị thiết bị đã sửa chữa (có log)
+                list = list.filter(function (d) {
+                    return d.TotalLogs > 0;
+                });
+            } else {
+                // Mặc định hiển thị thiết bị hỏng, tạm ngưng và đang bảo trì
+                list = list.filter(function (d) {
+                    return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'in_repair';
+                });
+            }
+
+            // 1. Tìm kiếm
             if (vm.searchQuery) {
                 var q = vm.searchQuery.toLowerCase().trim();
                 list = list.filter(function (d) {
-                    return (
-                        (d.ItemName || '').toLowerCase().includes(q) ||
-                        (d.SerialNumber || '').toLowerCase().includes(q) ||
-                        (d.AssetCode || '').toLowerCase().includes(q) ||
-                        (d.DepartmentName || '').toLowerCase().includes(q) ||
-                        (String(d.Id)).includes(q)
-                    );
+                    return (d.AssetCode && d.AssetCode.toLowerCase().indexOf(q) > -1) ||
+                           (d.ItemName && d.ItemName.toLowerCase().indexOf(q) > -1) ||
+                           (d.SerialNumber && d.SerialNumber.toLowerCase().indexOf(q) > -1) ||
+                           (d.DepartmentName && d.DepartmentName.toLowerCase().indexOf(q) > -1);
+                });
+            }
+
+            // Lọc theo trạng thái hoạt động (nếu có chọn)
+            if (vm.filterLifeStatus) {
+                list = list.filter(function (d) {
+                    return d.LifeStatus === vm.filterLifeStatus;
                 });
             }
 
@@ -181,7 +208,8 @@ var app = new Vue({
                 'active': 'Đang sử dụng',
                 'suspended': 'Tạm ngưng',
                 'disposed': 'Thanh lý',
-                'broken': 'Hỏng'
+                'broken': 'Hỏng',
+                'in_repair': 'BV Bảo trì'
             };
             return map[status] || status || 'N/A';
         },
@@ -193,10 +221,49 @@ var app = new Vue({
 
         calculateKPI: function () {
             var vm = this;
-            vm.kpi.totalDevices = vm.devices.length;
-            vm.kpi.devicesWithLogs = vm.devices.filter(function (d) { return d.TotalLogs > 0; }).length;
-            vm.kpi.activeIssues = vm.devices.reduce(function (sum, d) { return sum + d.OpenLogs + d.InProgressLogs; }, 0);
-            vm.kpi.totalRepairs = vm.devices.reduce(function (sum, d) { return sum + d.TotalLogs; }, 0);
+            // 1. Tổng sản phẩm hỏng, tạm ngưng & đang bảo trì
+            vm.kpi.totalDevices = vm.devices.filter(function (d) { 
+                return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'in_repair'; 
+            }).length;
+            
+            // 2. Những sản phẩm đang sửa chữa
+            vm.kpi.devicesWithLogs = vm.devices.filter(function (d) { 
+                return (d.OpenLogs > 0 || d.InProgressLogs > 0); 
+            }).length;
+            
+            // 3. Tổng sản phẩm đã sửa
+            vm.kpi.activeIssues = vm.devices.filter(function(d) {
+                return d.TotalLogs > 0;
+            }).length;
+            
+            // 4. Tổng chi phí sửa chữa
+            vm.kpi.totalRepairs = vm.devices.reduce(function (sum, d) { return sum + (d.TotalCost || 0); }, 0);
+        },
+
+        // ── Thay đổi trạng thái thiết bị ──
+        updateDeviceStatus: function (inventoryId, newStatus) {
+            var vm = this;
+            $.ajax({
+                url: '/api/maintenance/update-status/' + inventoryId,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(newStatus),
+                success: function (res) {
+                    if (res.success) {
+                        // Cập nhật lại trong danh sách
+                        var device = vm.devices.find(function(d) { return d.Id === inventoryId; });
+                        if (device) device.LifeStatus = newStatus;
+                        
+                        // Cập nhật lại KPI
+                        vm.calculateKPI();
+                    } else {
+                        alert(res.message || 'Lỗi cập nhật trạng thái');
+                    }
+                },
+                error: function (xhr) {
+                    alert('Lỗi hệ thống khi cập nhật trạng thái.');
+                }
+            });
         },
 
         // ── API Calls ──
@@ -249,8 +316,9 @@ var app = new Vue({
             vm.deviceLogs = [];
 
             $.ajax({
-                url: '/api/maintenance/history?inventoryId=' + inventoryId,
+                url: '/api/maintenance/history',
                 type: 'GET',
+                data: { inventoryId: inventoryId },
                 success: function (res) {
                     vm.selectedDevice = res.Device;
                     vm.summaryData = {
@@ -261,6 +329,7 @@ var app = new Vue({
                     };
                     vm.deviceLogs = res.Logs;
                     vm.historyLoading = false;
+                    vm.loadAttachments(inventoryId);
                 },
                 error: function (xhr) {
                     console.error('Lỗi tải lịch sử:', xhr.responseText);
@@ -442,10 +511,107 @@ var app = new Vue({
                 StartDate: ''
             };
             this.createFromDevice = null;
+        },
+
+        syncTopScroll: function (e) {
+            if (!this.ignoreScroll) {
+                this.ignoreScroll = true;
+                if (this.$refs.bottomScroll) {
+                    this.$refs.bottomScroll.scrollLeft = e.target.scrollLeft;
+                }
+                var vm = this;
+                setTimeout(function() { vm.ignoreScroll = false; }, 20);
+            }
+        },
+
+        syncBottomScroll: function (e) {
+            if (!this.ignoreScroll) {
+                this.ignoreScroll = true;
+                if (this.$refs.topScroll) {
+                    this.$refs.topScroll.scrollLeft = e.target.scrollLeft;
+                }
+                var vm = this;
+                setTimeout(function() { vm.ignoreScroll = false; }, 20);
+            }
+        },
+
+        updateScrollWidth: function () {
+            if (this.$refs.maintTable) {
+                this.tableScrollWidth = this.$refs.maintTable.scrollWidth;
+            } else {
+                this.tableScrollWidth = 0;
+            }
+        },
+
+        loadAttachments: function (deviceId) {
+            var vm = this;
+            $.getJSON('/api/maintenance/attachments/' + deviceId, function (data) {
+                vm.attachments = data;
+            });
+        },
+
+        uploadAttachment: function (event) {
+            var vm = this;
+            var fileInput = event.target;
+            if (fileInput.files.length === 0) return;
+
+            var formData = new FormData();
+            formData.append('InventoryId', vm.selectedDevice.Id);
+            for (var i = 0; i < fileInput.files.length; i++) {
+                formData.append('file' + i, fileInput.files[i]);
+            }
+
+            vm.uploading = true;
+            $.ajax({
+                url: '/api/maintenance/upload-attachment',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (res) {
+                    if (res.success) {
+                        vm.loadAttachments(vm.selectedDevice.Id);
+                    } else {
+                        alert(res.message || 'Lỗi tải file');
+                    }
+                },
+                error: function (xhr) {
+                    var errorMsg = 'Lỗi hệ thống khi tải file.';
+                    if (xhr.responseText) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            errorMsg += '\nChi tiết: ' + (response.ExceptionMessage || response.Message || xhr.responseText);
+                        } catch(e) {
+                            errorMsg += '\n' + xhr.responseText;
+                        }
+                    }
+                    alert(errorMsg);
+                },
+                complete: function () {
+                    vm.uploading = false;
+                    fileInput.value = ''; // reset
+                }
+            });
+        },
+
+        formatFileSize: function(bytes) {
+            if (bytes === 0) return '0 Byte';
+            var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+            return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + ['Bytes', 'KB', 'MB', 'GB', 'TB'][i];
         }
     },
 
     mounted: function () {
         this.loadDevices();
+        this.updateScrollWidth();
+        window.addEventListener('resize', this.updateScrollWidth);
+    },
+
+    updated: function () {
+        this.updateScrollWidth();
+    },
+
+    beforeDestroy: function () {
+        window.removeEventListener('resize', this.updateScrollWidth);
     }
 });

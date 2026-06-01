@@ -15,34 +15,34 @@
             </div>
             <div class="kpi-info">
                 <h4>${ kpi.totalDevices }</h4>
-                <p>Tổng thiết bị</p>
+                <p>Bảo trì, Hỏng, Ngưng</p>
             </div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon amber">
-                <i class="fa-solid fa-clipboard-list"></i>
+                <i class="fa-solid fa-tools"></i>
             </div>
             <div class="kpi-info">
                 <h4>${ kpi.devicesWithLogs }</h4>
-                <p>Có lịch sử sửa chữa</p>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon red">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <div class="kpi-info">
-                <h4>${ kpi.activeIssues }</h4>
-                <p>Đang có sự cố</p>
+                <p>Đang sửa chữa</p>
             </div>
         </div>
         <div class="kpi-card">
             <div class="kpi-icon green">
-                <i class="fa-solid fa-wrench"></i>
+                <i class="fa-solid fa-check-circle"></i>
             </div>
             <div class="kpi-info">
-                <h4>${ kpi.totalRepairs }</h4>
-                <p>Tổng lần sửa chữa</p>
+                <h4>${ kpi.activeIssues }</h4>
+                <p>Đã sửa chữa</p>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon purple">
+                <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ formatCurrency(kpi.totalRepairs) }</h4>
+                <p>Tổng chi phí sửa</p>
             </div>
         </div>
     </div>
@@ -72,17 +72,39 @@
             <option v-for="dept in departmentList" :key="dept" :value="dept">${ dept }</option>
         </select>
 
+        <select v-model="filterLifeStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="in_repair">BV Bảo trì</option>
+            <option value="broken">Hỏng</option>
+            <option value="suspended">Tạm ngưng</option>
+        </select>
+
         <select v-model="pageSize">
             <option :value="10">10 dòng</option>
             <option :value="15">15 dòng</option>
             <option :value="20">20 dòng</option>
             <option :value="50">50 dòng</option>
         </select>
+
+        <button type="button" 
+                class="btn-vendor" 
+                style="padding: 9px 16px; margin: 0; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap;"
+                @@click="showRepairedDevices = !showRepairedDevices"
+                :style="showRepairedDevices ? 'background: #10b981; color: white; border: 1px solid #10b981;' : 'background: white; color: #475569; border: 1px solid #cbd5e1;'">
+            <i class="fa-solid fa-check-circle" :style="showRepairedDevices ? 'color: white' : 'color: #10b981'"></i> 
+            <span v-if="!showRepairedDevices">Thiết bị đã sửa chữa</span>
+            <span v-else>Quay lại (Mặc định)</span>
+        </button>
+    </div>
+
+    <!-- TOP SCROLLBAR -->
+    <div class="top-scrollbar-wrap" ref="topScroll" @@scroll="syncTopScroll" v-show="tableScrollWidth > 0">
+        <div class="top-scrollbar-inner" :style="{ width: tableScrollWidth + 'px' }"></div>
     </div>
 
     <!-- TABLE: DANH SÁCH THIẾT BỊ -->
-    <div class="maint-table-wrap">
-        <table v-if="filteredDevices.length > 0">
+    <div class="maint-table-wrap" ref="bottomScroll" @@scroll="syncBottomScroll">
+        <table v-if="filteredDevices.length > 0" ref="maintTable">
             <thead>
                 <tr>
                     <th>Mã</th>
@@ -215,9 +237,13 @@
                             <div class="profile-title">
                                 <h2>
                                     ${ selectedDevice.ItemName }
-                                    <span class="badge-status-maint" style="background:#d1fae5; color:#065f46">
-                                        Đang hoạt động
-                                    </span>
+                                    <select class="badge-status-maint" style="background:#f1f5f9; color:#334155; border: 1px solid #cbd5e1; cursor: pointer; padding: 4px 24px 4px 8px; font-weight: 600; outline: none; appearance: auto;" v-model="selectedDevice.LifeStatus" @@change="updateDeviceStatus(selectedDevice.Id, selectedDevice.LifeStatus)">
+                                        <option value="active">Đang sử dụng</option>
+                                        <option value="suspended">Tạm ngưng</option>
+                                        <option value="broken">Hỏng</option>
+                                        <option value="in_repair">BV Bảo trì</option>
+                                        <option value="disposed">Thanh lý</option>
+                                    </select>
                                 </h2>
                             </div>
                             <div class="profile-meta">
@@ -259,10 +285,6 @@
                     <div class="profile-kpi-card">
                         <h5>Bảo dưỡng gần nhất</h5>
                         <p>${ summaryData.LastMaintenanceDate || 'Chưa có' }</p>
-                    </div>
-                    <div class="profile-kpi-card">
-                        <h5>Thời gian hoạt động</h5>
-                        <p class="text-green">${ summaryData.Uptime } <i class="fa-solid fa-arrow-trend-up" style="font-size:14px"></i></p>
                     </div>
                 </div>
 
@@ -394,11 +416,28 @@
                             </div>
                             <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; background: #f8fafc; cursor: pointer; margin-bottom:16px; transition: all 0.2s" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc'" onclick="document.getElementById('fileUploadInput').click()">
                                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; color: #94a3b8; margin-bottom: 12px"></i>
-                                <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500">Kéo thả ảnh vào đây hoặc nhấn để tải lên</p>
+                                <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500" v-if="!uploading">Kéo thả ảnh vào đây hoặc nhấn để tải lên</p>
+                                <p style="margin: 0; font-size: 13px; color: #3b82f6; font-weight: 500" v-else>Đang tải tệp lên <i class="fa-solid fa-spinner fa-spin"></i></p>
                                 <p style="margin: 4px 0 0; font-size: 11px; color: #94a3b8">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</p>
-                                <input type="file" id="fileUploadInput" style="display: none" accept="image/*,application/pdf" multiple />
+                                <input type="file" id="fileUploadInput" style="display: none" accept="image/*,application/pdf" multiple @@change="uploadAttachment" />
                             </div>
-                            <button class="btn-vendor" style="background:#fff; border-color:#cbd5e1; color:#475569">Xem tất cả tài liệu đính kèm</button>
+                            
+                            <div v-if="attachments.length > 0" style="margin-bottom: 16px;">
+                                <div v-for="att in attachments" :key="att.Id" style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                                        <i class="fa-solid fa-file-pdf" v-if="att.FileType && att.FileType.includes('pdf')" style="color: #ef4444; font-size: 32px; padding: 0 6px;"></i>
+                                        <img v-else-if="att.FileType && att.FileType.startsWith('image/')" :src="'/api/maintenance/download-attachment/' + att.Id" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; flex-shrink: 0;" alt="thumbnail" />
+                                        <i class="fa-solid fa-file" v-else style="color: #94a3b8; font-size: 32px; padding: 0 6px;"></i>
+                                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">
+                                            <span style="font-size: 13px; font-weight: 500; color: #1e293b;" :title="att.FileName">${ att.FileName }</span>
+                                            <div style="font-size: 11px; color: #64748b;">${ formatFileSize(att.FileSize) }</div>
+                                        </div>
+                                    </div>
+                                    <a :href="'/api/maintenance/download-attachment/' + att.Id" target="_blank" class="btn-vendor" style="padding: 4px 8px; font-size: 12px; margin: 0; display: inline-block; width: auto; border-color: #cbd5e1; color: #475569; text-decoration: none;"><i class="fa-solid fa-download"></i></a>
+                                </div>
+                            </div>
+
+                            <button class="btn-vendor" style="background:#fff; border-color:#cbd5e1; color:#475569" v-if="attachments.length > 3">Xem tất cả tài liệu đính kèm</button>
                         </div>
 
                         <!-- Đơn vị bảo trì ủy quyền -->

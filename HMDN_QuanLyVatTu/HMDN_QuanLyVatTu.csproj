@@ -178,6 +178,7 @@
     <Compile Include="Models\GroupUpdateDTO.cs" />
     <Compile Include="Models\GroupVM.cs" />
     <Compile Include="Models\Inventory.cs" />
+    <Compile Include="Models\InventoryAttachment.cs" />
     <Compile Include="Models\InventoryDetailVM.cs" />
     <Compile Include="Models\InventoryListVM.cs" />
     <Compile Include="Models\InventoryReportModel.cs" />

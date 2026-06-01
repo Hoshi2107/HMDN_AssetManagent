@@ -13,6 +13,7 @@ namespace HMDN_QuanLyVatTu
     {
         protected void Application_Start()
         {
+            System.Data.Entity.Database.SetInitializer<HMS.Data.HospitalAssetDbContext>(null);
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             //GlobalConfiguration.Configuration.DependencyResolver = new SimpleDependencyResolver();
