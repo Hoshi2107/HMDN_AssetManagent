@@ -458,5 +458,17 @@ namespace HMDN.Controllers.API
             return Ok();
         }
 
+        [HttpGet]
+        [Route("history/{inventoryId}")]
+        public IHttpActionResult GetHistory(int inventoryId)
+        {
+            var data = db.MaintenanceLogs
+                .Where(x => x.InventoryId == inventoryId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList();
+
+            return Ok(data);
+        }
+
     }
 }

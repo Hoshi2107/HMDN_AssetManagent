@@ -155,7 +155,7 @@
                                         Đang hoạt động
                                     </option>
 
-                                    <option value="maintenance_bv">
+                                    @*<option value="maintenance_bv">
                                         BV bảo trì
                                     </option>
 
@@ -165,7 +165,7 @@
 
                                     <option value="Send_for_warranty">
                                         Gửi về bảo hành
-                                    </option>
+                                    </option>*@
 
                                     <!-- suspended KHÔNG CHO CHỌN -->
                                     <option v-if="item.LifeStatus == 'suspended'"
@@ -194,217 +194,441 @@
 
                         <div class="modal-header">
 
-                            <h3>
-                                Chi tiết thiết bị
-                            </h3>
+                            @*<h3>
+                    Chi tiết thiết bị
+                </h3>
 
-                            <button class="close-btn"
-                                    @@click="showModal = false">
+                <button class="close-btn"
+                        @@click="showModal = false">
 
-                                ×
-                            </button>
+                    ×
+                </button>*@
+
+                            <div class="detail-tabs">
+
+                                <button :class="{active: activeTab === 'detail'}"
+                                        @@click="activeTab='detail'">
+
+                                    Chi tiết thiết bị
+
+                                </button>
+
+                                <button :class="{active: activeTab === 'history'}"
+                                        @@click="loadMaintenanceHistory(selectedDevice.Id)">
+
+                                    Hồ sơ bệnh án
+
+                                </button>
+
+                                <div class="tab-indicator"
+                                     :class="activeTab">
+                                </div>
+
+                            </div>
 
                         </div>
 
                         <div class="modal-body"
                              v-if="selectedDevice">
 
-                            <div class="detail-grid">
+                            <div v-if="activeTab==='detail'">
+                                <div class="detail-grid">
 
-                                <div>
-                                    <label>Mã tài sản</label>
-                                    <p>${ selectedDevice.AssetCode }</p>
+                                    <div>
+                                        <label>Mã tài sản</label>
+                                        <p>${ selectedDevice.AssetCode }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Tên thiết bị</label>
+                                        <p>${ selectedDevice.ItemName }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Serial</label>
+                                        <p>${ selectedDevice.SerialNumber }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Hãng</label>
+                                        <p>${ selectedDevice.Brand }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Model</label>
+                                        <p>${ selectedDevice.Model }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Khoa</label>
+                                        <p>${ selectedDevice.DepartmentName }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Vị trí</label>
+                                        <p>${ selectedDevice.LocationName }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Tầng</label>
+                                        <p>${ selectedDevice.Floor }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Tòa nhà</label>
+                                        <p>${ selectedDevice.Building }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Trạng thái</label>
+
+                                        @*<span :class="statusClass(selectedDevice.LifeStatus)">
+                                ${ statusLabel(selectedDevice.LifeStatus) }
+                            </span>*@
+
+                                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                              :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
+
+                                            ${ getLifeStatusMeta(selectedDevice.LifeStatus).icon }
+
+                                            ${ getLifeStatusMeta(selectedDevice.LifeStatus).text }
+
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <label>Giá trị</label>
+                                        <p>
+                                            ${ selectedDevice.TotalPrice }
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label>Phiếu</label>
+                                        <p>${ selectedDevice.TicketCode }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Năm sản xuất</label>
+                                        <p>${ selectedDevice.YearManufactured || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Năm hoạt động</label>
+                                        <p>${ selectedDevice.YearInUse || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Năm sử dụng</label>
+                                        <p>${ selectedDevice.UsageYears || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Phân loại</label>
+                                        <p>${ selectedDevice.AssetCategory || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Mã tập đoàn</label>
+                                        <p>${ selectedDevice.GroupAssetCode || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Mã kế toán</label>
+                                        <p>${ selectedDevice.AccountingCode || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Mã bảo hiểm</label>
+                                        <p>${ selectedDevice.InsuranceCode || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Nước sản xuất</label>
+                                        <p>${ selectedDevice.CountryManufactured || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Nhà sản xuất</label>
+                                        <p>${ selectedDevice.Manufacturer || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Nhà cung cấp</label>
+                                        <p>${ selectedDevice.SupplierName || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Ngày nhập</label>
+                                        <p>${ selectedDevice.ImportDate || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Hết bảo hành</label>
+                                        <p>${ selectedDevice.WarrantyExpiry || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Khấu hao (%)</label>
+                                        <p>${ selectedDevice.DepreciationRate || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Số năm khấu hao</label>
+                                        <p>${ selectedDevice.DepreciationYears || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Giá trị còn lại</label>
+                                        <p>${ selectedDevice.ResidualValue || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Người tạo</label>
+                                        <p>${ selectedDevice.CreatedByName || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Người duyệt</label>
+                                        <p>${ selectedDevice.ApprovedByName || '—' }</p>
+                                    </div>
+
+                                    <div>
+                                        <label>Ngày tạo</label>
+                                        <p>${ selectedDevice.CreatedAt || '—' }</p>
+                                    </div>
+
                                 </div>
 
-                                <div>
-                                    <label>Tên thiết bị</label>
-                                    <p>${ selectedDevice.ItemName }</p>
-                                </div>
+                                <div class="note-box">
 
-                                <div>
-                                    <label>Serial</label>
-                                    <p>${ selectedDevice.SerialNumber }</p>
-                                </div>
+                                    <label>Ghi chú</label>
 
-                                <div>
-                                    <label>Hãng</label>
-                                    <p>${ selectedDevice.Brand }</p>
-                                </div>
-
-                                <div>
-                                    <label>Model</label>
-                                    <p>${ selectedDevice.Model }</p>
-                                </div>
-
-                                <div>
-                                    <label>Khoa</label>
-                                    <p>${ selectedDevice.DepartmentName }</p>
-                                </div>
-
-                                <div>
-                                    <label>Vị trí</label>
-                                    <p>${ selectedDevice.LocationName }</p>
-                                </div>
-
-                                <div>
-                                    <label>Tầng</label>
-                                    <p>${ selectedDevice.Floor }</p>
-                                </div>
-
-                                <div>
-                                    <label>Tòa nhà</label>
-                                    <p>${ selectedDevice.Building }</p>
-                                </div>
-
-                                <div>
-                                    <label>Trạng thái</label>
-
-                                    @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                                    ${ statusLabel(selectedDevice.LifeStatus) }
-                                </span>*@
-
-                                    <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
-                                          :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
-
-                                        ${ getLifeStatusMeta(selectedDevice.LifeStatus).icon }
-
-                                        ${ getLifeStatusMeta(selectedDevice.LifeStatus).text }
-
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <label>Giá trị</label>
                                     <p>
-                                        ${ selectedDevice.TotalPrice }
+                                        ${ selectedDevice.Note || 'Không có ghi chú' }
                                     </p>
+
                                 </div>
-
-                                <div>
-                                    <label>Phiếu</label>
-                                    <p>${ selectedDevice.TicketCode }</p>
-                                </div>
-
-                                <div>
-                                    <label>Năm sản xuất</label>
-                                    <p>${ selectedDevice.YearManufactured || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Năm hoạt động</label>
-                                    <p>${ selectedDevice.YearInUse || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Năm sử dụng</label>
-                                    <p>${ selectedDevice.UsageYears || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Phân loại</label>
-                                    <p>${ selectedDevice.AssetCategory || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Mã tập đoàn</label>
-                                    <p>${ selectedDevice.GroupAssetCode || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Mã kế toán</label>
-                                    <p>${ selectedDevice.AccountingCode || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Mã bảo hiểm</label>
-                                    <p>${ selectedDevice.InsuranceCode || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Nước sản xuất</label>
-                                    <p>${ selectedDevice.CountryManufactured || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Nhà sản xuất</label>
-                                    <p>${ selectedDevice.Manufacturer || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Nhà cung cấp</label>
-                                    <p>${ selectedDevice.SupplierName || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Ngày nhập</label>
-                                    <p>${ selectedDevice.ImportDate || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Hết bảo hành</label>
-                                    <p>${ selectedDevice.WarrantyExpiry || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Khấu hao (%)</label>
-                                    <p>${ selectedDevice.DepreciationRate || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Số năm khấu hao</label>
-                                    <p>${ selectedDevice.DepreciationYears || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Giá trị còn lại</label>
-                                    <p>${ selectedDevice.ResidualValue || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Người tạo</label>
-                                    <p>${ selectedDevice.CreatedByName || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Người duyệt</label>
-                                    <p>${ selectedDevice.ApprovedByName || '—' }</p>
-                                </div>
-
-                                <div>
-                                    <label>Ngày tạo</label>
-                                    <p>${ selectedDevice.CreatedAt || '—' }</p>
-                                </div>
-
-                            </div>
-
-                            <div class="note-box">
-
-                                <label>Ghi chú</label>
-
-                                <p>
-                                    ${ selectedDevice.Note || 'Không có ghi chú' }
-                                </p>
-
-                            </div>
-
-                            <div class="action-group">
 
                                 <div class="action-group">
 
-                                    <button class="btn-primary"
-                                            v-if="hasPermission('Inventory', 'EDIT')"
-                                            @@click="openEditModal(selectedDevice.Id)">
-                                        Sửa
-                                    </button>
+                                    <div class="action-group">
 
-                                    <button class="btn-danger"
-                                            v-if="hasPermission('Inventory', 'EDIT')"
-                                            :disabled="selectedDevice.LifeStatus == 'suspended'"
-                                            @@click="openSuspendModal(selectedDevice)">
-                                        Check có lỗi
-                                    </button>
+                                        <button class="btn-primary"
+                                                v-if="hasPermission('Inventory', 'EDIT')"
+                                                @@click="openEditModal(selectedDevice.Id)">
+                                            Sửa
+                                        </button>
+
+                                        <button class="btn-danger"
+                                                v-if="hasPermission('Inventory', 'EDIT')"
+                                                :disabled="selectedDevice.LifeStatus == 'suspended'"
+                                                @@click="openSuspendModal(selectedDevice)">
+                                            Check có lỗi
+                                        </button>
+
+                                    </div>
 
                                 </div>
+                            </div>
+
+                            <!-- History -->
+                            <div v-if="activeTab==='history'"
+                                 class="medical-history">
+
+                                <div v-if="maintenanceHistory.length == 0"
+                                     class="empty-state">
+
+                                    Chưa có lịch sử sửa chữa
+
+                                </div>
+
+                                <div v-for="record in maintenanceHistory"
+                                     :key="record.Id"
+                                     class="history-card">
+
+                                    <h4>
+                                        ${ record.Title || 'Không có dữ liệu' }
+                                    </h4>
+
+                                    <div class="history-info">
+
+                                        <div>
+                                            <span>Loại sửa chữa</span>
+                                            <strong>
+                                                ${ record.MaintenanceType || 'Không có dữ liệu' }
+                                            </strong>
+                                        </div>
+
+                                        <hr>
+
+                                        <div>
+                                            <span>Ngày bắt đầu</span>
+                                            <strong>
+                                                ${ record.StartDate || 'Không có dữ liệu' }
+                                            </strong>
+                                        </div>
+
+                                        <hr>
+
+                                        <div>
+                                            <span>Ngày kết thúc</span>
+                                            <strong>
+                                                ${ record.EndDate || 'Không có dữ liệu' }
+                                            </strong>
+                                        </div>
+
+                                        <hr>
+
+                                        <div>
+                                            <span>Chi phí</span>
+                                            <strong>
+                                                ${ record.Cost || 'Không có dữ liệu' }
+                                            </strong>
+                                        </div>
+
+                                        <hr>
+
+                                        <div>
+                                            <span>Đơn vị sửa</span>
+                                            <strong>
+                                                ${ record.Vendor || 'Không có dữ liệu' }
+                                            </strong>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="history-actions">
+
+                                        <button class="btn-primary"
+                                                @@click="openHistoryDetail(record)">
+                                            Chi tiết
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <!-- History Detail -->
+                    <div class="modal-overlay"
+                         v-if="showHistoryDetail"
+                         @@click.self="showHistoryDetail=false">
+
+                        <div class="device-modal large-modal">
+
+                            <div class="modal-header">
+
+                                <h3>Chi tiết hồ sơ bệnh án</h3>
+
+                                <button class="close-btn"
+                                        @@click="showHistoryDetail=false">
+                                    ×
+                                </button>
+
+                            </div>
+
+                            <div class="modal-body"
+                                 v-if="selectedHistory">
+
+                                <table class="history-detail-table">
+
+                                    <tr>
+                                        <th>ID</th>
+                                        <td>${ selectedHistory.Id ?? 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Loại sửa chữa</th>
+                                        <td>${ selectedHistory.MaintenanceType || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Tiêu đề</th>
+                                        <td>${ selectedHistory.Title || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Mô tả</th>
+                                        <td>${ selectedHistory.Description || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Mô tả lỗi</th>
+                                        <td>${ selectedHistory.ErrorDescription || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Biện pháp xử lý</th>
+                                        <td>${ selectedHistory.ActionTaken || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Linh kiện thay thế</th>
+                                        <td>${ selectedHistory.PartReplaced || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Chi phí</th>
+                                        <td>${ selectedHistory.Cost || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Đơn vị sửa chữa</th>
+                                        <td>${ selectedHistory.Vendor || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Ngày bắt đầu</th>
+                                        <td>${ selectedHistory.StartDate || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Ngày kết thúc</th>
+                                        <td>${ selectedHistory.EndDate || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Trạng thái</th>
+                                        <td>${ selectedHistory.Status || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Mức độ ưu tiên</th>
+                                        <td>${ selectedHistory.Priority || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Người báo lỗi</th>
+                                        <td>${ selectedHistory.ReportedBy || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Người xử lý</th>
+                                        <td>${ selectedHistory.AssignedTo || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Người đóng</th>
+                                        <td>${ selectedHistory.ClosedBy || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Ngày đóng</th>
+                                        <td>${ selectedHistory.ClosedAt || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th>Repair Status</th>
+                                        <td>${ selectedHistory.RepairStatus || 'Không có dữ liệu' }</td>
+                                    </tr>
+
+                                </table>
 
                             </div>
 

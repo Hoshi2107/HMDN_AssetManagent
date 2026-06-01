@@ -29,6 +29,13 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        showHistoryDetail: false,
+        selectedHistory: null,
+
+        activeTab: "detail",
+
+        maintenanceHistory: [],
+
         groupsData: [],
 
         checkCycles: [],
@@ -375,6 +382,26 @@ var app = new Vue({
             return d.toISOString().split('T')[0]
         },
 
+        loadMaintenanceHistory(id) {
+
+            this.activeTab = "history";
+
+            $.get('/api/device/history/' + id, (res) => {
+
+                this.maintenanceHistory = res;
+
+            }).fail(() => {
+
+                alert('Không tải được lịch sử bảo trì');
+
+            });
+        },
+
+        openHistoryDetail(record) {
+            this.selectedHistory = record;
+            this.showHistoryDetail = true;
+        },
+
         loadDropdowns() {
 
             // ITEMS
@@ -629,6 +656,9 @@ var app = new Vue({
         //}
         openDetail(id) {
             console.log('Calling detail for id:', id) // check xem id đúng chưa
+
+            this.activeTab = "detail";
+            this.maintenanceHistory = [];
 
             $.ajax({
                 url: '/api/device/detail?id=' + id,
