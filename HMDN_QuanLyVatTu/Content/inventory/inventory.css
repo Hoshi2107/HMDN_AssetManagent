@@ -1,4 +1,4 @@
-﻿body {
+body {
     margin: 0;
     font-family: Arial;
     background: #f1f5f9;
@@ -8,49 +8,7 @@
     display: flex;
 }
 
-.sidebar {
-    width: 220px;
-    min-height: 100vh;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
-}
-
-.brand-name {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.brand-sub {
-    font-size: 12px;
-    opacity: .7;
-}
-
-.sidebar-nav {
-    margin-top: 30px;
-}
-
-.nav-item {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    margin-bottom: 5px;
-}
-
-    .nav-item.active {
-        background: #2563eb;
-    }
-
-.badge-alert {
-    margin-left: auto;
-    background: red;
-    border-radius: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
-}
+/* Removed legacy sidebar styles to prevent conflict with shared _Layout.cshtml styles */
 
 .main-wrap {
     flex: 1;

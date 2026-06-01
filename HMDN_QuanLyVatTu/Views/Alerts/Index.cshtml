@@ -32,18 +32,18 @@
         <!-- Tabs lọc & Thao tác cấu hình -->
         <div class="alerts-tab-header">
             <div class="alerts-tabs">
-                <button class="alert-tab-btn" :class="{ active: activeTab === 'all' }" v-on:click="setTab('all')">
+                <button class="alert-tab-btn tab-all" :class="{ active: activeTab === 'all' }" v-on:click="setTab('all')">
                     Tất cả <span class="badge-pill">${ counts.All }</span>
                 </button>
-                <button class="alert-tab-btn" :class="{ active: activeTab === 'danger' }" v-on:click="setTab('danger')">
+                <button class="alert-tab-btn tab-danger" :class="{ active: activeTab === 'danger' }" v-on:click="setTab('danger')">
                     <i class="fa-solid fa-circle text-danger" style="font-size: 8px;"></i>
                     Khẩn cấp <span class="badge-pill">${ counts.Danger }</span>
                 </button>
-                <button class="alert-tab-btn" :class="{ active: activeTab === 'warning' }" v-on:click="setTab('warning')">
+                <button class="alert-tab-btn tab-warning" :class="{ active: activeTab === 'warning' }" v-on:click="setTab('warning')">
                     <i class="fa-solid fa-circle text-warning" style="font-size: 8px;"></i>
                     Cảnh báo <span class="badge-pill">${ counts.Warning }</span>
                 </button>
-                <button class="alert-tab-btn" :class="{ active: activeTab === 'info' }" v-on:click="setTab('info')">
+                <button class="alert-tab-btn tab-info" :class="{ active: activeTab === 'info' }" v-on:click="setTab('info')">
                     <i class="fa-solid fa-circle text-info" style="font-size: 8px;"></i>
                     Thông tin <span class="badge-pill">${ counts.Info }</span>
                 </button>
