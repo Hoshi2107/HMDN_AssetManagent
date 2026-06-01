@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Quản lý Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -970,7 +970,7 @@
 
             <div class="group-panel-header">
                 <h4>Nhóm tài sản</h4>
-                <button class="btn-add-group" @@click="openAddGroup" title="Thêm nhóm">+</button>
+                <button class="btn-add-group" v-if="hasPermission('Catalog', 'CREATE')" @@click="openAddGroup" title="Thêm nhóm">+</button>
             </div>
 
             <div class="group-list">
@@ -989,7 +989,7 @@
                     <div class="gi-sub">${ g.ItemCount } Mẫu tài sản</div>
 
                     <div class="gi-actions" @@click.stop>
-                        <button class="btn-gi" @@click="openEditGroup(g)" title="Sửa">✏️</button>
+                        <button class="btn-gi" v-if="hasPermission('Catalog', 'EDIT')" @@click="openEditGroup(g)" title="Sửa">✏️</button>
                         @*<button class="btn-gi del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>*@
                     </div>
 
@@ -1040,7 +1040,7 @@
                             <option value="1">Đang dùng</option>
                             <option value="0">Ngưng</option>
                         </select>
-                        <button class="btn-add-item" @@click="openAddItem">
+                        <button class="btn-add-item" v-if="hasPermission('Catalog', 'CREATE')" @@click="openAddItem">
                             ⊕ Thêm Mẫu Mới
                         </button>
                     </div>
@@ -1088,13 +1088,14 @@
                                         <label class="toggle" @@click.stop>
                                             <input type="checkbox"
                                                    v-model="item.IsActive"
+                                                   :disabled="!hasPermission('Catalog', 'EDIT')"
                                                    @@change="toggleItemStatus(item)">
                                             <span class="toggle-slider"></span>
                                         </label>
                                     </td>
                                     <td>
                                         <div class="row-actions">
-                                            <button class="btn-row-icon" @@click="openEditItem(item)" title="Sửa">✏️</button>
+                                            <button class="btn-row-icon" v-if="hasPermission('Catalog', 'EDIT')" @@click="openEditItem(item)" title="Sửa">✏️</button>
                                             <button class="btn-row-icon" @@click="openDetailItem(item)" title="Chi tiết">⠿</button>
                                             @*<button class="btn-row-icon del" @@click="openDeleteItem(item)" title="Xoá">🗑️</button>*@
                                         </div>
@@ -1495,8 +1496,5 @@
 
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="~/Addon/vue/vue.js"></script>
-<script src="~/Addon/vue/vue_dev.js"></script>
 <script src="~/Scripts/app/category.js"></script>
 

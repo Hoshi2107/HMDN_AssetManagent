@@ -139,10 +139,11 @@ BEGIN
     END
 
     -- ── RULE 4: CHECKLIST OVERDUE ──
-    DECLARE @ChecklistRuleId INT, @ChecklistActive BIT;
+    DECLARE @ChecklistRuleId INT, @ChecklistActive BIT, @ChecklistThreshold INT;
     SELECT 
         @ChecklistRuleId = Id, 
-        @ChecklistActive = IsActive
+        @ChecklistActive = IsActive,
+        @ChecklistThreshold = ThresholdDays
     FROM AlertRules 
     WHERE Code = 'CHECKLIST_OVERDUE';
     
@@ -167,39 +168,176 @@ BEGIN
         FROM ChecklistSchedules cs
         JOIN Inventory inv ON cs.InventoryId = inv.Id
         JOIN Items it ON inv.ItemId = it.Id
-        WHERE cs.Status = 'pending' AND cs.DueDate < @Today
+        WHERE cs.Status = 'pending' 
+          AND cs.DueDate <= DATEADD(DAY, -ISNULL(@ChecklistThreshold, 0), @Today)
           AND NOT EXISTS (
               SELECT 1 FROM Alerts a 
               WHERE a.AlertRuleId = @ChecklistRuleId AND a.InventoryId = cs.InventoryId AND a.IsResolved = 0
           );
     END
 
-    -- ── RULE 5: CONSUMABLES LOW ──
-    DECLARE @ConsumablesRuleId INT;
-    SELECT @ConsumablesRuleId = Id FROM AlertRules WHERE Code = 'CONSUMABLES_LOW';
+    -- ── RULE 4B: CHECKLIST DUE ──
+    DECLARE @ChecklistDueRuleId INT, @ChecklistDueActive BIT, @ChecklistDueThreshold INT;
+    SELECT 
+        @ChecklistDueRuleId = Id, 
+        @ChecklistDueActive = IsActive,
+        @ChecklistDueThreshold = ThresholdDays
+    FROM AlertRules 
+    WHERE Code = 'CHECKLIST_DUE_3D';
     
-    INSERT INTO Alerts (AlertRuleId, InventoryId, Title, Body, Severity, IsResolved, IsNotified, CreatedAt)
-    SELECT
-        ISNULL(@ConsumablesRuleId, 7),
-        inv.Id,
-        N'Vật tư tiêu hao sắp hết',
-        N'Lượng vật tư ' + it.Name + N' (Mã: ' + inv.AssetCode + N') trong kho đang dưới mức tối thiểu. Tồn kho hiện tại: ' + CAST(inv.Quantity AS NVARCHAR(10)) + N' bộ (Mức tối thiểu quy định: ' + CAST(CASE gr.Code WHEN 'PRINTER' THEN 10 ELSE 5 END AS NVARCHAR(10)) + N' bộ).',
-        'info',
-        0,
-        0,
-        GETDATE()
-    FROM Inventory inv
-    JOIN Items it ON inv.ItemId = it.Id
-    JOIN Groups gr ON it.GroupId = gr.Id
-    WHERE inv.LifeStatus = 'active' AND inv.ApprovalStatus = 'approved'
-      AND (
-          (gr.Code = 'PRINTER' AND inv.Quantity < 10) OR
-          (gr.Code = 'UPS' AND inv.Quantity < 5)
-      )
-      AND NOT EXISTS (
-          SELECT 1 FROM Alerts a 
-          WHERE a.InventoryId = inv.Id AND a.Title = N'Vật tư tiêu hao sắp hết' AND a.IsResolved = 0
-      );
+    IF @ChecklistDueActive = 1
+    BEGIN
+        INSERT INTO Alerts (AlertRuleId, InventoryId, Title, Body, Severity, IsResolved, IsNotified, CreatedAt)
+        SELECT
+            @ChecklistDueRuleId,
+            cs.InventoryId,
+            N'Lịch kiểm tra sắp đến hạn',
+            N'Lịch kiểm tra/bảo trì định kỳ (' + 
+                CASE cs.CycleType 
+                    WHEN 'monthly' THEN N'Hàng tháng'
+                    WHEN 'yearly' THEN N'Hàng năm'
+                    WHEN 'weekly' THEN N'Hàng tuần'
+                    ELSE N'Hàng ngày' 
+                END + N') của thiết bị ' + it.Name + N' (Mã: ' + inv.AssetCode + N') sắp đến hạn vào ngày ' + CONVERT(NVARCHAR(10), cs.DueDate, 103) + N'. Vui lòng chuẩn bị kiểm định/bảo dưỡng.',
+            'info',
+            0,
+            0,
+            GETDATE()
+        FROM ChecklistSchedules cs
+        JOIN Inventory inv ON cs.InventoryId = inv.Id
+        JOIN Items it ON inv.ItemId = it.Id
+        WHERE cs.Status = 'pending' 
+          AND cs.DueDate >= @Today 
+          AND cs.DueDate <= DATEADD(DAY, ISNULL(@ChecklistDueThreshold, 3), @Today)
+          AND NOT EXISTS (
+              SELECT 1 FROM Alerts a 
+              WHERE a.AlertRuleId = @ChecklistDueRuleId AND a.InventoryId = cs.InventoryId AND a.IsResolved = 0
+          );
+    END
+
+    -- ── RULE 5: CONSUMABLES LOW ──
+    DECLARE @ConsumablesRuleId INT, @ConsumablesActive BIT, @ConsumablesDesc NVARCHAR(MAX);
+    DECLARE @PrinterMin INT, @UpsMin INT, @OfficeMin INT, @CdhaMin INT, @HsccMin INT, @PhongmoMin INT, @XetnghiemMin INT;
+    
+    SELECT 
+        @ConsumablesRuleId = Id,
+        @ConsumablesActive = IsActive,
+        @ConsumablesDesc = Description,
+        @PrinterMin = ThresholdCount,
+        @UpsMin = ThresholdDays
+    FROM AlertRules 
+    WHERE Code = 'CONSUMABLES_LOW';
+    
+    IF @ConsumablesActive = 1
+    BEGIN
+        -- Default fallbacks
+        SET @PrinterMin = ISNULL(@PrinterMin, 10);
+        SET @UpsMin = ISNULL(@UpsMin, 5);
+        SET @OfficeMin = 15;
+        SET @CdhaMin = 20;
+        SET @HsccMin = 8;
+        SET @PhongmoMin = 12;
+        SET @XetnghiemMin = 25;
+
+        -- Extract from JSON Description if valid
+        IF @ConsumablesDesc IS NOT NULL AND ISJSON(@ConsumablesDesc) = 1
+        BEGIN
+            DECLARE @JsonPrinter NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.PRINTER');
+            DECLARE @JsonUps NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.UPS');
+            DECLARE @JsonOffice NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.OFFICE');
+            DECLARE @JsonCdha NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.CDHA');
+            DECLARE @JsonHscc NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.HSCC');
+            DECLARE @JsonPhongmo NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.PHONGMO');
+            DECLARE @JsonXetnghiem NVARCHAR(50) = JSON_VALUE(@ConsumablesDesc, '$.thresholds.XETNGHIEM');
+
+            IF @JsonPrinter IS NOT NULL SET @PrinterMin = TRY_CAST(@JsonPrinter AS INT);
+            IF @JsonUps IS NOT NULL SET @UpsMin = TRY_CAST(@JsonUps AS INT);
+            IF @JsonOffice IS NOT NULL SET @OfficeMin = TRY_CAST(@JsonOffice AS INT);
+            IF @JsonCdha IS NOT NULL SET @CdhaMin = TRY_CAST(@JsonCdha AS INT);
+            IF @JsonHscc IS NOT NULL SET @HsccMin = TRY_CAST(@JsonHscc AS INT);
+            IF @JsonPhongmo IS NOT NULL SET @PhongmoMin = TRY_CAST(@JsonPhongmo AS INT);
+            IF @JsonXetnghiem IS NOT NULL SET @XetnghiemMin = TRY_CAST(@JsonXetnghiem AS INT);
+        END
+
+        INSERT INTO Alerts (AlertRuleId, InventoryId, Title, Body, Severity, IsResolved, IsNotified, CreatedAt)
+        SELECT
+            @ConsumablesRuleId,
+            inv.Id,
+            N'Vật tư tiêu hao sắp hết',
+            N'Lượng vật tư ' + it.Name + N' (Mã: ' + inv.AssetCode + N') trong kho đang dưới mức tối thiểu. Tồn kho hiện tại: ' + CAST(inv.Quantity AS NVARCHAR(10)) + N' bộ/cái (Mức tối thiểu quy định: ' + 
+            CAST(
+                CASE gr.Code 
+                    WHEN 'PRINTER' THEN @PrinterMin
+                    WHEN 'UPS' THEN @UpsMin
+                    WHEN 'OFFICE' THEN @OfficeMin
+                    WHEN 'CDHA' THEN @CdhaMin
+                    WHEN 'HSCC' THEN @HsccMin
+                    WHEN 'PHONGMO' THEN @PhongmoMin
+                    WHEN 'XETNGHIEM' THEN @XetnghiemMin
+                    ELSE 5
+                END 
+            AS NVARCHAR(10)) + N' bộ/cái/cuộn).',
+            'info',
+            0,
+            0,
+            GETDATE()
+        FROM Inventory inv
+        JOIN Items it ON inv.ItemId = it.Id
+        JOIN Groups gr ON it.GroupId = gr.Id
+        WHERE inv.LifeStatus = 'active' AND inv.ApprovalStatus = 'approved'
+          AND (
+              (gr.Code = 'PRINTER' AND inv.Quantity < @PrinterMin) OR
+              (gr.Code = 'UPS' AND inv.Quantity < @UpsMin) OR
+              (gr.Code = 'OFFICE' AND inv.Quantity < @OfficeMin) OR
+              (gr.Code = 'CDHA' AND inv.Quantity < @CdhaMin) OR
+              (gr.Code = 'HSCC' AND inv.Quantity < @HsccMin) OR
+              (gr.Code = 'PHONGMO' AND inv.Quantity < @PhongmoMin) OR
+              (gr.Code = 'XETNGHIEM' AND inv.Quantity < @XetnghiemMin)
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM Alerts a 
+              WHERE a.InventoryId = inv.Id AND a.Title = N'Vật tư tiêu hao sắp hết' AND a.IsResolved = 0
+          );
+    END
+
+    -- ── RULE 6: DEPRECIATION END ──
+    DECLARE @DeprecRuleId INT, @DeprecActive BIT, @DeprecThreshold INT;
+    SELECT 
+        @DeprecRuleId = Id, 
+        @DeprecActive = IsActive, 
+        @DeprecThreshold = ThresholdDays
+    FROM AlertRules 
+    WHERE Code = 'DEPRECIATION_END_30D';
+    
+    IF @DeprecActive = 1
+    BEGIN
+        INSERT INTO Alerts (AlertRuleId, InventoryId, Title, Body, Severity, IsResolved, IsNotified, CreatedAt)
+        SELECT
+            @DeprecRuleId,
+            inv.Id,
+            N'Thiết bị sắp hết khấu hao',
+            N'Thiết bị y tế ' + it.Name + N' (Mã: ' + inv.AssetCode + N') sắp kết thúc chu kỳ khấu hao sau ' + 
+                CAST(DATEDIFF(DAY, @Today, DATEADD(YEAR, ISNULL(inv.DepreciationYears, 5), inv.ImportDate)) AS NVARCHAR(10)) + 
+                N' ngày (ngày hoàn thành khấu hao dự kiến: ' + 
+                CONVERT(NVARCHAR(10), DATEADD(YEAR, ISNULL(inv.DepreciationYears, 5), inv.ImportDate), 103) + 
+                N'). Khuyến nghị: Thực hiện kiểm định lại hiệu năng để đưa ra quyết định thanh lý hoặc tái cấu trúc sử dụng.',
+            'info',
+            0,
+            0,
+            GETDATE()
+        FROM Inventory inv
+        JOIN Items it ON inv.ItemId = it.Id
+        WHERE inv.LifeStatus = 'active' 
+          AND inv.ApprovalStatus = 'approved' 
+          AND inv.DepreciationYears IS NOT NULL 
+          AND inv.DepreciationYears > 0
+          AND DATEADD(YEAR, inv.DepreciationYears, inv.ImportDate) >= @Today
+          AND DATEADD(YEAR, inv.DepreciationYears, inv.ImportDate) <= DATEADD(DAY, ISNULL(@DeprecThreshold, 30), @Today)
+          AND NOT EXISTS (
+              SELECT 1 FROM Alerts a 
+              WHERE a.AlertRuleId = @DeprecRuleId AND a.InventoryId = inv.Id AND a.IsResolved = 0
+          );
+    END
 END;
 GO
 

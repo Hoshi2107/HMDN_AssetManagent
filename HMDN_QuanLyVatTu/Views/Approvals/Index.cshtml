@@ -20,7 +20,6 @@
     .topbar-actions {
         width: 100%;
         display: flex;
-        justify-content: space-between !important;
         align-items: center;
     }
 
@@ -34,6 +33,7 @@
         width: 320px;
         border: 1px solid var(--border);
         transition: border-color var(--transition);
+        margin-right: auto;
     }
 
         .header-search:focus-within {
@@ -1846,7 +1846,6 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
     <script>
         window.SERVER_SESSION = {
             userId: @(Session["UserId"] ?? 0),

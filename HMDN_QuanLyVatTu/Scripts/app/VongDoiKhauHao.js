@@ -536,12 +536,30 @@ new Vue({
         this.availableYears.sort((a,b) => b - a);
         this.filterYear = '';
 
-        // Tự động lọc thiết bị nếu trỏ từ Alerts Center qua searchCode
+        // Tự động lọc thiết bị nếu trỏ từ Alerts Center qua searchCode và inventoryId
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('searchCode');
+        const invId = urlParams.get('inventoryId');
         if (code) {
             this.searchQuery = code.trim();
         }
+        this.$nextTick(() => {
+            if (invId) {
+                const targetId = parseInt(invId);
+                const matched = this.devices.find(d => d.dbId === targetId);
+                if (matched) {
+                    if (!this.searchQuery) {
+                        this.searchQuery = matched.id;
+                    }
+                    this.openStatusModal(matched);
+                }
+            } else if (code) {
+                const matched = this.devices.find(d => d.id.toLowerCase() === code.trim().toLowerCase());
+                if (matched) {
+                    this.openStatusModal(matched);
+                }
+            }
+        });
 
         document.addEventListener('click', this.closeDropdowns);
         window.addEventListener('resize', this.updateTableWidth);

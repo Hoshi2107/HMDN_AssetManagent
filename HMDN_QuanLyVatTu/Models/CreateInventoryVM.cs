@@ -4,6 +4,8 @@ namespace HMS.Models.ViewModels
 {
     public class CreateInventoryVM
     {
+        public int Id { get; set; }
+
         public string AssetCode { get; set; }
 
         public int ItemId { get; set; }

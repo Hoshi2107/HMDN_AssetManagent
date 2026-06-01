@@ -135,6 +135,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("QrCodes");
                     allowedCodes.Add("Lifecycle");
                     allowedCodes.Add("VongDoiKhauHao");
+                    allowedCodes.Add("Checklists");
                     allowedCodes.Add("Maintenance");
                     allowedCodes.Add("TiepNhanBaoHong");
                     allowedCodes.Add("Alerts");
@@ -146,7 +147,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                 else if (string.Equals(role, "technician", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "ktv", StringComparison.OrdinalIgnoreCase))
                 {
                     allowedCodes.Add("Inventory");
+                    allowedCodes.Add("Catalog");
+                    allowedCodes.Add("Locations");
                     allowedCodes.Add("QrCodes");
+                    allowedCodes.Add("Lifecycle");
                     allowedCodes.Add("Checklists");
                     allowedCodes.Add("Maintenance");
                     allowedCodes.Add("TiepNhanBaoHong");
@@ -158,6 +162,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                 {
                     allowedCodes.Add("Analytics");
                     allowedCodes.Add("Inventory");
+                    allowedCodes.Add("VongDoiKhauHao");
+                    allowedCodes.Add("Maintenance");
                     allowedCodes.Add("Approvals");
                     allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
@@ -166,6 +172,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                 {
                     allowedCodes.Add("Analytics");
                     allowedCodes.Add("Inventory");
+                    allowedCodes.Add("Catalog");
+                    allowedCodes.Add("Locations");
+                    allowedCodes.Add("QrCodes");
+                    allowedCodes.Add("Lifecycle");
+                    allowedCodes.Add("VongDoiKhauHao");
+                    allowedCodes.Add("Maintenance");
+                    allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
                 }
             }

@@ -68,6 +68,30 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        [HttpGet]
+        public JsonResult GetAllInventoryAssets()
+        {
+            try
+            {
+                var assets = db.Inventories
+                    .Where(x => !string.IsNullOrEmpty(x.AssetCode))
+                    .Select(x => new
+                    {
+                        AssetCode = x.AssetCode,
+                        SerialNumber = x.SerialNumber
+                    })
+                    .GroupBy(x => x.AssetCode)
+                    .Select(g => g.FirstOrDefault())
+                    .OrderBy(x => x.AssetCode)
+                    .ToList();
+                return Json(assets, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         public class TicketItemDto
         {
             public string ItemName { get; set; }
@@ -107,31 +131,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                 }
 
                 // --- Backend Validation Sync ---
-                if (payload.TicketType == "HoTro")
+                if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
                 {
-                    if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
-                    {
-                        return Json(new { success = false, message = "Lý do và chi tiết yêu cầu hỗ trợ không được để trống!" });
-                    }
-                    if (request.Files.Count == 0)
-                    {
-                        return Json(new { success = false, message = "Vui lòng đính kèm ít nhất một hình ảnh, video hoặc tài liệu làm minh chứng cho yêu cầu hỗ trợ!" });
-                    }
-                }
-                else
-                {
-                    if (string.IsNullOrWhiteSpace(payload.AssetType))
-                    {
-                        return Json(new { success = false, message = "Vui lòng chọn loại vật tư!" });
-                    }
-                    if (payload.Devices == null || payload.Devices.Count == 0 || payload.Devices.All(d => string.IsNullOrWhiteSpace(d.ItemName)))
-                    {
-                        return Json(new { success = false, message = "Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!" });
-                    }
-                    if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
-                    {
-                        return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
-                    }
+                    return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
                 }
 
                 // Get user's department

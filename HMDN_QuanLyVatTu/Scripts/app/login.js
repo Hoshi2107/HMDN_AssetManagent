@@ -1,8 +1,7 @@
 new Vue({
     el: '#app',
     data: {
-        // 🌟 FIX BUG 1: Sử dụng 'email' thay vì 'username' để đồng bộ 100% với LoginViewModel bên C#
-        email: '',
+        username: '',
         password: '',
         rememberMe: false,
         showPassword: false,
@@ -11,10 +10,10 @@ new Vue({
         hasError: false
     },
     mounted() {
-        // Tự động tải lại email đã lưu nếu người dùng chọn Ghi nhớ trước đó
-        const savedEmail = localStorage.getItem('saved_email');
-        if (savedEmail) {
-            this.email = savedEmail;
+        // Tự động tải lại tên đăng nhập đã lưu nếu người dùng chọn Ghi nhớ trước đó
+        const savedUsername = localStorage.getItem('saved_username');
+        if (savedUsername) {
+            this.username = savedUsername;
             this.rememberMe = true;
         }
     },
@@ -31,16 +30,16 @@ new Vue({
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    Email: this.email,       // 🌟 FIX BUG 2: Map chính xác vào thuộc tính public string Email {get;set;}
-                    Password: this.password  // Map chính xác vào thuộc tính Password
+                    Username: this.username,
+                    Password: this.password
                 }),
                 success: (res) => {
                     if (res.success) {
                         // Xử lý lưu trữ thông tin ở LocalStorage của trình duyệt (Client Side)
                         if (this.rememberMe) {
-                            localStorage.setItem('saved_email', this.email);
+                            localStorage.setItem('saved_username', this.username);
                         } else {
-                            localStorage.removeItem('saved_email');
+                            localStorage.removeItem('saved_username');
                         }
                         localStorage.setItem('current_user', JSON.stringify(res.user));
 

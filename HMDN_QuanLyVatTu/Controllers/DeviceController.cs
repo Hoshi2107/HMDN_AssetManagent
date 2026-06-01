@@ -340,5 +340,135 @@ namespace HMDN.Controllers.API
             return Ok(data);
         }
 
+        [HttpPost]
+        [Route("update")]
+        public IHttpActionResult Update(CreateInventoryVM model)
+        {
+            db.Database.ExecuteSqlCommand(@"
+        UPDATE Inventory
+        SET
+            AssetCode = @AssetCode,
+            ItemId = @ItemId,
+            SerialNumber = @SerialNumber,
+            Quantity = @Quantity,
+            DepartmentId = @DepartmentId,
+            LocationId = @LocationId,
+            ImportDate = @ImportDate,
+            ExpiryDate = @ExpiryDate,
+            WarrantyExpiry = @WarrantyExpiry,
+            CheckCycleId = @CheckCycleId,
+            UnitPrice = @UnitPrice,
+            DepreciationRate = @DepreciationRate,
+            DepreciationYears = @DepreciationYears,
+            ResidualValue = @ResidualValue,
+            YearManufactured = @YearManufactured,
+            YearInUse = @YearInUse,
+            UsageYears = @UsageYears,
+            AssetCategory = @AssetCategory,
+            GroupAssetCode = @GroupAssetCode,
+            AccountingCode = @AccountingCode,
+            InsuranceCode = @InsuranceCode,
+            CountryManufactured = @CountryManufactured,
+            Manufacturer = @Manufacturer,
+            SupplierName = @SupplierName,
+            QrCode = @QrCode,
+            Note = @Note,
+            IdTicket = @IdTicket
+        WHERE Id = @Id",
+
+                new SqlParameter("@Id", model.Id),
+
+                new SqlParameter("@AssetCode", model.AssetCode),
+                new SqlParameter("@ItemId", model.ItemId),
+
+                new SqlParameter("@SerialNumber",
+                    (object)model.SerialNumber ?? DBNull.Value),
+
+                new SqlParameter("@Quantity", model.Quantity),
+
+                new SqlParameter("@DepartmentId",
+                    (object)model.DepartmentId ?? DBNull.Value),
+
+                new SqlParameter("@LocationId",
+                    (object)model.LocationId ?? DBNull.Value),
+
+                new SqlParameter("@ImportDate",
+                    (object)model.ImportDate ?? DBNull.Value),
+
+                new SqlParameter("@ExpiryDate",
+                    (object)model.ExpiryDate ?? DBNull.Value),
+
+                new SqlParameter("@WarrantyExpiry",
+                    (object)model.WarrantyExpiry ?? DBNull.Value),
+
+                new SqlParameter("@CheckCycleId",
+                    (object)model.CheckCycleId ?? DBNull.Value),
+
+                new SqlParameter("@UnitPrice", model.UnitPrice),
+
+                new SqlParameter("@DepreciationRate",
+                    (object)model.DepreciationRate ?? DBNull.Value),
+
+                new SqlParameter("@DepreciationYears",
+                    (object)model.DepreciationYears ?? DBNull.Value),
+
+                new SqlParameter("@ResidualValue",
+                    (object)model.ResidualValue ?? DBNull.Value),
+
+                new SqlParameter("@YearManufactured",
+                    (object)model.YearManufactured ?? DBNull.Value),
+
+                new SqlParameter("@YearInUse",
+                    (object)model.YearInUse ?? DBNull.Value),
+
+                new SqlParameter("@UsageYears",
+                    (object)model.UsageYears ?? DBNull.Value),
+
+                new SqlParameter("@AssetCategory",
+                    (object)model.AssetCategory ?? DBNull.Value),
+
+                new SqlParameter("@GroupAssetCode",
+                    (object)model.GroupAssetCode ?? DBNull.Value),
+
+                new SqlParameter("@AccountingCode",
+                    (object)model.AccountingCode ?? DBNull.Value),
+
+                new SqlParameter("@InsuranceCode",
+                    (object)model.InsuranceCode ?? DBNull.Value),
+
+                new SqlParameter("@CountryManufactured",
+                    (object)model.CountryManufactured ?? DBNull.Value),
+
+                new SqlParameter("@Manufacturer",
+                    (object)model.Manufacturer ?? DBNull.Value),
+
+                new SqlParameter("@SupplierName",
+                    (object)model.SupplierName ?? DBNull.Value),
+
+                new SqlParameter("@QrCode",
+                    (object)model.QrCode ?? DBNull.Value),
+
+                new SqlParameter("@Note",
+                    (object)model.Note ?? DBNull.Value),
+
+                new SqlParameter("@IdTicket",
+                    (object)model.IdTicket ?? DBNull.Value)
+            );
+           
+            return Ok();
+        }
+
+        [HttpGet]
+        [Route("history/{inventoryId}")]
+        public IHttpActionResult GetHistory(int inventoryId)
+        {
+            var data = db.MaintenanceLogs
+                .Where(x => x.InventoryId == inventoryId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList();
+
+            return Ok(data);
+        }
+
     }
 }

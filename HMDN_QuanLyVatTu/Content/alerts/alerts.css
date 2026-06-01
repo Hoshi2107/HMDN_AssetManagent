@@ -52,7 +52,7 @@
     font-size: 13px;
     font-weight: 600;
     border-radius: 24px;
-    color: var(--text-secondary);
+    color: #475569; /* Much better readability on light body background than var(--text-secondary) */
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
@@ -60,16 +60,58 @@
     gap: 8px;
 }
 
-.alert-tab-btn:hover {
+/* 1. All Tab (Blue theme) */
+.alert-tab-btn.tab-all:hover {
     background: rgba(37, 99, 235, 0.05);
     color: var(--accent-blue);
 }
-
-.alert-tab-btn.active {
+.alert-tab-btn.tab-all.active {
     background: linear-gradient(135deg, var(--accent-blue) 0%, #1d4ed8 100%);
     color: #fff;
     border-color: transparent;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+/* 2. Danger Tab (Red theme) */
+.alert-tab-btn.tab-danger:hover {
+    background: rgba(239, 68, 68, 0.05);
+    color: var(--accent-red);
+}
+.alert-tab-btn.tab-danger.active {
+    background: linear-gradient(135deg, var(--accent-red) 0%, #dc2626 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+/* 3. Warning Tab (Amber/Orange theme) */
+.alert-tab-btn.tab-warning:hover {
+    background: rgba(245, 158, 11, 0.05);
+    color: var(--accent-amber);
+}
+.alert-tab-btn.tab-warning.active {
+    background: linear-gradient(135deg, var(--accent-amber) 0%, #d97706 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+
+/* 4. Info Tab (Teal/Cyan theme) */
+.alert-tab-btn.tab-info:hover {
+    background: rgba(6, 182, 212, 0.05);
+    color: var(--accent-cyan);
+}
+.alert-tab-btn.tab-info.active {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, #0891b2 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+}
+
+/* Make all text and icons white when active */
+.alert-tab-btn.active,
+.alert-tab-btn.active i {
+    color: #fff !important;
 }
 
 .alert-tab-btn .badge-pill {
@@ -77,9 +119,10 @@
     padding: 2px 8px;
     border-radius: 12px;
     background: rgba(15, 22, 35, 0.06);
-    color: var(--text-muted);
+    color: #475569;
     font-family: var(--font-mono);
     font-weight: 700;
+    transition: background 0.25s, color 0.25s;
 }
 
 .alert-tab-btn.active .badge-pill {
@@ -107,6 +150,7 @@
     position: relative;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
+    cursor: pointer;
 }
 
 .alert-card:hover {
@@ -565,8 +609,8 @@ input:checked + .switch-slider:before {
 .stock-item-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 13px;
+    gap: 12px;
+    font-size: 13.5px;
     font-weight: 600;
     color: #334155;
 }
@@ -574,12 +618,14 @@ input:checked + .switch-slider:before {
 .stock-item-info i {
     font-size: 15px;
     color: #64748b;
+    width: 20px;
+    text-align: center;
 }
 
 .stock-limit-input {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .stock-input-mini {
@@ -590,10 +636,20 @@ input:checked + .switch-slider:before {
     font-weight: 600;
 }
 
-.stock-unit-label {
-    font-size: 12px;
+.stock-limit-input span:first-child {
+    font-size: 12.5px;
     color: #64748b;
     font-weight: 600;
+    width: 95px;
+    text-align: right;
+}
+
+.stock-limit-input span:last-child {
+    font-size: 12.5px;
+    color: #64748b;
+    font-weight: 600;
+    width: 80px;
+    text-align: left;
 }
 
 /* Notification Methods Grid */
@@ -800,4 +856,160 @@ input:checked + .switch-slider:before {
 .restock-input:focus {
     border-color: #10b981;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+/* ── CONFIGURATION SUB-TABS (Segmented Control) ── */
+.config-tabs-nav {
+    display: flex;
+    gap: 6px;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 12px;
+    width: fit-content;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.config-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.config-tab-btn:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.config-tab-btn.active {
+    background: #ffffff;
+    color: #2563eb;
+    box-shadow: 0 2px 8px rgba(15, 22, 35, 0.08);
+}
+
+/* ── MODERN CONFIG TABLE ── */
+.config-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12.5px;
+}
+
+.config-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    padding: 12px 16px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+
+.config-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.config-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.config-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.config-table input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+/* ── CATEGORY OVERRIDES ROWS ── */
+.override-row-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 11.5px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 22, 35, 0.01);
+    margin-bottom: 8px;
+}
+
+.override-row-item:hover {
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(15, 22, 35, 0.03);
+}
+
+.override-row-item select,
+.override-row-item input {
+    height: 28px !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    border-radius: 6px !important;
+    border: 1px solid #cbd5e1 !important;
+    outline: none !important;
+    background-color: #fff !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.override-row-item select:focus,
+.override-row-item input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* ── PREMIUM BUTTON OVERRIDES ── */
+.topbar-btn {
+    border-radius: 20px !important;
+    padding: 7px 18px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-ghost {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #475569 !important;
+}
+.btn-ghost:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+.btn-outline-success {
+    background: transparent !important;
+    border: 1px solid #10b981 !important;
+    color: #10b981 !important;
+}
+.btn-outline-success:hover {
+    background: #10b981 !important;
+    color: #ffffff !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2) !important;
+}
+.btn-primary:hover {
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3) !important;
+    transform: translateY(-1.5px) !important;
 }

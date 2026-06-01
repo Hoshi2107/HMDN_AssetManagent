@@ -29,6 +29,13 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        showHistoryDetail: false,
+        selectedHistory: null,
+
+        activeTab: "detail",
+
+        maintenanceHistory: [],
+
         groupsData: [],
 
         checkCycles: [],
@@ -84,6 +91,51 @@ var app = new Vue({
 
             QrCode: '',
             Note: ''
+        },
+
+        showEditModal: false,
+
+        editForm: {
+            Id: null,
+
+            AssetCode: '',
+            ItemId: null,
+            SerialNumber: '',
+            Quantity: 1,
+
+            DepartmentId: null,
+            LocationId: null,
+
+            ImportDate: null,
+            ExpiryDate: null,
+            WarrantyExpiry: null,
+
+            CheckCycleId: null,
+
+            UnitPrice: 0,
+
+            DepreciationRate: null,
+            DepreciationYears: null,
+            ResidualValue: null,
+
+            YearManufactured: null,
+            YearInUse: null,
+            UsageYears: null,
+
+            AssetCategory: '',
+
+            GroupAssetCode: '',
+            AccountingCode: '',
+            InsuranceCode: '',
+
+            CountryManufactured: '',
+            Manufacturer: '',
+            SupplierName: '',
+
+            QrCode: '',
+            Note: '',
+
+            IdTicket: null
         },
 
         items: [],
@@ -305,11 +357,50 @@ var app = new Vue({
 
         },
 
-        
+        //formatDate(date) {
+
+        //    if (!date)
+        //        return null
+
+        //    return date.substring(0, 10)
+        //},
 
     },
 
     methods: {
+
+        formatDate(date) {
+
+            if (!date)
+                return null
+
+            const d = new Date(date)
+
+            if (isNaN(d.getTime()))
+                return null
+
+            return d.toISOString().split('T')[0]
+        },
+
+        loadMaintenanceHistory(id) {
+
+            this.activeTab = "history";
+
+            $.get('/api/device/history/' + id, (res) => {
+
+                this.maintenanceHistory = res;
+
+            }).fail(() => {
+
+                alert('Không tải được lịch sử bảo trì');
+
+            });
+        },
+
+        openHistoryDetail(record) {
+            this.selectedHistory = record;
+            this.showHistoryDetail = true;
+        },
 
         loadDropdowns() {
 
@@ -527,6 +618,9 @@ var app = new Vue({
                         const targetId = parseInt(invId);
                         const device = this.devices.find(d => d.Id === targetId);
                         if (device) {
+                            if (!this.searchQuery && device.AssetCode) {
+                                this.searchQuery = device.AssetCode;
+                            }
                             this.openDetail(targetId);
                         }
                     }
@@ -562,6 +656,9 @@ var app = new Vue({
         //}
         openDetail(id) {
             console.log('Calling detail for id:', id) // check xem id đúng chưa
+
+            this.activeTab = "detail";
+            this.maintenanceHistory = [];
 
             $.ajax({
                 url: '/api/device/detail?id=' + id,
@@ -675,6 +772,96 @@ var app = new Vue({
                     console.log(err)
 
                     alert('Thêm thất bại')
+                }
+            })
+        },
+
+        openEditModal(id) {
+
+            $.get('/api/device/detail?id=' + id, (res) => {
+
+                console.log(res)
+
+                console.log(typeof res.ImportDate)
+                console.log(res.ImportDate)
+
+                this.editForm = {
+
+                    Id: res.Id,
+
+                    AssetCode: res.AssetCode,
+                    ItemId: res.ItemId,
+
+                    SerialNumber: res.SerialNumber,
+
+                    Quantity: res.Quantity,
+
+                    DepartmentId: res.DepartmentId,
+                    LocationId: res.LocationId,
+
+                    ImportDate: this.formatDate(res.ImportDate),
+                    ExpiryDate: this.formatDate(res.ExpiryDate),
+                    WarrantyExpiry: this.formatDate(res.WarrantyExpiry),
+
+                    CheckCycleId: res.CheckCycleId,
+
+                    UnitPrice: res.UnitPrice,
+
+                    DepreciationRate: res.DepreciationRate,
+                    DepreciationYears: res.DepreciationYears,
+                    ResidualValue: res.ResidualValue,
+
+                    YearManufactured: res.YearManufactured,
+                    YearInUse: res.YearInUse,
+                    UsageYears: res.UsageYears,
+
+                    AssetCategory: res.AssetCategory,
+
+                    GroupAssetCode: res.GroupAssetCode,
+                    AccountingCode: res.AccountingCode,
+                    InsuranceCode: res.InsuranceCode,
+
+                    CountryManufactured: res.CountryManufactured,
+                    Manufacturer: res.Manufacturer,
+                    SupplierName: res.SupplierName,
+
+                    QrCode: res.QrCode,
+
+                    Note: res.Note,
+
+                    IdTicket: res.IdTicket
+                }
+
+                this.showEditModal = true
+            })
+        },
+
+        updateInventory() {
+ 
+            $.ajax({
+
+                url: '/api/device/update',
+
+                type: 'POST',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify(this.editForm),
+
+                success: () => {
+
+                    alert('Cập nhật thành công')
+
+                    this.showEditModal = false
+
+                    this.showModal = false
+
+                    this.loadDevices()
+                },
+
+                error: () => {
+
+                    alert('Cập nhật thất bại')
                 }
             })
         },

@@ -1,4 +1,4 @@
-﻿body {
+body {
     margin: 0;
     font-family: Arial;
     background: #f1f5f9;
@@ -8,49 +8,7 @@
     display: flex;
 }
 
-.sidebar {
-    width: 220px;
-    min-height: 100vh;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
-}
-
-.brand-name {
-    font-size: 18px;
-    font-weight: bold;
-}
-
-.brand-sub {
-    font-size: 12px;
-    opacity: .7;
-}
-
-.sidebar-nav {
-    margin-top: 30px;
-}
-
-.nav-item {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    margin-bottom: 5px;
-}
-
-    .nav-item.active {
-        background: #2563eb;
-    }
-
-.badge-alert {
-    margin-left: auto;
-    background: red;
-    border-radius: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
-}
+/* Removed legacy sidebar styles to prevent conflict with shared _Layout.cshtml styles */
 
 .main-wrap {
     flex: 1;
@@ -62,6 +20,11 @@
     border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
+}
+
+.topbar-actions {
+    display: flex;
+    gap: 10px;
 }
 
 .topbar-search input {
@@ -368,3 +331,74 @@ td {
     width: 1000px;
     max-width: 100%;
 }
+
+.detail-tabs {
+    position: relative;
+    display: flex;
+    gap: 40px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+    .detail-tabs button {
+        background: none;
+        border: none;
+        padding: 14px 0;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .detail-tabs button.active {
+            color: #2563eb;
+        }
+
+.tab-indicator {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    width: 100px;
+    background: #2563eb;
+    transition: all .3s ease;
+}
+
+    .tab-indicator.detail {
+        left: 0;
+    }
+
+    .tab-indicator.history {
+        left: 135px;
+    }
+
+.history-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all .2s ease;
+    cursor: pointer;
+}
+
+    .history-card:hover {
+        border-color: #2563eb;
+        box-shadow: 0 6px 18px rgba(37,99,235,.15);
+        transform: translateY(-2px);
+    }
+
+.history-detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .history-detail-table th {
+        width: 220px;
+        text-align: left;
+        background: #f8fafc;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .history-detail-table td {
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+    }
