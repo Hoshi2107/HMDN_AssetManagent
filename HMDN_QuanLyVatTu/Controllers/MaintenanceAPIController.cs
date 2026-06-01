@@ -585,17 +585,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 return Request.CreateErrorResponse(System.Net.HttpStatusCode.InternalServerError, ex);
             }
         }
-    }
 
-    // DTO cho cập nhật trạng thái
-    public class UpdateMaintenanceStatusDTO
-    {
-        public int Id { get; set; }
-        public string Status { get; set; }
-        public string ActionTaken { get; set; }
-        public decimal? Cost { get; set; }
-        public string PartReplaced { get; set; }
-        public string Vendor { get; set; }
         // POST api/maintenance/update-status/{id}
         [HttpPost]
         [Route("update-status/{id}")]
@@ -619,5 +609,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                 return InternalServerError(ex);
             }
         }
+    }
+
+    // DTO cho cập nhật trạng thái
+    public class UpdateMaintenanceStatusDTO
+    {
+        public int Id { get; set; }
+        public string Status { get; set; }
+        public string ActionTaken { get; set; }
+        public decimal? Cost { get; set; }
+        public string PartReplaced { get; set; }
+        public string Vendor { get; set; }
     }
 }
