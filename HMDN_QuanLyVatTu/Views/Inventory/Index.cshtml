@@ -20,14 +20,29 @@
                        v-model="searchQuery">
             </div>
 
+            <div class="topbar-actions">
 
-            <button class="btn-primary"
-                    v-if="hasPermission('Inventory', 'CREATE')"
-                    @@click="showAddOptionModal = true">
+                <button class="btn-secondary"
+                        @@click="openQrModal()">
+                    Check QR
 
-                Thêm thiết bị
+                    @*<div class="icon">📷</div>
 
-            </button>
+                <h4>Quét QR</h4>
+
+                <p>Check nhanh bằng mã QR</p>*@
+
+                </button>
+
+                <button class="btn-primary"
+                        v-if="hasPermission('Inventory', 'CREATE')"
+                        @@click="showAddOptionModal = true">
+
+                    Thêm thiết bị
+
+                </button>
+
+            </div>
 
         </header>
 
@@ -498,13 +513,13 @@
                         <div class="add-option-grid">
 
                             <button class="add-option-card"
-                                    @@click="openQrModal()">
+                                    @@click="openAddWithExcelModal()">
 
-                                <div class="icon">📷</div>
+                                <div class="icon">📁</div>
 
-                                <h4>Quét QR</h4>
+                                <h4>Thêm bằng excel</h4>
 
-                                <p>Thêm nhanh bằng mã QR</p>
+                                <p>Thêm nhanh bằng excel</p>
 
                             </button>
 

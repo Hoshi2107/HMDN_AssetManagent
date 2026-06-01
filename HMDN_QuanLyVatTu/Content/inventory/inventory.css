@@ -64,6 +64,11 @@
     justify-content: space-between;
 }
 
+.topbar-actions {
+    display: flex;
+    gap: 10px;
+}
+
 .topbar-search input {
     width: 300px;
     padding: 10px;
