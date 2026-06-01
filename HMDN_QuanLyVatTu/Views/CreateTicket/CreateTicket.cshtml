@@ -41,7 +41,7 @@
     }
     @@media(min-width:768px) {
         .dev-add-grid {
-            grid-template-columns: 2.2fr 1.2fr 0.8fr 1.5fr auto;
+            grid-template-columns: 1.8fr 1.2fr 0.8fr 1.5fr auto;
         }
     }
     .col-left, .col-right { display: flex; flex-direction: column; gap: 24px; }
@@ -60,6 +60,7 @@
         display: flex; align-items: center; gap: 12px;
         padding: 18px 24px;
         border-bottom: 1px solid var(--hm-border);
+        flex-wrap: wrap;
     }
     .c-icon {
         display: flex; align-items: center; justify-content: center;
@@ -346,7 +347,7 @@
                             <input type="text" class="f-input" v-model="form.department" disabled />
                         </div>
                         <div class="f-group">
-                            <label class="f-label" style="white-space: nowrap;">Loại vật tư <span v-if="form.ticketType !== 'HoTro'" style="color: var(--hm-danger);">*</span><span v-else style="color: var(--hm-text-sec); text-transform: none; font-weight: normal;"> (Không bắt buộc)</span></label>
+                            <label class="f-label" style="white-space: nowrap;">Loại vật tư <span style="color: var(--hm-text-sec); text-transform: none; font-weight: normal;">(Không bắt buộc)</span></label>
                             <select class="f-input" v-model="form.assetType" style="cursor:pointer;" :disabled="form.ticketType === 'HoTro'">
                                 <option value="">Chọn loại vật tư...</option>
                                 <option v-for="t in listLoaiVatTu" :key="t" :value="t">${ t }</option>
@@ -360,17 +361,21 @@
             <div class="p-card">
                 <div class="c-head">
                     <div class="c-icon"><i class="fa-solid fa-list-ol"></i></div>
-                    <span class="c-title">Danh sách thiết bị yêu cầu <span v-if="form.ticketType === 'HoTro'" style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
+                    <span class="c-title">Danh sách thiết bị yêu cầu <span style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
+                    <div style="margin-left: auto; position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hm-navy); font-size: 13px; pointer-events: none;"></i>
+                        <input type="text" class="f-input" v-model="searchQuery" placeholder="Tìm kiếm Mã Tài Sản..." style="padding-left: 36px; width: 240px; height: 38px; font-size: 12.5px; border-radius: 20px;" />
+                    </div>
                 </div>
                 <div class="c-body">
                     <!-- Inline form to add devices -->
                     <div class="dev-add-grid">
                         <div class="f-group">
-                            <label class="f-label">Tên Thiết Bị</label>
-                            <input type="text" class="f-input" v-model="newDevice.itemName" placeholder="Nhập tên thiết bị..." list="dbItemsDatalist" />
-                            <datalist id="dbItemsDatalist">
-                                <option v-for="item in dbItems" :key="item.Id" :value="item.Name"></option>
-                            </datalist>
+                            <label class="f-label">Mã Tài Sản</label>
+                            <select class="f-input" v-model="newDevice.itemName" style="cursor:pointer;">
+                                <option value="">Chọn Mã Tài Sản...</option>
+                                <option v-for="item in filteredInventoryAssets" :key="item.AssetCode" :value="item.AssetCode">${ item.AssetCode }</option>
+                            </select>
                         </div>
                         <div class="f-group">
                             <label class="f-label">Số Serial (tự động)</label>
@@ -397,7 +402,7 @@
                             <thead>
                                 <tr style="border-bottom: 2px solid var(--hm-border); background: #f8fafc;">
                                     <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 60px;">STT</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Tên thiết bị</th>
+                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Mã Tài Sản</th>
                                     <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 180px;">Mã/Serial</th>
                                     <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px; text-align: center;">Số lượng</th>
                                     <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px;">ĐVT</th>
@@ -421,7 +426,7 @@
                                 </tr>
                                 <tr v-if="form.devices.length === 0">
                                     <td colspan="7" style="padding: 32px 16px; text-align: center; color: var(--hm-text-sec); font-style: italic;">
-                                        Chưa có thiết bị nào trong danh sách. Vui lòng thêm thiết bị bằng cách nhập tên và bấm nút "Thêm" ở trên.
+                                        Chưa có thiết bị nào trong danh sách. Vui lòng chọn Mã Tài Sản và bấm nút "Thêm" ở trên.
                                     </td>
                                 </tr>
                             </tbody>
@@ -456,7 +461,7 @@
             <div class="p-card">
                 <div class="c-head">
                     <div class="c-icon"><i class="fa-solid fa-paperclip"></i></div>
-                    <span class="c-title" style="white-space: nowrap;">Đính kèm <span v-if="form.ticketType === 'HoTro'" style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">* (Ít nhất 1 file minh chứng)</span></span>
+                    <span class="c-title" style="white-space: nowrap;">Đính kèm <span style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
                 </div>
                 <!-- Tabs -->
                 <div class="attach-tabs">
@@ -546,6 +551,8 @@
                 listLoaiVatTu: ['Thiết bị y tế', 'Vật tư tiêu hao', 'Linh kiện thay thế', 'Khác'],
 
                 dbItems: [], // Danh sách mẫu thiết bị từ CSDL
+                inventoryAssets: [], // Danh sách mã tài sản từ bảng Inventory
+                searchQuery: '',
                 newDevice: {
                     itemName: '',
                     serialNumber: '',
@@ -572,6 +579,16 @@
                 isDragging: false,
                 attachedImages: [],
                 attachedFiles: []
+            },
+            computed: {
+                filteredInventoryAssets() {
+                    var vm = this;
+                    var q = (vm.searchQuery || '').trim().toLowerCase();
+                    if (!q) return vm.inventoryAssets;
+                    return vm.inventoryAssets.filter(function (x) {
+                        return x.AssetCode && x.AssetCode.toLowerCase().indexOf(q) > -1;
+                    });
+                }
             },
 
             methods: {
@@ -611,6 +628,22 @@
                         });
                 },
 
+                loadInventoryAssets() {
+                    var vm = this;
+                    fetch('/CreateTicket/GetAllInventoryAssets')
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res.error) {
+                                console.error(res.error);
+                            } else {
+                                vm.inventoryAssets = res;
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error('Không thể kết nối lấy danh mục mã tài sản:', err);
+                        });
+                },
+
                 // ── Sinh Serial tự động ──
                 generateSerial(itemName) {
                     var prefix = 'SN';
@@ -633,8 +666,8 @@
 
                 // ── Quản lý danh sách thiết bị yêu cầu ──
                 addDeviceToList() {
-                    if (!this.newDevice.itemName || !this.newDevice.itemName.trim()) {
-                        this.toast('Cảnh báo', 'Vui lòng nhập tên thiết bị!', 'warning');
+                    if (!this.newDevice.itemName) {
+                        this.toast('Cảnh báo', 'Vui lòng chọn Mã Tài Sản!', 'warning');
                         return;
                     }
                     if (this.newDevice.quantity <= 0) {
@@ -643,32 +676,26 @@
                     }
 
                     var vm = this;
-                    var trimmedName = this.newDevice.itemName.trim();
-                    
-                    var matchedItem = this.dbItems.find(function (x) {
-                        return x.Name.toLowerCase() === trimmedName.toLowerCase();
-                    });
-                    var unit = matchedItem ? matchedItem.Unit : 'Cái';
-
-                    // Auto-generate serial number
-                    var autoSerial = this.generateSerial(trimmedName);
+                    var selectedAssetCode = this.newDevice.itemName;
+                    var serialNum = this.newDevice.serialNumber;
 
                     var exists = this.form.devices.find(function (d) {
-                        return d.itemName.toLowerCase() === trimmedName.toLowerCase();
+                        return d.itemName.toLowerCase() === selectedAssetCode.toLowerCase();
                     });
 
                     if (exists) {
                         exists.quantity += vm.newDevice.quantity;
                     } else {
                         this.form.devices.push({
-                            itemName: trimmedName,
-                            serialNumber: autoSerial,
+                            itemName: selectedAssetCode,
+                            serialNumber: serialNum,
                             quantity: this.newDevice.quantity,
-                            unit: unit,
+                            unit: 'Cái',
                             note: this.newDevice.note
                         });
                     }
 
+                    this.searchQuery = '';
                     this.newDevice = {
                         itemName: '',
                         serialNumber: '',
@@ -765,29 +792,10 @@
                         } catch (e) { /* ignore */ }
                     }
 
-                    // Dynamic Validation based on ticket type
-                    if (this.form.ticketType === 'HoTro') {
-                        if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
-                            this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu hỗ trợ!', 'warning');
-                            return;
-                        }
-                        if (this.attachedImages.length === 0 && this.attachedFiles.length === 0) {
-                            this.toast('Cảnh báo', 'Vui lòng đính kèm ít nhất một hình ảnh, video hoặc tập tin tài liệu làm minh chứng!', 'warning');
-                            return;
-                        }
-                    } else {
-                        if (!this.form.assetType) {
-                            this.toast('Cảnh báo', 'Vui lòng chọn loại vật tư!', 'warning');
-                            return;
-                        }
-                        if (this.form.devices.length === 0) {
-                            this.toast('Cảnh báo', 'Vui lòng thêm ít nhất một thiết bị vào danh sách yêu cầu!', 'warning');
-                            return;
-                        }
-                        if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
-                            this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
-                            return;
-                        }
+                    // RÀNG BUỘC BẮT BUỘC DUY NHẤT: Chỉ kiểm tra trường "Lý do yêu cầu & Chi tiết *" không được để trống
+                    if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
+                        return;
                     }
 
                     this.isSubmitting = true;
@@ -863,6 +871,37 @@
                     if (newVal === 'HoTro') {
                         this.form.assetType = '';
                     }
+                },
+                'newDevice.itemName': function (newVal) {
+                    if (!newVal) {
+                        this.newDevice.serialNumber = '';
+                        return;
+                    }
+                    var match = this.inventoryAssets.find(function (x) {
+                        return x.AssetCode === newVal;
+                    });
+                    if (match) {
+                        this.newDevice.serialNumber = match.SerialNumber || '';
+                    } else {
+                        this.newDevice.serialNumber = '';
+                    }
+                },
+                'searchQuery': function (newVal) {
+                    if (!newVal) {
+                        return;
+                    }
+                    var query = newVal.trim().toLowerCase();
+                    var match = this.inventoryAssets.find(function (x) {
+                        return x.AssetCode && x.AssetCode.toLowerCase() === query;
+                    });
+                    if (match) {
+                        this.newDevice.itemName = match.AssetCode;
+                    } else {
+                        var filtered = this.filteredInventoryAssets;
+                        if (filtered && filtered.length === 1) {
+                            this.newDevice.itemName = filtered[0].AssetCode;
+                        }
+                    }
                 }
             },
 
@@ -887,6 +926,7 @@
 
                 // Tải danh mục thiết bị
                 this.loadDbItems();
+                this.loadInventoryAssets();
             },
             beforeDestroy() {
                 this.attachedImages.forEach(function (w) { if (w.url) URL.revokeObjectURL(w.url); });
