@@ -92,7 +92,7 @@ var app = new Vue({
             } else {
                 // Mặc định hiển thị thiết bị hỏng, tạm ngưng và đang bảo trì
                 list = list.filter(function (d) {
-                    return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'in_repair';
+                    return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'maintenance_bv';
                 });
             }
 
@@ -209,7 +209,7 @@ var app = new Vue({
                 'suspended': 'Tạm ngưng',
                 'disposed': 'Thanh lý',
                 'broken': 'Hỏng',
-                'in_repair': 'BV Bảo trì'
+                'maintenance_bv': 'BV Bảo trì'
             };
             return map[status] || status || 'N/A';
         },
@@ -223,7 +223,7 @@ var app = new Vue({
             var vm = this;
             // 1. Tổng sản phẩm hỏng, tạm ngưng & đang bảo trì
             vm.kpi.totalDevices = vm.devices.filter(function (d) { 
-                return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'in_repair'; 
+                return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'maintenance_bv'; 
             }).length;
             
             // 2. Những sản phẩm đang sửa chữa
