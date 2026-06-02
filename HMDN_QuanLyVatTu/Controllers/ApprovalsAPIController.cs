@@ -15,10 +15,37 @@ namespace HMDN_QuanLyVatTu.Controllers
     [RoutePrefix("api/approvals")]
     public class ApprovalsAPIController : ApiController
     {
-        // GET api/approvals/GetTickets?userId=X
+        // GET api/approvals/GetDepartments
+        [HttpGet]
+        [Route("GetDepartments")]
+        public IHttpActionResult GetDepartments()
+        {
+            try
+            {
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var depts = db.Departments
+                        .Where(x => x.IsActive)
+                        .Select(x => new
+                        {
+                            x.Id,
+                            x.Name
+                        })
+                        .OrderBy(x => x.Name)
+                        .ToList();
+                    return Ok(depts);
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
+        // GET api/approvals/GetTickets?userId=X&departmentId=Y
         [HttpGet]
         [Route("GetTickets")]
-        public IHttpActionResult GetTickets(int userId = 0)
+        public IHttpActionResult GetTickets(int userId = 0, int? departmentId = null)
         {
             try
             {
@@ -69,6 +96,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                         filteredData = Enumerable.Empty<Tickets>();
                     }
 
+                    // LỌC THEO PHÒNG BAN NHẬN: Nếu truyền departmentId và > 0, lọc theo phòng ban nhận (t.SendTo)
+                    if (departmentId.HasValue && departmentId.Value > 0)
+                    {
+                        filteredData = filteredData.Where(t => t.SendTo == departmentId.Value).ToList();
+                    }
+
                     var data = filteredData.Select(t =>
                     {
                         users.TryGetValue(t.CreatedBy, out var creator);
@@ -76,6 +109,25 @@ namespace HMDN_QuanLyVatTu.Controllers
                         if (creator != null && creator.DepartmentId.HasValue)
                         {
                             departments.TryGetValue(creator.DepartmentId.Value, out dept);
+                        }
+
+                        Department sendToDept = null;
+                        string sendToDeptName = null;
+                        if (t.SendTo.HasValue)
+                        {
+                            if (departments.TryGetValue(t.SendTo.Value, out sendToDept))
+                            {
+                                sendToDeptName = sendToDept.Name;
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(sendToDeptName) && !string.IsNullOrEmpty(t.Note) && t.Note.StartsWith("[Gửi tới:"))
+                        {
+                            int idxClose = t.Note.IndexOf(']');
+                            if (idxClose > 9)
+                            {
+                                sendToDeptName = t.Note.Substring(9, idxClose - 9).Trim();
+                            }
                         }
 
                         return new ApprovalsListVM
@@ -89,6 +141,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CreatedByName = creator != null ? creator.FullName : null,
                             CreatedByUsername = creator != null ? creator.Username : null,
                             DepartmentName = dept != null ? dept.Name : null,
+                            SendToDepartment = sendToDeptName,
                             CreatedAt = t.CreatedAt,
                             CheckedBy = t.CheckedBy,
                             CheckedAt = t.CheckedAt,
@@ -554,6 +607,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public string CreatedByName { get; set; }
         public string CreatedByUsername { get; set; }
         public string DepartmentName { get; set; }
+        public string SendToDepartment { get; set; }
         public DateTime CreatedAt { get; set; }
         public int? CheckedBy { get; set; }
         public DateTime? CheckedAt { get; set; }
