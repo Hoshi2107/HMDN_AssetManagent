@@ -1,0 +1,848 @@
+@{
+    ViewBag.Title = "Lập lịch & Thực hiện Checklist";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --cl-primary: #2563eb;
+        --cl-primary-light: #eff6ff;
+        --cl-success: #10b981;
+        --cl-success-light: #ecfdf5;
+        --cl-warning: #f59e0b;
+        --cl-warning-light: #fffbeb;
+        --cl-danger: #ef4444;
+        --cl-danger-light: #fef2f2;
+        --cl-neutral: #64748b;
+        --cl-neutral-light: #f8fafc;
+        --cl-border: #e2e8f0;
+        --cl-text: #0f172a;
+        --cl-text-muted: #64748b;
+        --cl-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+        --cl-tr: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .cl-dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    /* ── KPI CARDS ── */
+    .cl-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+    .cl-kpi-card {
+        background: #fff;
+        border: 1px solid var(--cl-border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        box-shadow: var(--cl-shadow);
+        transition: var(--cl-tr);
+        cursor: pointer;
+    }
+    .cl-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+    }
+    .cl-kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+    .cl-kpi-icon.blue { background: var(--cl-primary-light); color: var(--cl-primary); }
+    .cl-kpi-icon.amber { background: var(--cl-warning-light); color: var(--cl-warning); }
+    .cl-kpi-icon.green { background: var(--cl-success-light); color: var(--cl-success); }
+    .cl-kpi-icon.red { background: var(--cl-danger-light); color: var(--cl-danger); }
+    .cl-kpi-val { font-size: 24px; font-weight: 700; color: var(--cl-text); }
+    .cl-kpi-label { font-size: 13px; color: var(--cl-text-muted); margin-top: 2px; }
+
+    /* ── TABS ── */
+    .cl-tabs-nav {
+        display: flex;
+        border-bottom: 2px solid var(--cl-border);
+        gap: 24px;
+        margin-bottom: 8px;
+    }
+    .cl-tab-btn {
+        padding: 12px 4px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--cl-text-muted);
+        background: none;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        transition: var(--cl-tr);
+    }
+    .cl-tab-btn:hover {
+        color: var(--cl-primary);
+    }
+    .cl-tab-btn.active {
+        color: var(--cl-primary);
+    }
+    .cl-tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--cl-primary);
+        border-radius: 2px;
+    }
+
+    /* ── FILTER BAR ── */
+    .cl-filter-bar {
+        background: #fff;
+        border: 1px solid var(--cl-border);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        box-shadow: var(--cl-shadow);
+    }
+    .cl-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 140px;
+    }
+    .cl-input-group.flex-grow {
+        flex: 1;
+        min-width: 200px;
+    }
+    .cl-input-group label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--cl-text-muted);
+        letter-spacing: 0.5px;
+    }
+    .cl-input, .cl-select {
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid var(--cl-border);
+        border-radius: 8px;
+        font-size: 13.5px;
+        outline: none;
+        background: #fff;
+        transition: var(--cl-tr);
+    }
+    .cl-input:focus, .cl-select:focus {
+        border-color: var(--cl-primary);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    /* ── BUTTONS ── */
+    .cl-btn {
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        border: none;
+        transition: var(--cl-tr);
+    }
+    .cl-btn-primary {
+        background: var(--cl-primary);
+        color: #fff;
+    }
+    .cl-btn-primary:hover { background: #1d4ed8; }
+    .cl-btn-success {
+        background: var(--cl-success);
+        color: #fff;
+    }
+    .cl-btn-success:hover { background: #059669; }
+    .cl-btn-outline {
+        background: #fff;
+        border: 1px solid var(--cl-border);
+        color: var(--cl-text);
+    }
+    .cl-btn-outline:hover { background: #f1f5f9; }
+
+    /* ── TABLES ── */
+    .cl-card-table {
+        background: #fff;
+        border: 1px solid var(--cl-border);
+        border-radius: 12px;
+        box-shadow: var(--cl-shadow);
+        overflow: hidden;
+    }
+    .cl-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 13.5px;
+    }
+    .cl-table th {
+        background: var(--cl-neutral-light);
+        padding: 14px 16px;
+        font-weight: 600;
+        color: var(--cl-text-muted);
+        border-bottom: 1px solid var(--cl-border);
+    }
+    .cl-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--cl-border);
+        color: var(--cl-text);
+    }
+    .cl-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .cl-table tbody tr {
+        transition: var(--cl-tr);
+    }
+    .cl-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    /* ── BADGES ── */
+    .cl-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .cl-badge::before {
+        content: '';
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .cl-badge-pending { background: var(--cl-warning-light); color: var(--cl-warning); }
+    .cl-badge-completed { background: var(--cl-success-light); color: var(--cl-success); }
+    .cl-badge-skipped { background: var(--cl-neutral-light); color: var(--cl-neutral); }
+    .cl-badge-pass { background: var(--cl-success-light); color: var(--cl-success); }
+    .cl-badge-fail { background: var(--cl-danger-light); color: var(--cl-danger); }
+    .cl-badge-partial { background: var(--cl-warning-light); color: var(--cl-warning); }
+
+    /* ── MODALS ── */
+    .cl-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.4);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1100;
+        padding: 16px;
+    }
+    .cl-modal-card {
+        background: #fff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 680px;
+        max-height: calc(100vh - 40px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: modalScale 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .cl-modal-card.lg { max-width: 800px; }
+    .cl-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--cl-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .cl-modal-header h3 {
+        font-size: 16.5px;
+        font-weight: 700;
+        color: var(--cl-text);
+        margin: 0;
+    }
+    .cl-modal-close {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--cl-text-muted);
+        cursor: pointer;
+        transition: var(--cl-tr);
+    }
+    .cl-modal-close:hover { color: var(--cl-text); }
+    .cl-modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    .cl-modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--cl-border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        background: #f8fafc;
+    }
+
+    /* ── EXECUTION ITEMS ── */
+    .cl-exec-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .cl-exec-item {
+        background: #f8fafc;
+        border: 1px solid var(--cl-border);
+        border-radius: 10px;
+        padding: 16px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    @@media(min-width: 576px) {
+        .cl-exec-item {
+            grid-template-columns: 1.5fr auto;
+            align-items: center;
+        }
+    }
+    .cl-exec-name {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--cl-text);
+    }
+    .cl-exec-desc {
+        font-size: 12px;
+        color: var(--cl-text-muted);
+        margin-top: 3px;
+    }
+    .cl-exec-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .cl-toggle-btn {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid var(--cl-border);
+        background: #fff;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--cl-tr);
+    }
+    .cl-toggle-btn.pass {
+        color: var(--cl-neutral);
+    }
+    .cl-toggle-btn.pass.active {
+        background: var(--cl-success-light);
+        border-color: var(--cl-success);
+        color: var(--cl-success);
+    }
+    .cl-toggle-btn.fail {
+        color: var(--cl-neutral);
+    }
+    .cl-toggle-btn.fail.active {
+        background: var(--cl-danger-light);
+        border-color: var(--cl-danger);
+        color: var(--cl-danger);
+    }
+
+    /* ── ANIMATIONS ── */
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes modalScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    /* ── PAGINATION ── */
+    .cl-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 16px;
+        padding: 0 4px;
+    }
+    .cl-page-btn {
+        height: 32px;
+        padding: 0 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid var(--cl-border);
+        background: #fff;
+        color: var(--cl-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: var(--cl-tr);
+    }
+    .cl-page-btn:hover:not(:disabled) {
+        background: var(--cl-primary-light);
+        border-color: var(--cl-primary);
+        color: var(--cl-primary);
+    }
+    .cl-page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .cl-page-info {
+        font-size: 13px;
+        color: var(--cl-text-muted);
+        font-weight: 500;
+    }
+    @@keyframes laserMove {
+        0% { top: 0%; }
+        50% { top: 100%; }
+        100% { top: 0%; }
+    }
+</style>
+
+<div id="app" class="cl-dashboard" v-cloak>
+    <!-- KPI SUMMARY CARDS -->
+    <div class="cl-kpi-grid">
+        <div class="cl-kpi-card" @@click="filterByKpi('pending')">
+            <div class="cl-kpi-icon blue">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+                <div class="cl-kpi-val">${ kpi.pending }</div>
+                <div class="cl-kpi-label">Lịch kiểm tra chờ xử lý</div>
+            </div>
+        </div>
+        <div class="cl-kpi-card" @@click="filterByKpi('overdue')">
+            <div class="cl-kpi-icon amber">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <div class="cl-kpi-val">${ kpi.overdue }</div>
+                <div class="cl-kpi-label">Schedules quá hạn</div>
+            </div>
+        </div>
+        <div class="cl-kpi-card" @@click="filterByKpi('completed')">
+            <div class="cl-kpi-icon green">
+                <i class="fa-solid fa-square-check"></i>
+            </div>
+            <div>
+                <div class="cl-kpi-val">${ kpi.completed }</div>
+                <div class="cl-kpi-label">Hoàn thành tháng này</div>
+            </div>
+        </div>
+        <div class="cl-kpi-card">
+            <div class="cl-kpi-icon red">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div>
+                <div class="cl-kpi-val">${ kpi.passRate }%</div>
+                <div class="cl-kpi-label">Tỷ lệ đạt chuẩn</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="cl-tabs-nav">
+        <button class="cl-tab-btn" :class="{active: activeTab==='schedules'}" @@click="activeTab='schedules'">
+            <i class="fa-solid fa-clock mr-1"></i> Lịch Trình Kiểm Tra
+        </button>
+        <button class="cl-tab-btn" :class="{active: activeTab==='logs'}" @@click="activeTab='logs'">
+            <i class="fa-solid fa-book mr-1"></i> Nhật Ký Hoàn Thành
+        </button>
+    </div>
+
+    <!-- ===== TAB CONTENT: SCHEDULES ===== -->
+    <div v-if="activeTab==='schedules'" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="cl-filter-bar">
+            <div class="cl-input-group flex-grow">
+                <label>Tìm kiếm thiết bị</label>
+                <input type="text" class="cl-input" placeholder="Nhập tên, serial hoặc mã tài sản..." v-model="schedulesFilter.query" />
+            </div>
+            <div class="cl-input-group">
+                <label>Trạng thái</label>
+                <select class="cl-select" v-model="schedulesFilter.status">
+                    <option value="">Tất cả</option>
+                    <option value="pending">Chờ thực hiện</option>
+                    <option value="completed">Đã hoàn thành</option>
+                </select>
+            </div>
+            <div class="cl-input-group">
+                <label>Chu kỳ</label>
+                <select class="cl-select" v-model="schedulesFilter.cycleType">
+                    <option value="">Tất cả</option>
+                    <option value="daily">Hàng ngày (Daily)</option>
+                    <option value="weekly">Hàng tuần (Weekly)</option>
+                    <option value="monthly">Hàng tháng (Monthly)</option>
+                    <option value="quarterly">Hàng quý (Quarterly)</option>
+                    <option value="yearly">Hàng năm (Yearly)</option>
+                </select>
+            </div>
+            <div style="margin-top:auto; display:flex; gap:8px;">
+                <button class="cl-btn cl-btn-primary" @@click="loadSchedules"><i class="fa-solid fa-arrows-rotate"></i> Tải lại</button>
+                <button class="cl-btn cl-btn-outline" @@click="showGenerateModal = true"><i class="fa-solid fa-plus"></i> Sinh lịch mới</button>
+            </div>
+        </div>
+
+        <div class="cl-card-table">
+            <table class="cl-table">
+                <thead>
+                    <tr>
+                        <th>Mã Tài Sản</th>
+                        <th>Tên thiết bị</th>
+                        <th>Serial</th>
+                        <th>Khoa phòng</th>
+                        <th>Ngày kiểm tra</th>
+                        <th>Chu kỳ</th>
+                        <th>Hạn cuối</th>
+                        <th>Trạng thái</th>
+                        <th style="text-align: center;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="sch in paginatedSchedules" :key="sch.Id">
+                        <td><strong>${ sch.AssetCode }</strong></td>
+                        <td>${ sch.ItemName }</td>
+                        <td><small>${ sch.SerialNumber || '—' }</small></td>
+                        <td>${ sch.DepartmentName || '—' }</td>
+                        <td>${ sch.ScheduledDate }</td>
+                        <td><span style="font-weight: 500;">${ cycleLabel(sch.CycleType) }</span></td>
+                        <td><span :class="{'text-danger font-weight-bold': isOverdue(sch.DueDate) && sch.Status==='pending'}">${ sch.DueDate }</span></td>
+                        <td>
+                            <span class="cl-badge" :class="'cl-badge-' + sch.Status">${ statusLabel(sch.Status) }</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="cl-btn cl-btn-success" style="height:28px; padding:0 10px; font-size:11.5px; border-radius:6px;" v-if="sch.Status === 'pending'" @@click="openPerformModal(sch)">
+                                <i class="fa-solid fa-play"></i> Thực hiện
+                            </button>
+                            <span v-else style="color:var(--cl-text-muted); font-size:12px; font-style:italic">Hoàn tất</span>
+                        </td>
+                    </tr>
+                    <tr v-if="filteredSchedules.length === 0">
+                        <td colspan="9" style="padding:48px; text-align:center; color:var(--cl-text-muted); font-style:italic;">
+                            Không có lịch trình kiểm tra nào được tìm thấy.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination UI -->
+        <div class="cl-pagination" v-if="schedulesTotalPages > 1">
+            <button class="cl-page-btn" :disabled="schedulesPage === 1" @@click="setSchedulesPage(schedulesPage - 1)">
+                <i class="fa-solid fa-chevron-left"></i> Trước
+            </button>
+            <span class="cl-page-info">Trang ${ schedulesPage } / ${ schedulesTotalPages }</span>
+            <button class="cl-page-btn" :disabled="schedulesPage === schedulesTotalPages" @@click="setSchedulesPage(schedulesPage + 1)">
+                Sau <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== TAB CONTENT: LOGS ===== -->
+    <div v-if="activeTab==='logs'" style="display:flex; flex-direction:column; gap:16px;">
+        <div class="cl-filter-bar">
+            <div class="cl-input-group flex-grow">
+                <label>Tìm kiếm</label>
+                <input type="text" class="cl-input" placeholder="Mã tài sản, tên thiết bị..." v-model="logsFilter.query" />
+            </div>
+            <div class="cl-input-group">
+                <label>Kết quả chung</label>
+                <select class="cl-select" v-model="logsFilter.result">
+                    <option value="">Tất cả</option>
+                    <option value="pass">Đạt chuẩn</option>
+                    <option value="fail">Không đạt</option>
+                    <option value="partial">Đạt một phần</option>
+                </select>
+            </div>
+            <div style="margin-top:auto; display:flex; gap:8px;">
+                <button class="cl-btn cl-btn-primary" @@click="loadLogs"><i class="fa-solid fa-arrows-rotate"></i> Tải lại</button>
+            </div>
+        </div>
+
+        <div class="cl-card-table">
+            <table class="cl-table">
+                <thead>
+                    <tr>
+                        <th>Mã Tài Sản</th>
+                        <th>Tên thiết bị</th>
+                        <th>Serial</th>
+                        <th>Khoa phòng</th>
+                        <th>Người kiểm tra</th>
+                        <th>Thời gian thực hiện</th>
+                        <th>Loại chu kỳ</th>
+                        <th>Kết quả</th>
+                        <th style="text-align: center;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="log in paginatedLogs" :key="log.Id">
+                        <td><strong>${ log.AssetCode }</strong></td>
+                        <td>${ log.ItemName }</td>
+                        <td><small>${ log.SerialNumber || '—' }</small></td>
+                        <td>${ log.DepartmentName || '—' }</td>
+                        <td>${ log.CheckedByName }</td>
+                        <td>${ log.CheckedAt }</td>
+                        <td><span>${ cycleLabel(log.CycleType) }</span></td>
+                        <td>
+                            <span class="cl-badge" :class="'cl-badge-' + log.OverallResult">${ resultLabel(log.OverallResult) }</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="cl-btn cl-btn-outline" style="height:28px; padding:0 10px; font-size:11.5px; border-radius:6px;" @@click="openDetailsModal(log.Id)">
+                                <i class="fa-solid fa-eye"></i> Chi tiết
+                            </button>
+                        </td>
+                    </tr>
+                    <tr v-if="filteredLogs.length === 0">
+                        <td colspan="9" style="padding:48px; text-align:center; color:var(--cl-text-muted); font-style:italic;">
+                            Chưa có nhật ký kiểm tra nào được ghi lại.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination UI -->
+        <div class="cl-pagination" v-if="logsTotalPages > 1">
+            <button class="cl-page-btn" :disabled="logsPage === 1" @@click="setLogsPage(logsPage - 1)">
+                <i class="fa-solid fa-chevron-left"></i> Trước
+            </button>
+            <span class="cl-page-info">Trang ${ logsPage } / ${ logsTotalPages }</span>
+            <button class="cl-page-btn" :disabled="logsPage === logsTotalPages" @@click="setLogsPage(logsPage + 1)">
+                Sau <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL: SINH LỊCH TRÌNH MỚI ===== -->
+    <div class="cl-modal-overlay" v-if="showGenerateModal" @@click.self="showGenerateModal=false">
+        <div class="cl-modal-card">
+            <div class="cl-modal-header">
+                <h3>Tạo lịch trình Checklist tự động</h3>
+                <button class="cl-modal-close" @@click="showGenerateModal=false">×</button>
+            </div>
+            <div class="cl-modal-body">
+                <p style="font-size:13.5px; color:var(--cl-text-muted); margin-bottom:16px;">
+                    Hệ thống sẽ dựa vào thiết lập **Chu kỳ kiểm tra** của từng thiết bị trong kho để tự động tính toán và sinh lịch kiểm tra (Schedules).
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div class="cl-input-group">
+                        <label>Từ ngày</label>
+                        <input type="date" class="cl-input" v-model="generateForm.fromDate" />
+                    </div>
+                    <div class="cl-input-group">
+                        <label>Đến ngày</label>
+                        <input type="date" class="cl-input" v-model="generateForm.toDate" />
+                    </div>
+                </div>
+            </div>
+            <div class="cl-modal-footer">
+                <button class="cl-btn cl-btn-outline" @@click="showGenerateModal=false">Hủy bỏ</button>
+                <button class="cl-btn cl-btn-primary" @@click="generateSchedules" :disabled="isGenerating">
+                    <span v-if="isGenerating"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tạo...</span>
+                    <span v-else><i class="fa-solid fa-check"></i> Xác nhận tạo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL: THỰC HIỆN CHECKLIST ===== -->
+    <div class="cl-modal-overlay" v-if="showPerformModal" @@click.self="showPerformModal=false">
+        <div class="cl-modal-card lg">
+            <div class="cl-modal-header">
+                <h3>Thực hiện kiểm tra thiết bị</h3>
+                <button class="cl-modal-close" @@click="showPerformModal=false">×</button>
+            </div>
+            <div class="cl-modal-body" style="display:flex; flex-direction:column; gap:20px;">
+                <!-- Device Prefilled Info -->
+                <div style="background:#f8fafc; border:1px solid var(--cl-border); border-radius:10px; padding:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+                    <div><small style="color:var(--cl-text-muted)">Thiết bị:</small> <strong style="display:block; font-size:14px; color:var(--cl-primary);">${ activeSchedule.ItemName }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Mã Tài Sản:</small> <strong style="display:block;">${ activeSchedule.AssetCode }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Số Serial:</small> <strong style="display:block;">${ activeSchedule.SerialNumber || 'N/A' }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Khoa phòng:</small> <strong style="display:block;">${ activeSchedule.DepartmentName }</strong></div>
+                </div>
+
+                <!-- Simulated QR Scan Verification -->
+                <div style="display:flex; flex-direction:column; gap:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:16px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-qrcode" style="font-size:20px; color:var(--cl-success)"></i>
+                            <span style="font-size:13.5px; font-weight:600; color:#15803d">Xác thực quét mã QR Code</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <button type="button" class="cl-btn cl-btn-success" style="height:30px; padding:0 10px; font-size:11.5px; border-radius:6px;" @@click="openQrScanner">
+                                <i class="fa-solid fa-camera"></i> Quét mã QR thiết bị
+                            </button>
+                            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13.5px; font-weight:600; color:#15803d; user-select:none; margin:0;">
+                                <input type="checkbox" v-model="performForm.qrScanned" style="width:16px; height:16px;" /> Đã xác thực tại vị trí
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Simulated Scanner UI Area -->
+                    <div v-if="showQrScannerArea" style="background:#0f172a; border-radius:8px; padding:16px; color:#fff; display:flex; flex-direction:column; gap:12px; animation: fadeIn 0.2s;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:12px; font-weight:bold; color:#10b981; text-transform:uppercase; letter-spacing:1px;">
+                                <i class="fa-solid fa-circle fa-beat mr-1" style="color:#ef4444;"></i> [ CAMERA SCANNING... ]
+                            </span>
+                            <button type="button" @@click="showQrScannerArea = false" style="background:none; border:none; color:#94a3b8; font-size:16px; cursor:pointer;">&times;</button>
+                        </div>
+                        
+                        <!-- Simulated laser scanning animation box -->
+                        <div style="height:80px; border:2px dashed #334155; border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; background:rgba(30,41,59,0.5);">
+                            <div style="position:absolute; width:100%; height:2px; background:#10b981; top:0; animation: laserMove 2s infinite linear; box-shadow:0 0 8px #10b981;"></div>
+                            <span style="font-size:11.5px; color:#94a3b8; text-align:center;">Đặt mã QR thiết bị trước camera để quét<br><small style="color:#64748b;">(Nhập mã QR vào ô bên dưới để giả lập)</small></span>
+                        </div>
+                        
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" class="cl-input" placeholder="Nhập mã QR của thiết bị..." style="flex:1; height:34px; background:#1e293b; border-color:#334155; color:#fff; font-size:12.5px;" v-model="scannedQrInput" @@keyup.enter="verifyQrCode" />
+                            <button type="button" class="cl-btn cl-btn-outline" style="height:34px; padding:0 10px; font-size:12px; border-color:#334155; background:#1e293b; color:#cbd5e1;" @@click="autoFillQrCode" title="Nhấn để lấy nhanh mã QR của thiết bị này">
+                                Lấy mã QR mẫu
+                            </button>
+                            <button type="button" class="cl-btn cl-btn-success" style="height:34px; padding:0 12px; font-size:12px;" @@click="verifyQrCode">
+                                Xác thực
+                            </button>
+                        </div>
+                        
+                        <div style="font-size:11px; color:#94a3b8;">
+                            Mã QR trên thiết bị thực tế: <strong style="color:#38bdf8;">${ activeSchedule.QrCode || 'QR-' + activeSchedule.AssetCode }</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checklist Definitions List -->
+                <div v-if="performLoading" style="padding:48px; text-align:center; color:var(--cl-text-muted);">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size:24px;"></i>
+                    <p style="margin-top:10px; font-weight:500;">Đang tải danh sách hạng mục kiểm tra...</p>
+                </div>
+                
+                <div v-else-if="checklistItems.length === 0" style="padding:48px; text-align:center; color:var(--cl-text-muted); font-style:italic;">
+                    Không tìm thấy hạng mục nào áp dụng cho thiết bị này. Bạn có thể bấm xác nhận hoàn tất.
+                </div>
+
+                <div v-else style="display:flex; flex-direction:column; gap:16px;">
+                    <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); border-bottom:1px solid var(--cl-border); padding-bottom:8px;">Danh sách hạng mục kiểm tra</h4>
+                    <div class="cl-exec-grid">
+                        <div class="cl-exec-item" v-for="(item, idx) in checklistItems" :key="item.Id">
+                            <div>
+                                <div class="cl-exec-name">${ item.CheckName } <span style="color:var(--cl-danger)" v-if="item.IsRequired">*</span></div>
+                                <div class="cl-exec-desc" v-if="item.Description">${ item.Description }</div>
+                            </div>
+                            <div class="cl-exec-actions">
+                                <button type="button" class="cl-toggle-btn pass" :class="{active: item.isPassed === true}" @@click="setItemPassed(idx, true)">
+                                    <i class="fa-solid fa-check"></i> Đạt
+                                </button>
+                                <button type="button" class="cl-toggle-btn fail" :class="{active: item.isPassed === false}" @@click="setItemPassed(idx, false)">
+                                    <i class="fa-solid fa-xmark"></i> Lỗi
+                                </button>
+                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi nếu có..." style="height:34px; width:150px; font-size:12px;" v-model="item.note" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checklist General Note -->
+                <div class="cl-input-group">
+                    <label>Ghi chú chung của toàn bộ ca kiểm tra</label>
+                    <textarea class="cl-input" style="height:80px; padding:8px 12px; resize:none;" placeholder="Nhập tình trạng tổng quát của thiết bị..." v-model="performForm.note"></textarea>
+                </div>
+            </div>
+            <div class="cl-modal-footer">
+                <button class="cl-btn cl-btn-outline" @@click="showPerformModal=false">Hủy bỏ</button>
+                <button class="cl-btn cl-btn-success" @@click="submitChecklist" :disabled="isSubmitting">
+                    <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu...</span>
+                    <span v-else><i class="fa-solid fa-cloud-arrow-up"></i> Hoàn thành & Lưu kết quả</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL: CHI TIẾT NHẬT KÝ ===== -->
+    <div class="cl-modal-overlay" v-if="showDetailsModal" @@click.self="showDetailsModal=false">
+        <div class="cl-modal-card lg" v-if="logDetails">
+            <div class="cl-modal-header">
+                <h3>Chi tiết nhật ký kiểm tra thiết bị</h3>
+                <button class="cl-modal-close" @@click="showDetailsModal=false">×</button>
+            </div>
+            <div class="cl-modal-body" style="display:flex; flex-direction:column; gap:20px;">
+                <!-- General Log Info -->
+                <div style="background:#f8fafc; border:1px solid var(--cl-border); border-radius:10px; padding:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                    <div><small style="color:var(--cl-text-muted)">Thiết bị:</small> <strong style="display:block; font-size:14px; color:var(--cl-primary);">${ logDetails.ItemName }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Mã Tài Sản / Serial:</small> <strong style="display:block;">${ logDetails.AssetCode } / ${ logDetails.SerialNumber || '—' }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Khoa phòng thực hiện:</small> <strong style="display:block;">${ logDetails.DepartmentName }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Kỹ thuật viên thực hiện:</small> <strong style="display:block;">${ logDetails.CheckedByName }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Thời gian kiểm tra:</small> <strong style="display:block;">${ logDetails.CheckedAt }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Chu kỳ kiểm tra:</small> <strong style="display:block;">${ cycleLabel(logDetails.CycleType) }</strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Kết quả chung:</small> <strong style="display:block;"><span class="cl-badge" :class="'cl-badge-' + logDetails.OverallResult">${ resultLabel(logDetails.OverallResult) }</span></strong></div>
+                    <div><small style="color:var(--cl-text-muted)">Xác thực mã QR:</small> <strong style="display:block; color:var(--cl-success)" v-if="logDetails.QrScannedAt"><i class="fa-solid fa-square-check"></i> Đã quét mã tại phòng ban</strong><strong style="display:block; color:var(--cl-text-muted)" v-else>Không quét QR</strong></div>
+                </div>
+
+                <!-- Log Details Checklist Items -->
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); border-bottom:1px solid var(--cl-border); padding-bottom:8px;">Chi tiết kết quả từng hạng mục</h4>
+                    <div style="border:1px solid var(--cl-border); border-radius:10px; overflow:hidden;">
+                        <table class="cl-table">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th>STT</th>
+                                    <th>Hạng mục kiểm tra</th>
+                                    <th>Đánh giá</th>
+                                    <th>Ghi chú lỗi / Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, idx) in logDetails.Items" :key="item.Id">
+                                    <td>${ idx + 1 }</td>
+                                    <td><strong>${ item.CheckName }</strong></td>
+                                    <td>
+                                        <span class="cl-badge" :class="item.IsPassed ? 'cl-badge-pass' : 'cl-badge-fail'">
+                                            ${ item.IsPassed ? 'Đạt' : 'Lỗi / Hỏng' }
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span v-if="item.Note" style="color:var(--cl-danger); font-weight:500;">${ item.Note }</span>
+                                        <span v-else style="color:var(--cl-text-muted); font-style:italic;">Bình thường</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- General Note -->
+                <div v-if="logDetails.Note" style="background:#f1f5f9; border-radius:10px; padding:16px;">
+                    <small style="color:var(--cl-text-muted); font-weight:600; text-transform:uppercase; font-size:10px; display:block; margin-bottom:4px;">Ghi chú chung</small>
+                    <p style="margin:0; font-size:13.5px; line-height:1.5; color:var(--cl-text);">${ logDetails.Note }</p>
+                </div>
+            </div>
+            <div class="cl-modal-footer">
+                <button class="cl-btn cl-btn-primary" @@click="showDetailsModal=false">Đóng cửa sổ</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script src="~/Scripts/app/checklists.js?v=@DateTime.Now.Ticks.ToString()"></script>
+}
