@@ -286,8 +286,8 @@
                                         <label>Trạng thái</label>
 
                                         @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                                                ${ statusLabel(selectedDevice.LifeStatus) }
-                                            </span>*@
+                    ${ statusLabel(selectedDevice.LifeStatus) }
+                </span>*@
 
                                         <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
                                               :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
@@ -430,9 +430,54 @@
                                             Check có lỗi
                                         </button>
 
+                                        <!-- Thêm nút này -->
+                                        <button class="btn-secondary"
+                                                @@click="showDeviceQr()">
+                                            📱 QR Code
+                                        </button>
+
                                     </div>
 
                                 </div>
+
+                                <!-- QR section Modal -->
+                                <div class="modal-overlay"
+                                     v-if="showQrInDetail"
+                                     @@click.self="showQrInDetail = false">
+
+                                    <div class="device-modal small-modal" style="max-width:380px;text-align:center">
+
+                                        <div class="modal-header">
+                                            <h3>📱 QR Code thiết bị</h3>
+                                            <button class="close-btn" @@click="showQrInDetail = false">×</button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <p style="font-size:13px;color:#64748b;margin-bottom:16px">
+                                                Scan để xem chi tiết thiết bị
+                                            </p>
+
+                                            <div id="detail-qr-container"
+                                                 style="display:inline-block;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                                            </div>
+
+                                            <p style="font-size:12px;color:#94a3b8;margin-top:10px;word-break:break-all">
+                                                ${ selectedDevice.AssetCode } — ${ selectedDevice.ItemName }
+                                            </p>
+
+                                            <div class="modal-actions" style="margin-top:20px">
+                                                <button class="btn-secondary" @@click="downloadDetailQr()">⬇ Tải</button>
+                                                <button class="btn-secondary" @@click="printDetailQr()">🖨 In</button>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
                             </div>
 
                             <!-- History -->
@@ -1623,7 +1668,7 @@
                             </div>
 
                             <!-- QR -->
-                            <div class="form-group">
+                            <div class="form-group" readonly>
 
                                 <label>QR Code</label>
 
@@ -1693,8 +1738,8 @@
                         <select class="form-control"
                                 v-model="errorForm.IdTicket">
                             @*<option value="">
-                                -- Chọn phiếu --
-                            </option>*@
+                                    -- Chọn phiếu --
+                                </option>*@
 
                             <option v-for="ticket in tickets"
                                     :key="ticket.Id"
@@ -1762,6 +1807,53 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Modal QR Code sau khi tạo tài sản -->
+    <div class="modal-overlay"
+         v-if="showQrResultModal"
+         @@click.self="showQrResultModal = false">
+
+        <div class="device-modal small-modal" style="max-width:400px;text-align:center">
+
+            <div class="modal-header">
+                <h3>Tạo thành công! 🎉</h3>
+                <button class="close-btn" @@click="showQrResultModal = false">×</button>
+            </div>
+
+            <div class="modal-body">
+
+                <p style="color:#64748b;font-size:13px;margin-bottom:16px">
+                    Quét QR để xem chi tiết thiết bị ID: <strong>${ newInventoryQr.id }</strong>
+                </p>
+
+                <!-- QR Code render ở đây -->
+                <div id="qr-code-container"
+                     style="display:inline-block;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff">
+                </div>
+
+                <p style="margin-top:12px;font-size:11px;color:#94a3b8;word-break:break-all">
+                    ${ newInventoryQr.url }
+                </p>
+
+                <div class="modal-actions" style="margin-top:20px">
+                    <button class="btn-secondary" @@click="downloadQr()">
+                        ⬇ Tải QR
+                    </button>
+                    <button class="btn-secondary" @@click="printQr()">
+                        🖨 In QR
+                    </button>
+                    <button class="btn-primary" @@click="openDetail(newInventoryQr.id); showQrResultModal = false">
+                        Xem chi tiết
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 </div>
 

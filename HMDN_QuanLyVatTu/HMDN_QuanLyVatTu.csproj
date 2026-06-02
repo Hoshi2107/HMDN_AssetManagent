@@ -157,7 +157,6 @@
     <Compile Include="Controllers\AlertsController.cs" />
     <Compile Include="Controllers\AlertsAPIController.cs" />
     <Compile Include="Controllers\ChecklistsController.cs" />
-
     <Compile Include="Controllers\ChecklistsAPIController.cs" />
     <Compile Include="Models\AlertRule.cs" />
     <Compile Include="Models\Alert.cs" />
@@ -173,6 +172,7 @@
     <Compile Include="Models\Approvals.cs" />
     <Compile Include="Models\ChangeStatusVM.cs" />
     <Compile Include="Models\ChecklistProgressModel.cs" />
+    <Compile Include="Models\CreateInventoryResult.cs" />
     <Compile Include="Models\CreateInventoryVM.cs" />
     <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
