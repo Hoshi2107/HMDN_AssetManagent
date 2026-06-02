@@ -1205,7 +1205,7 @@
             if (code === 'WARRANTY_EXPIRY_30D') {
                 return '/VongDoiKhauHao/VongDoiKhauHao?searchCode=' + assetCode + '&inventoryId=' + invId;
             }
-            if (code === 'CHECKLIST_OVERDUE') {
+            if (code === 'CHECKLIST_OVERDUE' || code === 'CHECKLIST_DUE_3D') {
                 return '/Checklists/Index?inventoryId=' + invId;
             }
             if (code === 'CONSUMABLES_LOW') {
@@ -1233,7 +1233,7 @@
                 return code === 'MULTI_FAULT_3X';
             }
             if (path.indexOf('/checklists') !== -1) {
-                return code === 'CHECKLIST_OVERDUE';
+                return code === 'CHECKLIST_OVERDUE' || code === 'CHECKLIST_DUE_3D';
             }
             if (path.indexOf('/vongdoikhauhao') !== -1) {
                 return code === 'WARRANTY_EXPIRY_30D' || code === 'EXPIRY_SOON_60D' || code === 'DEPRECIATION_END_30D';
@@ -1247,12 +1247,39 @@
         MedEquip.toast = function (title, message, type, alertObj) {
             type = type || 'warning';
             
+            // Ngăn chặn hiển thị lặp lại thông báo có cùng tiêu đề và nội dung đang hiển thị trên màn hình (Edge Case 1)
+            var isDuplicate = false;
+            var toasts = document.getElementsByClassName('toast-mockup');
+            for (var i = 0; i < toasts.length; i++) {
+                var existingTitleEl = toasts[i].getElementsByClassName('toast-mockup-title')[0];
+                var existingMsgEl = toasts[i].getElementsByClassName('toast-mockup-msg')[0];
+                if (existingTitleEl && existingMsgEl) {
+                    if (existingTitleEl.innerText.trim() === title.trim() && existingMsgEl.innerText.trim() === message.trim()) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+            }
+            if (isDuplicate) return;
+
+            // Giới hạn số lượng toast hiển thị đồng thời tối đa là 3. Nếu vượt quá, xóa các toast cũ nhất.
+            var maxToasts = 3;
+            while (toasts.length >= maxToasts) {
+                var oldestToast = toasts[0];
+                if (oldestToast && oldestToast.parentNode) {
+                    oldestToast.parentNode.removeChild(oldestToast);
+                } else {
+                    break;
+                }
+            }
+
             var redirectUrl = '';
             if (alertObj) {
                 redirectUrl = window.getAlertRedirectUrl(alertObj);
             }
 
-            var id = 'toast-' + Date.now();
+            // Dùng ID độc bản kết hợp thời gian và số ngẫu nhiên
+            var id = 'toast-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
             
             var badgeText = 'THÔNG BÁO MỚI';
             if (type === 'danger') badgeText = 'CẢNH BÁO KHẨN CẤP';
@@ -1334,12 +1361,29 @@
                 var seenKey = 'seen_alerts_' + currentUserId;
                 var readKey = 'read_alerts_' + currentUserId;
 
-                // Load arrays: seenAlerts is page-load-scoped (resets on F5/refresh), readAlerts from localStorage (persistent)
+                // Load arrays: seenAlerts and readAlerts are both persisted to localStorage
                 var seenAlerts = [];
+                var isFirstLoad = false;
+                try {
+                    var storedSeen = localStorage.getItem(seenKey);
+                    if (storedSeen) {
+                        seenAlerts = JSON.parse(storedSeen);
+                    } else {
+                        isFirstLoad = true;
+                    }
+                } catch (e) {
+                    seenAlerts = [];
+                    isFirstLoad = true;
+                }
                 var readAlerts = JSON.parse(localStorage.getItem(readKey) || '[]');
 
                 function saveLocalStorage() {
+                    // Giới hạn kích thước mảng seenAlerts để tránh quá tải dung lượng localStorage
+                    if (seenAlerts.length > 200) {
+                        seenAlerts = seenAlerts.slice(seenAlerts.length - 200);
+                    }
                     localStorage.setItem(readKey, JSON.stringify(readAlerts));
+                    localStorage.setItem(seenKey, JSON.stringify(seenAlerts));
                 }
 
                 // Click to toggle dropdown
@@ -1450,20 +1494,27 @@
                                             seenAlerts.push(alert.Id);
                                             hasNew = true;
 
-                                            var toastType = alert.Severity === 'danger' ? 'danger' :
-                                                            alert.Severity === 'warning' ? 'warning' : 'success';
+                                            // Tránh hiện hàng loạt cảnh báo cũ trên màn hình khi mới load trang/refresh lần đầu
+                                            if (!isFirstLoad) {
+                                                var toastType = alert.Severity === 'danger' ? 'danger' :
+                                                                alert.Severity === 'warning' ? 'warning' : 'success';
 
-                                            if (window.MedEquip && window.MedEquip.toast) {
-                                                window.MedEquip.toast(
-                                                    alert.Title,
-                                                    alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
-                                                    toastType,
-                                                    alert
-                                                );
+                                                if (window.MedEquip && window.MedEquip.toast) {
+                                                    window.MedEquip.toast(
+                                                        alert.Title,
+                                                        alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
+                                                        toastType,
+                                                        alert
+                                                    );
+                                                }
                                             }
                                         }
                                     }
                                 });
+
+                                if (isFirstLoad) {
+                                    isFirstLoad = false;
+                                }
 
                                 if (hasNew) {
                                     saveLocalStorage();
@@ -1472,6 +1523,9 @@
                                 // Render list in dropdown
                                 renderAlertsList(res);
                             } else {
+                                if (isFirstLoad) {
+                                    isFirstLoad = false;
+                                }
                                 renderAlertsList([]);
                             }
                         },

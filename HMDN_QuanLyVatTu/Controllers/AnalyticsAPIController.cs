@@ -37,20 +37,55 @@ namespace HMDN_QuanLyVatTu.Controllers
         // API 2: Lấy dữ liệu tiến trình Checklist thực tế từ database cho Dashboard
         [HttpGet]
         [Route("checklist-today-progress")]
-        public IHttpActionResult GetChecklistTodayProgress()
+        public IHttpActionResult GetChecklistTodayProgress(string range = "today")
         {
             try
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    var today = DateTime.Today;
-                    
-                    var total = db.ChecklistSchedules.Count(s => s.ScheduledDate == today);
-                    var done = db.ChecklistSchedules.Count(s => s.ScheduledDate == today && (s.Status == "done" || s.Status == "completed"));
-                    var pending = db.ChecklistSchedules.Count(s => s.ScheduledDate == today && s.Status == "pending");
+                    // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
+                    if (!db.ChecklistSchedules.Any())
+                    {
+                        DateTime todayDate = DateTime.Today;
+                        DateTime start = new DateTime(todayDate.Year, todayDate.Month, 1);
+                        DateTime end = start.AddMonths(1).AddDays(-1);
+
+                        db.Database.ExecuteSqlCommand(
+                            "EXEC sp_GenerateChecklistSchedules @FromDate, @ToDate",
+                            new SqlParameter("@FromDate", start),
+                            new SqlParameter("@ToDate", end)
+                        );
+                    }
+
+                    DateTime startDate = DateTime.Today;
+                    DateTime endDate = DateTime.Today;
+
+                    if (range == "week")
+                    {
+                        var today = DateTime.Today;
+                        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+                        startDate = today.AddDays(-1 * diff);
+                        endDate = startDate.AddDays(6);
+                    }
+                    else if (range == "month")
+                    {
+                        var today = DateTime.Today;
+                        startDate = new DateTime(today.Year, today.Month, 1);
+                        endDate = startDate.AddMonths(1).AddDays(-1);
+                    }
+
+                    DateTime startRange = startDate.Date;
+                    DateTime endRange = endDate.Date.AddDays(1);
+
+                    // 1. Số lượng đã thực hiện checklist (Đếm từ lịch sử thực hiện ChecklistLogs trong khoảng thời gian)
+                    var done = db.ChecklistLogs.Count(l => l.CheckedAt >= startRange && l.CheckedAt < endRange);
+                    // 2. Lịch trình chưa làm (Đếm các lịch trình ChecklistSchedules trong khoảng thời gian có trạng thái pending)
+                    var pending = db.ChecklistSchedules.Count(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && s.Status == "pending");
+                    var total = done + pending;
 
                     var progress = new
                     {
+                        Range = range,
                         TotalSchedules = total,
                         DoneCount = done,
                         PendingCount = pending

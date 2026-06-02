@@ -95,10 +95,17 @@
             </div>
         </div>
 
-        <!-- Đồ thị 2: Tiến độ Checklist hôm nay -->
+        <!-- Đồ thị 2: Tiến độ Checklist -->
         <div class="col-12 col-md-6 col-xl-3 mb-3">
             <div class="card p-3 border-0 shadow-sm bg-white h-100">
-                <h6 class="font-weight-bold text-dark mb-3"><i class="fa-solid fa-list-check mr-2 text-success"></i>Tiến độ Checklist hôm nay</h6>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-list-check mr-2 text-success"></i>Tiến độ Checklist</h6>
+                    <select class="form-control form-control-sm border" v-model="checklistRange" v-on:change="fetchTodayChecklistData" style="width: auto; height: 28px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; color: #475569;">
+                        <option value="today">Hôm nay</option>
+                        <option value="week">Tuần này</option>
+                        <option value="month">Tháng này</option>
+                    </select>
+                </div>
                 <div class="position-relative d-flex align-items-center justify-content-center chart-container">
                     <canvas id="todayChecklistChart"></canvas>
                 </div>
@@ -362,4 +369,4 @@
     };
 </script>
 
-<script src="@Url.Content("~/Scripts/app/analytics-module.js")"></script>
+<script src="@Url.Content("~/Scripts/app/analytics-module.js?v=" + DateTime.Now.Ticks.ToString())"></script>

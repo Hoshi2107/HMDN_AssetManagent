@@ -21,16 +21,30 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
+                // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
+                if (!db.ChecklistSchedules.Any())
+                {
+                    DateTime today = DateTime.Today;
+                    DateTime start = new DateTime(today.Year, today.Month, 1);
+                    DateTime end = start.AddMonths(1).AddDays(-1);
+
+                    db.Database.ExecuteSqlCommand(
+                        "EXEC sp_GenerateChecklistSchedules @FromDate, @ToDate",
+                        new SqlParameter("@FromDate", start),
+                        new SqlParameter("@ToDate", end)
+                    );
+                }
+
                 var query = db.ChecklistSchedules.AsQueryable();
 
                 if (!string.IsNullOrEmpty(fromDate))
                 {
-                    DateTime start = DateTime.Parse(fromDate);
+                    DateTime start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
                     query = query.Where(s => s.ScheduledDate >= start);
                 }
                 if (!string.IsNullOrEmpty(toDate))
                 {
-                    DateTime end = DateTime.Parse(toDate);
+                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture);
                     query = query.Where(s => s.ScheduledDate <= end);
                 }
                 if (!string.IsNullOrEmpty(status))
@@ -104,8 +118,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                     return Ok(new { success = false, message = "Vui lòng chọn đầy đủ khoảng thời gian." });
                 }
 
-                DateTime start = DateTime.Parse(startStr);
-                DateTime end = DateTime.Parse(endStr);
+                DateTime start = DateTime.Parse(startStr, System.Globalization.CultureInfo.InvariantCulture);
+                DateTime end = DateTime.Parse(endStr, System.Globalization.CultureInfo.InvariantCulture);
 
                 db.Database.ExecuteSqlCommand(
                     "EXEC sp_GenerateChecklistSchedules @FromDate, @ToDate",
@@ -244,12 +258,12 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                 if (!string.IsNullOrEmpty(fromDate))
                 {
-                    DateTime start = DateTime.Parse(fromDate);
+                    DateTime start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
                     query = query.Where(l => l.CheckedAt >= start);
                 }
                 if (!string.IsNullOrEmpty(toDate))
                 {
-                    DateTime end = DateTime.Parse(toDate);
+                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture);
                     query = query.Where(l => l.CheckedAt <= end);
                 }
                 if (!string.IsNullOrEmpty(result))

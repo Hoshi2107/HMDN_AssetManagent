@@ -50,6 +50,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 VendorMaintenanceCount: 0
             },
             selectedYear: 2026,
+            checklistRange: 'today',
             showCostChart: true,
             lookups: { Departments: [], Groups: [] },
             inventoryList: [],
@@ -514,28 +515,31 @@ window.addEventListener('DOMContentLoaded', function () {
             },
             fetchTodayChecklistData: function () {
                 var vm = this;
-                $.getJSON(window.AnalyticsEndpoints.getChecklist, function (res) {
+                $.getJSON(window.AnalyticsEndpoints.getChecklist, { range: vm.checklistRange }, function (res) {
                     vm.renderTodayChecklistChart(res.DoneCount, res.PendingCount, res.TotalSchedules);
                 });
             },
-            // Cập nhật Checklist Chart sử dụng .update()
+            // Cập nhật Checklist Chart bằng cách luôn hủy và tạo mới để tránh lỗi thay đổi độ dài mảng dữ liệu trong Chart.js
             renderTodayChecklistChart: function (done, pending, total) {
                 var chartElement = document.getElementById('todayChecklistChart');
                 if (!chartElement) return;
                 var ctx = chartElement.getContext('2d');
                 var vm = this;
 
-                var chartLabels = total === 0 ? ['Chưa có lịch trình checklist'] : ['Đã Checklist', 'Chưa làm'];
+                // Hủy instance cũ để tránh lỗi vẽ đè hoặc lỗi render khi thay đổi cấu trúc dữ liệu của Chart
+                if (this.todayChecklistChart) {
+                    this.todayChecklistChart.destroy();
+                    this.todayChecklistChart = null;
+                }
+
+                var emptyLabel = 'Chưa có lịch trình';
+                if (vm.checklistRange === 'week') emptyLabel = 'Chưa có lịch tuần này';
+                else if (vm.checklistRange === 'month') emptyLabel = 'Chưa có lịch tháng này';
+
+                // Bổ sung hiển thị trực quan số lượng (done / pending) ngay trên nhãn chú thích (Legend)
+                var chartLabels = total === 0 ? [emptyLabel] : ['Đã Checklist (' + done + ')', 'Chưa làm (' + pending + ')'];
                 var chartData = total === 0 ? [1] : [done, pending];
                 var chartColors = total === 0 ? ['#e2e8f0'] : ['#3b82f6', '#cbd5e1'];
-
-                if (this.todayChecklistChart) {
-                    this.todayChecklistChart.data.labels = chartLabels;
-                    this.todayChecklistChart.data.datasets[0].data = chartData;
-                    this.todayChecklistChart.data.datasets[0].backgroundColor = chartColors;
-                    this.todayChecklistChart.update();
-                    return;
-                }
 
                 this.todayChecklistChart = new Chart(ctx, {
                     type: 'doughnut',
@@ -566,11 +570,26 @@ window.addEventListener('DOMContentLoaded', function () {
                                 var activeElement = elements[0];
                                 var index = activeElement.index;
                                 var label = vm.todayChecklistChart.data.labels[index];
-                                if (label === 'Chưa làm') {
-                                    window.location.href = '/Checklists?status=pending';
-                                } else if (label === 'Đã Checklist') {
-                                    window.location.href = '/Checklists?tab=logs';
+                                
+                                var url = '/Checklists/Index?status=pending';
+                                // Hỗ trợ so sánh khớp nhãn động có kèm số lượng
+                                if (label.indexOf('Đã Checklist') !== -1) {
+                                    url = '/Checklists/Index?tab=logs';
                                 }
+
+                                var now = new Date();
+                                if (vm.checklistRange === 'week') {
+                                    var diff = (7 + (now.getDay() - 1)) % 7;
+                                    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+                                    var end = new Date(now.getFullYear(), now.getMonth(), start.getDate() + 6);
+                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                } else if (vm.checklistRange === 'month') {
+                                    var start = new Date(now.getFullYear(), now.getMonth(), 1);
+                                    var end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                }
+                                
+                                window.location.href = url;
                             }
                         },
                         onHover: function (evt, elements) {

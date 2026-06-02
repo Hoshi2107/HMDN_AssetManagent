@@ -23,7 +23,9 @@ new Vue({
             query: '',
             status: 'pending',
             cycleType: '',
-            onlyOverdue: false
+            onlyOverdue: false,
+            fromDate: '',
+            toDate: ''
         },
         logsFilter: {
             query: '',
@@ -65,6 +67,8 @@ new Vue({
         'schedulesFilter.query': function () { this.schedulesPage = 1; },
         'schedulesFilter.status': function () { this.schedulesPage = 1; this.schedulesFilter.onlyOverdue = false; },
         'schedulesFilter.cycleType': function () { this.schedulesPage = 1; },
+        'schedulesFilter.fromDate': function () { this.schedulesPage = 1; },
+        'schedulesFilter.toDate': function () { this.schedulesPage = 1; },
         'logsFilter.query': function () { this.logsPage = 1; },
         'logsFilter.result': function () { this.logsPage = 1; }
     },
@@ -87,8 +91,11 @@ new Vue({
                 if (vm.schedulesFilter.onlyOverdue) {
                     matchOverdue = s.Status === 'pending' && vm.isOverdue(s.DueDate);
                 }
+
+                var matchFrom = !vm.schedulesFilter.fromDate || s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
                 
-                return matchQuery && matchStatus && matchCycle && matchOverdue;
+                return matchQuery && matchStatus && matchCycle && matchOverdue && matchFrom && matchTo;
             });
         },
 
@@ -238,17 +245,32 @@ new Vue({
                 vm.schedulesFilter.onlyOverdue = false;
                 vm.schedulesFilter.query = '';
                 vm.schedulesFilter.cycleType = '';
+                vm.schedulesFilter.fromDate = '';
+                vm.schedulesFilter.toDate = '';
             } else if (type === 'overdue') {
                 vm.activeTab = 'schedules';
                 vm.schedulesFilter.status = 'pending';
                 vm.schedulesFilter.onlyOverdue = true;
                 vm.schedulesFilter.query = '';
                 vm.schedulesFilter.cycleType = '';
+                vm.schedulesFilter.fromDate = '';
+                vm.schedulesFilter.toDate = '';
             } else if (type === 'completed') {
                 vm.activeTab = 'logs';
                 vm.logsFilter.result = '';
                 vm.logsFilter.query = '';
             }
+        },
+
+        resetFilters() {
+            this.schedulesFilter = {
+                query: '',
+                status: 'pending',
+                cycleType: '',
+                onlyOverdue: false,
+                fromDate: '',
+                toDate: ''
+            };
         },
 
         // ── URL QUERY ROUTING PARSING ──
@@ -264,6 +286,15 @@ new Vue({
             var status = params.get('status');
             if (status !== null) {
                 vm.schedulesFilter.status = status;
+            }
+
+            var fromDate = params.get('fromDate');
+            if (fromDate) {
+                vm.schedulesFilter.fromDate = fromDate;
+            }
+            var toDate = params.get('toDate');
+            if (toDate) {
+                vm.schedulesFilter.toDate = toDate;
             }
 
             var inventoryIdStr = params.get('inventoryId');
@@ -285,7 +316,12 @@ new Vue({
                         if (anySch && anySch.AssetCode) {
                             vm.schedulesFilter.query = anySch.AssetCode;
                             vm.schedulesFilter.status = '';
+                            vm.toast('Kiểm tra hoàn thành', 'Không có lịch kiểm tra chờ xử lý cho thiết bị này. Lần kiểm tra này có thể đã được hoàn thành trước đó.', 'warning');
+                        } else {
+                            vm.toast('Không tìm thấy lịch trình', 'Thiết bị được yêu cầu hiện tại không có lịch trình checklist nào trong hệ thống.', 'danger');
                         }
+                        var newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                        window.history.replaceState({ path: newUrl }, '', newUrl);
                     }
                 }
             }
