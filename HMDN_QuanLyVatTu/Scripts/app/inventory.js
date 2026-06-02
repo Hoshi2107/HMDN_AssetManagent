@@ -29,6 +29,24 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        //ticketList: [],
+
+        //errorForm: {
+        //    inventoryId: null,
+        //    ticketId: null,
+        //    title: '',
+        //    errorDescription: '',
+        //    priority: 'Medium'
+        //},
+        errorForm: {
+            inventoryId: null,
+            //ticketId: null,
+            IdTicket: null,
+            title: '',
+            errorDescription: '',
+            priority: 'normal'
+        },
+
         showHistoryDetail: false,
         selectedHistory: null,
 
@@ -369,6 +387,86 @@ var app = new Vue({
 
     methods: {
 
+        openErrorModal(device) {
+
+            this.errorForm = {
+
+                inventoryId: device.Id,
+
+                ticketId: device.IdTicket || null,
+
+                title: '',
+
+                errorDescription: '',
+
+                priority: 'normal'
+            }
+
+            $('#errorModal').modal('show')
+        },
+
+        saveError() {
+
+            if (!this.errorForm.title.trim()) {
+
+                alert('Nhập tiêu đề lỗi')
+                return
+            }
+
+            if (!this.errorForm.errorDescription.trim()) {
+
+                alert('Nhập mô tả lỗi')
+                return
+            }
+
+            const currentUser =
+                JSON.parse(localStorage.getItem('current_user'));
+
+            $.ajax({
+
+                url: '/api/device/report-error',
+
+                type: 'POST',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify({
+
+                    InventoryId: this.errorForm.inventoryId,
+
+                    TicketId: this.errorForm.ticketId,
+
+                    Title: this.errorForm.title,
+
+                    ErrorDescription: this.errorForm.errorDescription,
+
+                    Priority: this.errorForm.priority,
+
+                    ReportedBy: currentUser.Id
+                }),
+
+                success: () => {
+
+                    alert('Báo lỗi thành công')
+
+                    $('#errorModal').modal('hide')
+
+                    this.loadDevices()
+
+                    if (this.selectedDevice) {
+                        this.loadMaintenanceHistory(this.selectedDevice.Id)
+                    }
+                },
+
+                error: (xhr) => {
+
+                    console.log(xhr)
+
+                    alert('Gửi báo lỗi thất bại')
+                }
+            })
+        },
+
         formatDate(date) {
 
             if (!date)
@@ -427,7 +525,7 @@ var app = new Vue({
 
             // TICKETS
             $.get('/api/device/tickets', (res) => {
-
+                console.log(this.tickets)
                 this.tickets = res
 
             })

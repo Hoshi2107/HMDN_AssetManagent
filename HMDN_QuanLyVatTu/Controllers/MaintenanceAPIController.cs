@@ -587,28 +587,28 @@ namespace HMDN_QuanLyVatTu.Controllers
         }
 
         // POST api/maintenance/update-status/{id}
-        [HttpPost]
-        [Route("update-status/{id}")]
-        public IHttpActionResult UpdateLifeStatus(int id, [FromBody] string newStatus)
-        {
-            try
-            {
-                using (var db = new HospitalAssetDbContext())
-                {
-                    var inventory = db.Inventories.FirstOrDefault(i => i.Id == id);
-                    if (inventory == null) return NotFound();
+        //[HttpPost]
+        //[Route("update-status/{id}")]
+        //public IHttpActionResult UpdateLifeStatus(int id, [FromBody] string newStatus)
+        //{
+        //    try
+        //    {
+        //        using (var db = new HospitalAssetDbContext())
+        //        {
+        //            var inventory = db.Inventories.FirstOrDefault(i => i.Id == id);
+        //            if (inventory == null) return NotFound();
 
-                    inventory.LifeStatus = newStatus;
-                    db.SaveChanges();
+        //            inventory.LifeStatus = newStatus;
+        //            db.SaveChanges();
 
-                    return Ok(new { success = true, message = "Cập nhật trạng thái thành công" });
-                }
-            }
-            catch (Exception ex)
-            {
-                return InternalServerError(ex);
-            }
-        }
+        //            return Ok(new { success = true, message = "Cập nhật trạng thái thành công" });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return InternalServerError(ex);
+        //    }
+        //}
     }
 
     // DTO cho cập nhật trạng thái

@@ -21,5 +21,6 @@ namespace HMS.Models.ViewModels
         public string GroupName { get; set; }
 
         public string LocationName { get; set; }
+        public string ApprovalStatus { get; set; }
     }
 }

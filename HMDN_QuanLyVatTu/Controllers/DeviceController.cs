@@ -1,8 +1,10 @@
-﻿using HMS.Data;
+﻿using HMDN_QuanLyVatTu.Models;
+using HMS.Data;
 using HMS.Models.ViewModels;
 using System;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Web;
 using System.Web.Http;
 
 namespace HMDN.Controllers.API
@@ -469,6 +471,62 @@ namespace HMDN.Controllers.API
 
             return Ok(data);
         }
+
+        [HttpPost]
+        [Route("report-error")]
+        public IHttpActionResult ReportError(ReportErrorVM model)
+        {
+            try
+            {
+                var log = new MaintenanceLog
+                {
+                    InventoryId = model.InventoryId,
+                    TicketId = model.TicketId,
+
+                    MaintenanceType = "corrective",
+
+                    Title = model.Title,
+
+                    ErrorDescription = model.ErrorDescription,
+
+                    StartDate = DateTime.Now,
+
+                    Status = "open",
+
+                    Priority = model.Priority,
+
+                    //ReportedBy = userId,
+                    ReportedBy = model.ReportedBy,
+
+                    RepairStatus = "Open",
+
+                    CreatedAt = DateTime.Now
+                };
+
+                //change status to suspended
+                var inventory = db.Inventories
+                  .FirstOrDefault(x => x.Id == model.InventoryId);
+
+                if (inventory != null)
+                {
+                    inventory.LifeStatus = "suspended";
+                }
+
+                db.MaintenanceLogs.Add(log);
+                db.SaveChanges();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Báo lỗi thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
     }
 }

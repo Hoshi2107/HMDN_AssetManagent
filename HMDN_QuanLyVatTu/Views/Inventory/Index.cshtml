@@ -28,9 +28,9 @@
 
                     @*<div class="icon">📷</div>
 
-                <h4>Quét QR</h4>
+                        <h4>Quét QR</h4>
 
-                <p>Check nhanh bằng mã QR</p>*@
+                        <p>Check nhanh bằng mã QR</p>*@
 
                 </button>
 
@@ -52,9 +52,9 @@
             <div class="page-header">
 
                 @*<div>
-                <h2>Danh sách thiết bị</h2>
-                <p>Quản lý kho thiết bị y tế</p>
-            </div>*@
+                        <h2>Danh sách thiết bị</h2>
+                        <p>Quản lý kho thiết bị y tế</p>
+                    </div>*@
 
 
             </div>
@@ -121,6 +121,7 @@
                             <th>Serial</th>
                             <th>Khoa</th>
                             <th>Phiếu</th>
+                            <th>Trạng thái tài sản</th>
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
@@ -144,6 +145,8 @@
 
                             <td>${ item.TicketCode || '—' }</td>
 
+                            <td>${ item.ApprovalStatus || '-' }</td>
+
                             <td @@click.stop>
 
                                 <select class="status-dropdown"
@@ -156,16 +159,16 @@
                                     </option>
 
                                     @*<option value="maintenance_bv">
-                                        BV bảo trì
-                                    </option>
+                                            BV bảo trì
+                                        </option>
 
-                                    <option value="maintenance_hang">
-                                        Hãng bảo hành
-                                    </option>
+                                        <option value="maintenance_hang">
+                                            Hãng bảo hành
+                                        </option>
 
-                                    <option value="Send_for_warranty">
-                                        Gửi về bảo hành
-                                    </option>*@
+                                        <option value="Send_for_warranty">
+                                            Gửi về bảo hành
+                                        </option>*@
 
                                     <!-- suspended KHÔNG CHO CHỌN -->
                                     <option v-if="item.LifeStatus == 'suspended'"
@@ -195,14 +198,14 @@
                         <div class="modal-header">
 
                             @*<h3>
-                    Chi tiết thiết bị
-                </h3>
+                                    Chi tiết thiết bị
+                                </h3>
 
-                <button class="close-btn"
-                        @@click="showModal = false">
+                                <button class="close-btn"
+                                        @@click="showModal = false">
 
-                    ×
-                </button>*@
+                                    ×
+                                </button>*@
 
                             <div class="detail-tabs">
 
@@ -283,8 +286,8 @@
                                         <label>Trạng thái</label>
 
                                         @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                                ${ statusLabel(selectedDevice.LifeStatus) }
-                            </span>*@
+                                                ${ statusLabel(selectedDevice.LifeStatus) }
+                                            </span>*@
 
                                         <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
                                               :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
@@ -423,7 +426,7 @@
                                         <button class="btn-danger"
                                                 v-if="hasPermission('Inventory', 'EDIT')"
                                                 :disabled="selectedDevice.LifeStatus == 'suspended'"
-                                                @@click="openSuspendModal(selectedDevice)">
+                                                @@click="openErrorModal(selectedDevice)">
                                             Check có lỗi
                                         </button>
 
@@ -637,52 +640,54 @@
                     </div>
 
                     <!-- MODAL CHECK LỖI -->
-                    <div class="modal-overlay"
-                         v-if="showSuspendModal"
-                         @@click.self="showSuspendModal = false">
+                    @*<div class="modal-overlay"
+                             v-if="showSuspendModal"
+                             @@click.self="showSuspendModal = false">
 
-                        <div class="device-modal small-modal">
+                            <div class="device-modal small-modal">
 
-                            <div class="modal-header">
-                                <h3>Check lỗi thiết bị</h3>
+                                <div class="modal-header">
+                                    <h3>Check lỗi thiết bị</h3>
 
-                                <button class="close-btn"
-                                        @@click="showSuspendModal = false">
-                                    ×
-                                </button>
-                            </div>
-
-                            <div class="modal-body">
-
-                                <div class="form-group">
-                                    <label>Lý do lỗi</label>
-
-                                    <textarea v-model="suspendReason"
-                                              rows="5"
-                                              placeholder="Nhập lý do lỗi thiết bị..."
-                                              class="form-textarea">
-                                    </textarea>
-                                </div>
-
-                                <div class="modal-actions">
-
-                                    <button class="btn-secondary"
+                                    <button class="close-btn"
                                             @@click="showSuspendModal = false">
-                                        Hủy
+                                        ×
                                     </button>
+                                </div>
 
-                                    <button class="btn-danger"
-                                            @@click="submitSuspend()">
-                                        Xác nhận tạm ngưng
-                                    </button>
+                                <div class="modal-body">
+
+                                    <div class="form-group">
+                                        <label>Lý do lỗi</label>
+
+                                        <textarea v-model="suspendReason"
+                                                  rows="5"
+                                                  placeholder="Nhập lý do lỗi thiết bị..."
+                                                  class="form-textarea">
+                                        </textarea>
+                                    </div>
+
+                                    <div class="modal-actions">
+
+                                        <button class="btn-secondary"
+                                                @@click="showSuspendModal = false">
+                                            Hủy
+                                        </button>
+
+                                        <button class="btn-danger"
+                                                @@click="submitSuspend()">
+                                            Xác nhận tạm ngưng
+                                        </button>
+
+                                    </div>
 
                                 </div>
 
                             </div>
 
-                        </div>
+                        </div>*@
 
-                    </div>
+
 
                 </div>
 
@@ -1000,13 +1005,13 @@
                             <!-- Check Cycle -->
                             @*<div class="form-group">
 
-                            <label>Chu kỳ kiểm tra</label>
+                                    <label>Chu kỳ kiểm tra</label>
 
-                            <input type="number"
-                                   class="form-control"
-                                   v-model="createForm.CheckCycleId">
+                                    <input type="number"
+                                           class="form-control"
+                                           v-model="createForm.CheckCycleId">
 
-                        </div>*@
+                                </div>*@
                             <div class="form-group">
 
                                 <label>Chu kỳ kiểm tra</label>
@@ -1641,7 +1646,7 @@
                             </textarea>
 
                         </div>
-                        
+
                         <!-- ACTION -->
                         <div class="modal-actions mt-3">
 
@@ -1670,6 +1675,95 @@
 
     </div>
 
+    <!-- Check Error -->
+    <div class="modal fade" id="errorModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5>Báo lỗi thiết bị</h5>
+                </div>
+
+                <div class="modal-body">
+
+                    <input type="hidden" v-model="errorForm.inventoryId" />
+
+                    <div class="form-group">
+                        <label>Phiếu báo lỗi</label>
+                        <select class="form-control"
+                                v-model="errorForm.IdTicket">
+                            @*<option value="">
+                                -- Chọn phiếu --
+                            </option>*@
+
+                            <option v-for="ticket in tickets"
+                                    :key="ticket.Id"
+                                    :value="ticket.Id">
+
+                                ${ ticket.TicketCode }
+
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label>Tiêu đề lỗi</label>
+                        <input class="form-control"
+                               v-model="errorForm.title">
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label>Mô tả lỗi</label>
+                        <textarea class="form-control"
+                                  rows="4"
+                                  v-model="errorForm.errorDescription">
+                     </textarea>
+                    </div>
+
+                    <div class="form-group mt-2">
+                        <label>Mức độ ưu tiên</label>
+
+                        <select class="form-control"
+                                v-model="errorForm.priority">
+
+                            <option value="low">
+                                Thấp
+                            </option>
+
+                            <option value="normal">
+                                Trung bình
+                            </option>
+
+                            <option value="high">
+                                Cao
+                            </option>
+
+                            <option value="critical">
+                                Khẩn cấp
+                            </option>
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary"
+                            @@click="saveError">
+                        Gửi báo lỗi
+                    </button>
+
+                    <button class="btn btn-secondary"
+                            data-dismiss="modal">
+                        Đóng
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
+
 
 <script src="~/Scripts/app/inventory.js"></script>
