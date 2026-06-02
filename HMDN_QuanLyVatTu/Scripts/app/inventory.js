@@ -401,7 +401,7 @@ var app = new Vue({
                 const container = document.getElementById('detail-qr-container')
                 if (!container) return
                 container.innerHTML = ''
-                const url = window.location.origin + '/Inventory?inventoryId=' + this.selectedDevice.Id
+                const url = window.location.origin + '/Inventory/Index?inventoryId=' + this.selectedDevice.Id
                 new QRCode(container, {
                     text: url,
                     width: 180,
@@ -751,18 +751,48 @@ var app = new Vue({
         },
 
 
+        //loadDevices() {
+
+        //    $.ajax({
+
+        //        url: '/api/device/list',
+
+        //        type: 'GET',
+
+        //        success: (res) => {
+
+        //            this.devices = res
+
+        //            // Tự động mở chi tiết thiết bị nếu trỏ từ Alerts Center qua inventoryId
+        //            const urlParams = new URLSearchParams(window.location.search);
+        //            const invId = urlParams.get('inventoryId');
+        //            if (invId) {
+        //                const targetId = parseInt(invId);
+        //                const device = this.devices.find(d => d.Id === targetId);
+        //                if (device) {
+        //                    if (!this.searchQuery && device.AssetCode) {
+        //                        this.searchQuery = device.AssetCode;
+        //                    }
+        //                    this.openDetail(targetId);
+        //                }
+        //            }
+        //        },
+
+        //        error: () => {
+
+        //            alert('Load dữ liệu thất bại')
+        //        }
+        //    })
+        //},
         loadDevices() {
 
             $.ajax({
-
                 url: '/api/device/list',
-
                 type: 'GET',
 
                 success: (res) => {
 
-                    this.devices = res
-
+                    this.devices = res;
                     // Tự động mở chi tiết thiết bị nếu trỏ từ Alerts Center qua inventoryId
                     const urlParams = new URLSearchParams(window.location.search);
                     const invId = urlParams.get('inventoryId');
@@ -776,15 +806,17 @@ var app = new Vue({
                             this.openDetail(targetId);
                         }
                     }
-                },
 
-                error: () => {
+                    //const invId =
+                    //    new URLSearchParams(window.location.search)
+                    //        .get('inventoryId');
 
-                    alert('Load dữ liệu thất bại')
+                    if (invId) {
+                        this.openDetail(parseInt(invId));
+                    }
                 }
-            })
+            });
         },
-
         //openDetail(id) {
 
         //    $.ajax({
