@@ -34,20 +34,29 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
-        // API 2: Tạm thời trả về thông số trống cho Checklist để Front-end không bị lỗi 404 đứng màn hình
+        // API 2: Lấy dữ liệu tiến trình Checklist thực tế từ database cho Dashboard
         [HttpGet]
         [Route("checklist-today-progress")]
         public IHttpActionResult GetChecklistTodayProgress()
         {
             try
             {
-                var progress = new
+                using (var db = new HospitalAssetDbContext())
                 {
-                    TotalSchedules = 0,
-                    DoneCount = 0,
-                    PendingCount = 0
-                };
-                return Ok(progress);
+                    var today = DateTime.Today;
+                    
+                    var total = db.ChecklistSchedules.Count(s => s.ScheduledDate == today);
+                    var done = db.ChecklistSchedules.Count(s => s.ScheduledDate == today && (s.Status == "done" || s.Status == "completed"));
+                    var pending = db.ChecklistSchedules.Count(s => s.ScheduledDate == today && s.Status == "pending");
+
+                    var progress = new
+                    {
+                        TotalSchedules = total,
+                        DoneCount = done,
+                        PendingCount = pending
+                    };
+                    return Ok(progress);
+                }
             }
             catch (Exception ex)
             {

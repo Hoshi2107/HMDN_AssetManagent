@@ -156,8 +156,16 @@
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
     <Compile Include="Controllers\AlertsController.cs" />
     <Compile Include="Controllers\AlertsAPIController.cs" />
+    <Compile Include="Controllers\ChecklistsController.cs" />
+
+    <Compile Include="Controllers\ChecklistsAPIController.cs" />
     <Compile Include="Models\AlertRule.cs" />
     <Compile Include="Models\Alert.cs" />
+    <Compile Include="Models\CheckCycle.cs" />
+    <Compile Include="Models\ChecklistDefinition.cs" />
+    <Compile Include="Models\ChecklistSchedule.cs" />
+    <Compile Include="Models\ChecklistLog.cs" />
+    <Compile Include="Models\ChecklistLogItem.cs" />
     <Compile Include="Data\HospitalAssetDbContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -253,6 +261,7 @@
     <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
     <Content Include="Scripts\app\alerts.js" />
+    <Content Include="Scripts\app\checklists.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -303,6 +312,7 @@
     <Content Include="Views\Maintenance\Index.cshtml" />
     <Content Include="Views\CreateTicket\CreateTicket.cshtml" />
     <Content Include="Views\Alerts\Index.cshtml" />
+    <Content Include="Views\Checklists\Index.cshtml" />
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
     <Content Include="Uploads\web.config" />
   </ItemGroup>

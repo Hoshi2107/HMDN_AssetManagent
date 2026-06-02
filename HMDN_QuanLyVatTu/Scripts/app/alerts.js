@@ -485,6 +485,10 @@ var app = new Vue({
             });
         },
 
+        goToPerformChecklist: function (inventoryId) {
+            window.location.href = '/Checklists/Index?inventoryId=' + inventoryId;
+        },
+
         // 4.3. Hoàn thành hoặc bỏ qua checklist
         completeChecklist: function (alert, status) {
             var vm = this;
@@ -642,7 +646,11 @@ var app = new Vue({
                 target.closest('a')) {
                 return;
             }
-            this.handleAction(alert, 'view');
+            if (alert.RuleCode === 'CHECKLIST_OVERDUE' || alert.RuleCode === 'CHECKLIST_DUE_3D') {
+                this.handleAction(alert, 'checklist');
+            } else {
+                this.handleAction(alert, 'view');
+            }
         },
 
         // Hiển thị Toast thông báo sử dụng thư viện chung MedEquip.toast

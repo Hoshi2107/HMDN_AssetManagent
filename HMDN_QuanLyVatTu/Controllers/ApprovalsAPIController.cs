@@ -3,6 +3,7 @@ using HMS.Data;
 using HMS.Models;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
@@ -33,14 +34,34 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     IEnumerable<Tickets> filteredData;
 
-                    // PHÂN QUYỀN: Admin (Id == 1) xem tất cả, user khác chỉ xem phiếu của mình
-                    if (userId == 1)
+                    // PHÂN QUYỀN: Admin (Id == 1 hoặc role admin/manager/approver) xem tất cả, user khác chỉ xem phiếu của mình
+                    bool canApproveAll = false;
+                    if (userId > 0)
                     {
-                        filteredData = allData; // Admin: xem toàn bộ
+                        var user = db.Users
+                            .Include(u => u.UserRoles.Select(ur => ur.Role))
+                            .FirstOrDefault(u => u.Id == userId);
+                        if (user != null)
+                        {
+                            var roles = user.UserRoles
+                                .Where(ur => ur.Role != null)
+                                .Select(ur => ur.Role.Code)
+                                .ToList();
+                            canApproveAll = userId == 1 || roles.Any(r =>
+                                string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(r, "manager", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(r, "approver", StringComparison.OrdinalIgnoreCase)
+                            );
+                        }
+                    }
+
+                    if (canApproveAll)
+                    {
+                        filteredData = allData; // Admin/Manager/Approver: xem toàn bộ
                     }
                     else if (userId > 1)
                     {
-                        filteredData = allData.Where(t => t.CreatedBy == userId); // User: chỉ phiếu của mình
+                        filteredData = allData.Where(t => t.CreatedBy == userId); // User/KTV: chỉ phiếu của mình
                     }
                     else
                     {
@@ -152,6 +173,32 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return Ok(new { success = false, message = "Không tìm thấy yêu cầu." });
                     }
 
+                    // PHÂN QUYỀN: Chỉ cho phép admin, manager hoặc approver phê duyệt/từ chối
+                    bool isAuthorized = false;
+                    if (request.UserId > 0)
+                    {
+                        var user = db.Users
+                            .Include(u => u.UserRoles.Select(ur => ur.Role))
+                            .FirstOrDefault(u => u.Id == request.UserId);
+                        if (user != null)
+                        {
+                            var roles = user.UserRoles
+                                .Where(ur => ur.Role != null)
+                                .Select(ur => ur.Role.Code)
+                                .ToList();
+                            isAuthorized = request.UserId == 1 || roles.Any(r =>
+                                string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(r, "manager", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(r, "approver", StringComparison.OrdinalIgnoreCase)
+                            );
+                        }
+                    }
+
+                    if (!isAuthorized)
+                    {
+                        return Ok(new { success = false, message = "Bạn không có quyền thực hiện hành động này." });
+                    }
+
                     // Preserve the original ticket Note (ReasonDetails) in TicketDiscussions before it gets overwritten by the approver's note
                     if (!string.IsNullOrWhiteSpace(ticket.Note))
                     {
@@ -191,9 +238,26 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
                                 inv.ApprovedQuantity = itemInput.ApprovedQuantity;
                                 inv.ApprovalNote = itemInput.ApprovalNote;
-                                inv.ApprovedBy = 1; // Default Admin User
+                                inv.ApprovedBy = request.UserId;
                                 inv.ApprovedAt = DateTime.Now;
                             }
+                        }
+                        db.SaveChanges();
+                    }
+
+                    // Cập nhật người duyệt/người từ chối và thời gian trên Ticket thực tế
+                    var ticketToUpdate = db.Tickets.Find(request.TicketId);
+                    if (ticketToUpdate != null)
+                    {
+                        if (request.Status == "APPROVED")
+                        {
+                            ticketToUpdate.ApprovedBy = request.UserId;
+                            ticketToUpdate.ApprovedAt = DateTime.Now;
+                        }
+                        else if (request.Status == "REJECTED")
+                        {
+                            ticketToUpdate.CheckedBy = request.UserId;
+                            ticketToUpdate.CheckedAt = DateTime.Now;
                         }
                         db.SaveChanges();
                     }
@@ -516,6 +580,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public string Status { get; set; }
         public string Note { get; set; }
         public List<TicketItemApprovalInput> Items { get; set; }
+        public int UserId { get; set; }
     }
 
     public class TicketItemApprovalInput
