@@ -38,5 +38,7 @@ namespace HMDN_QuanLyVatTu.Models
 
         [Column(TypeName = "datetime2")]
         public DateTime? TransactionDate { get; set; }
+
+        public int? SendTo { get; set; }
     }
 }

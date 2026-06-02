@@ -39,7 +39,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     // Project trực tiếp trong query để tránh lazy-load
                     var inventories = db.Inventories
                         .Where(inv => inv.ApprovalStatus == "approved")
-                        .OrderByDescending(inv => inv.CreatedAt)
+                        .OrderBy(inv => inv.Id)
                         .Select(inv => new
                         {
                             inv.Id,

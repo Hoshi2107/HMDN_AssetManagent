@@ -69,6 +69,28 @@ namespace HMDN_QuanLyVatTu.Controllers
         }
 
         [HttpGet]
+        public JsonResult GetActiveDepartments()
+        {
+            try
+            {
+                var depts = db.Departments
+                    .Where(x => x.IsActive)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Name
+                    })
+                    .ToList()
+                    .OrderBy(x => x.Name);
+                return Json(depts, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
         public JsonResult GetAllInventoryAssets()
         {
             try
@@ -108,6 +130,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             public int UserId { get; set; }
             public string SenderName { get; set; }  // Tên người yêu cầu (dùng cho TicketDiscussions)
             public string ReasonDetails { get; set; }
+            public int? TargetDepartmentId { get; set; }
             public System.Collections.Generic.List<TicketItemDto> Devices { get; set; }
         }
 
@@ -144,15 +167,36 @@ namespace HMDN_QuanLyVatTu.Controllers
                     userDeptId = user.DepartmentId;
                 }
 
+                // Lấy thông tin phòng ban nhận (Target Department) nếu có
+                string targetDeptName = "";
+                if (payload.TargetDepartmentId.HasValue)
+                {
+                    var targetDept = db.Departments.Find(payload.TargetDepartmentId.Value);
+                    if (targetDept != null)
+                    {
+                        targetDeptName = targetDept.Name;
+                    }
+                }
+
+                // Ghép phòng ban nhận vào Note để người duyệt dễ theo dõi
+                string originalNote = !string.IsNullOrWhiteSpace(payload.Note) 
+                    ? payload.Note.Trim() 
+                    : (payload.ReasonDetails != null ? payload.ReasonDetails.Trim() : "");
+                
+                string finalNote = !string.IsNullOrEmpty(targetDeptName)
+                    ? $"[Gửi tới: {targetDeptName}] {originalNote}"
+                    : originalNote;
+
                 // 1. Save ticket (Fallback to ReasonDetails if Note is empty/whitespace)
                 var ticket = new Tickets
                 {
                     TicketCode = GenerateTicketCode(payload.TicketType),
                     TicketType = payload.TicketType,
                     Status = "PENDING",
-                    Note = !string.IsNullOrWhiteSpace(payload.Note) ? payload.Note.Trim() : (payload.ReasonDetails != null ? payload.ReasonDetails.Trim() : ""),
+                    Note = finalNote,
                     CreatedBy = payload.UserId,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    SendTo = payload.TargetDepartmentId
                 };
 
                 db.Tickets.Add(ticket);
@@ -243,7 +287,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CreatedBy = payload.UserId,
                             CreatedAt = DateTime.Now,
                             Note = device.Note,
-                            DepartmentId = userDeptId,
+                            DepartmentId = payload.TargetDepartmentId ?? userDeptId,
                             QrCode = "QR-" + Guid.NewGuid().ToString("N").ToUpper()
                         };
                         db.Inventories.Add(inventory);

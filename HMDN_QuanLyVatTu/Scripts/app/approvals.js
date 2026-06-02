@@ -21,6 +21,8 @@ var app = new Vue({
         searchQuery: '',
         filterType: '',
         filterStatus: '',
+        filterDepartment: '',
+        departmentsList: [],
         currentPage: 1,
         pageSize: 10,
         tickets: [],
@@ -313,8 +315,12 @@ var app = new Vue({
         loadTickets() {
             // Truyền userId để backend lọc phân quyền
             var userId = (this.currentUser && this.currentUser.Id) ? this.currentUser.Id : 0;
+            var url = '/api/approvals/GetTickets?userId=' + userId;
+            if (this.filterDepartment) {
+                url += '&departmentId=' + this.filterDepartment;
+            }
             $.ajax({
-                url: '/api/approvals/GetTickets?userId=' + userId,
+                url: url,
                 type: 'GET',
                 dataType: 'json',
                 cache: false,
@@ -697,16 +703,30 @@ var app = new Vue({
             );
             return firstTextMsg ? firstTextMsg.content : '';
         },
-        getAdditionalNote() {
-            if (!this.selectedTicket) return '';
-            const reason = this.getReasonDetails();
-            if (this.selectedTicket.Note && this.selectedTicket.Note.trim() === reason.trim()) {
-                return '';
-            }
-            return this.selectedTicket.Note;
+        loadDepartments() {
+            $.ajax({
+                url: '/api/approvals/GetDepartments',
+                type: 'GET',
+                dataType: 'json',
+                success: (res) => {
+                    if (Array.isArray(res)) {
+                        this.departmentsList = res;
+                    }
+                },
+                error: (xhr) => {
+                    console.error('Không tải được danh sách phòng ban:', xhr.responseText);
+                }
+            });
+        }
+    },
+    watch: {
+        filterDepartment: function (newVal) {
+            this.currentPage = 1;
+            this.loadTickets();
         }
     },
     mounted() {
-        this.loadTickets()
+        this.loadDepartments();
+        this.loadTickets();
     }
 })
