@@ -38,6 +38,12 @@ namespace HMS.Data
         public DbSet<AlertRule> AlertRules { get; set; }
         public DbSet<Alert> Alerts { get; set; }
 
+        public DbSet<CheckCycle> CheckCycles { get; set; }
+        public DbSet<ChecklistDefinition> ChecklistDefinitions { get; set; }
+        public DbSet<ChecklistSchedule> ChecklistSchedules { get; set; }
+        public DbSet<ChecklistLog> ChecklistLogs { get; set; }
+        public DbSet<ChecklistLogItem> ChecklistLogItems { get; set; }
+
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -87,6 +93,21 @@ namespace HMS.Data
 
             modelBuilder.Entity<Alert>()
                 .ToTable("Alerts");
+
+            modelBuilder.Entity<CheckCycle>()
+                .ToTable("CheckCycles");
+
+            modelBuilder.Entity<ChecklistDefinition>()
+                .ToTable("ChecklistDefinitions");
+
+            modelBuilder.Entity<ChecklistSchedule>()
+                .ToTable("ChecklistSchedules");
+
+            modelBuilder.Entity<ChecklistLog>()
+                .ToTable("ChecklistLogs");
+
+            modelBuilder.Entity<ChecklistLogItem>()
+                .ToTable("ChecklistLogItems");
         }
 
     }

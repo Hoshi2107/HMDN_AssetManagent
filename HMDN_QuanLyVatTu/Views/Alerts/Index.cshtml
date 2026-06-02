@@ -149,7 +149,11 @@
                         </template>
 
                         <!-- 3. CHECKLIST_OVERDUE (Maintenance checklists) -->
-                        <template v-else-if="alert.RuleCode === 'CHECKLIST_OVERDUE'">
+                        <template v-else-if="alert.RuleCode === 'CHECKLIST_OVERDUE' || alert.RuleCode === 'CHECKLIST_DUE_3D'">
+                            <button class="btn-alert-action btn-action-success" 
+                                    v-on:click="goToPerformChecklist(alert.InventoryId)">
+                                <i class="fa-solid fa-list-check mr-1"></i> Làm Checklist
+                            </button>
                             <button class="btn-alert-action btn-action-primary" 
                                     :disabled="processingAlerts[alert.Id]"
                                     v-on:click="completeChecklist(alert, 'done')">

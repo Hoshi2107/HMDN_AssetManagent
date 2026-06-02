@@ -38,6 +38,25 @@ namespace HMDN_QuanLyVatTu.Controllers
                             departments.TryGetValue(creator.DepartmentId.Value, out dept);
                         }
 
+                        HMS.Models.Department sendToDept = null;
+                        string sendToDeptName = null;
+                        if (t.SendTo.HasValue)
+                        {
+                            if (departments.TryGetValue(t.SendTo.Value, out sendToDept))
+                            {
+                                sendToDeptName = sendToDept.Name;
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(sendToDeptName) && !string.IsNullOrEmpty(t.Note) && t.Note.StartsWith("[Gửi tới:"))
+                        {
+                            int idxClose = t.Note.IndexOf(']');
+                            if (idxClose > 9)
+                            {
+                                sendToDeptName = t.Note.Substring(9, idxClose - 9).Trim();
+                            }
+                        }
+
                         return new
                         {
                             t.Id,
@@ -49,6 +68,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CreatedByName = creator != null ? creator.FullName : null,
                             CreatedByUsername = creator != null ? creator.Username : null,
                             DepartmentName = dept != null ? dept.Name : null,
+                            SendToDepartment = sendToDeptName,
                             CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd"),
                             t.CheckedBy,
                             CheckedAt = t.CheckedAt.HasValue ? t.CheckedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,

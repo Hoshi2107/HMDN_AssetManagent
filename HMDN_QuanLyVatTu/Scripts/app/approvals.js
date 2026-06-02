@@ -21,6 +21,8 @@ var app = new Vue({
         searchQuery: '',
         filterType: '',
         filterStatus: '',
+        filterDepartment: '',
+        departmentsList: [],
         currentPage: 1,
         pageSize: 10,
         tickets: [],
@@ -46,16 +48,21 @@ var app = new Vue({
         // Thông tin user đang đăng nhập (đọc từ localStorage do login.js đã lưu)
         currentUser: (function() {
             try {
-                // Ưu tiên đọc từ SERVER_SESSION nếu có thông tin hợp lệ
+                var localUser = {};
+                var u = localStorage.getItem('current_user');
+                if (u) {
+                    localUser = JSON.parse(u);
+                }
+                
+                // Ưu tiên đọc Id và FullName từ SERVER_SESSION nếu có thông tin hợp lệ
                 if (window.SERVER_SESSION && window.SERVER_SESSION.userId > 0) {
                     return {
                         Id: window.SERVER_SESSION.userId,
-                        FullName: window.SERVER_SESSION.fullName || 'Người dùng',
-                        roles: []
+                        FullName: window.SERVER_SESSION.fullName || localUser.FullName || 'Người dùng',
+                        roles: localUser.roles || []
                     };
                 }
-                var u = localStorage.getItem('current_user');
-                return u ? JSON.parse(u) : { Id: 0, FullName: 'Người dùng', roles: [] };
+                return localUser.Id ? localUser : { Id: 0, FullName: 'Người dùng', roles: [] };
             } catch(e) {
                 return { Id: 0, FullName: 'Người dùng', roles: [] };
             }
@@ -174,6 +181,13 @@ var app = new Vue({
             // KHÓA chat khi Status là APPROVED hoặc REJECTED
             // MỞ chat khi Status là PENDING
             return this.selectedTicket.Status !== 'PENDING';
+        },
+        canApprove() {
+            if (!this.currentUser) return false;
+            if (this.currentUser.Id === 1) return true;
+            if (!this.currentUser.roles) return false;
+            const checkRoles = ['admin', 'manager', 'approver'];
+            return this.currentUser.roles.some(r => checkRoles.includes(r.toLowerCase()));
         }
     },
     methods: {
@@ -281,7 +295,8 @@ var app = new Vue({
                     TicketId: this.selectedTicket.Id,
                     Status: status,
                     Note: this.approvalNote,
-                    Items: itemsPayload
+                    Items: itemsPayload,
+                    UserId: this.currentUser.Id
                 }),
                 success: (res) => {
                     if (res.success) {
@@ -300,8 +315,12 @@ var app = new Vue({
         loadTickets() {
             // Truyền userId để backend lọc phân quyền
             var userId = (this.currentUser && this.currentUser.Id) ? this.currentUser.Id : 0;
+            var url = '/api/approvals/GetTickets?userId=' + userId;
+            if (this.filterDepartment) {
+                url += '&departmentId=' + this.filterDepartment;
+            }
             $.ajax({
-                url: '/api/approvals/GetTickets?userId=' + userId,
+                url: url,
                 type: 'GET',
                 dataType: 'json',
                 cache: false,
@@ -684,16 +703,30 @@ var app = new Vue({
             );
             return firstTextMsg ? firstTextMsg.content : '';
         },
-        getAdditionalNote() {
-            if (!this.selectedTicket) return '';
-            const reason = this.getReasonDetails();
-            if (this.selectedTicket.Note && this.selectedTicket.Note.trim() === reason.trim()) {
-                return '';
-            }
-            return this.selectedTicket.Note;
+        loadDepartments() {
+            $.ajax({
+                url: '/api/approvals/GetDepartments',
+                type: 'GET',
+                dataType: 'json',
+                success: (res) => {
+                    if (Array.isArray(res)) {
+                        this.departmentsList = res;
+                    }
+                },
+                error: (xhr) => {
+                    console.error('Không tải được danh sách phòng ban:', xhr.responseText);
+                }
+            });
+        }
+    },
+    watch: {
+        filterDepartment: function (newVal) {
+            this.currentPage = 1;
+            this.loadTickets();
         }
     },
     mounted() {
-        this.loadTickets()
+        this.loadDepartments();
+        this.loadTickets();
     }
 })

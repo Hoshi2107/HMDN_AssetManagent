@@ -85,7 +85,7 @@
     /* ── FORM GRID ── */
     .f-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
     @@media(min-width:576px) { .f-grid { grid-template-columns: 1fr 1fr; } }
-    @@media(min-width:1200px) { .f-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } }
+    @@media(min-width:1200px) { .f-grid { grid-template-columns: repeat(5, 1fr); } }
     .f-group { display: flex; flex-direction: column; gap: 8px; }
     .f-label {
         font-size: 11px; font-weight: 700; text-transform: uppercase;
@@ -347,6 +347,13 @@
                             <input type="text" class="f-input" v-model="form.department" disabled />
                         </div>
                         <div class="f-group">
+                            <label class="f-label">Gửi tới <span style="color: var(--hm-danger);">*</span></label>
+                            <select class="f-input" v-model="form.targetDepartmentId" style="cursor:pointer;" required>
+                                <option value="">Chọn phòng ban...</option>
+                                <option v-for="dept in listDepartments" :key="dept.Id" :value="dept.Id">${ dept.Name }</option>
+                            </select>
+                        </div>
+                        <div class="f-group">
                             <label class="f-label" style="white-space: nowrap;">Loại vật tư <span style="color: var(--hm-text-sec); text-transform: none; font-weight: normal;">(Không bắt buộc)</span></label>
                             <select class="f-input" v-model="form.assetType" style="cursor:pointer;" :disabled="form.ticketType === 'HoTro'">
                                 <option value="">Chọn loại vật tư...</option>
@@ -510,17 +517,6 @@
                 </div>
             </div>
 
-            <!-- 4. ADDITIONAL NOTES -->
-            <div class="p-card">
-                <div class="c-head">
-                    <div class="c-icon"><i class="fa-solid fa-pen-to-square"></i></div>
-                    <span class="c-title">Ghi chú bổ sung</span>
-                </div>
-                <div class="c-body">
-                    <textarea class="notes-ta" placeholder="Ghi chú ngắn cho bộ phận phê duyệt..." v-model="form.note"></textarea>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -546,7 +542,8 @@
                     { text: 'Nhập kho', value: 'IMPORT' },
                     { text: 'Xuất kho', value: 'EXPORT' },
                     { text: 'Điều chuyển', value: 'TRANSFER' },
-                    { text: 'Hỗ trợ', value: 'HoTro' }
+                    { text: 'Hỗ trợ', value: 'SUPPORT' },
+                    { text: 'Sửa chữa', value: 'REPAIR' }
                 ],
                 listLoaiVatTu: ['Thiết bị y tế', 'Vật tư tiêu hao', 'Linh kiện thay thế', 'Khác'],
 
@@ -567,10 +564,12 @@
                     department: 'Đang tải...',
                     userId: 1,
                     assetType: '',
+                    targetDepartmentId: '',
                     note: '',
                     reasonDetails: '',
                     devices: [] // Danh sách thiết bị yêu cầu
                 },
+                listDepartments: [],
 
                 isSubmitting: false,
 
@@ -611,7 +610,21 @@
                             vm.form.department = 'Lỗi kết nối';
                         });
                 },
-
+                loadDepartments() {
+                    var vm = this;
+                    fetch('/CreateTicket/GetActiveDepartments')
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res.error) {
+                                console.error(res.error);
+                            } else {
+                                vm.listDepartments = res;
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error('Không thể kết nối lấy danh sách phòng ban:', err);
+                        });
+                },
                 loadDbItems() {
                     var vm = this;
                     fetch('/CreateTicket/GetAllItems')
@@ -792,7 +805,11 @@
                         } catch (e) { /* ignore */ }
                     }
 
-                    // RÀNG BUỘC BẮT BUỘC DUY NHẤT: Chỉ kiểm tra trường "Lý do yêu cầu & Chi tiết *" không được để trống
+                    // RÀNG BUỘC BẮT BUỘC: Kiểm tra "Gửi phiếu tới phòng ban" và "Lý do chi tiết"
+                    if (!this.form.targetDepartmentId) {
+                        this.toast('Cảnh báo', 'Vui lòng chọn phòng ban nhận phiếu!', 'warning');
+                        return;
+                    }
                     if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
                         this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
                         return;
@@ -808,6 +825,7 @@
                         ReasonDetails: this.form.reasonDetails,
                         UserId: this.form.userId,
                         SenderName: senderName,
+                        TargetDepartmentId: this.form.targetDepartmentId,
                         Devices: this.form.devices.map(function (d) {
                             return {
                                 ItemName: d.itemName,
@@ -925,6 +943,7 @@
                 }
 
                 // Tải danh mục thiết bị
+                this.loadDepartments();
                 this.loadDbItems();
                 this.loadInventoryAssets();
             },

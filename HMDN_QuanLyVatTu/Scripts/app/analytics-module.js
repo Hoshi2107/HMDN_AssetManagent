@@ -523,10 +523,11 @@ window.addEventListener('DOMContentLoaded', function () {
                 var chartElement = document.getElementById('todayChecklistChart');
                 if (!chartElement) return;
                 var ctx = chartElement.getContext('2d');
+                var vm = this;
 
                 var chartLabels = total === 0 ? ['Chưa có lịch trình checklist'] : ['Đã Checklist', 'Chưa làm'];
                 var chartData = total === 0 ? [1] : [done, pending];
-                var chartColors = total === 0 ? ['#e2e8f0'] : ['#3b82f6', '#f1f5f9'];
+                var chartColors = total === 0 ? ['#e2e8f0'] : ['#3b82f6', '#cbd5e1'];
 
                 if (this.todayChecklistChart) {
                     this.todayChecklistChart.data.labels = chartLabels;
@@ -560,6 +561,18 @@ window.addEventListener('DOMContentLoaded', function () {
                             }
                         },
                         cutout: '70%',
+                        onClick: function (evt, elements) {
+                            if (elements && elements.length > 0) {
+                                var activeElement = elements[0];
+                                var index = activeElement.index;
+                                var label = vm.todayChecklistChart.data.labels[index];
+                                if (label === 'Chưa làm') {
+                                    window.location.href = '/Checklists?status=pending';
+                                } else if (label === 'Đã Checklist') {
+                                    window.location.href = '/Checklists?tab=logs';
+                                }
+                            }
+                        },
                         onHover: function (evt, elements) {
                             evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
                         }

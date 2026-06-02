@@ -156,8 +156,15 @@
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
     <Compile Include="Controllers\AlertsController.cs" />
     <Compile Include="Controllers\AlertsAPIController.cs" />
+    <Compile Include="Controllers\ChecklistsController.cs" />
+    <Compile Include="Controllers\ChecklistsAPIController.cs" />
     <Compile Include="Models\AlertRule.cs" />
     <Compile Include="Models\Alert.cs" />
+    <Compile Include="Models\CheckCycle.cs" />
+    <Compile Include="Models\ChecklistDefinition.cs" />
+    <Compile Include="Models\ChecklistSchedule.cs" />
+    <Compile Include="Models\ChecklistLog.cs" />
+    <Compile Include="Models\ChecklistLogItem.cs" />
     <Compile Include="Data\HospitalAssetDbContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -165,6 +172,7 @@
     <Compile Include="Models\Approvals.cs" />
     <Compile Include="Models\ChangeStatusVM.cs" />
     <Compile Include="Models\ChecklistProgressModel.cs" />
+    <Compile Include="Models\CreateInventoryResult.cs" />
     <Compile Include="Models\CreateInventoryVM.cs" />
     <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
@@ -197,6 +205,7 @@
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
+    <Compile Include="Models\ReportErrorVM.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\SuspendedDeviceVM.cs" />
     <Compile Include="Models\TicketAttachment.cs" />
@@ -249,6 +258,7 @@
     <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
     <Content Include="Scripts\app\inventory.js" />
+    <Content Include="Scripts\app\login.js" />
     <Content Include="Scripts\app\maintenance.js" />
     <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
@@ -303,6 +313,7 @@
     <Content Include="Views\Maintenance\Index.cshtml" />
     <Content Include="Views\CreateTicket\CreateTicket.cshtml" />
     <Content Include="Views\Alerts\Index.cshtml" />
+    <Content Include="Views\Checklists\Index.cshtml" />
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
     <Content Include="Uploads\web.config" />
   </ItemGroup>

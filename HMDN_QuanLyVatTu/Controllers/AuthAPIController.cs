@@ -157,6 +157,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("CreateTicket");
                     allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
+                    allowedCodes.Add("Approvals");
                 }
                 else if (string.Equals(role, "approver", StringComparison.OrdinalIgnoreCase))
                 {

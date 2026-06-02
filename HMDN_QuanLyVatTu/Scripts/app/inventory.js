@@ -29,6 +29,32 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        showQrInDetail: false,
+        showQrResultModal: false,
+        newInventoryQr: {
+            id: null,
+            url: '',
+            token: ''
+        },
+
+        //ticketList: [],
+
+        //errorForm: {
+        //    inventoryId: null,
+        //    ticketId: null,
+        //    title: '',
+        //    errorDescription: '',
+        //    priority: 'Medium'
+        //},
+        errorForm: {
+            inventoryId: null,
+            //ticketId: null,
+            IdTicket: null,
+            title: '',
+            errorDescription: '',
+            priority: 'normal'
+        },
+
         showHistoryDetail: false,
         selectedHistory: null,
 
@@ -369,6 +395,132 @@ var app = new Vue({
 
     methods: {
 
+        showDeviceQr() {
+            this.showQrInDetail = true
+            this.$nextTick(() => {
+                const container = document.getElementById('detail-qr-container')
+                if (!container) return
+                container.innerHTML = ''
+                const url = window.location.origin + '/Inventory?inventoryId=' + this.selectedDevice.Id
+                new QRCode(container, {
+                    text: url,
+                    width: 180,
+                    height: 180,
+                    colorDark: '#1a1a1a',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                })
+            })
+        },
+
+        downloadDetailQr() {
+            const canvas = document.querySelector('#detail-qr-container canvas')
+            if (!canvas) return
+            const link = document.createElement('a')
+            link.download = 'QR-' + this.selectedDevice.AssetCode + '.png'
+            link.href = canvas.toDataURL()
+            link.click()
+        },
+
+        printDetailQr() {
+            const canvas = document.querySelector('#detail-qr-container canvas')
+            if (!canvas) return
+            const win = window.open('')
+            win.document.write(`
+        <div style="font-family:sans-serif;text-align:center;padding:20px">
+            <img src="${canvas.toDataURL()}" style="width:200px"/>
+            <p style="font-size:14px;font-weight:bold;margin-top:8px">
+                ${this.selectedDevice.AssetCode}
+            </p>
+            <p style="font-size:12px;color:#555">
+                ${this.selectedDevice.ItemName}
+            </p>
+        </div>
+    `)
+            win.print()
+            win.close()
+        },
+
+        openErrorModal(device) {
+
+            this.errorForm = {
+
+                inventoryId: device.Id,
+
+                ticketId: device.IdTicket || null,
+
+                title: '',
+
+                errorDescription: '',
+
+                priority: 'normal'
+            }
+
+            $('#errorModal').modal('show')
+        },
+
+        saveError() {
+
+            if (!this.errorForm.title.trim()) {
+
+                alert('Nhập tiêu đề lỗi')
+                return
+            }
+
+            if (!this.errorForm.errorDescription.trim()) {
+
+                alert('Nhập mô tả lỗi')
+                return
+            }
+
+            const currentUser =
+                JSON.parse(localStorage.getItem('current_user'));
+
+            $.ajax({
+
+                url: '/api/device/report-error',
+
+                type: 'POST',
+
+                contentType: 'application/json',
+
+                data: JSON.stringify({
+
+                    InventoryId: this.errorForm.inventoryId,
+
+                    TicketId: this.errorForm.ticketId,
+
+                    Title: this.errorForm.title,
+
+                    ErrorDescription: this.errorForm.errorDescription,
+
+                    Priority: this.errorForm.priority,
+
+                    ReportedBy: currentUser.Id
+                }),
+
+                success: () => {
+
+                    alert('Báo lỗi thành công')
+
+                    $('#errorModal').modal('hide')
+
+                    this.loadDevices()
+
+                    if (this.selectedDevice) {
+                        this.loadMaintenanceHistory(this.selectedDevice.Id)
+                    }
+                },
+
+                error: (xhr) => {
+
+                    console.log(xhr)
+
+                    alert('Gửi báo lỗi thất bại')
+                }
+            })
+        },
+
         formatDate(date) {
 
             if (!date)
@@ -427,7 +579,7 @@ var app = new Vue({
 
             // TICKETS
             $.get('/api/device/tickets', (res) => {
-
+                console.log(this.tickets)
                 this.tickets = res
 
             })
@@ -716,14 +868,19 @@ var app = new Vue({
 
         //createInventory() {
 
+        //    if (!this.createForm.ImportDate)
+        //        this.createForm.ImportDate = null
+
+        //    if (!this.createForm.ExpiryDate)
+        //        this.createForm.ExpiryDate = null
+
+        //    if (!this.createForm.WarrantyExpiry)
+        //        this.createForm.WarrantyExpiry = null
+
         //    $.ajax({
-
         //        url: '/api/device/create',
-
         //        type: 'POST',
-
         //        contentType: 'application/json',
-
         //        data: JSON.stringify(this.createForm),
 
         //        success: () => {
@@ -733,48 +890,89 @@ var app = new Vue({
         //            this.showManualModal = false
 
         //            this.loadDevices()
+
         //        },
 
-        //        error: () => {
+        //        error: (err) => {
+
+        //            console.log(err)
 
         //            alert('Thêm thất bại')
         //        }
         //    })
         //},
+
+
+        // Update createInventory method
         createInventory() {
-
-            if (!this.createForm.ImportDate)
-                this.createForm.ImportDate = null
-
-            if (!this.createForm.ExpiryDate)
-                this.createForm.ExpiryDate = null
-
-            if (!this.createForm.WarrantyExpiry)
-                this.createForm.WarrantyExpiry = null
+            if (!this.createForm.ImportDate) this.createForm.ImportDate = null
+            if (!this.createForm.ExpiryDate) this.createForm.ExpiryDate = null
+            if (!this.createForm.WarrantyExpiry) this.createForm.WarrantyExpiry = null
 
             $.ajax({
                 url: '/api/device/create',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(this.createForm),
-
-                success: () => {
-
-                    alert('Thêm thiết bị thành công')
-
+                success: (res) => {
                     this.showManualModal = false
-
                     this.loadDevices()
+
+                    // Hiện modal QR code
+                    this.newInventoryQr = {
+                        id: res.id,
+                        url: res.qrUrl,
+                        token: res.qrToken
+                    }
+                    this.showQrResultModal = true
+
+                    // Gen QR image sau khi modal render
+                    this.$nextTick(() => {
+                        this.generateQrCode(res.qrUrl)
+                    })
                 },
-
                 error: (err) => {
-
                     console.log(err)
-
                     alert('Thêm thất bại')
                 }
             })
         },
+
+        generateQrCode(url) {
+            const container = document.getElementById('qr-code-container')
+            if (!container) return
+            container.innerHTML = ''
+            new QRCode(container, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: '#1a1a1a',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            })
+        },
+
+        downloadQr() {
+            const canvas = document.querySelector('#qr-code-container canvas')
+            if (!canvas) return
+            const link = document.createElement('a')
+            link.download = 'QR-' + this.newInventoryQr.id + '.png'
+            link.href = canvas.toDataURL()
+            link.click()
+        },
+
+        printQr() {
+            const canvas = document.querySelector('#qr-code-container canvas')
+            if (!canvas) return
+            const dataUrl = canvas.toDataURL()
+            const win = window.open('')
+            win.document.write('<img src="' + dataUrl + '" style="width:220px"/>')
+            win.document.write('<p style="font-family:sans-serif;font-size:13px">Mã: ' + this.newInventoryQr.token + '</p>')
+            win.document.write('<p style="font-family:sans-serif;font-size:11px;color:#555">' + this.newInventoryQr.url + '</p>')
+            win.print()
+            win.close()
+        },
+
 
         openEditModal(id) {
 
@@ -882,6 +1080,10 @@ var app = new Vue({
     },
 
     watch: {
+
+        showModal(val) {
+            if (!val) this.showQrInDetail = false
+        },
 
         pageSize() {
             this.currentPage = 1

@@ -1463,6 +1463,13 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>PHÒNG BAN</label>
+                <select class="filter-select" v-model="filterDepartment">
+                    <option value="">Tất cả</option>
+                    <option v-for="dept in departmentsList" :key="dept.Id" :value="dept.Id">${dept.Name}</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>TRẠNG THÁI</label>
                 <select class="filter-select" v-model="filterStatus">
                     <option value="">Tất cả</option>
@@ -1471,7 +1478,7 @@
                     <option value="REJECTED">Rejected</option>
                 </select>
             </div>
-            <button class="btn-filter" @@click="filterType = ''; filterStatus = ''; searchQuery = ''">
+            <button class="btn-filter" @@click="filterType = ''; filterStatus = ''; filterDepartment = ''; searchQuery = ''">
                 <i class="fa-solid fa-filter-list"></i>
                 <i class="fa-solid fa-filter"></i> Xóa Lọc
             </button>
@@ -1486,6 +1493,7 @@
                         <th @@click="sort.key = 'TicketCode'; sort.dir *= -1" style="cursor: pointer;">MÃ YÊU CẦU <i class="fa-solid fa-sort"></i></th>
                         <th @@click="sort.key = 'TicketType'; sort.dir *= -1" style="cursor: pointer;">LOẠI YÊU CẦU <i class="fa-solid fa-sort"></i></th>
                         <th @@click="sort.key = 'CreatedBy'; sort.dir *= -1" style="cursor: pointer;">NGƯỜI TẠO <i class="fa-solid fa-sort"></i></th>
+                        <th>GỬI TỚI PHÒNG BAN</th>
                         <th>NGÀY TẠO</th>
                         <th>TRẠNG THÁI</th>
                         <th style="text-align: right;">HÀNH ĐỘNG</th>
@@ -1501,6 +1509,7 @@
                                 <span>${creatorLabel(item)}</span>
                             </div>
                         </td>
+                        <td>${item.SendToDepartment || '—'}</td>
                         <td>${formatDate(item.CreatedAt)}</td>
                         <td>
                             <span class="badge-status" :class="statusClass(item.Status)">
@@ -1510,7 +1519,7 @@
                         <td style="text-align: right;"><a href="#" class="btn-action" @@click.prevent="viewDetail(item)">Chi tiết <i class="fa-solid fa-arrow-right"></i></a></td>
                     </tr>
                     <tr v-if="paginatedTickets.length === 0">
-                        <td colspan="6" style="text-align: center; padding: 30px;">Không có dữ liệu</td>
+                        <td colspan="7" style="text-align: center; padding: 30px;">Không có dữ liệu</td>
                     </tr>
                 </tbody>
             </table>
@@ -1542,7 +1551,7 @@
                     </div>
                 </div>
                 <div class="dm-header-right">
-                    <template v-if="selectedTicket && selectedTicket.Status === 'PENDING'">
+                    <template v-if="selectedTicket && selectedTicket.Status === 'PENDING' && canApprove()">
                         <button class="dm-btn-reject" @@click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
                         <button class="dm-btn-approve" @@click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
                     </template>
@@ -1571,8 +1580,8 @@
                                     <p>${formatDate(selectedTicket.CreatedAt)}</p>
                                 </div>
                                 <div class="dm-info-item">
-                                    <label>Mức độ ưu tiên</label>
-                                    <p class="dm-priority">! Cao</p>
+                                    <label>Gửi tới phòng ban:</label>
+                                    <p>${selectedTicket.SendToDepartment || '—'}</p>
                                 </div>
                             </div>
                         </div>
@@ -1664,7 +1673,7 @@
                     <div class="dm-sidebar" style="display: flex; flex-direction: column; gap: 20px; height: 100%;">
                         <div class="dm-card" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column; box-sizing: border-box;">
                             <h3 style="margin-bottom: 12px;"><i class="fa-solid fa-pen-to-square" style="color: #0ea5e9;"></i> Ghi chú phê duyệt</h3>
-                            <textarea class="dm-textarea" v-model="approvalNote" placeholder="Nhập lý do từ chối hoặc ghi chú (không bắt buộc)..." style="flex: 1; min-height: 80px; resize: none;"></textarea>
+                            <textarea class="dm-textarea" v-model="approvalNote" :disabled="!canApprove()" placeholder="Nhập lý do từ chối hoặc ghi chú (không bắt buộc)..." style="flex: 1; min-height: 80px; resize: none;"></textarea>
                         </div>
 
                         <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box; flex: 2; display: flex; flex-direction: column; overflow: hidden;">
@@ -1754,16 +1763,16 @@
                                 <tr v-for="(dt, index) in ticketDetails" :key="dt.Id" :style="{ opacity: dt.isApproved ? 1 : 0.6, background: dt.isApproved ? 'transparent' : '#f8fafc' }">
                                     <td>${index + 1}</td>
                                     <td style="text-align: center;">
-                                        <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING'" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
+                                        <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
                                     </td>
                                     <td style="font-weight: 500;">${dt.ItemName}</td>
                                     <td>${dt.SerialNumber || 'N/A'}</td>
                                     <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
                                     <td style="text-align: center;">
-                                        <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING'" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
+                                        <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
                                     </td>
                                     <td>
-                                        <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING'" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
+                                        <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
                                     </td>
                                 </tr>
                                 <tr v-if="ticketDetails.length === 0">
@@ -1777,16 +1786,12 @@
                 <!-- Thông tin bổ sung từ phiếu yêu cầu -->
                 <div class="dm-card" style="margin-top: 20px; margin-bottom: 0;">
                     <h3><i class="fa-solid fa-file-signature"></i> Thông tin bổ sung từ phiếu yêu cầu</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 12px 0 0 0;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 20px; padding: 12px 0 0 0;">
                         <div v-if="getReasonDetails()" style="display: flex; flex-direction: column; gap: 6px;">
                             <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Lý do yêu cầu & Chi tiết</label>
                             <p style="font-size: 13px; color: #0f172a; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 0; white-space: pre-wrap; word-break: break-word;">${ getReasonDetails() }</p>
                         </div>
-                        <div v-if="getAdditionalNote()" style="display: flex; flex-direction: column; gap: 6px;">
-                            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Ghi chú bổ sung</label>
-                            <p style="font-size: 13px; color: #0f172a; line-height: 1.6; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 0; white-space: pre-wrap; word-break: break-word;">${ getAdditionalNote() }</p>
-                        </div>
-                        <div v-if="!getReasonDetails() && !getAdditionalNote()" style="color: #94a3b8; font-style: italic; font-size: 13px; padding: 12px 0;">
+                        <div v-if="!getReasonDetails()" style="color: #94a3b8; font-style: italic; font-size: 13px; padding: 12px 0;">
                             Không có thông tin bổ sung từ người tạo phiếu.
                         </div>
                     </div>
