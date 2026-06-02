@@ -993,18 +993,58 @@ var app = new Vue({
             link.click()
         },
 
+        //printQr() {
+        //    const canvas = document.querySelector('#qr-code-container canvas')
+        //    if (!canvas) return
+        //    const dataUrl = canvas.toDataURL()
+        //    const win = window.open('')
+        //    win.document.write('<img src="' + dataUrl + '" style="width:220px"/>')
+        //    win.document.write('<p style="font-family:sans-serif;font-size:13px">Mã: ' + this.newInventoryQr.token + '</p>')
+        //    win.document.write('<p style="font-family:sans-serif;font-size:11px;color:#555">' + this.newInventoryQr.url + '</p>')
+        //    win.print()
+        //    win.close()
+        //},
+
         printQr() {
             const canvas = document.querySelector('#qr-code-container canvas')
             if (!canvas) return
-            const dataUrl = canvas.toDataURL()
-            const win = window.open('')
-            win.document.write('<img src="' + dataUrl + '" style="width:220px"/>')
-            win.document.write('<p style="font-family:sans-serif;font-size:13px">Mã: ' + this.newInventoryQr.token + '</p>')
-            win.document.write('<p style="font-family:sans-serif;font-size:11px;color:#555">' + this.newInventoryQr.url + '</p>')
-            win.print()
-            win.close()
-        },
 
+            const dataUrl = canvas.toDataURL()
+
+            const win = window.open('')
+
+            win.document.write(`
+                <html>
+                <head>
+                    <style>
+                        @@page{
+                            size:50mm 50mm;
+                            margin:0;
+                        }
+
+                        body{
+                            margin:0;
+                            padding:0;
+                            text-align:center;
+                            font-family:Arial;
+                        }
+
+                        img{
+                            width:40mm;
+                            height:40mm;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${dataUrl}" />
+                </body>
+                </html>
+            `)
+
+            win.document.close()
+            win.focus()
+            win.print()
+        },
 
         openEditModal(id) {
 
