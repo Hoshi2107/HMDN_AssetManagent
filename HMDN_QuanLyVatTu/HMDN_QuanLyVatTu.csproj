@@ -159,7 +159,6 @@
     <Compile Include="Controllers\ChecklistsController.cs" />
     <Compile Include="Controllers\ChecklistsAPIController.cs" />
     <Compile Include="Controllers\QrCodesController.cs" />
-    <Compile Include="Controllers\LifecycleController.cs" />
     <Compile Include="Controllers\SettingsController.cs" />
     <Compile Include="Controllers\SupportController.cs" />
     <Compile Include="Models\AlertRule.cs" />
@@ -319,7 +318,6 @@
     <Content Include="Views\Alerts\Index.cshtml" />
     <Content Include="Views\Checklists\Index.cshtml" />
     <Content Include="Views\QrCodes\Index.cshtml" />
-    <Content Include="Views\Lifecycle\Index.cshtml" />
     <Content Include="Views\Settings\Index.cshtml" />
     <Content Include="Views\Support\Index.cshtml" />
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
