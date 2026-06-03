@@ -175,6 +175,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 {
                     try
                     {
+                        string cycleLower = (payload.CycleType ?? "adhoc").ToLower();
                         var log = new ChecklistLog
                         {
                             ScheduleId = payload.ScheduleId > 0 ? payload.ScheduleId : (int?)null,
@@ -183,6 +184,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
                             OverallResult = payload.OverallResult ?? "pass",
+                            ApprovalStatus = (payload.OverallResult == "pass" && (cycleLower == "daily" || cycleLower == "weekly")) ? "Approved" : "Pending",
                             Note = payload.Note,
                             QrLocation = payload.QrLocation,
                             ImageUrls = payload.ImageUrls
@@ -263,7 +265,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         [HttpGet]
         [Route("logs")]
         [Route("~/api/checklist/logs")]
-        public IHttpActionResult GetLogs(string fromDate = null, string toDate = null, string result = null)
+        public IHttpActionResult GetLogs(string fromDate = null, string toDate = null, string result = null, string approvalStatus = null)
         {
             try
             {
@@ -283,6 +285,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                 {
                     query = query.Where(l => l.OverallResult == result);
                 }
+                if (!string.IsNullOrEmpty(approvalStatus))
+                {
+                    query = query.Where(l => l.ApprovalStatus == approvalStatus);
+                }
 
                 var logs = query
                     .OrderByDescending(l => l.CheckedAt)
@@ -299,6 +305,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         CheckedByName = l.CheckedByUser != null ? l.CheckedByUser.FullName : "Admin",
                         l.CycleType,
                         l.OverallResult,
+                        l.ApprovalStatus,
                         l.Note
                     })
                     .ToList()
@@ -315,6 +322,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         l.CheckedByName,
                         l.CycleType,
                         l.OverallResult,
+                        l.ApprovalStatus,
                         l.Note
                     })
                     .ToList();
@@ -364,6 +372,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     CheckedByName = log.CheckedByUser != null ? log.CheckedByUser.FullName : "Admin",
                     log.CycleType,
                     log.OverallResult,
+                    log.ApprovalStatus,
                     log.Note,
                     log.QrScannedAt,
                     log.QrLocation,
@@ -376,6 +385,104 @@ namespace HMDN_QuanLyVatTu.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        // GET: api/checklists/department-progress
+        [HttpGet]
+        [Route("department-progress")]
+        [Route("~/api/checklist/department-progress")]
+        public IHttpActionResult GetDepartmentProgress(string fromDate = null, string toDate = null)
+        {
+            try
+            {
+                DateTime start = DateTime.Today.AddDays(-30);
+                DateTime end = DateTime.Today;
+
+                if (!string.IsNullOrEmpty(fromDate))
+                {
+                    start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
+                }
+                if (!string.IsNullOrEmpty(toDate))
+                {
+                    end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture);
+                }
+
+                DateTime startRange = start.Date;
+                DateTime endRange = end.Date.AddDays(1);
+
+                // Lấy tất cả phòng ban
+                var departments = db.Departments.ToList();
+
+                // Đếm số lượng logs đã hoàn thành theo từng khoa phòng
+                var doneCounts = db.ChecklistLogs
+                    .Where(l => l.CheckedAt >= startRange && l.CheckedAt < endRange)
+                    .GroupBy(l => l.Inventory.DepartmentId)
+                    .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
+                    .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
+
+                // Đếm số lượng schedules chờ xử lý theo từng khoa phòng
+                var pendingCounts = db.ChecklistSchedules
+                    .Where(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && s.Status == "pending")
+                    .GroupBy(s => s.Inventory.DepartmentId)
+                    .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
+                    .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
+
+                var progressData = departments.Select(d =>
+                {
+                    int done = doneCounts.ContainsKey(d.Id) ? doneCounts[d.Id] : 0;
+                    int pending = pendingCounts.ContainsKey(d.Id) ? pendingCounts[d.Id] : 0;
+                    int total = done + pending;
+                    int compliance = total > 0 ? (int)Math.Round((double)done / total * 100) : 100;
+
+                    return new
+                    {
+                        DepartmentId = d.Id,
+                        DepartmentName = d.Name,
+                        DoneCount = done,
+                        PendingCount = pending,
+                        TotalCount = total,
+                        ComplianceRate = compliance
+                    };
+                })
+                .OrderByDescending(p => p.TotalCount)
+                .ToList();
+
+                return Ok(new { success = true, data = progressData });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/checklists/approve-multiple
+        [HttpPost]
+        [Route("approve-multiple")]
+        [Route("~/api/checklist/approve-multiple")]
+        public IHttpActionResult ApproveMultiple([FromBody] List<int> logIds)
+        {
+            try
+            {
+                if (logIds == null || !logIds.Any())
+                {
+                    return Ok(new { success = false, message = "Vui lòng chọn ít nhất một nhật ký để duyệt." });
+                }
+
+                var userId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? 1;
+
+                var logs = db.ChecklistLogs.Where(l => logIds.Contains(l.Id) && l.ApprovalStatus == "Pending").ToList();
+                foreach (var log in logs)
+                {
+                    log.ApprovalStatus = "Approved";
+                }
+                db.SaveChanges();
+
+                return Ok(new { success = true, message = $"Đã duyệt thành công {logs.Count} nhật ký checklist!" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = "Lỗi khi duyệt hàng loạt: " + ex.Message });
             }
         }
 

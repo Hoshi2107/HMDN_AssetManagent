@@ -56,7 +56,6 @@ window.addEventListener('DOMContentLoaded', function () {
             inventoryList: [],
             availableYears: [],
             checklistProgress: { done: 0, pending: 0, total: 0 },
-            criticalAlerts: [],
 
             pieChart: null,
             barChart: null,
@@ -87,7 +86,6 @@ window.addEventListener('DOMContentLoaded', function () {
             this.initRealtimeSync();
             this.fetchMonthlyMaintenanceData();
             this.fetchTodayChecklistData();
-            this.fetchCriticalAlerts();
         },
         watch: {
             // Khi metrics thay đổi (do lọc/tìm kiếm), cập nhật lại dữ liệu biểu đồ Doughnut
@@ -242,9 +240,9 @@ window.addEventListener('DOMContentLoaded', function () {
                 } else if (status === 'suspended') {
                     statusLabel = 'Thiết bị đang báo hỏng';
                 } else if (status === 'maintenance_bv') {
-                    statusLabel = 'Thiết bị bệnh viện tự bảo trì';
+                    statusLabel = 'Thiết bị bệnh viện tự sửa';
                 } else if (status === 'maintenance_hang') {
-                    statusLabel = 'Thiết bị hãng đối tác bảo trì';
+                    statusLabel = 'Thiết bị hãng đối tác sửa';
                 } else if (status === 'maintenance') {
                     statusLabel = 'Thiết bị đang bảo trì';
                 } else {
@@ -321,7 +319,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 }
 
                 var metrics = vm.dashboardMetrics;
-                var labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự bảo trì', 'Hãng bảo trì'];
+                var labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự sửa', 'Hãng sửa'];
                 var chartData = [metrics.active, metrics.broken, metrics.maintBv, metrics.maintHang];
                 var colors = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'];
 
@@ -370,9 +368,9 @@ window.addEventListener('DOMContentLoaded', function () {
                                     vm.showDevicesByStatus('active');
                                 } else if (label === 'Báo hỏng') {
                                     vm.showDevicesByStatus('suspended');
-                                } else if (label === 'BV tự bảo trì') {
+                                } else if (label === 'BV tự sửa') {
                                     vm.showDevicesByStatus('maintenance_bv');
-                                } else if (label === 'Hãng bảo trì') {
+                                } else if (label === 'Hãng sửa') {
                                     vm.showDevicesByStatus('maintenance_hang');
                                 }
                             }
@@ -388,7 +386,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 if (!this.pieChart) return;
 
                 if (metrics.total > 0) {
-                    this.pieChart.data.labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự bảo trì', 'Hãng bảo trì'];
+                    this.pieChart.data.labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự sửa', 'Hãng sửa'];
                     this.pieChart.data.datasets[0].data = [metrics.active, metrics.broken, metrics.maintBv, metrics.maintHang];
                     this.pieChart.data.datasets[0].backgroundColor = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'];
                 } else {
@@ -650,7 +648,6 @@ window.addEventListener('DOMContentLoaded', function () {
                         vm.fetchMonthlyMaintenanceData();
                         vm.fetchTodayChecklistData();
                         vm.fetchInventoryReport();
-                        vm.fetchCriticalAlerts();
                     });
                 } catch (error) {
                     console.warn('Realtime Socket inactive.');
@@ -665,24 +662,6 @@ window.addEventListener('DOMContentLoaded', function () {
             },
             closeStatusDevicesModal: function () {
                 $('#statusDevicesModal').modal('hide');
-            },
-            fetchCriticalAlerts: function () {
-                var vm = this;
-                $.getJSON('/api/alerts/check-new', function (res) {
-                    vm.criticalAlerts = res || [];
-                });
-            },
-            resolveDashboardAlert: function (id) {
-                var vm = this;
-                if (!confirm('Xác nhận đã xử lý xong cảnh báo này?')) return;
-                $.post('/api/alerts/resolve/' + id, function (res) {
-                    if (res && res.success) {
-                        vm.fetchCriticalAlerts();
-                        vm.fetchKpiOverview();
-                    } else {
-                        alert(res.message || 'Lỗi khi xử lý cảnh báo.');
-                    }
-                });
             },
             goToChecklists: function () {
                 window.location.href = '/Checklists/Index';

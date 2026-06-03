@@ -82,6 +82,9 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
+                    // Tự động dọn dẹp cảnh báo đã xử lý quá hạn (30 ngày)
+                    PurgeResolvedAlerts(db);
+
                     // Tự động kiểm tra chẩn đoán (Lazy evaluation)
                     CheckAndRunDiagnostics(db);
 
@@ -392,6 +395,9 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
+                    // Tự động dọn dẹp cảnh báo đã xử lý quá hạn (30 ngày)
+                    PurgeResolvedAlerts(db);
+
                     // Chạy chẩn đoán (Lazy-Evaluation)
                     CheckAndRunDiagnostics(db);
 
@@ -480,6 +486,31 @@ namespace HMDN_QuanLyVatTu.Controllers
         private void RunDiagnosticsEngine(HospitalAssetDbContext db)
         {
             db.Database.ExecuteSqlCommand("EXEC [dbo].[sp_RunAlertDiagnostics]");
+        }
+
+        private void PurgeResolvedAlerts(HospitalAssetDbContext db)
+        {
+            try
+            {
+                var retentionDaysStr = System.Configuration.ConfigurationManager.AppSettings["AlertRetentionDays"];
+                int retentionDays = 30;
+                if (!string.IsNullOrEmpty(retentionDaysStr) && int.TryParse(retentionDaysStr, out int parsedDays))
+                {
+                    retentionDays = parsedDays;
+                }
+
+                var cutoffDate = DateTime.Now.AddDays(-retentionDays);
+                var alertsToPurge = db.Alerts.Where(a => a.IsResolved && a.ResolvedAt < cutoffDate).ToList();
+                if (alertsToPurge.Any())
+                {
+                    db.Alerts.RemoveRange(alertsToPurge);
+                    db.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi khi tự động dọn dẹp cảnh báo đã xử lý: " + ex.Message);
+            }
         }
         #endregion
 

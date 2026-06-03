@@ -32,6 +32,10 @@ namespace HMDN_QuanLyVatTu.Models
         [StringLength(20)]
         public string OverallResult { get; set; } // 'pass', 'fail', 'partial'
 
+        [Required]
+        [StringLength(20)]
+        public string ApprovalStatus { get; set; } // 'Pending', 'Approved'
+
         [StringLength(2000)]
         public string Note { get; set; }
 
@@ -58,6 +62,7 @@ namespace HMDN_QuanLyVatTu.Models
         public ChecklistLog()
         {
             CheckedAt = DateTime.Now;
+            ApprovalStatus = "Pending";
         }
     }
 }

@@ -1144,20 +1144,30 @@
                                 display: flex !important;
                             }
                         </style>
-                        <div class="notification-dropdown-wrap">
-                            <button id="notification-bell-btn" class="topbar-icon-btn" style="position: relative; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
+                        <div class="notification-dropdown-wrap" id="notification-app">
+                            <button @@click="toggleDropdown($event)" class="topbar-icon-btn" style="position: relative; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
                                 <i class="fa-solid fa-bell"></i>
-                                <span id="notification-badge" class="notification-badge">0</span>
+                                <span class="notification-badge" :class="{ show: unreadCount > 0 }">{{ unreadCount }}</span>
                             </button>
-                            <div id="notification-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-md); z-index: 1000; overflow: hidden; animation: notificationFadeIn 0.2s ease;">
+                            <div v-if="isOpen" @@click.stop style="display: block; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-md); z-index: 1000; overflow: hidden; animation: notificationFadeIn 0.2s ease;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
                                     <span style="font-weight: 700; font-size: 13px; color: #1e2a3a;">Cảnh báo mới nhất</span>
-                                    <button id="mark-all-read-btn" style="background: none; border: none; color: var(--accent-blue); font-size: 11.5px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
+                                    <button @@click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 11.5px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
                                 </div>
-                                <div id="notification-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column;">
-                                    <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">
+                                <div style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column;">
+                                    <div v-if="alerts.length === 0" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">
                                         <i class="fa-solid fa-bell-slash" style="font-size: 20px; display: block; margin-bottom: 6px;"></i>
                                         Không có cảnh báo chưa xử lý
+                                    </div>
+                                    <div v-else v-for="alert in alerts" :key="alert.Id" class="notification-item" :class="{ unread: isUnread(alert.Id) }" @@click="goToAlert(alert)">
+                                        <div class="notification-item-icon" :class="alert.Severity">
+                                            <i class="fa-solid" :class="getIconClass(alert.Severity)"></i>
+                                        </div>
+                                        <div class="notification-item-content">
+                                            <div class="notification-item-title">{{ alert.Title }}</div>
+                                            <div class="notification-item-body">{{ alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.') }}</div>
+                                            <div class="notification-item-time">{{ alert.CreatedAtFriendly || alert.CreatedAtStr }}</div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div style="padding: 10px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc;">
@@ -1356,188 +1366,150 @@
                         } catch (e) {}
                     }
                 }
-                if (!currentUserId) currentUserId = 1; // Fallback so it always runs
+                if (!currentUserId) currentUserId = 1;
 
                 var seenKey = 'seen_alerts_' + currentUserId;
                 var readKey = 'read_alerts_' + currentUserId;
 
-                // Load arrays: seenAlerts and readAlerts are both persisted to localStorage
-                var seenAlerts = [];
-                var isFirstLoad = false;
-                try {
-                    var storedSeen = localStorage.getItem(seenKey);
-                    if (storedSeen) {
-                        seenAlerts = JSON.parse(storedSeen);
-                    } else {
-                        isFirstLoad = true;
-                    }
-                } catch (e) {
-                    seenAlerts = [];
-                    isFirstLoad = true;
-                }
-                var readAlerts = JSON.parse(localStorage.getItem(readKey) || '[]');
-
-                function saveLocalStorage() {
-                    // Giới hạn kích thước mảng seenAlerts để tránh quá tải dung lượng localStorage
-                    if (seenAlerts.length > 200) {
-                        seenAlerts = seenAlerts.slice(seenAlerts.length - 200);
-                    }
-                    localStorage.setItem(readKey, JSON.stringify(readAlerts));
-                    localStorage.setItem(seenKey, JSON.stringify(seenAlerts));
-                }
-
-                // Click to toggle dropdown
-                $('#notification-bell-btn').on('click', function (e) {
-                    e.stopPropagation();
-                    $('#notification-dropdown').toggle();
-                    
-                    // Mark all loaded alerts as "read" when opening
-                    markAllAsRead();
-                });
-
-                $(document).on('click', function () {
-                    $('#notification-dropdown').hide();
-                });
-
-                $('#notification-dropdown').on('click', function (e) {
-                    e.stopPropagation();
-                });
-
-                $('#mark-all-read-btn').on('click', function () {
-                    markAllAsRead();
-                });
-
-                function markAllAsRead() {
-                    var items = $('#notification-list .notification-item');
-                    var hasChange = false;
-                    items.each(function () {
-                        var id = $(this).data('id');
-                        if (id && readAlerts.indexOf(id) === -1) {
-                            readAlerts.push(id);
-                            hasChange = true;
+                new Vue({
+                    el: '#notification-app',
+                    data: {
+                        alerts: [],
+                        seenAlerts: [],
+                        readAlerts: [],
+                        isOpen: false,
+                        isFirstLoad: true
+                    },
+                    computed: {
+                        unreadCount: function () {
+                            var vm = this;
+                            return vm.alerts.filter(function (a) {
+                                return vm.readAlerts.indexOf(a.Id) === -1;
+                            }).length;
                         }
-                        $(this).removeClass('unread');
-                    });
-                    if (hasChange) {
-                        saveLocalStorage();
-                        updateBadge();
-                    }
-                }
-
-                function updateBadge() {
-                    var unreadCount = 0;
-                    $('#notification-list .notification-item').each(function () {
-                        var id = $(this).data('id');
-                        if (id && readAlerts.indexOf(id) === -1) {
-                            unreadCount++;
-                        }
-                    });
-
-                    if (unreadCount > 0) {
-                        $('#notification-badge').text(unreadCount).addClass('show');
-                    } else {
-                        $('#notification-badge').removeClass('show');
-                    }
-                }
-
-                function renderAlertsList(alerts) {
-                    var listContainer = $('#notification-list');
-                    if (!alerts || alerts.length === 0) {
-                        listContainer.html(
-                            '<div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">' +
-                            '<i class="fa-solid fa-bell-slash" style="font-size: 20px; display: block; margin-bottom: 6px;"></i>' +
-                            'Không có cảnh báo chưa xử lý' +
-                            '</div>'
-                        );
-                        return;
-                    }
-
-                    var html = '';
-                    alerts.forEach(function (alert) {
-                        var isUnread = readAlerts.indexOf(alert.Id) === -1;
-                        var unreadClass = isUnread ? ' unread' : '';
-                        var iconClass = alert.Severity === 'danger' ? 'danger' :
-                                        alert.Severity === 'warning' ? 'warning' : 'info';
-                        var iconHtml = alert.Severity === 'danger' ? '<i class="fa-solid fa-triangle-exclamation"></i>' :
-                                       alert.Severity === 'warning' ? '<i class="fa-solid fa-circle-exclamation"></i>' :
-                                       '<i class="fa-solid fa-circle-info"></i>';
-
-                        var redirectUrl = window.getAlertRedirectUrl(alert);
-                        html += '<div class="notification-item' + unreadClass + '" data-id="' + alert.Id + '" onclick="window.location.href=\'' + redirectUrl + '\'; event.stopPropagation();">' +
-                            '<div class="notification-item-icon ' + iconClass + '">' + iconHtml + '</div>' +
-                            '<div class="notification-item-content">' +
-                            '<div class="notification-item-title">' + alert.Title + '</div>' +
-                            '<div class="notification-item-body">' + (alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.')) + '</div>' +
-                            '<div class="notification-item-time">' + alert.CreatedAtFriendly + '</div>' +
-                            '</div>' +
-                            '</div>';
-                    });
-
-                    listContainer.html(html);
-                    updateBadge();
-                }
-
-                function checkRealtimeAlerts() {
-                    $.ajax({
-                        url: '/api/alerts/check-new',
-                        type: 'GET',
-                        success: function (res) {
-                            if (res && res.length > 0) {
-                                var hasNew = false;
-                                res.forEach(function (alert) {
-                                    var relevant = window.isAlertRelevantToCurrentPage(alert);
-                                    var seen = seenAlerts.indexOf(alert.Id) !== -1;
-
-                                    // If not seen yet, show toast (only if relevant to current page)
-                                    if (relevant) {
-                                        if (!seen) {
-                                            seenAlerts.push(alert.Id);
-                                            hasNew = true;
-
-                                            // Tránh hiện hàng loạt cảnh báo cũ trên màn hình khi mới load trang/refresh lần đầu
-                                            if (!isFirstLoad) {
-                                                var toastType = alert.Severity === 'danger' ? 'danger' :
-                                                                alert.Severity === 'warning' ? 'warning' : 'success';
-
-                                                if (window.MedEquip && window.MedEquip.toast) {
-                                                    window.MedEquip.toast(
-                                                        alert.Title,
-                                                        alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
-                                                        toastType,
-                                                        alert
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                });
-
-                                if (isFirstLoad) {
-                                    isFirstLoad = false;
-                                }
-
-                                if (hasNew) {
-                                    saveLocalStorage();
-                                }
-
-                                // Render list in dropdown
-                                renderAlertsList(res);
-                            } else {
-                                if (isFirstLoad) {
-                                    isFirstLoad = false;
-                                }
-                                renderAlertsList([]);
+                    },
+                    methods: {
+                        loadLocalStorage: function () {
+                            try {
+                                var storedSeen = localStorage.getItem(seenKey);
+                                this.seenAlerts = storedSeen ? JSON.parse(storedSeen) : [];
+                            } catch (e) {
+                                this.seenAlerts = [];
+                            }
+                            try {
+                                var storedRead = localStorage.getItem(readKey);
+                                this.readAlerts = storedRead ? JSON.parse(storedRead) : [];
+                            } catch (e) {
+                                this.readAlerts = [];
                             }
                         },
-                        error: function (xhr) {
-                            console.warn('Lỗi polling cảnh báo realtime:', xhr.responseText);
-                        }
-                    });
-                }
+                        saveLocalStorage: function () {
+                            if (this.seenAlerts.length > 200) {
+                                this.seenAlerts = this.seenAlerts.slice(this.seenAlerts.length - 200);
+                            }
+                            localStorage.setItem(seenKey, JSON.stringify(this.seenAlerts));
+                            localStorage.setItem(readKey, JSON.stringify(this.readAlerts));
+                        },
+                        toggleDropdown: function (e) {
+                            if (e) e.stopPropagation();
+                            this.isOpen = !this.isOpen;
+                            if (this.isOpen) {
+                                this.markAllAsRead();
+                            }
+                        },
+                        closeDropdown: function () {
+                            this.isOpen = false;
+                        },
+                        markAllAsRead: function () {
+                            var vm = this;
+                            var hasChange = false;
+                            vm.alerts.forEach(function (alert) {
+                                if (vm.readAlerts.indexOf(alert.Id) === -1) {
+                                    vm.readAlerts.push(alert.Id);
+                                    hasChange = true;
+                                }
+                            });
+                            if (hasChange) {
+                                vm.saveLocalStorage();
+                            }
+                        },
+                        isUnread: function (id) {
+                            return this.readAlerts.indexOf(id) === -1;
+                        },
+                        getIconClass: function (severity) {
+                            if (severity === 'danger') return 'fa-triangle-exclamation';
+                            if (severity === 'warning') return 'fa-circle-exclamation';
+                            return 'fa-circle-info';
+                        },
+                        goToAlert: function (alert) {
+                            var redirectUrl = window.getAlertRedirectUrl(alert);
+                            window.location.href = redirectUrl;
+                        },
+                        checkRealtimeAlerts: function () {
+                            var vm = this;
+                            $.ajax({
+                                url: '/api/alerts/check-new',
+                                type: 'GET',
+                                success: function (res) {
+                                    vm.loadLocalStorage();
+                                    if (res && res.length > 0) {
+                                        var hasNew = false;
+                                        res.forEach(function (alert) {
+                                            var relevant = window.isAlertRelevantToCurrentPage(alert);
+                                            var seen = vm.seenAlerts.indexOf(alert.Id) !== -1;
 
-                // Chạy kiểm tra lần đầu sau 1 giây, sau đó chạy mỗi 15 giây
-                setTimeout(checkRealtimeAlerts, 1000);
-                setInterval(checkRealtimeAlerts, 15000);
+                                            if (relevant && !seen) {
+                                                vm.seenAlerts.push(alert.Id);
+                                                hasNew = true;
+
+                                                if (!vm.isFirstLoad) {
+                                                    var toastType = alert.Severity === 'danger' ? 'danger' :
+                                                                    alert.Severity === 'warning' ? 'warning' : 'success';
+
+                                                    if (window.MedEquip && window.MedEquip.toast) {
+                                                        window.MedEquip.toast(
+                                                            alert.Title,
+                                                            alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'),
+                                                            toastType,
+                                                            alert
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        });
+
+                                        vm.isFirstLoad = false;
+                                        if (hasNew) {
+                                            vm.saveLocalStorage();
+                                        }
+                                        vm.alerts = res;
+                                    } else {
+                                        vm.isFirstLoad = false;
+                                        vm.alerts = [];
+                                    }
+                                },
+                                error: function (xhr) {
+                                    console.warn('Lỗi polling cảnh báo realtime:', xhr.responseText);
+                                }
+                            });
+                        }
+                    },
+                    mounted: function () {
+                        var vm = this;
+                        vm.loadLocalStorage();
+                        vm.checkRealtimeAlerts();
+                        
+                        // Close dropdown when clicking outside
+                        document.addEventListener('click', function () {
+                            vm.closeDropdown();
+                        });
+
+                        // Poll every 15 seconds
+                        setInterval(function () {
+                            vm.checkRealtimeAlerts();
+                        }, 15000);
+                    }
+                });
             });
         </script>
     }

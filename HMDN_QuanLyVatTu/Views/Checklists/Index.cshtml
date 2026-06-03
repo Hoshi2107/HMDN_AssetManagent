@@ -769,6 +769,32 @@
 </style>
 
 <div id="app" class="cl-dashboard" v-cloak>
+    <!-- OFFLINE STATUS BANNER -->
+    <div v-if="!isOnline || offlineQueueLength > 0" class="cl-tech-qr-panel mb-4" :style="isOnline ? 'background:#fffbeb; border-color:#fde68a;' : 'background:#fef2f2; border-color:#fca5a5;'">
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:16px; margin: 0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fa-solid" :class="isOnline ? 'fa-cloud-arrow-up text-warning' : 'fa-wifi-slash text-danger'" style="font-size:20px;"></i>
+                <div>
+                    <strong :style="isOnline ? 'color:#b45309;' : 'color:#b91c1c;'">
+                        ${ isOnline ? 'Có dữ liệu ngoại tuyến chờ đồng bộ' : 'Bạn đang ngoại tuyến (Offline)' }
+                    </strong>
+                    <div style="font-size:12.5px; color:var(--cl-text-muted); margin-top:2px;">
+                        ${ isOnline ? 'Kết nối đã khôi phục. Vui lòng bấm đồng bộ để gửi dữ liệu lên máy chủ.' : 'Lịch trình và biểu mẫu đã được lưu vào bộ nhớ cache. Bạn vẫn có thể thực hiện checklist bình thường.' }
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="cl-badge" :class="isOnline ? 'cl-badge-pending' : 'cl-badge-fail'" style="font-size:12px; padding:6px 12px; text-transform: none; letter-spacing: normal;">
+                    Chờ đồng bộ: <strong>${ offlineQueueLength }</strong>
+                </span>
+                <button v-if="isOnline && offlineQueueLength > 0" class="cl-btn cl-btn-success" style="height:36px; padding:0 14px; font-size:12.5px;" @@click="syncOfflineQueue" :disabled="isSyncing">
+                    <span v-if="isSyncing"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang đồng bộ...</span>
+                    <span v-else><i class="fa-solid fa-rotate mr-1"></i> Đồng bộ ngay</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- KPI SUMMARY CARDS -->
     <div class="cl-kpi-grid">
         <div class="cl-kpi-card kpi-blue" @@click="filterByKpi('pending')">
@@ -817,10 +843,34 @@
         <button class="cl-tab-btn" :class="{active: activeTab==='logs'}" @@click="activeTab='logs'">
             <i class="fa-solid fa-book"></i> Nhật Ký Hoàn Thành
         </button>
+        <button class="cl-tab-btn" v-if="isManager()" :class="{active: activeTab==='manager_approvals'}" @@click="activeTab='manager_approvals'">
+            <i class="fa-solid fa-user-shield"></i> Giám Sát & Duyệt
+        </button>
     </div>
 
     <!-- ===== TAB CONTENT: SCHEDULES ===== -->
     <div v-if="activeTab==='schedules'" style="display:flex; flex-direction:column; gap:20px;">
+        <!-- Cycle tabs row -->
+        <div style="display:flex; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--cl-border); padding-bottom:12px; margin-bottom: 4px;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType===''}" @@click="schedulesFilter.cycleType=''" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Tất cả chu kỳ
+            </button>
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='daily'}" @@click="schedulesFilter.cycleType='daily'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Hàng ngày (Daily)
+            </button>
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='weekly'}" @@click="schedulesFilter.cycleType='weekly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Hàng tuần (Weekly)
+            </button>
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='monthly'}" @@click="schedulesFilter.cycleType='monthly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Hàng tháng (Monthly)
+            </button>
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='quarterly'}" @@click="schedulesFilter.cycleType='quarterly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Hàng quý (Quarterly)
+            </button>
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='yearly'}" @@click="schedulesFilter.cycleType='yearly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+                Hàng năm (Yearly)
+            </button>
+        </div>
         <div class="cl-filter-bar">
             <div class="cl-input-group flex-grow">
                 <label><i class="fa-solid fa-magnifying-glass mr-1"></i> Tìm kiếm thiết bị</label>
@@ -1002,6 +1052,117 @@
             <button class="cl-page-btn" :disabled="logsPage === logsTotalPages" @@click="setLogsPage(logsPage + 1)">
                 Sau <i class="fa-solid fa-chevron-right"></i>
             </button>
+        </div>
+    </div>
+
+    <!-- ===== TAB CONTENT: MANAGER APPROVALS ===== -->
+    <div v-if="activeTab==='manager_approvals'" style="display:flex; flex-direction:column; gap:28px;">
+        <!-- 1. Department Compliance Rates -->
+        <div style="background:var(--cl-card-bg); border:1px solid var(--cl-border); border-radius:var(--cl-radius-lg); padding:24px; box-shadow:var(--cl-shadow-sm);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; border-bottom:1px solid var(--cl-border); padding-bottom:12px;">
+                <h4 style="font-size:15px; font-weight:700; color:var(--cl-text); margin:0;">
+                    <i class="fa-solid fa-chart-bar mr-2 text-primary"></i>Tỷ lệ tuân thủ Checklist theo khoa phòng ban
+                </h4>
+                <div style="display:flex; gap:10px;">
+                    <input type="date" class="cl-input" v-model="complianceFilter.fromDate" style="height:36px; padding:0 10px; font-size:12.5px;" />
+                    <input type="date" class="cl-input" v-model="complianceFilter.toDate" style="height:36px; padding:0 10px; font-size:12.5px;" />
+                    <button class="cl-btn cl-btn-primary" style="height:36px; padding:0 12px; font-size:12.5px;" @@click="loadDepartmentProgress">
+                        <i class="fa-solid fa-arrows-rotate"></i> Lấy dữ liệu
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+                <div v-for="dept in departmentCompliance" :key="dept.DepartmentId" style="border:1px solid var(--cl-border); border-radius:var(--cl-radius-md); padding:16px; background:var(--cl-neutral-light);">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
+                        <strong style="font-size:13.5px; color:#0f172a;">${ dept.DepartmentName }</strong>
+                        <span class="cl-badge" :class="dept.ComplianceRate >= 80 ? 'cl-badge-completed' : (dept.ComplianceRate >= 50 ? 'cl-badge-pending' : 'cl-badge-fail')" style="font-size:11px; padding:2px 8px;">
+                            ${ dept.ComplianceRate }%
+                        </span>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div style="height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:8px;">
+                        <div :style="'width: ' + dept.ComplianceRate + '%; height:100%; background:' + (dept.ComplianceRate >= 80 ? 'var(--cl-success)' : (dept.ComplianceRate >= 50 ? 'var(--cl-warning)' : 'var(--cl-danger)'))"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--cl-text-muted);">
+                        <span>Hoàn thành: <strong>${ dept.DoneCount }</strong></span>
+                        <span>Tổng lịch trình: <strong>${ dept.TotalCount }</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Checklist Awaiting Approval List -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <h4 style="font-size:15px; font-weight:700; color:var(--cl-text); margin:0;">
+                    <i class="fa-solid fa-list-check mr-2 text-warning"></i>Danh sách checklists chờ duyệt (${ pendingApprovals.length } nhật ký)
+                </h4>
+                <div style="display:flex; gap:10px;">
+                    <button class="cl-btn cl-btn-success" style="height:38px; font-size:13px;" @@click="approveSelectedLogs" :disabled="selectedLogIds.length === 0 || isApproving">
+                        <span v-if="isApproving"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang duyệt...</span>
+                        <span v-else><i class="fa-solid fa-check-double mr-1"></i> Duyệt hàng loạt (${ selectedLogIds.length } đã chọn)</span>
+                    </button>
+                    <button class="cl-btn cl-btn-primary" style="height:38px; font-size:13px;" @@click="loadPendingApprovals">
+                        <i class="fa-solid fa-arrows-rotate"></i> Tải lại
+                    </button>
+                </div>
+            </div>
+
+            <div class="cl-card-table">
+                <table class="cl-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px; text-align:center;">
+                                <input type="checkbox" @@change="toggleSelectAll($event)" :checked="selectedLogIds.length === pendingApprovals.length && pendingApprovals.length > 0" />
+                            </th>
+                            <th>Mã Tài Sản</th>
+                            <th>Tên thiết bị</th>
+                            <th>Khoa phòng</th>
+                            <th>Kỹ thuật viên</th>
+                            <th>Thời gian làm</th>
+                            <th>Chu kỳ</th>
+                            <th>Kết quả</th>
+                            <th style="text-align: center;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="log in pendingApprovals" :key="log.Id">
+                            <td style="text-align:center;">
+                                <input type="checkbox" :value="log.Id" v-model="selectedLogIds" />
+                            </td>
+                            <td><strong class="text-primary">${ log.AssetCode }</strong></td>
+                            <td class="font-weight-bold">${ log.ItemName }</td>
+                            <td>${ log.DepartmentName || '—' }</td>
+                            <td>${ log.CheckedByName }</td>
+                            <td>${ log.CheckedAt }</td>
+                            <td><span class="font-weight-bold">${ cycleLabel(log.CycleType) }</span></td>
+                            <td>
+                                <span class="cl-badge" :class="'cl-badge-' + log.OverallResult">${ resultLabel(log.OverallResult) }</span>
+                            </td>
+                            <td style="text-align: center; display:flex; justify-content:center; gap:8px;">
+                                <button class="cl-btn cl-btn-success" style="height:28px; padding:0 10px; font-size:11.5px; border-radius:6px;" @@click="approveSingleLog(log.Id)">
+                                    <i class="fa-solid fa-circle-check"></i> Duyệt
+                                </button>
+                                <button class="cl-btn cl-btn-outline" style="height:28px; padding:0 10px; font-size:11.5px; border-radius:6px;" @@click="openDetailsModal(log.Id)">
+                                    <i class="fa-solid fa-eye"></i> Chi tiết
+                                </button>
+                            </td>
+                        </tr>
+                        <tr v-if="pendingApprovals.length === 0">
+                            <td colspan="9" style="padding: 0;">
+                                <div class="cl-empty-state">
+                                    <div class="cl-empty-icon-wrap" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+                                        <i class="fa-solid fa-shield-heart"></i>
+                                    </div>
+                                    <h4 class="cl-empty-title" style="color:#166534;">Không có checklist chờ duyệt</h4>
+                                    <p class="cl-empty-text">Tất cả checklist định kỳ đạt tiêu chuẩn đã được tự động duyệt. Các checklists lỗi hoặc chu kỳ dài hiện tại đều sạch sẽ.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
