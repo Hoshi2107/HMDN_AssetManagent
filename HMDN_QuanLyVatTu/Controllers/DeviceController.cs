@@ -763,7 +763,7 @@ namespace HMDN.Controllers.API
         public IHttpActionResult Groups()
         {
             var data = db.Database.SqlQuery<DropdownVM>(
-                "SELECT Id, Name FROM Groups WHERE IsActive = 1 ORDER BY SortOrder, Name"
+                @"SELECT Id, Name FROM Groups WHERE IsActive = 1 ORDER BY SortOrder, Name"
             ).ToList();
             return Ok(data);
         }

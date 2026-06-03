@@ -29,6 +29,7 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        qrScanner: null,
         showQrInDetail: false,
         showQrResultModal: false,
         newInventoryQr: {
@@ -1136,12 +1137,7 @@ var app = new Vue({
             })
         },
 
-        openQrModal() {
 
-            this.showAddOptionModal = false
-
-            this.showQrModal = true
-        },
 
         openManualModal() {
 
