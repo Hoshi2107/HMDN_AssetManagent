@@ -90,21 +90,52 @@ namespace HMDN_QuanLyVatTu.Controllers
         [HttpGet]
         public JsonResult GetTicketDetails(int ticketId)
         {
-            var details = db.Inventories
-                .Where(x => x.IdTicket == ticketId)
-                .Select(x => new
-                {
-                    x.Id,
-                    ItemName = x.Item != null ? x.Item.Name : "N/A",
-                    x.SerialNumber,
-                    x.Quantity,
-                    x.LifeStatus,
-                    x.ApprovalStatus,
-                    x.ApprovalNote,
-                    x.ApprovedQuantity
-                })
-                .ToList();
-            return Json(details, JsonRequestBehavior.AllowGet);
+            var ticket = db.Tickets.FirstOrDefault(t => t.Id == ticketId);
+            if (ticket == null)
+            {
+                return Json(new object[] { }, JsonRequestBehavior.AllowGet);
+            }
+
+            bool hasTicketDetails = db.TicketDetails.Any(x => x.TicketId == ticketId);
+
+            if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR" || !hasTicketDetails)
+            {
+                var details = db.Inventories
+                    .Where(x => x.IdTicket == ticketId)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        ItemName = x.Item != null ? x.Item.Name : "N/A",
+                        x.SerialNumber,
+                        x.Quantity,
+                        x.LifeStatus,
+                        x.ApprovalStatus,
+                        x.ApprovalNote,
+                        x.ApprovedQuantity,
+                        Note = x.Note
+                    })
+                    .ToList();
+                return Json(details, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                var details = db.TicketDetails
+                    .Where(x => x.TicketId == ticketId)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        ItemName = x.ItemName,
+                        SerialNumber = "",
+                        x.Quantity,
+                        LifeStatus = "active",
+                        x.ApprovalStatus,
+                        x.ApprovalNote,
+                        x.ApprovedQuantity,
+                        Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note)
+                    })
+                    .ToList();
+                return Json(details, JsonRequestBehavior.AllowGet);
+            }
         }
 
         [HttpPost]

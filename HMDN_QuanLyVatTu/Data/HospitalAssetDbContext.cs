@@ -32,6 +32,7 @@ namespace HMS.Data
 
         public DbSet<Location> Locations { get; set; }
         public DbSet<Tickets> Tickets { get; set; }
+        public DbSet<TicketDetail> TicketDetails { get; set; }
         public DbSet<TicketDiscussion> TicketDiscussions { get; set; }
         public DbSet<DepreciationLog> DepreciationLogs { get; set; }
         public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
@@ -68,6 +69,9 @@ namespace HMS.Data
 
             modelBuilder.Entity<Tickets>()
                 .ToTable("Tickets");
+
+            modelBuilder.Entity<TicketDetail>()
+                .ToTable("TicketDetails");
 
             modelBuilder.Entity<TicketDiscussion>()
                 .ToTable("TicketDiscussions");

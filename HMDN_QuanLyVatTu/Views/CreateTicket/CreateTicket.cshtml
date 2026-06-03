@@ -114,6 +114,47 @@
     .reason-hint { display: flex; gap: 8px; margin-top: 12px; color: var(--hm-text-sec); font-size: 12px; line-height: 1.4; }
     .reason-hint i { color: var(--hm-navy); margin-top: 2px; }
 
+    /* ── PURCHASE REQUEST FORM (IMPORT/EXPORT/TRANSFER) ── */
+    .pr-form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 0.8fr 1.5fr auto;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 20px;
+    }
+    @@media(max-width:768px) { .pr-form-grid { grid-template-columns: 1fr; } }
+    .pr-table {
+        width: 100%; border-collapse: collapse; font-size: 13.5px;
+    }
+    .pr-table th {
+        padding: 12px 14px; background: #f8fafc;
+        font-weight: 700; color: var(--hm-navy);
+        border-bottom: 2px solid var(--hm-border);
+        text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .pr-table td {
+        padding: 10px 14px; border-bottom: 1px solid var(--hm-border);
+        vertical-align: middle; color: var(--hm-text);
+    }
+    .pr-table tbody tr:hover { background: #f8fafc; }
+    .pr-table tbody tr:last-child td { border-bottom: none; }
+    .pr-inline-input {
+        width: 100%; padding: 6px 10px; border: 1px solid var(--hm-border);
+        border-radius: 8px; font-size: 13px; color: var(--hm-text);
+        outline: none; background: #fff; transition: border-color .2s;
+    }
+    .pr-inline-input:focus { border-color: var(--hm-navy); }
+    .pr-table-wrap {
+        border: 1px solid var(--hm-border); border-radius: 12px; overflow: hidden;
+        background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.02);
+    }
+    .pr-info-box {
+        background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+        padding: 12px 16px; margin-bottom: 18px; display: flex; gap: 10px; align-items: flex-start;
+        font-size: 13px; color: #1e40af;
+    }
+    .pr-info-box i { color: #3b82f6; margin-top: 2px; }
+
     /* ── CHAT CONTAINER ── */
     .chat-wrap {
         display: flex; flex-direction: column; height: 420px; background: var(--hm-chat-bg);
@@ -364,100 +405,207 @@
                 </div>
             </div>
 
-            <!-- 1b. DANH SÁCH THIẾT BỊ YÊU CẦU -->
-            <div class="p-card">
-                <div class="c-head">
-                    <div class="c-icon"><i class="fa-solid fa-list-ol"></i></div>
-                    <span class="c-title">Danh sách thiết bị yêu cầu <span style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
-                    <div style="margin-left: auto; position: relative;">
-                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hm-navy); font-size: 13px; pointer-events: none;"></i>
-                        <input type="text" class="f-input" v-model="searchQuery" placeholder="Tìm kiếm Mã Tài Sản..." style="padding-left: 36px; width: 240px; height: 38px; font-size: 12.5px; border-radius: 20px;" />
-                    </div>
-                </div>
-                <div class="c-body">
-                    <!-- Inline form to add devices -->
-                    <div class="dev-add-grid">
-                        <div class="f-group">
-                            <label class="f-label">Mã Tài Sản</label>
-                            <select class="f-input" v-model="newDevice.itemName" style="cursor:pointer;">
-                                <option value="">Chọn Mã Tài Sản...</option>
-                                <option v-for="item in filteredInventoryAssets" :key="item.AssetCode" :value="item.AssetCode">${ item.AssetCode }</option>
-                            </select>
-                        </div>
-                        <div class="f-group">
-                            <label class="f-label">Số Serial (tự động)</label>
-                            <input type="text" class="f-input" v-model="newDevice.serialNumber" placeholder="Sẽ tự sinh khi thêm thiết bị" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed;border-style:dashed;" />
-                        </div>
-                        <div class="f-group">
-                            <label class="f-label">Số lượng</label>
-                            <input type="number" class="f-input" v-model.number="newDevice.quantity" min="1" />
-                        </div>
-                        <div class="f-group">
-                            <label class="f-label">Ghi chú</label>
-                            <input type="text" class="f-input" v-model="newDevice.note" placeholder="Vị trí lắp đặt, lý do..." />
-                        </div>
-                        <div class="f-group">
-                            <button type="button" class="btn-submit" style="height: 44px; padding: 0 20px; border-radius: 10px; margin-top: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;" @@click="addDeviceToList">
-                                <i class="fa-solid fa-plus" style="margin: 0; font-size: 14px;"></i> Thêm
-                            </button>
-                        </div>
-                    </div>
+            <!-- ===== KHỐI CHO: HỖ TRỢ + SỬA CHỮA ===== -->
+            <template v-if="isDeviceForm">
 
-                    <!-- Devices Table -->
-                    <div style="overflow-x: auto; margin-top: 20px; border: 1px solid var(--hm-border); border-radius: 12px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-                            <thead>
-                                <tr style="border-bottom: 2px solid var(--hm-border); background: #f8fafc;">
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 60px;">STT</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Mã Tài Sản</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 180px;">Mã/Serial</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px; text-align: center;">Số lượng</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px;">ĐVT</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Ghi chú</th>
-                                    <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 80px; text-align: center;">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(dev, idx) in form.devices" :key="idx" style="border-bottom: 1px solid var(--hm-border); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
-                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ idx + 1 }</td>
-                                    <td style="padding: 14px 16px; font-weight: 600; color: var(--hm-navy);">${ dev.itemName }</td>
-                                    <td style="padding: 14px 16px;">${ dev.serialNumber || '-' }</td>
-                                    <td style="padding: 14px 16px; font-weight: 600; text-align: center;">${ dev.quantity }</td>
-                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.unit || 'Cái' }</td>
-                                    <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.note || '-' }</td>
-                                    <td style="padding: 14px 16px; text-align: center;">
-                                        <button type="button" style="background: none; border: none; color: var(--hm-danger); cursor: pointer; font-size: 14.5px; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" @@click="removeDeviceFromList(idx)" title="Xóa">
-                                            <i class="fa-regular fa-trash-can"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr v-if="form.devices.length === 0">
-                                    <td colspan="7" style="padding: 32px 16px; text-align: center; color: var(--hm-text-sec); font-style: italic;">
-                                        Chưa có thiết bị nào trong danh sách. Vui lòng chọn Mã Tài Sản và bấm nút "Thêm" ở trên.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- 1b. DANH SÁCH THIẾT BỊ YÊU CẦU -->
+                <div class="p-card">
+                    <div class="c-head">
+                        <div class="c-icon"><i class="fa-solid fa-list-ol"></i></div>
+                        <span class="c-title">Danh sách thiết bị yêu cầu <span style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
+                        <div style="margin-left: auto; position: relative;">
+                            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hm-navy); font-size: 13px; pointer-events: none;"></i>
+                            <input type="text" class="f-input" v-model="searchQuery" placeholder="Tìm kiếm Mã Tài Sản..." style="padding-left: 36px; width: 240px; height: 38px; font-size: 12.5px; border-radius: 20px;" />
+                        </div>
+                    </div>
+                    <div class="c-body">
+                        <div class="dev-add-grid">
+                            <div class="f-group">
+                                <label class="f-label">Mã Tài Sản</label>
+                                <select class="f-input" v-model="newDevice.itemName" style="cursor:pointer;">
+                                    <option value="">Chọn Mã Tài Sản...</option>
+                                    <option v-for="item in filteredInventoryAssets" :key="item.AssetCode" :value="item.AssetCode">${ item.AssetCode }</option>
+                                </select>
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Số Serial (tự động)</label>
+                                <input type="text" class="f-input" v-model="newDevice.serialNumber" placeholder="Sẽ tự sinh khi thêm thiết bị" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed;border-style:dashed;" />
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Số lượng</label>
+                                <input type="number" class="f-input" v-model.number="newDevice.quantity" min="1" />
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Ghi chú</label>
+                                <input type="text" class="f-input" v-model="newDevice.note" placeholder="Vị trí lắp đặt, lý do..." />
+                            </div>
+                            <div class="f-group">
+                                <button type="button" class="btn-submit" style="height: 44px; padding: 0 20px; border-radius: 10px; margin-top: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;" @@click="addDeviceToList">
+                                    <i class="fa-solid fa-plus" style="margin: 0; font-size: 14px;"></i> Thêm
+                                </button>
+                            </div>
+                        </div>
+                        <div style="overflow-x: auto; margin-top: 20px; border: 1px solid var(--hm-border); border-radius: 12px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--hm-border); background: #f8fafc;">
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 60px;">STT</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Mã Tài Sản</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 180px;">Mã/Serial</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px; text-align: center;">Số lượng</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 100px;">ĐVT</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy);">Ghi chú</th>
+                                        <th style="padding: 14px 16px; font-weight: 700; color: var(--hm-navy); width: 80px; text-align: center;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(dev, idx) in form.devices" :key="idx" style="border-bottom: 1px solid var(--hm-border); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='transparent'">
+                                        <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ idx + 1 }</td>
+                                        <td style="padding: 14px 16px; font-weight: 600; color: var(--hm-navy);">${ dev.itemName }</td>
+                                        <td style="padding: 14px 16px;">${ dev.serialNumber || '-' }</td>
+                                        <td style="padding: 14px 16px; font-weight: 600; text-align: center;">${ dev.quantity }</td>
+                                        <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.unit || 'Cái' }</td>
+                                        <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.note || '-' }</td>
+                                        <td style="padding: 14px 16px; text-align: center;">
+                                            <button type="button" style="background: none; border: none; color: var(--hm-danger); cursor: pointer; font-size: 14.5px; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" @@click="removeDeviceFromList(idx)" title="Xóa">
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="form.devices.length === 0">
+                                        <td colspan="7" style="padding: 32px 16px; text-align: center; color: var(--hm-text-sec); font-style: italic;">
+                                            Chưa có thiết bị nào trong danh sách. Vui lòng chọn Mã Tài Sản và bấm nút "Thêm" ở trên.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 2. REASON TEXTAREA -->
-            <div class="p-card">
-                <div class="c-head">
-                    <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                    <span class="c-title">Lý do yêu cầu & Chi tiết <span style="color: var(--hm-danger);">*</span></span>
-                </div>
-                <div class="c-body">
-                    <textarea class="reason-textarea"
-                              :placeholder="form.ticketType === 'HoTro' ? 'Nhập chi tiết yêu cầu hỗ trợ kỹ thuật hoặc báo lỗi thiết bị/phần mềm... (Bắt buộc)' : 'Nhập chi tiết yêu cầu... (Ví dụ: Nhập kho/Xuất kho thiết bị Switch thay thế khẩn cấp tại Khoa Khám bệnh)'"
-                              v-model="form.reasonDetails"></textarea>
-                    <div class="reason-hint">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span>Gợi ý: Mô tả rõ mã thiết bị, vị trí lắp đặt và tình trạng hiện tại.</span>
+                <!-- 2. LÝ DO YÊU CẦU -->
+                <div class="p-card">
+                    <div class="c-head">
+                        <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                        <span class="c-title">Lý do yêu cầu &amp; Chi tiết <span style="color: var(--hm-danger);">*</span></span>
+                    </div>
+                    <div class="c-body">
+                        <textarea class="reason-textarea"
+                                  placeholder="Nhập chi tiết yêu cầu hỗ trợ kỹ thuật hoặc báo lỗi thiết bị/phần mềm... (Bắt buộc)"
+                                  v-model="form.reasonDetails"></textarea>
+                        <div class="reason-hint">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Gợi ý: Mô tả rõ mã thiết bị, vị trí lắp đặt và tình trạng hiện tại.</span>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+            </template>
+
+            <!-- ===== KHỐI CHO: NHẬP KHO / XUẤT KHO / ĐIỀU CHUYỂN ===== -->
+            <template v-if="!isDeviceForm">
+
+                <!-- FORM GIẤY ĐỀ NGHỊ MUA HÀNG -->
+                <div class="p-card">
+                    <div class="c-head">
+                        <div class="c-icon"><i class="fa-solid fa-file-invoice"></i></div>
+                        <span class="c-title">Danh sách hàng hóa / Yêu cầu <span style="color: var(--hm-danger);">*</span></span>
+                    </div>
+                    <div class="c-body">
+                        <div class="pr-info-box">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Điền thông tin hàng hóa cần <strong>${ ticketTypeLabel }</strong>. Ít nhất 1 dòng hàng hóa bắt buộc.</span>
+                        </div>
+
+                        <!-- Form thêm dòng -->
+                        <div class="pr-form-grid">
+                            <div class="f-group">
+                                <label class="f-label">Tên hàng / Mô tả <span style="color:var(--hm-danger);">*</span></label>
+                                <input type="text" class="f-input" v-model="newPrItem.tenHang" placeholder="VD: Nâng cấp tài khoản mail, Switch mạng..." />
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Đơn vị</label>
+                                <input type="text" class="f-input" v-model="newPrItem.donVi" placeholder="Cái, Bộ, Tài khoản..." />
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Số lượng</label>
+                                <input type="number" class="f-input" v-model.number="newPrItem.soLuong" min="1" />
+                            </div>
+                            <div class="f-group">
+                                <label class="f-label">Ghi chú</label>
+                                <input type="text" class="f-input" v-model="newPrItem.ghiChu" placeholder="Email, vị trí lắp, lý do..." />
+                            </div>
+                            <div class="f-group">
+                                <button type="button" class="btn-submit" style="height:44px;padding:0 20px;border-radius:10px;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" @@click="addPrItem">
+                                    <i class="fa-solid fa-plus" style="font-size:14px;"></i> Thêm
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bảng danh sách hàng -->
+                        <div class="pr-table-wrap">
+                            <table class="pr-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:48px;">STT</th>
+                                        <th>Tên hàng</th>
+                                        <th style="width:120px;">Đơn vị</th>
+                                        <th style="width:100px;text-align:center;">Số lượng</th>
+                                        <th>Ghi chú</th>
+                                        <th style="width:60px;text-align:center;">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(it, i) in form.prItems" :key="i">
+                                        <td style="color:var(--hm-text-sec);">${ i + 1 }</td>
+                                        <td>
+                                            <input class="pr-inline-input" type="text" v-model="it.tenHang" placeholder="Tên hàng..." />
+                                        </td>
+                                        <td>
+                                            <input class="pr-inline-input" type="text" v-model="it.donVi" placeholder="Cái..." />
+                                        </td>
+                                        <td style="text-align:center;">
+                                            <input class="pr-inline-input" type="number" v-model.number="it.soLuong" min="1" style="width:70px;text-align:center;" />
+                                        </td>
+                                        <td>
+                                            <input class="pr-inline-input" type="text" v-model="it.ghiChu" placeholder="Ghi chú..." />
+                                        </td>
+                                        <td style="text-align:center;">
+                                            <button type="button" style="background:none;border:none;color:var(--hm-danger);cursor:pointer;font-size:15px;padding:4px;transition:transform .2s;" @@click="removePrItem(i)" title="Xóa dòng">
+                                                <i class="fa-regular fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="form.prItems.length === 0">
+                                        <td colspan="6" style="padding:28px 16px;text-align:center;color:var(--hm-text-sec);font-style:italic;">
+                                            Chưa có hàng hóa nào. Điền thông tin ở trên và bấm <strong>Thêm</strong>.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LÝ DO / MỤC ĐÍCH -->
+                <div class="p-card">
+                    <div class="c-head">
+                        <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                        <span class="c-title">Lý do / Mục đích <span style="color: var(--hm-danger);">*</span></span>
+                    </div>
+                    <div class="c-body">
+                        <textarea class="reason-textarea"
+                                  placeholder="Nhập lý do, mục đích yêu cầu... (VD: Cần tạo form khảo sát và chia sẻ file excel công việc giữa các bộ phận)"
+                                  v-model="form.reasonDetails"
+                                  style="min-height:140px;"></textarea>
+                        <div class="reason-hint">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Gợi ý: Mô tả rõ ràng mục đích để người phê duyệt hiểu và xử lý nhanh hơn.</span>
+                        </div>
+                    </div>
+                </div>
+
+            </template>
 
         </div>
 
@@ -556,10 +704,16 @@
                     quantity: 1,
                     note: ''
                 },
+                newPrItem: {
+                    tenHang: '',
+                    donVi: '',
+                    soLuong: 1,
+                    ghiChu: ''
+                },
 
                 // Form data: khởi tạo động từ Razor ViewBag hoặc LocalStorage
                 form: {
-                    ticketType: 'EXPORT',
+                    ticketType: 'IMPORT',
                     creator: 'Đang tải...',
                     department: 'Đang tải...',
                     userId: 1,
@@ -567,7 +721,8 @@
                     targetDepartmentId: '',
                     note: '',
                     reasonDetails: '',
-                    devices: [] // Danh sách thiết bị yêu cầu
+                    devices: [],      // Dùng cho SUPPORT / REPAIR
+                    prItems: []       // Dùng cho IMPORT / EXPORT / TRANSFER
                 },
                 listDepartments: [],
 
@@ -580,6 +735,14 @@
                 attachedFiles: []
             },
             computed: {
+                isDeviceForm() {
+                    // SUPPORT (HoTro) và REPAIR (SuaChua) → hiện form thiết bị + lý do
+                    return this.form.ticketType === 'SUPPORT' || this.form.ticketType === 'REPAIR';
+                },
+                ticketTypeLabel() {
+                    var map = { 'IMPORT': 'Nhập kho', 'EXPORT': 'Xuất kho', 'TRANSFER': 'Điều chuyển', 'SUPPORT': 'Hỗ trợ', 'REPAIR': 'Sửa chữa' };
+                    return map[this.form.ticketType] || this.form.ticketType;
+                },
                 filteredInventoryAssets() {
                     var vm = this;
                     var q = (vm.searchQuery || '').trim().toLowerCase();
@@ -721,6 +884,28 @@
                     this.form.devices.splice(idx, 1);
                 },
 
+                // ── Quản lý danh sách hàng hóa (IMPORT/EXPORT/TRANSFER) ──
+                addPrItem() {
+                    if (!this.newPrItem.tenHang || !this.newPrItem.tenHang.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập tên hàng hóa!', 'warning');
+                        return;
+                    }
+                    if (!this.newPrItem.soLuong || this.newPrItem.soLuong <= 0) {
+                        this.toast('Cảnh báo', 'Số lượng phải lớn hơn 0!', 'warning');
+                        return;
+                    }
+                    this.form.prItems.push({
+                        tenHang: this.newPrItem.tenHang.trim(),
+                        donVi: this.newPrItem.donVi.trim() || 'Cái',
+                        soLuong: this.newPrItem.soLuong,
+                        ghiChu: this.newPrItem.ghiChu.trim()
+                    });
+                    this.newPrItem = { tenHang: '', donVi: '', soLuong: 1, ghiChu: '' };
+                },
+                removePrItem(idx) {
+                    this.form.prItems.splice(idx, 1);
+                },
+
                 // ── Attachment Panel (Right) ──
                 handleDrop(e) {
                     this.isDragging = false;
@@ -805,33 +990,55 @@
                         } catch (e) { /* ignore */ }
                     }
 
-                    // RÀNG BUỘC BẮT BUỘC: Kiểm tra "Gửi phiếu tới phòng ban" và "Lý do chi tiết"
+                    // RÀNG BUỘC BẮT BUỘC
                     if (!this.form.targetDepartmentId) {
                         this.toast('Cảnh báo', 'Vui lòng chọn phòng ban nhận phiếu!', 'warning');
                         return;
                     }
                     if (!this.form.reasonDetails || !this.form.reasonDetails.trim()) {
-                        this.toast('Cảnh báo', 'Vui lòng nhập lý do chi tiết yêu cầu!', 'warning');
+                        this.toast('Cảnh báo', 'Vui lòng nhập lý do / mục đích yêu cầu!', 'warning');
+                        return;
+                    }
+                    // Với IMPORT/EXPORT/TRANSFER: bắt buộc ít nhất 1 dòng hàng hóa
+                    if (!this.isDeviceForm && this.form.prItems.length === 0) {
+                        this.toast('Cảnh báo', 'Vui lòng thêm ít nhất 1 hàng hóa vào danh sách!', 'warning');
                         return;
                     }
 
                     this.isSubmitting = true;
                     var senderName = this.form.creator || 'Người yêu cầu';
 
+                    // Build note tổng hợp cho IMPORT/EXPORT/TRANSFER từ prItems
+                    var prNote = this.form.reasonDetails;
+                    if (!this.isDeviceForm && this.form.prItems.length > 0) {
+                        var lines = this.form.prItems.map(function (it, i) {
+                            return (i+1) + '. ' + it.tenHang + ' | ' + it.donVi + ' | SL: ' + it.soLuong + (it.ghiChu ? ' | ' + it.ghiChu : '');
+                        });
+                        prNote = '[Danh sách hàng hóa]\n' + lines.join('\n') + '\n\n[Lý do/Mục đích]\n' + this.form.reasonDetails;
+                    }
+
                     var payload = {
                         TicketType: this.form.ticketType,
-                        AssetType: this.form.ticketType === 'HoTro' ? null : this.form.assetType,
-                        Note: this.form.note,
+                        AssetType: this.isDeviceForm ? null : this.form.assetType,
+                        Note: prNote,
                         ReasonDetails: this.form.reasonDetails,
                         UserId: this.form.userId,
                         SenderName: senderName,
                         TargetDepartmentId: this.form.targetDepartmentId,
-                        Devices: this.form.devices.map(function (d) {
+                        Devices: this.isDeviceForm ? this.form.devices.map(function (d) {
                             return {
                                 ItemName: d.itemName,
                                 SerialNumber: d.serialNumber,
                                 Quantity: d.quantity,
                                 Note: d.note
+                            };
+                        }) : this.form.prItems.map(function (it) {
+                            return {
+                                ItemName: it.tenHang,
+                                SerialNumber: '',
+                                Quantity: it.soLuong,
+                                Unit: it.donVi,
+                                Note: it.ghiChu
                             };
                         })
                     };
@@ -886,8 +1093,13 @@
             },
             watch: {
                 'form.ticketType': function (newVal) {
-                    if (newVal === 'HoTro') {
-                        this.form.assetType = '';
+                    // Reset form khi đổi loại yêu cầu
+                    this.form.assetType = '';
+                    this.form.reasonDetails = '';
+                    if (newVal === 'SUPPORT' || newVal === 'REPAIR') {
+                        this.form.prItems = [];
+                    } else {
+                        this.form.devices = [];
                     }
                 },
                 'newDevice.itemName': function (newVal) {

@@ -181,6 +181,30 @@ var app = new Vue({
             // KHÓA chat khi Status là APPROVED hoặc REJECTED
             // MỞ chat khi Status là PENDING
             return this.selectedTicket.Status !== 'PENDING';
+        }
+    },
+    methods: {
+        ticketTypeLabel(type) {
+            if (type === 'IMPORT') return 'Nhập kho';
+            if (type === 'EXPORT') return 'Xuất kho';
+            if (type === 'TRANSFER') return 'Điều chuyển';
+            if (type === 'SUPPORT') return 'Hỗ trợ';
+            if (type === 'REPAIR') return 'Sửa chữa';
+            return type || 'Nhập kho';
+        },
+        getUnitFromNote(note) {
+            if (!note) return 'Cái';
+            var parts = note.split(' | ');
+            return parts[0] || 'Cái';
+        },
+        getItemNoteFromNote(note) {
+            if (!note) return '';
+            var parts = note.split(' | ');
+            if (parts.length <= 1) return '';
+            return parts.slice(1).join(' | ');
+        },
+        isDeviceFormType(type) {
+            return type === 'SUPPORT' || type === 'REPAIR';
         },
         canApprove() {
             if (!this.currentUser) return false;
@@ -188,9 +212,7 @@ var app = new Vue({
             if (!this.currentUser.roles) return false;
             const checkRoles = ['admin', 'manager', 'approver'];
             return this.currentUser.roles.some(r => checkRoles.includes(r.toLowerCase()));
-        }
-    },
-    methods: {
+        },
         formatDate(dateStr) {
             if (!dateStr) return '';
             var s = dateStr.toString();
@@ -259,7 +281,8 @@ var app = new Vue({
                                 ...dt,
                                 isApproved: dt.ApprovalStatus === 'rejected' ? false : true,
                                 approvedQuantity: (dt.ApprovedQuantity !== null && dt.ApprovedQuantity !== undefined) ? dt.ApprovedQuantity : dt.Quantity,
-                                approvalNote: dt.ApprovalNote || ''
+                                approvalNote: dt.ApprovalNote || '',
+                                note: dt.Note || ''
                             };
                         });
                     } else {

@@ -119,6 +119,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             public string ItemName { get; set; }
             public string SerialNumber { get; set; }
             public int Quantity { get; set; }
+            public string Unit { get; set; }
             public string Note { get; set; }
         }
 
@@ -223,74 +224,99 @@ namespace HMDN_QuanLyVatTu.Controllers
                     db.SaveChanges();
                 }
 
-                // 2. Save items (Inventories)
+                // 2. Save items (Inventories / TicketDetails)
                 if (payload.Devices != null && payload.Devices.Count > 0)
                 {
-                    foreach (var device in payload.Devices)
-                    {
-                        if (string.IsNullOrWhiteSpace(device.ItemName)) continue;
+                    bool isDeviceTicket = payload.TicketType == "SUPPORT" || payload.TicketType == "REPAIR";
 
-                        // Check if an item with the same name exists
-                        string trimmedName = device.ItemName.Trim();
-                        var item = db.Items.FirstOrDefault(x => x.Name.Trim().ToLower() == trimmedName.ToLower());
-                        if (item == null)
+                    if (isDeviceTicket)
+                    {
+                        foreach (var device in payload.Devices)
                         {
-                            // Get first group or create a default group
-                            var group = db.Groups.FirstOrDefault();
-                            int groupId = 1;
-                            if (group != null)
+                            if (string.IsNullOrWhiteSpace(device.ItemName)) continue;
+
+                            // Check if an item with the same name exists
+                            string trimmedName = device.ItemName.Trim();
+                            var item = db.Items.FirstOrDefault(x => x.Name.Trim().ToLower() == trimmedName.ToLower());
+                            if (item == null)
                             {
-                                groupId = group.Id;
-                            }
-                            else
-                            {
-                                var newGroup = new Group
+                                // Get first group or create a default group
+                                var group = db.Groups.FirstOrDefault();
+                                int groupId = 1;
+                                if (group != null)
                                 {
-                                    Code = "DEFAULT",
-                                    Name = "Nhóm mặc định",
+                                    groupId = group.Id;
+                                }
+                                else
+                                {
+                                    var newGroup = new Group
+                                    {
+                                        Code = "DEFAULT",
+                                        Name = "Nhóm mặc định",
+                                        IsActive = true,
+                                        CreatedAt = DateTime.Now
+                                    };
+                                    db.Groups.Add(newGroup);
+                                    db.SaveChanges();
+                                    groupId = newGroup.Id;
+                                }
+
+                                // Create new item under catalog
+                                item = new Item
+                                {
+                                    GroupId = groupId,
+                                    Code = "ITEM_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+                                    Name = trimmedName,
+                                    Unit = "Cái",
                                     IsActive = true,
                                     CreatedAt = DateTime.Now
                                 };
-                                db.Groups.Add(newGroup);
-                                db.SaveChanges();
-                                groupId = newGroup.Id;
+                                db.Items.Add(item);
+                                db.SaveChanges(); // Generates item.Id
                             }
 
-                            // Create new item under catalog
-                            item = new Item
+                            var inventory = new HMS.Models.Inventory.Inventory
                             {
-                                GroupId = groupId,
-                                Code = "ITEM_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
-                                Name = trimmedName,
-                                Unit = "Cái",
-                                IsActive = true,
-                                CreatedAt = DateTime.Now
+                                ItemId = item.Id,
+                                AssetCode = "TS-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper(),
+                                SerialNumber = string.IsNullOrWhiteSpace(device.SerialNumber)
+                                    ? "SN-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper()
+                                    : device.SerialNumber.Trim(),
+                                Quantity = device.Quantity,
+                                IdTicket = ticket.Id,
+                                ApprovalStatus = "PENDING",
+                                LifeStatus = "active",
+                                ImportDate = DateTime.Now,
+                                UnitPrice = 0,
+                                TotalPrice = 0,
+                                CreatedBy = payload.UserId,
+                                CreatedAt = DateTime.Now,
+                                Note = device.Note,
+                                DepartmentId = payload.TargetDepartmentId ?? userDeptId,
+                                QrCode = "QR-" + Guid.NewGuid().ToString("N").ToUpper()
                             };
-                            db.Items.Add(item);
-                            db.SaveChanges(); // Generates item.Id
+                            db.Inventories.Add(inventory);
                         }
-
-                        var inventory = new HMS.Models.Inventory.Inventory
+                    }
+                    else
+                    {
+                        foreach (var device in payload.Devices)
                         {
-                            ItemId = item.Id,
-                            AssetCode = "TS-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper(),
-                            SerialNumber = string.IsNullOrWhiteSpace(device.SerialNumber)
-                                ? "SN-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper()
-                                : device.SerialNumber.Trim(),
-                            Quantity = device.Quantity,
-                            IdTicket = ticket.Id,
-                            ApprovalStatus = "PENDING",
-                            LifeStatus = "active",
-                            ImportDate = DateTime.Now,
-                            UnitPrice = 0,
-                            TotalPrice = 0,
-                            CreatedBy = payload.UserId,
-                            CreatedAt = DateTime.Now,
-                            Note = device.Note,
-                            DepartmentId = payload.TargetDepartmentId ?? userDeptId,
-                            QrCode = "QR-" + Guid.NewGuid().ToString("N").ToUpper()
-                        };
-                        db.Inventories.Add(inventory);
+                            if (string.IsNullOrWhiteSpace(device.ItemName)) continue;
+
+                            var detail = new TicketDetail
+                            {
+                                TicketId = ticket.Id,
+                                ItemName = device.ItemName.Trim(),
+                                Unit = string.IsNullOrWhiteSpace(device.Unit) ? "Cái" : device.Unit.Trim(),
+                                Quantity = device.Quantity,
+                                Note = device.Note,
+                                ApprovalStatus = "PENDING",
+                                ApprovedQuantity = device.Quantity,
+                                ApprovalNote = ""
+                            };
+                            db.TicketDetails.Add(detail);
+                        }
                     }
                     db.SaveChanges();
                 }

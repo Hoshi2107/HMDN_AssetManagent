@@ -170,34 +170,77 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    // Dùng EF trực tiếp, project sang anonymous type trước để tránh lỗi EF projection
-                    var data = db.Inventories
-                        .Where(x => x.IdTicket == ticketId)
-                        .Select(x => new
-                        {
-                            x.Id,
-                            ItemName = x.Item != null ? x.Item.Name : "N/A",
-                            x.SerialNumber,
-                            x.Quantity,
-                            x.LifeStatus,
-                            x.ApprovalStatus,
-                            x.ApprovalNote,
-                            x.ApprovedQuantity
-                        })
-                        .ToList()
-                        .Select(x => new TicketDetailVM
-                        {
-                            Id = x.Id,
-                            ItemName = x.ItemName,
-                            SerialNumber = x.SerialNumber,
-                            Quantity = x.Quantity,
-                            LifeStatus = x.LifeStatus,
-                            ApprovalStatus = x.ApprovalStatus,
-                            ApprovalNote = x.ApprovalNote,
-                            ApprovedQuantity = x.ApprovedQuantity
-                        })
-                        .ToList();
-                    return Ok(data);
+                    var ticket = db.Tickets.FirstOrDefault(t => t.Id == ticketId);
+                    if (ticket == null)
+                    {
+                        return Ok(new List<TicketDetailVM>());
+                    }
+
+                    bool hasTicketDetails = db.TicketDetails.Any(x => x.TicketId == ticketId);
+
+                    if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR" || !hasTicketDetails)
+                    {
+                        var data = db.Inventories
+                            .Where(x => x.IdTicket == ticketId)
+                            .Select(x => new
+                            {
+                                x.Id,
+                                ItemName = x.Item != null ? x.Item.Name : "N/A",
+                                x.SerialNumber,
+                                x.Quantity,
+                                x.LifeStatus,
+                                x.ApprovalStatus,
+                                x.ApprovalNote,
+                                x.ApprovedQuantity,
+                                x.Note
+                            })
+                            .ToList()
+                            .Select(x => new TicketDetailVM
+                            {
+                                Id = x.Id,
+                                ItemName = x.ItemName,
+                                SerialNumber = x.SerialNumber,
+                                Quantity = x.Quantity,
+                                LifeStatus = x.LifeStatus,
+                                ApprovalStatus = x.ApprovalStatus,
+                                ApprovalNote = x.ApprovalNote,
+                                ApprovedQuantity = x.ApprovedQuantity,
+                                Note = x.Note
+                            })
+                            .ToList();
+                        return Ok(data);
+                    }
+                    else
+                    {
+                        var data = db.TicketDetails
+                            .Where(x => x.TicketId == ticketId)
+                            .Select(x => new
+                            {
+                                x.Id,
+                                x.ItemName,
+                                x.Unit,
+                                x.Quantity,
+                                x.Note,
+                                x.ApprovalStatus,
+                                x.ApprovedQuantity,
+                                x.ApprovalNote
+                            })
+                            .ToList()
+                            .Select(x => new TicketDetailVM
+                            {
+                                Id = x.Id,
+                                ItemName = x.ItemName,
+                                SerialNumber = "",
+                                Quantity = x.Quantity,
+                                LifeStatus = "active",
+                                ApprovalStatus = x.ApprovalStatus,
+                                ApprovalNote = x.ApprovalNote,
+                                ApprovedQuantity = x.ApprovedQuantity,
+                                Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note)
+                            })
+                            .ToList();
+                        return Ok(data);
+                    }
                 }
             }
             catch (Exception ex)
@@ -284,16 +327,56 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     if (request.Items != null)
                     {
-                        foreach (var itemInput in request.Items)
+                        bool isDeviceTicket = ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR";
+
+                        if (isDeviceTicket)
                         {
-                            var inv = db.Inventories.Find(itemInput.Id);
-                            if (inv != null)
+                            foreach (var itemInput in request.Items)
                             {
-                                inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
-                                inv.ApprovedQuantity = itemInput.ApprovedQuantity;
-                                inv.ApprovalNote = itemInput.ApprovalNote;
-                                inv.ApprovedBy = request.UserId;
-                                inv.ApprovedAt = DateTime.Now;
+                                var inv = db.Inventories.Find(itemInput.Id);
+                                if (inv != null)
+                                {
+                                    inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
+                                    inv.ApprovedQuantity = itemInput.ApprovedQuantity;
+                                    inv.ApprovalNote = itemInput.ApprovalNote;
+                                    inv.ApprovedBy = request.UserId;
+                                    inv.ApprovedAt = DateTime.Now;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Kiểm tra xem phiếu có dữ liệu trong TicketDetails không
+                            bool hasTicketDetails = db.TicketDetails.Any(td => td.TicketId == request.TicketId);
+
+                            if (hasTicketDetails)
+                            {
+                                foreach (var itemInput in request.Items)
+                                {
+                                    var td = db.TicketDetails.Find(itemInput.Id);
+                                    if (td != null)
+                                    {
+                                        td.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
+                                        td.ApprovedQuantity = itemInput.ApprovedQuantity;
+                                        td.ApprovalNote = itemInput.ApprovalNote;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Fallback: Phiếu cũ lưu trong Inventories
+                                foreach (var itemInput in request.Items)
+                                {
+                                    var inv = db.Inventories.Find(itemInput.Id);
+                                    if (inv != null)
+                                    {
+                                        inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
+                                        inv.ApprovedQuantity = itemInput.ApprovedQuantity;
+                                        inv.ApprovalNote = itemInput.ApprovalNote;
+                                        inv.ApprovedBy = request.UserId;
+                                        inv.ApprovedAt = DateTime.Now;
+                                    }
+                                }
                             }
                         }
                         db.SaveChanges();
@@ -627,6 +710,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public string ApprovalStatus { get; set; }
         public string ApprovalNote { get; set; }
         public int? ApprovedQuantity { get; set; }
+        public string Note { get; set; }
     }
 
     public class UpdateStatusRequest

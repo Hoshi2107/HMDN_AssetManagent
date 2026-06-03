@@ -1502,7 +1502,7 @@
                 <tbody>
                     <tr v-for="item in paginatedTickets" :key="item.Id">
                         <td class="req-id">${item.TicketCode}</td>
-                        <td>${item.TicketType || 'Nhập kho'}</td>
+                        <td>${ticketTypeLabel(item.TicketType)}</td>
                         <td>
                             <div class="user-cell">
                                 <div class="user-avatar-text">${creatorInitials(item)}</div>
@@ -1545,7 +1545,7 @@
                     <div class="dm-title">
                         <h2>
                             Chi tiết Yêu cầu
-                            <span class="dm-badge"><i class="fa-solid fa-file-invoice"></i> ${selectedTicket.TicketType || 'Nhập kho'}</span>
+                            <span class="dm-badge"><i class="fa-solid fa-file-invoice"></i> ${ticketTypeLabel(selectedTicket.TicketType)}</span>
                         </h2>
                         <p>Mã YC: #${selectedTicket.TicketCode}</p>
                     </div>
@@ -1745,11 +1745,15 @@
                 </div>
 
                 <div class="dm-card" style="margin-bottom: 0;">
-                    <h3><i class="fa-solid fa-box"></i> Danh sách Thiết bị</h3>
+                    <h3>
+                        <i v-if="isDeviceFormType(selectedTicket.TicketType)" class="fa-solid fa-box"></i>
+                        <i v-else class="fa-solid fa-cart-shopping"></i>
+                        ${isDeviceFormType(selectedTicket.TicketType) ? 'Danh sách Thiết bị' : 'Danh sách Hàng hóa đề nghị'}
+                    </h3>
                     <div class="dm-table-wrap">
                         <table class="dm-table">
                             <thead>
-                                <tr>
+                                <tr v-if="isDeviceFormType(selectedTicket.TicketType)">
                                     <th style="width: 50px;">STT</th>
                                     <th style="width: 80px; text-align: center;">Duyệt</th>
                                     <th>Tên thiết bị</th>
@@ -1758,25 +1762,57 @@
                                     <th style="width: 110px; text-align: center;">SL Duyệt</th>
                                     <th>Ghi chú duyệt</th>
                                 </tr>
+                                <tr v-else>
+                                    <th style="width: 50px;">STT</th>
+                                    <th style="width: 80px; text-align: center;">Duyệt</th>
+                                    <th>Tên hàng</th>
+                                    <th style="width: 100px;">Đơn vị</th>
+                                    <th style="width: 100px; text-align: center;">SL Yêu cầu</th>
+                                    <th style="width: 110px; text-align: center;">SL Duyệt</th>
+                                    <th>Ghi chú</th>
+                                    <th>Ghi chú duyệt</th>
+                                </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(dt, index) in ticketDetails" :key="dt.Id" :style="{ opacity: dt.isApproved ? 1 : 0.6, background: dt.isApproved ? 'transparent' : '#f8fafc' }">
-                                    <td>${index + 1}</td>
-                                    <td style="text-align: center;">
-                                        <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
-                                    </td>
-                                    <td style="font-weight: 500;">${dt.ItemName}</td>
-                                    <td>${dt.SerialNumber || 'N/A'}</td>
-                                    <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
-                                    <td style="text-align: center;">
-                                        <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
-                                    </td>
-                                    <td>
-                                        <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
-                                    </td>
-                                </tr>
+                                <template v-if="isDeviceFormType(selectedTicket.TicketType)">
+                                    <tr v-for="(dt, index) in ticketDetails" :key="dt.Id" :style="{ opacity: dt.isApproved ? 1 : 0.6, background: dt.isApproved ? 'transparent' : '#f8fafc' }">
+                                        <td>${index + 1}</td>
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
+                                        </td>
+                                        <td style="font-weight: 500;">${dt.ItemName}</td>
+                                        <td>${dt.SerialNumber || 'N/A'}</td>
+                                        <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
+                                        <td style="text-align: center;">
+                                            <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
+                                        </td>
+                                        <td>
+                                            <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template v-else>
+                                    <tr v-for="(dt, index) in ticketDetails" :key="dt.Id" :style="{ opacity: dt.isApproved ? 1 : 0.6, background: dt.isApproved ? 'transparent' : '#f8fafc' }">
+                                        <td>${index + 1}</td>
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
+                                        </td>
+                                        <td style="font-weight: 500;">${dt.ItemName}</td>
+                                        <td>${getUnitFromNote(dt.note)}</td>
+                                        <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
+                                        <td style="text-align: center;">
+                                            <input type="number" v-model.number="dt.approvedQuantity" :min="0" :max="dt.Quantity" :disabled="!dt.isApproved || selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 80px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 13px; font-weight: 600;" />
+                                        </td>
+                                        <td>${getItemNoteFromNote(dt.note) || '—'}</td>
+                                        <td>
+                                            <input type="text" v-model="dt.approvalNote" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" placeholder="Nhập ghi chú..." style="width: 100%; padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 13px;" />
+                                        </td>
+                                    </tr>
+                                </template>
                                 <tr v-if="ticketDetails.length === 0">
-                                    <td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">Không có thiết bị đính kèm trong Inventory</td>
+                                    <td :colspan="isDeviceFormType(selectedTicket.TicketType) ? 7 : 8" style="text-align: center; padding: 24px; color: #64748b;">
+                                        ${isDeviceFormType(selectedTicket.TicketType) ? 'Không có thiết bị đính kèm trong Inventory' : 'Không có hàng hóa nào'}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
