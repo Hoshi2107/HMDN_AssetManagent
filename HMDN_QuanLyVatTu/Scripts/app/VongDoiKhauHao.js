@@ -196,7 +196,7 @@ new Vue({
             return Number(percent.toFixed(2));
         },
         formatMoney(val) {
-            return new Intl.NumberFormat('vi-VN').format(val);
+            return new Intl.NumberFormat('vi-VN').format(Math.round(val));
         },
         toggleSelectAll(e) {
             if (e.target.checked) {

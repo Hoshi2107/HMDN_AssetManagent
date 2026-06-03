@@ -195,11 +195,11 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                var count = _context.Database.SqlQuery<int>(
+                var count = _context.Database.ExecuteSqlCommand(
                     "EXEC sp_VongDoiKhauHao_CalculateDepreciation @CalculateYear, @CalculatedBy",
                     new SqlParameter("@CalculateYear", calculateYear),
                     new SqlParameter("@CalculatedBy", 1)
-                ).FirstOrDefault();
+                );
 
                 return Json(new { success = true, message = $"Đã tính khấu hao tự động và cập nhật Giá trị còn lại cho {count} thiết bị đến năm {calculateYear}!" });
             }
