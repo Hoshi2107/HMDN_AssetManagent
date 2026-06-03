@@ -13,6 +13,7 @@ using System.Web.Http;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [RoutePrefix("api/approvals")]
+    [CustomApiAuthorize("Approvals")]
     public class ApprovalsAPIController : ApiController
     {
         // GET api/approvals/GetDepartments

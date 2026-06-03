@@ -1127,7 +1127,12 @@
                 </div>
 
                 <div v-else style="display:flex; flex-direction:column; gap:16px;">
-                    <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;"><i class="fa-solid fa-circle-list mr-1 text-primary"></i> Hạng mục kiểm tra bắt buộc</h4>
+                    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;">
+                        <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0;"><i class="fa-solid fa-circle-list mr-1 text-primary"></i> Hạng mục kiểm tra bắt buộc</h4>
+                        <button type="button" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-success); color: var(--cl-success-dark);" @@click="bulkSetAllPassed()">
+                            <i class="fa-solid fa-check-double"></i> Xác nhận đạt tất cả
+                        </button>
+                    </div>
                     <div class="cl-exec-grid">
                         <div class="cl-exec-item" v-for="(item, idx) in checklistItems" :key="item.Id">
                             <div>

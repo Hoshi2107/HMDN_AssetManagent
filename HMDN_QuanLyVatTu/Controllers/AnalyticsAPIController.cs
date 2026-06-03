@@ -10,6 +10,7 @@ using System.Web.Http;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [RoutePrefix("api/analytics")]
+    [CustomApiAuthorize("Analytics")]
     public class AnalyticsApiController : ApiController
     {
         // API 1: KPI & Tỷ lệ thiết bị tổng quan
@@ -72,6 +73,19 @@ namespace HMDN_QuanLyVatTu.Controllers
                         var today = DateTime.Today;
                         startDate = new DateTime(today.Year, today.Month, 1);
                         endDate = startDate.AddMonths(1).AddDays(-1);
+                    }
+                    else if (range == "quarter")
+                    {
+                        var today = DateTime.Today;
+                        int quarter = (today.Month - 1) / 3 + 1;
+                        startDate = new DateTime(today.Year, (quarter - 1) * 3 + 1, 1);
+                        endDate = startDate.AddMonths(3).AddDays(-1);
+                    }
+                    else if (range == "year")
+                    {
+                        var today = DateTime.Today;
+                        startDate = new DateTime(today.Year, 1, 1);
+                        endDate = new DateTime(today.Year, 12, 31);
                     }
 
                     DateTime startRange = startDate.Date;

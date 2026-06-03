@@ -1,4 +1,4 @@
-const STATUS = {
+﻿const STATUS = {
     active: {
         label: 'Đang sử dụng',
         class: 's-active'

@@ -1,4 +1,4 @@
-﻿using HMDN.Models.Location;
+using HMDN.Models.Location;
 using HMS.Data;
 using HMS.Models;
 using HMS.Models.ViewModels;
@@ -7,10 +7,12 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Http;
+using HMDN_QuanLyVatTu.Controllers;
 
 namespace HMDN.Controllers.API
 {
     [RoutePrefix("api/location")]
+    [CustomApiAuthorize("Locations")]
     public class LocationAPIController : ApiController
     {
         HospitalAssetDbContext db = new HospitalAssetDbContext();

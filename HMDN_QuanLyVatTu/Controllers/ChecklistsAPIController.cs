@@ -9,6 +9,7 @@ using HMDN_QuanLyVatTu.Models;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [RoutePrefix("api/checklists")]
+    [CustomApiAuthorize("Checklists")]
     public class ChecklistsApiController : ApiController
     {
         private HospitalAssetDbContext db = new HospitalAssetDbContext();
@@ -178,7 +179,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         {
                             ScheduleId = payload.ScheduleId > 0 ? payload.ScheduleId : (int?)null,
                             InventoryId = payload.InventoryId,
-                            CheckedBy = payload.CheckedBy > 0 ? payload.CheckedBy : 1,
+                            CheckedBy = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1),
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
                             OverallResult = payload.OverallResult ?? "pass",
@@ -217,6 +218,18 @@ namespace HMDN_QuanLyVatTu.Controllers
                             if (schedule != null)
                             {
                                 schedule.Status = "done";
+                                db.SaveChanges();
+                            }
+                        }
+
+                        if (payload.OverallResult == "fail")
+                        {
+                            var inventory = db.Inventories.Find(payload.InventoryId);
+                            if (inventory != null)
+                            {
+                                inventory.LifeStatus = "suspended";
+                                inventory.UpdatedAt = DateTime.Now;
+                                inventory.UpdatedBy = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
                                 db.SaveChanges();
                             }
                         }

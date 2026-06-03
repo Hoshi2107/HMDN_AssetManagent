@@ -1,4 +1,4 @@
-new Vue({
+﻿new Vue({
     el: '#app',
     delimiters: ['${', '}'],
     data: {
@@ -435,6 +435,13 @@ new Vue({
 
         setItemPassed(index, val) {
             this.checklistItems[index].isPassed = val;
+        },
+
+        bulkSetAllPassed() {
+            this.checklistItems.forEach(function (item) {
+                item.isPassed = true;
+            });
+            this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho toàn bộ ' + this.checklistItems.length + ' hạng mục.', 'success');
         },
 
         submitChecklist() {

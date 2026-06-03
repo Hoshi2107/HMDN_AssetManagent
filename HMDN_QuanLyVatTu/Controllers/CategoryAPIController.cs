@@ -1,4 +1,4 @@
-﻿using HMS.Data;
+using HMS.Data;
 using HMS.Models;
 using HMS.Models.Catalog;
 using HMS.Models.ViewModels;
@@ -7,10 +7,12 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Http;
+using HMDN_QuanLyVatTu.Controllers;
 
 namespace HMDN.Controllers.API
 {
     [RoutePrefix("api/category")]
+    [CustomApiAuthorize("Catalog")]
     public class CategoryAPIController : ApiController
     {
         HospitalAssetDbContext db = new HospitalAssetDbContext();

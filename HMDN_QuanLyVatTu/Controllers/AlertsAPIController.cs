@@ -12,6 +12,7 @@ using System.Web.Http;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [RoutePrefix("api/alerts")]
+    [CustomApiAuthorize("Alerts")]
     public class AlertsApiController : ApiController
     {
         private static DateTime? _lastScanTime = null;

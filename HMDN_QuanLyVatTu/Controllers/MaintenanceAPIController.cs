@@ -9,6 +9,7 @@ using System.Web.Http;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [RoutePrefix("api/maintenance")]
+    [CustomApiAuthorize("Maintenance")]
     public class MaintenanceApiController : ApiController
     {
         // GET api/maintenance/inventory-list

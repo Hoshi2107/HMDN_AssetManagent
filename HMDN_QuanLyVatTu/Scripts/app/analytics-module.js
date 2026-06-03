@@ -55,6 +55,8 @@ window.addEventListener('DOMContentLoaded', function () {
             lookups: { Departments: [], Groups: [] },
             inventoryList: [],
             availableYears: [],
+            checklistProgress: { done: 0, pending: 0, total: 0 },
+            criticalAlerts: [],
 
             pieChart: null,
             barChart: null,
@@ -85,6 +87,7 @@ window.addEventListener('DOMContentLoaded', function () {
             this.initRealtimeSync();
             this.fetchMonthlyMaintenanceData();
             this.fetchTodayChecklistData();
+            this.fetchCriticalAlerts();
         },
         watch: {
             // Khi metrics thay đổi (do lọc/tìm kiếm), cập nhật lại dữ liệu biểu đồ Doughnut
@@ -168,6 +171,19 @@ window.addEventListener('DOMContentLoaded', function () {
                 var start = (this.statusModal.currentPage - 1) * this.statusModal.pageSize;
                 var end = start + this.statusModal.pageSize;
                 return this.filteredPopupDevices.slice(start, end);
+            },
+            checklistCompliance: function () {
+                var total = this.checklistProgress.total;
+                var done = this.checklistProgress.done;
+                return total > 0 ? Math.round((done / total) * 100) : 100;
+            },
+            checklistRangeText: function () {
+                var range = this.checklistRange;
+                if (range === 'week') return 'Tuần này';
+                if (range === 'month') return 'Tháng này';
+                if (range === 'quarter') return 'Quý này';
+                if (range === 'year') return 'Năm nay';
+                return 'Hôm nay';
             }
         },
         methods: {
@@ -225,6 +241,10 @@ window.addEventListener('DOMContentLoaded', function () {
                     statusLabel = 'Thiết bị đang chạy tốt';
                 } else if (status === 'suspended') {
                     statusLabel = 'Thiết bị đang báo hỏng';
+                } else if (status === 'maintenance_bv') {
+                    statusLabel = 'Thiết bị bệnh viện tự bảo trì';
+                } else if (status === 'maintenance_hang') {
+                    statusLabel = 'Thiết bị hãng đối tác bảo trì';
                 } else if (status === 'maintenance') {
                     statusLabel = 'Thiết bị đang bảo trì';
                 } else {
@@ -248,6 +268,8 @@ window.addEventListener('DOMContentLoaded', function () {
                 if (status === 'active') apiStatus = 'active';
                 else if (status === 'suspended') apiStatus = 'suspended';
                 else if (status === 'maintenance') apiStatus = 'maintenance_any';
+                else if (status === 'maintenance_bv') apiStatus = 'maintenance_bv';
+                else if (status === 'maintenance_hang') apiStatus = 'maintenance_hang';
 
                 var params = {
                     status: apiStatus
@@ -299,9 +321,9 @@ window.addEventListener('DOMContentLoaded', function () {
                 }
 
                 var metrics = vm.dashboardMetrics;
-                var labels = ['Hoạt động tốt', 'Báo hỏng', 'Đang bảo trì'];
-                var chartData = [metrics.active, metrics.broken, metrics.totalMaint];
-                var colors = ['#10b981', '#ef4444', '#f59e0b'];
+                var labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự bảo trì', 'Hãng bảo trì'];
+                var chartData = [metrics.active, metrics.broken, metrics.maintBv, metrics.maintHang];
+                var colors = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'];
 
                 // Xử lý empty state cho biểu đồ
                 if (metrics.total === 0) {
@@ -348,8 +370,10 @@ window.addEventListener('DOMContentLoaded', function () {
                                     vm.showDevicesByStatus('active');
                                 } else if (label === 'Báo hỏng') {
                                     vm.showDevicesByStatus('suspended');
-                                } else if (label === 'Đang bảo trì') {
-                                    vm.showDevicesByStatus('maintenance');
+                                } else if (label === 'BV tự bảo trì') {
+                                    vm.showDevicesByStatus('maintenance_bv');
+                                } else if (label === 'Hãng bảo trì') {
+                                    vm.showDevicesByStatus('maintenance_hang');
                                 }
                             }
                         },
@@ -364,9 +388,9 @@ window.addEventListener('DOMContentLoaded', function () {
                 if (!this.pieChart) return;
 
                 if (metrics.total > 0) {
-                    this.pieChart.data.labels = ['Hoạt động tốt', 'Báo hỏng', 'Đang bảo trì'];
-                    this.pieChart.data.datasets[0].data = [metrics.active, metrics.broken, metrics.totalMaint];
-                    this.pieChart.data.datasets[0].backgroundColor = ['#10b981', '#ef4444', '#f59e0b'];
+                    this.pieChart.data.labels = ['Hoạt động tốt', 'Báo hỏng', 'BV tự bảo trì', 'Hãng bảo trì'];
+                    this.pieChart.data.datasets[0].data = [metrics.active, metrics.broken, metrics.maintBv, metrics.maintHang];
+                    this.pieChart.data.datasets[0].backgroundColor = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'];
                 } else {
                     this.pieChart.data.labels = ['Không có dữ liệu'];
                     this.pieChart.data.datasets[0].data = [1];
@@ -516,6 +540,9 @@ window.addEventListener('DOMContentLoaded', function () {
             fetchTodayChecklistData: function () {
                 var vm = this;
                 $.getJSON(window.AnalyticsEndpoints.getChecklist, { range: vm.checklistRange }, function (res) {
+                    vm.checklistProgress.done = res.DoneCount || 0;
+                    vm.checklistProgress.pending = res.PendingCount || 0;
+                    vm.checklistProgress.total = res.TotalSchedules || 0;
                     vm.renderTodayChecklistChart(res.DoneCount, res.PendingCount, res.TotalSchedules);
                 });
             },
@@ -535,6 +562,8 @@ window.addEventListener('DOMContentLoaded', function () {
                 var emptyLabel = 'Chưa có lịch trình';
                 if (vm.checklistRange === 'week') emptyLabel = 'Chưa có lịch tuần này';
                 else if (vm.checklistRange === 'month') emptyLabel = 'Chưa có lịch tháng này';
+                else if (vm.checklistRange === 'quarter') emptyLabel = 'Chưa có lịch quý này';
+                else if (vm.checklistRange === 'year') emptyLabel = 'Chưa có lịch năm nay';
 
                 // Bổ sung hiển thị trực quan số lượng (done / pending) ngay trên nhãn chú thích (Legend)
                 var chartLabels = total === 0 ? [emptyLabel] : ['Đã Checklist (' + done + ')', 'Chưa làm (' + pending + ')'];
@@ -587,6 +616,15 @@ window.addEventListener('DOMContentLoaded', function () {
                                     var start = new Date(now.getFullYear(), now.getMonth(), 1);
                                     var end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                                     url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                } else if (vm.checklistRange === 'quarter') {
+                                    var qStartMonth = Math.floor(now.getMonth() / 3) * 3;
+                                    var start = new Date(now.getFullYear(), qStartMonth, 1);
+                                    var end = new Date(now.getFullYear(), qStartMonth + 3, 0);
+                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                } else if (vm.checklistRange === 'year') {
+                                    var start = new Date(now.getFullYear(), 0, 1);
+                                    var end = new Date(now.getFullYear(), 12, 0);
+                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
                                 }
                                 
                                 window.location.href = url;
@@ -612,6 +650,7 @@ window.addEventListener('DOMContentLoaded', function () {
                         vm.fetchMonthlyMaintenanceData();
                         vm.fetchTodayChecklistData();
                         vm.fetchInventoryReport();
+                        vm.fetchCriticalAlerts();
                     });
                 } catch (error) {
                     console.warn('Realtime Socket inactive.');
@@ -626,6 +665,32 @@ window.addEventListener('DOMContentLoaded', function () {
             },
             closeStatusDevicesModal: function () {
                 $('#statusDevicesModal').modal('hide');
+            },
+            fetchCriticalAlerts: function () {
+                var vm = this;
+                $.getJSON('/api/alerts/check-new', function (res) {
+                    vm.criticalAlerts = res || [];
+                });
+            },
+            resolveDashboardAlert: function (id) {
+                var vm = this;
+                if (!confirm('Xác nhận đã xử lý xong cảnh báo này?')) return;
+                $.post('/api/alerts/resolve/' + id, function (res) {
+                    if (res && res.success) {
+                        vm.fetchCriticalAlerts();
+                        vm.fetchKpiOverview();
+                    } else {
+                        alert(res.message || 'Lỗi khi xử lý cảnh báo.');
+                    }
+                });
+            },
+            goToChecklists: function () {
+                window.location.href = '/Checklists/Index';
+            },
+            severityLabel: function (severity) {
+                if (severity === 'danger') return 'Khẩn cấp';
+                if (severity === 'warning') return 'Cảnh báo';
+                return 'Thông tin';
             }
         }
     });

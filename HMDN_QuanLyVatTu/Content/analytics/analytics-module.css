@@ -182,12 +182,12 @@
    ========================================================================= */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 16px;
     margin-bottom: 24px;
 }
 
-@media (max-width: 1400px) {
+@media (max-width: 1500px) {
     .kpi-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -224,6 +224,50 @@
 
 .bg-kpi-value {
     background: linear-gradient(135deg, #31108c, #6366f1) !important;
+}
+
+.bg-kpi-compliance {
+    background: linear-gradient(135deg, #0d9488, #0ea5e9) !important;
+}
+
+/* Sidebar Alert Styles */
+.alerts-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sidebar-alert-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left-width: 4px !important;
+    transition: all 0.2s ease;
+    padding: 10px;
+    border-radius: 8px;
+}
+.sidebar-alert-item:hover {
+    background: #f1f5f9;
+    transform: translateX(2px);
+}
+.sidebar-alert-item.border-danger {
+    border-left-color: #ef4444 !important;
+}
+.sidebar-alert-item.border-warning {
+    border-left-color: #f59e0b !important;
+}
+.sidebar-alert-item.border-info {
+    border-left-color: #3b82f6 !important;
+}
+.badge-danger {
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+.badge-warning {
+    background-color: #fef3c7 !important;
+    color: #d97706 !important;
+}
+.badge-info {
+    background-color: #eff6ff !important;
+    color: #3b82f6 !important;
 }
 
 .text-white-muted {
@@ -463,4 +507,15 @@
     cursor: not-allowed;
     background-color: #f8fafc !important;
     border-color: #e2e8f0 !important;
+}
+
+/* Interactive sub-links on KPI cards */
+.kpi-sub-link {
+    cursor: pointer !important;
+    transition: opacity 0.2s ease, text-decoration 0.2s ease;
+}
+
+.kpi-sub-link:hover {
+    text-decoration: underline !important;
+    opacity: 0.9 !important;
 }
