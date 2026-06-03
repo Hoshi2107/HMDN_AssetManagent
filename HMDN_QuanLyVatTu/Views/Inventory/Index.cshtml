@@ -22,9 +22,9 @@
 
             <div class="topbar-actions">
 
-                <button class="btn-secondary"
+                <!--<button class="btn-secondary"
                         @@click="openQrModal()">
-                    Check QR
+                    Check QR-->
 
                     @*<div class="icon">📷</div>
 
@@ -32,7 +32,7 @@
 
                         <p>Check nhanh bằng mã QR</p>*@
 
-                </button>
+                <!--</button>-->
 
                 <button class="btn-primary"
                         v-if="hasPermission('Inventory', 'CREATE')"
@@ -158,29 +158,6 @@
                                         Đang hoạt động
                                     </option>
 
-<<<<<<< HEAD
-                                    <option value="maintenance_bv">
-                                        BV bảo trì
-                                    </option>
-=======
-                                    @*<option value="maintenance_bv">
-                                            BV bảo trì
-                                        </option>
->>>>>>> b1ba33861a1d935f195fafef66e7e46f5351b1c2
-
-                                        <option value="maintenance_hang">
-                                            Hãng bảo hành
-                                        </option>
-
-<<<<<<< HEAD
-                                    <option value="Send_for_warranty">
-                                        Gửi về bảo hành
-                                    </option>
-=======
-                                        <option value="Send_for_warranty">
-                                            Gửi về bảo hành
-                                        </option>*@
->>>>>>> b1ba33861a1d935f195fafef66e7e46f5351b1c2
 
                                     <!-- suspended KHÔNG CHO CHỌN -->
                                     <option v-if="item.LifeStatus == 'suspended'"
@@ -828,40 +805,6 @@
 
             </div>
 
-            <!-- MODAL QR -->
-            <div class="modal-overlay"
-                 v-if="showQrModal"
-                 @@click.self="showQrModal = false">
-
-                <div class="device-modal">
-
-                    <div class="modal-header">
-
-                        <h3>Quét QR thiết bị</h3>
-
-                        <button class="close-btn"
-                                @@click="showQrModal = false">
-
-                            ×
-
-                        </button>
-
-                    </div>
-
-                    <div class="modal-body">
-
-                        <div class="qr-box">
-
-                            Camera scan QR ở đây
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
             <!-- MODAL MANUAL -->
             <div class="modal-overlay"
                  v-if="showManualModal"
@@ -1250,7 +1193,7 @@
                             </div>
 
                             <!-- QR -->
-                            <div class="form-group">
+                            @*<div class="form-group">
 
                                 <label>QR Code</label>
 
@@ -1258,7 +1201,7 @@
                                        class="form-control"
                                        v-model="createForm.QrCode">
 
-                            </div>
+                            </div>*@
 
                         </div>
 
@@ -1680,13 +1623,13 @@
                             </div>
 
                             <!-- QR -->
-                            <div class="form-group" readonly>
+                            <div class="form-group">
 
                                 <label>QR Code</label>
 
                                 <input type="text"
                                        class="form-control"
-                                       v-model="editForm.QrCode">
+                                       v-model="editForm.QrCode" readonly>
 
                             </div>
 
