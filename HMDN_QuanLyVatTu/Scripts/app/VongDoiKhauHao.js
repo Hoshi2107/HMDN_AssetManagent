@@ -51,7 +51,13 @@ new Vue({
     computed: {
         processedDevices() {
             let list = this.devices;
-            if(this.filterStatus) list = list.filter(d => d.status === this.filterStatus);
+            if(this.filterStatus) {
+                if (this.filterStatus === 'suspended') {
+                    list = list.filter(d => d.status === 'suspended' || d.status === 'maintenance');
+                } else {
+                    list = list.filter(d => d.status === this.filterStatus);
+                }
+            }
             if(this.filterYear) {
                 list = list.filter(d => d.expiryDate && d.expiryDate.endsWith(this.filterYear));
             }
@@ -90,7 +96,7 @@ new Vue({
             return pages;
         },
         totalClosingValue() {
-            return this.devices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
+            return this.processedDevices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
         },
         isAllSelected() {
             return this.paginatedDevices.length > 0 && 
@@ -101,6 +107,7 @@ new Vue({
         processedDevices() { 
             this.currentPage = 1;
             this.selectedRows = []; 
+            this.$nextTick(() => this.renderCharts());
         },
         paginatedDevices() {
             this.$nextTick(() => {
@@ -164,9 +171,22 @@ new Vue({
             this.showStatusModal = true;
             this.closeDropdowns();
         },
-        countStatus(st) { return this.devices.filter(d => d.status === st).length; },
+        countStatus(st) { 
+            if (!st) return 0;
+            const target = st.toLowerCase();
+            return this.processedDevices.filter(d => {
+                if (!d.status) return false;
+                const s = d.status.toLowerCase();
+                if (target === 'suspended') {
+                    return s === 'suspended' || s === 'maintenance';
+                }
+                return s === target;
+            }).length; 
+        },
         statusText(st) {
-            return { active:'Đang sử dụng', suspended:'Tạm ngưng', disposed:'Đã thanh lý', replaced:'Đã thay mới' }[st] || st;
+            if (!st) return 'Khác';
+            const s = st.toLowerCase();
+            return { active:'Đang sử dụng', suspended:'Tạm ngưng', maintenance:'Đang bảo trì', disposed:'Đã thanh lý', replaced:'Đã thay mới' }[s] || st;
         },
         calcDepPercent(d) {
             if (!d.openingValue || d.openingValue === 0) return 0;
@@ -203,17 +223,29 @@ new Vue({
                 if (window.statusChartInstance) window.statusChartInstance.destroy();
                 
                 const active = this.countStatus('active');
-                const suspended = this.countStatus('suspended');
+                const maintenance = this.countStatus('maintenance');
                 const disposed = this.countStatus('disposed');
                 const replaced = this.countStatus('replaced');
+                
+                const other = this.processedDevices.length - (active + maintenance + disposed + replaced);
+
+                let chartLabels = ['Đang sử dụng', 'Đang bảo trì', 'Đã thanh lý', 'Đã thay mới'];
+                let chartData = [active, maintenance, disposed, replaced];
+                let chartColors = ['#10b981', '#f59e0b', '#94a3b8', '#3b82f6'];
+
+                if (other > 0) {
+                    chartLabels.push('Khác');
+                    chartData.push(other);
+                    chartColors.push('#cbd5e1');
+                }
 
                 window.statusChartInstance = new Chart(ctxStatus, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Đang sử dụng', 'Tạm ngưng', 'Đã thanh lý', 'Đã thay mới'],
+                        labels: chartLabels,
                         datasets: [{
-                            data: [active, suspended, disposed, replaced],
-                            backgroundColor: ['#10b981', '#f59e0b', '#94a3b8', '#3b82f6'],
+                            data: chartData,
+                            backgroundColor: chartColors,
                             borderWidth: 0,
                             hoverOffset: 4
                         }]
@@ -222,7 +254,7 @@ new Vue({
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, family: 'Inter' } } }
+                            legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, family: 'Outfit' } } }
                         },
                         cutout: '70%'
                     }
@@ -234,8 +266,8 @@ new Vue({
             if (ctxValue) {
                 if (window.valueChartInstance) window.valueChartInstance.destroy();
                 
-                let totalDepreciation = this.devices.reduce((sum, d) => sum + (d.depreciation || 0), 0);
-                let totalClosing = this.devices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
+                let totalDepreciation = this.processedDevices.reduce((sum, d) => sum + (d.depreciation || 0), 0);
+                let totalClosing = this.processedDevices.reduce((sum, d) => sum + (d.closingValue || 0), 0);
 
                 window.valueChartInstance = new Chart(ctxValue, {
                     type: 'bar',

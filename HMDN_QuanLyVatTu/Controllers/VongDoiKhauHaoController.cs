@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using HMS.Data;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using HMDN_QuanLyVatTu.Models;
 
 namespace HMDN_QuanLyVatTu.Controllers
 {
@@ -16,20 +17,44 @@ namespace HMDN_QuanLyVatTu.Controllers
 
         public ActionResult VongDoiKhauHao()
         {
-            var rawDevices = _context.Database.SqlQuery<VongDoiKhauHaoDeviceDto>("EXEC sp_VongDoiKhauHao_GetDevices").ToList();
+            var approvedIds = _context.Inventories.Where(x => x.ApprovalStatus == "approved").Select(x => x.Id).ToList();
             
-            var devices = rawDevices.Select(i => new {
-                dbId = i.dbId,
-                id = i.id,
-                name = i.name,
-                status = i.status,
-                openingValue = i.openingValue,
-                depreciation = i.depreciation,
-                closingValue = i.closingValue,
-                replacedBy = i.replacedBy,
-                importDate = i.importDate.ToString("dd/MM/yyyy"),
-                expiryDate = i.expiryDate.HasValue ? i.expiryDate.Value.ToString("dd/MM/yyyy") : "-",
-                warrantyExpiry = i.warrantyExpiry.HasValue ? i.warrantyExpiry.Value.ToString("dd/MM/yyyy") : "-"
+            var allApproved = _context.Inventories.Where(x => x.ApprovalStatus == "approved").ToList();
+
+            // Fetch maintenance IDs to exclude them from active/suspended exactly like Dashboard
+            var maintenanceIds = _context.Database.SqlQuery<int>(
+                "SELECT DISTINCT InventoryId FROM dbo.MaintenanceLogs WHERE Status IN ('open', 'in_progress')"
+            ).ToList();
+
+            var rawDevices = _context.Database.SqlQuery<VongDoiKhauHaoDeviceDto>("EXEC sp_VongDoiKhauHao_GetDevices")
+                                     .Where(d => approvedIds.Contains(d.dbId))
+                                     .ToList();
+            
+            var devices = rawDevices.Select(i => {
+                var inv = allApproved.FirstOrDefault(x => x.Id == i.dbId);
+                string exactStatus = "unknown";
+                if (inv != null && !string.IsNullOrWhiteSpace(inv.LifeStatus)) {
+                    exactStatus = inv.LifeStatus.Trim().ToLower();
+                }
+
+                // If device is in maintenance, override status so it isn't counted in 'active' or 'suspended' by the Vue UI
+                if (maintenanceIds.Contains(i.dbId)) {
+                    exactStatus = "maintenance";
+                }
+
+                return new {
+                    dbId = i.dbId,
+                    id = i.id,
+                    name = i.name,
+                    status = exactStatus,
+                    openingValue = i.openingValue,
+                    depreciation = i.depreciation,
+                    closingValue = i.closingValue,
+                    replacedBy = i.replacedBy,
+                    importDate = i.importDate.ToString("dd/MM/yyyy"),
+                    expiryDate = i.expiryDate.HasValue ? i.expiryDate.Value.ToString("dd/MM/yyyy") : "-",
+                    warrantyExpiry = i.warrantyExpiry.HasValue ? i.warrantyExpiry.Value.ToString("dd/MM/yyyy") : "-"
+                };
             }).ToList();
 
             ViewBag.DevicesJson = Newtonsoft.Json.JsonConvert.SerializeObject(devices);
@@ -42,6 +67,18 @@ namespace HMDN_QuanLyVatTu.Controllers
             ViewBag.GroupsJson = Newtonsoft.Json.JsonConvert.SerializeObject(groups);
             ViewBag.DepartmentsJson = Newtonsoft.Json.JsonConvert.SerializeObject(departments);
             ViewBag.LocationsJson = Newtonsoft.Json.JsonConvert.SerializeObject(locations);
+
+            var dashboardSummary = _context.Database.SqlQuery<DashboardOverviewModel>("EXEC sp_DashboardSummary").FirstOrDefault();
+            if (dashboardSummary != null)
+            {
+                ViewBag.HospitalMaintenanceCount = dashboardSummary.HospitalMaintenanceCount;
+                ViewBag.VendorMaintenanceCount = dashboardSummary.VendorMaintenanceCount;
+            }
+            else
+            {
+                ViewBag.HospitalMaintenanceCount = 0;
+                ViewBag.VendorMaintenanceCount = 0;
+            }
 
             return View();
         }
