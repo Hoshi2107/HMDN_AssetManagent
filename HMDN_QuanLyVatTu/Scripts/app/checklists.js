@@ -122,7 +122,7 @@ new Vue({
                 
                 var matchOverdue = true;
                 if (vm.schedulesFilter.onlyOverdue) {
-                    matchOverdue = s.Status === 'pending' && vm.isOverdue(s.DueDate);
+                    matchOverdue = s.Status === 'overdue';
                 }
 
                 var matchFrom = !vm.schedulesFilter.fromDate || s.ScheduledDate >= vm.schedulesFilter.fromDate;
@@ -185,7 +185,14 @@ new Vue({
             function useCachedSchedules() {
                 var cached = localStorage.getItem('checklist_schedules_cache');
                 if (cached) {
-                    vm.schedules = JSON.parse(cached);
+                    var parsed = JSON.parse(cached);
+                    var todayStr = vm.getLocalTodayStr();
+                    parsed.forEach(function (s) {
+                        if (s.Status === 'pending' && s.DueDate < todayStr) {
+                            s.Status = 'overdue';
+                        }
+                    });
+                    vm.schedules = parsed;
                     vm.calculateKPIs();
                     vm.checkUrlParams();
                     vm.toast('Ngoại tuyến', 'Đang sử dụng dữ liệu lịch trình đã lưu trong bộ nhớ cache.', 'warning');
@@ -203,6 +210,12 @@ new Vue({
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     if (res.success) {
+                        var todayStr = vm.getLocalTodayStr();
+                        res.data.forEach(function (s) {
+                            if (s.Status === 'pending' && s.DueDate < todayStr) {
+                                s.Status = 'overdue';
+                            }
+                        });
                         vm.schedules = res.data;
                         localStorage.setItem('checklist_schedules_cache', JSON.stringify(res.data));
                         vm.calculateKPIs();
@@ -256,7 +269,7 @@ new Vue({
         // ── KPIS CALCULATION ──
         calculateKPIs() {
             var vm = this;
-            var todayStr = new Date().toISOString().substring(0, 10);
+            var todayStr = vm.getLocalTodayStr();
 
             // 1. Pending & Overdue
             var pending = 0;
@@ -264,9 +277,9 @@ new Vue({
             vm.schedules.forEach(function (s) {
                 if (s.Status === 'pending') {
                     pending++;
-                    if (s.DueDate < todayStr) {
-                        overdue++;
-                    }
+                } else if (s.Status === 'overdue') {
+                    pending++;
+                    overdue++;
                 }
             });
 
@@ -318,8 +331,8 @@ new Vue({
                 vm.schedulesFilter.toDate = '';
             } else if (type === 'overdue') {
                 vm.activeTab = 'schedules';
-                vm.schedulesFilter.status = 'pending';
-                vm.schedulesFilter.onlyOverdue = true;
+                vm.schedulesFilter.status = 'overdue';
+                vm.schedulesFilter.onlyOverdue = false;
                 vm.schedulesFilter.query = '';
                 vm.schedulesFilter.cycleType = '';
                 vm.schedulesFilter.fromDate = '';
@@ -371,7 +384,7 @@ new Vue({
                 var inventoryId = parseInt(inventoryIdStr);
                 if (!isNaN(inventoryId)) {
                     var sch = vm.schedules.find(function (s) {
-                        return s.InventoryId === inventoryId && s.Status === 'pending';
+                        return s.InventoryId === inventoryId && (s.Status === 'pending' || s.Status === 'overdue');
                     });
                     
                     if (sch) {
@@ -711,6 +724,7 @@ new Vue({
         statusLabel(status) {
             switch (status) {
                 case 'pending': return 'Chờ xử lý';
+                case 'overdue': return 'Quá hạn';
                 case 'completed': return 'Đã xong';
                 case 'done': return 'Đã xong';
                 case 'skipped': return 'Bỏ qua';
@@ -727,8 +741,16 @@ new Vue({
             }
         },
 
+        getLocalTodayStr() {
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = ('0' + (d.getMonth() + 1)).slice(-2);
+            var day = ('0' + d.getDate()).slice(-2);
+            return year + '-' + month + '-' + day;
+        },
+
         isOverdue(dueDateStr) {
-            var todayStr = new Date().toISOString().substring(0, 10);
+            var todayStr = this.getLocalTodayStr();
             return dueDateStr < todayStr;
         },
 

@@ -321,6 +321,11 @@
         color: var(--cl-warning-dark);
         border-color: rgba(245, 158, 11, 0.15);
     }
+    .cl-badge-overdue { 
+        background: var(--cl-danger-light); 
+        color: var(--cl-danger-dark);
+        border-color: rgba(239, 68, 68, 0.15);
+    }
     .cl-badge-completed { 
         background: var(--cl-success-light); 
         color: var(--cl-success-dark);
@@ -881,6 +886,7 @@
                 <select class="cl-select" v-model="schedulesFilter.status">
                     <option value="">Tất cả</option>
                     <option value="pending">Chờ thực hiện</option>
+                    <option value="overdue">Quá hạn</option>
                     <option value="completed">Đã hoàn thành</option>
                 </select>
             </div>
@@ -938,10 +944,10 @@
                             <span class="cl-badge" :class="'cl-badge-' + sch.Status">${ statusLabel(sch.Status) }</span>
                         </td>
                         <td style="text-align: center;">
-                            <button class="cl-btn cl-btn-success" style="height:32px; padding:0 12px; font-size:12px; border-radius:8px;" v-if="sch.Status === 'pending'" @@click="openPerformModal(sch)">
+                            <button class="cl-btn cl-btn-success" style="height:32px; padding:0 12px; font-size:12px; border-radius:8px;" v-if="sch.Status === 'pending' || sch.Status === 'overdue'" @@click="openPerformModal(sch)">
                                 <i class="fa-solid fa-play"></i> Thực hiện
                             </button>
-                            <span v-else style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-check text-successmr-1"></i> Hoàn tất</span>
+                            <span v-else style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
                         </td>
                     </tr>
                     <tr v-if="filteredSchedules.length === 0">

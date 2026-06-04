@@ -88,7 +88,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.QrCode,
                         ScheduledDate = s.ScheduledDate.ToString("yyyy-MM-dd"),
                         s.CycleType,
-                        s.Status,
+                        Status = (s.Status == "pending" && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
                         DueDate = s.DueDate.ToString("yyyy-MM-dd"),
                         s.AssignedTo,
                         s.AssigneeName
