@@ -76,7 +76,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         // 3. GET: api/alerts/list
         [HttpGet]
         [Route("list")]
-        public IHttpActionResult GetAlerts(string tab = "all")
+        public IHttpActionResult GetAlerts(string tab = "all", int page = 1, int pageSize = 20)
         {
             try
             {
@@ -89,8 +89,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                     CheckAndRunDiagnostics(db);
 
                     var list = db.Database.SqlQuery<AlertDisplaySPResult>(
-                        "EXEC [dbo].[sp_GetAlertList] @Tab",
-                        new System.Data.SqlClient.SqlParameter("@Tab", tab)
+                        "EXEC [dbo].[sp_GetAlertList] @Tab, @Page, @PageSize",
+                        new System.Data.SqlClient.SqlParameter("@Tab", tab),
+                        new System.Data.SqlClient.SqlParameter("@Page", page),
+                        new System.Data.SqlClient.SqlParameter("@PageSize", pageSize)
                     ).ToList()
                     .Select(a => new AlertDisplayDTO
                     {

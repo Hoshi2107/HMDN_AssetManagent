@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    alerts.js — Vue 2 Instance cho Trung tâm Cảnh báo & Thông báo
    Tuân thủ: Vue 2.7.16 CDN, jQuery AJAX, delimiters ['${', '}']
    ═══════════════════════════════════════════════════════════ */
@@ -17,6 +17,12 @@ var app = new Vue({
 
         // Danh sách cảnh báo thực tế
         alerts: [],
+
+        // Phân trang
+        page: 1,
+        pageSize: 20,
+        hasMore: true,
+        loadingMore: false,
 
         // Số lượng cảnh báo theo từng tab
         counts: {
@@ -122,7 +128,10 @@ var app = new Vue({
         // Thiết lập tab hiển thị và load dữ liệu
         setTab: function (tab) {
             this.activeTab = tab;
-            this.loadAlerts();
+            this.page = 1;
+            this.hasMore = true;
+            this.alerts = [];
+            this.loadAlerts(false);
         },
 
         // Trả về icon phù hợp với severity
@@ -142,25 +151,50 @@ var app = new Vue({
         // ── API Calls ──
 
         // 1. Tải danh sách cảnh báo
-        loadAlerts: function () {
+        loadAlerts: function (append) {
             var vm = this;
-            vm.loading = true;
+            if (vm.loading || vm.loadingMore) return;
+
+            if (append) {
+                vm.loadingMore = true;
+            } else {
+                vm.loading = true;
+                vm.page = 1;
+                vm.hasMore = true;
+                vm.alerts = [];
+            }
 
             $.ajax({
-                url: '/api/alerts/list?tab=' + vm.activeTab,
+                url: '/api/alerts/list?tab=' + vm.activeTab + '&page=' + vm.page + '&pageSize=' + vm.pageSize,
                 type: 'GET',
                 success: function (res) {
-                    vm.alerts = res.alerts;
+                    if (append) {
+                        vm.alerts = vm.alerts.concat(res.alerts);
+                        vm.loadingMore = false;
+                    } else {
+                        vm.alerts = res.alerts;
+                        vm.loading = false;
+                    }
+
                     vm.counts.All = res.counts.All;
                     vm.counts.Danger = res.counts.Danger;
                     vm.counts.Warning = res.counts.Warning;
                     vm.counts.Info = res.counts.Info;
-                    vm.loading = false;
+
+                    // Xác định xem còn dữ liệu để tải hay không
+                    var total = 0;
+                    if (vm.activeTab === 'all') total = res.counts.All;
+                    else if (vm.activeTab === 'danger') total = res.counts.Danger;
+                    else if (vm.activeTab === 'warning') total = res.counts.Warning;
+                    else if (vm.activeTab === 'info') total = res.counts.Info;
+
+                    vm.hasMore = vm.alerts.length < total;
                 },
                 error: function (xhr) {
                     console.error('Lỗi tải danh sách cảnh báo:', xhr.responseText);
                     vm.showToast('Lỗi', 'Không thể tải danh sách cảnh báo.', 'danger');
                     vm.loading = false;
+                    vm.loadingMore = false;
                 }
             });
         },
@@ -597,9 +631,9 @@ var app = new Vue({
                 type: 'GET',
                 success: function (res) {
                     if (res && res.length > 0) {
-                        // Trên màn hình Trung tâm cảnh báo, nếu tổng số cảnh báo chưa xử lý thay đổi thì tự động tải lại UI
-                        if (vm.activeView === 'alerts' && res.length !== vm.alerts.length) {
-                            vm.loadAlerts();
+                        // Trên màn hình Trung tâm cảnh báo, nếu có cảnh báo mới thì tự động tải lại UI
+                        if (vm.activeView === 'alerts' && res.length > 0 && (vm.alerts.length === 0 || res[0].Id !== vm.alerts[0].Id)) {
+                            vm.loadAlerts(false);
                         }
                     }
                 },
@@ -718,11 +752,24 @@ var app = new Vue({
 
     mounted: function () {
         var vm = this;
-        vm.loadAlerts();
+        vm.loadAlerts(false);
 
         // Thiết lập polling chẩn đoán cảnh báo realtime định kỳ mỗi 10 giây
         setInterval(function () {
             vm.checkRealtimeAlerts();
         }, 10000);
+
+        // Lắng nghe sự kiện scroll trên container .page-content để lazy load
+        var contentEl = document.querySelector('.page-content');
+        if (contentEl) {
+            contentEl.addEventListener('scroll', function () {
+                var threshold = 100; // px tính từ đáy
+                var isNearBottom = (contentEl.scrollHeight - contentEl.scrollTop - contentEl.clientHeight) < threshold;
+                if (isNearBottom && vm.hasMore && !vm.loading && !vm.loadingMore) {
+                    vm.page += 1;
+                    vm.loadAlerts(true);
+                }
+            });
+        }
     }
 });

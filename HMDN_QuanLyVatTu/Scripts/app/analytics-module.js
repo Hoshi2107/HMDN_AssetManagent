@@ -478,7 +478,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 $.getJSON(window.AnalyticsEndpoints.getFrequency, { year: vm.selectedYear }, function (res) {
                     if (res && res.length > 0) {
                         var dynamicLabels = res.map(function (x) { return x.MonthLabel; });
-                        var dynamicCounts = res.map(function (x) { return x.MaintenanceCount; });
+                        var dynamicCounts = res.map(function (x) { return Number(x.MaintenanceCount); });
                         vm.renderMonthlyMaintenanceChart(dynamicLabels, dynamicCounts);
                     } else {
                         var defaultLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
@@ -531,7 +531,16 @@ window.addEventListener('DOMContentLoaded', function () {
                                 usePointStyle: true
                             }
                         },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grace: '10%',
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                min: 0
+                            }
+                        }
                     }
                 });
             },

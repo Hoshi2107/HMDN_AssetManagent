@@ -228,6 +228,12 @@
                 <div class="empty-title">Không có cảnh báo hoạt động</div>
                 <p class="m-0 text-muted" style="font-size: 13px;">Tất cả thiết bị y tế trong hệ thống đều đang hoạt động bình thường.</p>
             </div>
+
+            <!-- Infinite Scroll Loading More Indicator -->
+            <div v-if="loadingMore" class="text-center py-3 border-top mt-2" style="animation: fadeIn 0.2s;">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span class="text-muted ml-2 font-weight-bold" style="font-size: 12.5px;">Đang tải thêm cảnh báo...</span>
+            </div>
         </div>
 
     </div>
