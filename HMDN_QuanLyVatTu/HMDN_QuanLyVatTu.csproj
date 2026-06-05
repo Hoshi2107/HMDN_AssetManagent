@@ -255,7 +255,7 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
-    <Content Include="HMS-DB-for-GitHub-v1.sql" />
+    <Content Include="HMS-script-v11.sql" />
     <Content Include="Scripts\app\analytics-module.js" />
     <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
