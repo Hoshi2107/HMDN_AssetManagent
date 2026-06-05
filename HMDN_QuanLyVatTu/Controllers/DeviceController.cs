@@ -743,7 +743,7 @@ namespace HMDN.Controllers.API
         public IHttpActionResult Tickets()
         {
             var data = db.Database.SqlQuery<TicketDropdownVM>(
-                "SELECT Id, TicketCode FROM Tickets ORDER BY TicketCode"
+                "SELECT Id, TicketCode FROM Tickets WHERE TicketType = 'REPAIR' AND Status = 'PENDING' ORDER BY TicketCode"
             ).ToList();
             return Ok(data);
         }

@@ -153,6 +153,7 @@
     <Compile Include="Controllers\MaintenanceAPIController.cs" />
     <Compile Include="Controllers\LocationAPIController.cs" />
     <Compile Include="Controllers\LocationController.cs" />
+    <Compile Include="Controllers\MaintenanceScheduleController.cs" />
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
     <Compile Include="Controllers\AlertsController.cs" />
     <Compile Include="Controllers\AlertsAPIController.cs" />

@@ -29,6 +29,27 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        showScheduleModal: false,
+        maintenanceSchedules: [],
+        scheduleForm: {
+            InventoryId: null,
+            ScheduleName: '',
+            MaintenanceType: 'preventive',
+            LastMaintenanceDate: null,
+            NextMaintenanceDate: null,
+            ReminderDays: 15,
+            IsRecurring: true,
+            RecurringMonths: 3,
+            CreatedBy: 1
+        },
+
+
+        showTicketDropdown: false,
+
+        qrDevice: null,
+        showQrActionModal: false,
+        selectedQrInventoryId: null,
+
         qrScanner: null,
         showQrInDetail: false,
         showQrResultModal: false,
@@ -215,6 +236,18 @@ var app = new Vue({
     
     computed: {
 
+        selectedTicketName() {
+
+            const ticket =
+                this.tickets.find(
+                    x => x.Id == this.errorForm.IdTicket
+                )
+
+            return ticket
+                ? ticket.TicketCode
+                : 'Chọn phiếu sửa chữa'
+        },
+
         filteredDevices() {
 
             let list = [...this.devices]
@@ -396,13 +429,178 @@ var app = new Vue({
 
     methods: {
 
+        showMaintenanceSchedule() {
+            if (!this.selectedDevice) return
+
+            const user = JSON.parse(localStorage.getItem('current_user'))
+
+            this.scheduleForm = {
+                InventoryId: this.selectedDevice.Id,
+                ScheduleName: '',
+                MaintenanceType: 'preventive',
+                LastMaintenanceDate: null,
+                NextMaintenanceDate: null,
+                ReminderDays: 15,
+                IsRecurring: true,
+                RecurringMonths: 3,
+                CreatedBy: user ? user.Id : 1
+            }
+
+            this.loadMaintenanceSchedules(this.selectedDevice.Id)
+            this.showScheduleModal = true
+        },
+
+        loadMaintenanceSchedules(inventoryId) {
+            $.get('/api/maintenance-schedule/list?inventoryId=' + inventoryId, (res) => {
+                this.maintenanceSchedules = res
+            })
+        },
+
+        saveSchedule() {
+            if (!this.scheduleForm.ScheduleName.trim()) {
+                alert('Nhập tên lịch bảo trì')
+                return
+            }
+            if (!this.scheduleForm.NextMaintenanceDate) {
+                alert('Chọn ngày bảo trì tiếp theo')
+                return
+            }
+
+            $.ajax({
+                url: '/api/maintenance-schedule/create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.scheduleForm),
+                success: () => {
+                    alert('Đã thêm lịch bảo trì')
+                    this.loadMaintenanceSchedules(this.scheduleForm.InventoryId)
+                    // Reset form nhưng giữ modal mở để thêm tiếp
+                    this.scheduleForm.ScheduleName = ''
+                    this.scheduleForm.LastMaintenanceDate = null
+                    this.scheduleForm.NextMaintenanceDate = null
+                },
+                error: (xhr) => {
+                    alert('Lỗi: ' + xhr.responseText)
+                }
+            })
+        },
+
+        deleteSchedule(id) {
+            if (!confirm('Xóa lịch bảo trì này?')) return
+
+            const user = JSON.parse(localStorage.getItem('current_user'))
+
+            $.ajax({
+                url: '/api/maintenance-schedule/delete',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ Id: id, DeletedBy: user ? user.Id : 1 }),
+                success: () => {
+                    this.loadMaintenanceSchedules(this.selectedDevice.Id)
+                },
+                error: () => {
+                    alert('Xóa thất bại')
+                }
+            })
+        },
+
+        // Badge màu dựa vào số ngày còn lại
+        getUrgencyMeta(days) {
+            if (days < 0) return { text: 'Quá hạn', bg: '#fee2e2', color: '#dc2626' }
+            if (days <= 3) return { text: days + ' ngày', bg: '#fee2e2', color: '#dc2626' }
+            if (days <= 7) return { text: days + ' ngày', bg: '#ffedd5', color: '#ea580c' }
+            if (days <= 15) return { text: days + ' ngày', bg: '#fef9c3', color: '#ca8a04' }
+            return { text: days + ' ngày', bg: '#dcfce7', color: '#16a34a' }
+        },
+
+
+        selectTicket(ticket) {
+
+            this.errorForm.IdTicket =
+                ticket.Id
+
+            this.showTicketDropdown =
+                false
+        },
+
+        onQrScanned(decodedText) {
+
+            const url = new URL(decodedText)
+
+            const inventoryId =
+                url.searchParams.get('inventoryId')
+
+            if (!inventoryId)
+                return
+
+            $.get(
+                '/api/device/detail?id=' + inventoryId,
+                (res) => {
+
+                    this.qrDevice = res
+
+                    this.showQrModal = false
+
+                    this.showQrActionModal = true
+                }
+            )
+        },
+
+        viewQrDevice() {
+
+            //this.showQrActionModal = false
+
+            //this.selectedDevice =
+            //    this.qrDevice
+
+            //this.showModal = true
+            if (!this.qrDevice)
+                return
+
+            this.showQrActionModal = false
+
+            this.openDetail(this.qrDevice.Id)
+        },
+
+        requestRepair() {
+
+            this.showQrActionModal = false
+
+            this.openErrorModal(this.qrDevice)
+        },
+
+        openChecklist() {
+
+            alert(
+                'Checklist đang phát triển 🚀'
+            )
+        },
+
+
+        //showDeviceQr() {
+        //    this.showQrInDetail = true
+        //    this.$nextTick(() => {
+        //        const container = document.getElementById('detail-qr-container')
+        //        if (!container) return
+        //        container.innerHTML = ''
+        //        const url = window.location.origin + '/Inventory/Index?inventoryId=' + this.selectedDevice.Id
+        //        new QRCode(container, {
+        //            text: url,
+        //            width: 180,
+        //            height: 180,
+        //            colorDark: '#1a1a1a',
+        //            colorLight: '#ffffff',
+        //            correctLevel: QRCode.CorrectLevel.H
+        //        })
+        //    })
+        //},
         showDeviceQr() {
             this.showQrInDetail = true
             this.$nextTick(() => {
                 const container = document.getElementById('detail-qr-container')
                 if (!container) return
                 container.innerHTML = ''
-                const url = window.location.origin + '/Inventory/Index?inventoryId=' + this.selectedDevice.Id
+                const url = window.location.origin + '/Inventory/Index?actionQr=' + this.selectedDevice.Id
                 new QRCode(container, {
                     text: url,
                     width: 180,
@@ -448,7 +646,8 @@ var app = new Vue({
 
                 inventoryId: device.Id,
 
-                ticketId: device.IdTicket || null,
+                //ticketId: device.IdTicket || null,
+                IdTicket: device.IdTicket || null,
 
                 title: '',
 
@@ -489,7 +688,7 @@ var app = new Vue({
 
                     InventoryId: this.errorForm.inventoryId,
 
-                    TicketId: this.errorForm.ticketId,
+                    TicketId: this.errorForm.IdTicket,
 
                     Title: this.errorForm.title,
 
@@ -785,6 +984,59 @@ var app = new Vue({
         //        }
         //    })
         //},
+
+        //loadDevices() {
+
+        //    $.ajax({
+        //        url: '/api/device/list',
+        //        type: 'GET',
+
+        //        success: (res) => {
+
+        //            this.devices = res;
+        //            // Tự động mở chi tiết thiết bị nếu trỏ từ Alerts Center qua inventoryId
+        //            const urlParams = new URLSearchParams(window.location.search);
+        //            //const invId = urlParams.get('inventoryId');
+        //            //if (invId) {
+        //            //    const targetId = parseInt(invId);
+        //            //    const device = this.devices.find(d => d.Id === targetId);
+        //            //    if (device) {
+        //            //        if (!this.searchQuery && device.AssetCode) {
+        //            //            this.searchQuery = device.AssetCode;
+        //            //        }
+        //            //        this.openDetail(targetId);
+        //            //    }
+        //            //}
+        //            const params =
+        //                new URLSearchParams(window.location.search);
+
+        //            const actionQr =
+        //                params.get('actionQr');
+
+        //            if (actionQr) {
+
+        //                const targetId =
+        //                    parseInt(actionQr);
+
+        //                this.selectedQrInventoryId =
+        //                    targetId;
+
+        //                this.showQrActionModal =
+        //                    true;
+        //            }
+
+
+        //            //const invId =
+        //            //    new URLSearchParams(window.location.search)
+        //            //        .get('inventoryId');
+
+        //            if (invId) {
+        //                this.openDetail(parseInt(invId));
+        //            }
+        //        }
+        //    });
+        //},
+
         loadDevices() {
 
             $.ajax({
@@ -794,30 +1046,47 @@ var app = new Vue({
                 success: (res) => {
 
                     this.devices = res;
-                    // Tự động mở chi tiết thiết bị nếu trỏ từ Alerts Center qua inventoryId
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const invId = urlParams.get('inventoryId');
-                    if (invId) {
-                        const targetId = parseInt(invId);
-                        const device = this.devices.find(d => d.Id === targetId);
-                        if (device) {
-                            if (!this.searchQuery && device.AssetCode) {
-                                this.searchQuery = device.AssetCode;
-                            }
-                            this.openDetail(targetId);
-                        }
+
+                    const params =
+                        new URLSearchParams(window.location.search);
+
+                    // QR ACTION
+                    const actionQr = params.get('actionQr')
+
+                    if (actionQr) {
+
+                        $.get('/api/device/detail?id=' + actionQr, (res) => {
+
+                            this.qrDevice = res
+
+                            this.showQrActionModal = true
+
+                        })
+
+                        return
                     }
 
-                    //const invId =
-                    //    new URLSearchParams(window.location.search)
-                    //        .get('inventoryId');
+                    // OPEN DETAIL TRUYỀN THẲNG
+                    const invId =
+                        params.get('inventoryId');
 
                     if (invId) {
-                        this.openDetail(parseInt(invId));
+
+                        const targetId =
+                            parseInt(invId);
+
+                        this.openDetail(targetId);
                     }
+                },
+
+                error: () => {
+
+                    alert('Load dữ liệu thất bại');
                 }
             });
         },
+
+
         //openDetail(id) {
 
         //    $.ajax({

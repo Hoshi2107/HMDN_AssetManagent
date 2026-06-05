@@ -25,12 +25,11 @@
                 <!--<button class="btn-secondary"
                         @@click="openQrModal()">
                     Check QR-->
+                @*<div class="icon">📷</div>
 
-                    @*<div class="icon">📷</div>
+                    <h4>Quét QR</h4>
 
-                        <h4>Quét QR</h4>
-
-                        <p>Check nhanh bằng mã QR</p>*@
+                    <p>Check nhanh bằng mã QR</p>*@
 
                 <!--</button>-->
 
@@ -121,7 +120,7 @@
                             <th>Serial</th>
                             <th>Khoa</th>
                             <th>Phiếu</th>
-                            <th>Trạng thái tài sản</th>
+                            @*<th>Trạng thái tài sản</th>*@
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
@@ -145,7 +144,7 @@
 
                             <td>${ item.TicketCode || '—' }</td>
 
-                            <td>${ item.ApprovalStatus || '-' }</td>
+                            @*<td>${ item.ApprovalStatus || '-' }</td>*@
 
                             <td @@click.stop>
 
@@ -177,7 +176,7 @@
 
                 </table>
 
-                <!-- Modal -->
+                <!-- Modal Detail -->
                 <div class="modal-overlay"
                      v-if="showModal"
                      @@click.self="showModal = false">
@@ -275,8 +274,8 @@
                                         <label>Trạng thái</label>
 
                                         @*<span :class="statusClass(selectedDevice.LifeStatus)">
-                    ${ statusLabel(selectedDevice.LifeStatus) }
-                </span>*@
+                                                ${ statusLabel(selectedDevice.LifeStatus) }
+                                            </span>*@
 
                                         <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
                                               :style="{background:getLifeStatusMeta(selectedDevice.LifeStatus).bg,color:getLifeStatusMeta(selectedDevice.LifeStatus).color}">
@@ -423,6 +422,11 @@
                                         <button class="btn-secondary"
                                                 @@click="showDeviceQr()">
                                             📱 QR Code
+                                        </button>
+
+                                        <button class="btn-secondary"
+                                                @@click="showMaintenanceSchedule()">
+                                            Thêm lịch bảo trì
                                         </button>
 
                                     </div>
@@ -1195,13 +1199,13 @@
                             <!-- QR -->
                             @*<div class="form-group">
 
-                                <label>QR Code</label>
+                                    <label>QR Code</label>
 
-                                <input type="text"
-                                       class="form-control"
-                                       v-model="createForm.QrCode">
+                                    <input type="text"
+                                           class="form-control"
+                                           v-model="createForm.QrCode">
 
-                            </div>*@
+                                </div>*@
 
                         </div>
 
@@ -1690,20 +1694,60 @@
 
                     <div class="form-group">
                         <label>Phiếu báo lỗi</label>
-                        <select class="form-control"
-                                v-model="errorForm.IdTicket">
-                            @*<option value="">
-                                    -- Chọn phiếu --
-                                </option>*@
+                        @*<select class="form-control"
+                                    v-model="errorForm.IdTicket">
+                                <option value=0>
+                                    Mã phiếu | Ghi chú
+                                </option>
 
-                            <option v-for="ticket in tickets"
-                                    :key="ticket.Id"
-                                    :value="ticket.Id">
+                                <option v-for="ticket in tickets"
+                                        :key="ticket.Id"
+                                        :value="ticket.Id">
 
-                                ${ ticket.TicketCode }
+                                    ${ ticket.TicketCode }
 
-                            </option>
-                        </select>
+                                </option>
+                            </select>*@
+                        <div class="position-relative">
+
+                            <input class="form-control"
+                                   readonly
+                                   :value="selectedTicketName"
+                                   @@click="showTicketDropdown = !showTicketDropdown">
+
+                            <div class="ticket-dropdown"
+                                 v-if="showTicketDropdown">
+
+                                <table class="table table-hover table-sm mb-0">
+
+                                    <thead>
+                                        <tr>
+                                            <th>Mã phiếu</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ngày tạo</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+
+                                        <tr v-for="ticket in tickets"
+                                            :key="ticket.Id"
+                                            @@click="selectTicket(ticket)"
+                                            style="cursor:pointer">
+
+                                            <td>${ticket.TicketCode}</td>
+                                            <td>${ticket.Status}</td>
+                                            <td>${formatDate(ticket.CreatedAt)}</td>
+
+                                        </tr>
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
                     </div>
 
                     <div class="form-group mt-2">
@@ -1808,6 +1852,200 @@
         </div>
 
     </div>
+
+    <!-- Action after scan QR -->
+    <div class="modal-overlay"
+         v-if="showQrActionModal">
+
+        <div class="device-modal qr-action-modal">
+
+            <div class="modal-header">
+
+                <h3>
+                    Mã tài sản: ${ qrDevice? qrDevice.AssetCode : 'Không thể hiện Id tài sản này ' }
+                </h3>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="action-grid">
+
+                    <button class="action-card"
+                            @@click="viewQrDevice">
+
+                        🖥
+                        <span>Xem thông tin</span>
+
+                    </button>
+
+                    <button class="action-card"
+                            @@click="requestRepair">
+
+                        📝
+                        <span>Yêu cầu sửa</span>
+
+                    </button>
+
+                    <button class="action-card"
+                            @@click="openChecklist">
+
+                        ✅
+                        <span>Checklist</span>
+
+                        <small>Beta</small>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Maintenance Schedule Modal -->
+
+    <div class="modal-overlay"
+         v-if="showScheduleModal"
+         @@click.self="showScheduleModal = false">
+
+        <div class="device-modal sm-modal">
+
+            <!-- HEADER -->
+            <div class="modal-header">
+                <h3>📅 Lịch bảo trì — ${ selectedDevice ? selectedDevice.AssetCode : '' }</h3>
+                <button class="close-btn" @@click="showScheduleModal = false">×</button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- ─── FORM THÊM MỚI ─────────────────────── -->
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px">
+                    <h4 style="margin:0 0 14px;font-size:14px;color:#334155">➕ Thêm lịch mới</h4>
+
+                    <div class="detail-grid">
+
+                        <div class="form-group">
+                            <label>Tên lịch</label>
+                            <input type="text" class="form-control"
+                                   placeholder="VD: Bảo trì định kỳ Q1"
+                                   v-model="scheduleForm.ScheduleName"
+                                  >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Loại bảo trì</label>
+                            <select class="form-control" v-model="scheduleForm.MaintenanceType">
+                                <option value="preventive">Định kỳ (Preventive)</option>
+                                <option value="corrective">Sửa chữa (Corrective)</option>
+                                <option value="calibration">Hiệu chuẩn</option>
+                                <option value="inspection">Kiểm tra</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ngày bảo trì gần nhất</label>
+                            <input type="date" class="form-control"
+                                   v-model="scheduleForm.LastMaintenanceDate"
+                                   >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ngày bảo trì tiếp theo <span style="color:#dc2626">*</span></label>
+                            <input type="date" class="form-control"
+                                   v-model="scheduleForm.NextMaintenanceDate"
+                                   >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nhắc trước (ngày)</label>
+                            <input type="number" class="form-control" min="1" max="90"
+                                   v-model="scheduleForm.ReminderDays"
+                                   >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Lặp lại định kỳ?</label>
+                            <select class="form-control" v-model="scheduleForm.IsRecurring">
+                                <option :value="true">Có</option>
+                                <option :value="false">Không (1 lần)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" v-if="scheduleForm.IsRecurring" >
+                            <label>Chu kỳ (tháng)</label>
+                            <input type="number" class="form-control" min="1"
+                                   v-model="scheduleForm.RecurringMonths">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:12px">
+                        <button class="btn-primary" @@click="saveSchedule()">
+                            Lưu lịch
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ─── DANH SÁCH LỊCH HIỆN TẠI ──────────── -->
+                <h4 style="font-size:14px;color:#334155;margin-bottom:12px">
+                    📋 Danh sách lịch bảo trì (${ maintenanceSchedules.length })
+                </h4>
+
+                <div v-if="maintenanceSchedules.length === 0"
+                     style="text-align:center;color:#94a3b8;padding:30px">
+                    Chưa có lịch bảo trì nào
+                </div>
+
+                <div v-for="s in maintenanceSchedules"
+                     :key="s.Id"
+                     style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;
+                        margin-bottom:10px;display:flex;justify-content:space-between;
+                        align-items:flex-start;gap:12px">
+
+                    <!-- Thông tin -->
+                    <div style="flex:1">
+                        <div style="font-weight:600;font-size:14px;color:#1e293b;margin-bottom:4px">
+                            ${ s.ScheduleName }
+                        </div>
+                        <div style="font-size:12px;color:#64748b">
+                            Loại: <strong>${ s.MaintenanceType }</strong> &nbsp;|&nbsp;
+                            Ngày BT: <strong>${ s.NextMaintenanceDate ? s.NextMaintenanceDate.substring(0,10) : '—' }</strong> &nbsp;|&nbsp;
+                            Nhắc trước: <strong>${ s.ReminderDays } ngày</strong>
+                            <span v-if="s.IsRecurring">
+                                &nbsp;|&nbsp; Lặp mỗi <strong>${ s.RecurringMonths } tháng</strong>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Badge ngày còn lại -->
+                    <div style="text-align:center;white-space:nowrap">
+                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600"
+                              :style="{
+                            background: getUrgencyMeta(s.DaysUntilDue).bg,
+                            color:      getUrgencyMeta(s.DaysUntilDue).color
+                          }">
+                            ${ getUrgencyMeta(s.DaysUntilDue).text }
+                        </span>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:4px">còn lại</div>
+                    </div>
+
+                    <!-- Xóa -->
+                    <button class="btn-danger"
+                            style="padding:4px 10px;font-size:12px"
+                            @@click="deleteSchedule(s.Id)">
+                        Xóa
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 
 
 </div>
