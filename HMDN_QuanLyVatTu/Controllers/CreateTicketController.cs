@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using HMDN_QuanLyVatTu.Models;
@@ -12,6 +13,7 @@ namespace HMDN_QuanLyVatTu.Controllers
     public class CreateTicketController : Controller
     {
         private HospitalAssetDbContext db = new HospitalAssetDbContext();
+        private static readonly object _ticketCodeLock = new object();
 
         // GET: CreateTicket
         public ActionResult Index()
@@ -134,6 +136,7 @@ namespace HMDN_QuanLyVatTu.Controllers
             public int UserId { get; set; }
             public string SenderName { get; set; }  // Tên người yêu cầu (dùng cho TicketDiscussions)
             public string ReasonDetails { get; set; }
+            public string Proposal { get; set; }
             public int? TargetDepartmentId { get; set; }
             public System.Collections.Generic.List<TicketItemDto> Devices { get; set; }
         }
@@ -161,6 +164,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
                 {
                     return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
+                }
+                if (string.IsNullOrWhiteSpace(payload.Proposal))
+                {
+                    return Json(new { success = false, message = "Vui lòng nhập đề nghị!" });
                 }
 
                 // Get user's department
@@ -192,19 +199,23 @@ namespace HMDN_QuanLyVatTu.Controllers
                     : originalNote;
 
                 // 1. Save ticket (Fallback to ReasonDetails if Note is empty/whitespace)
-                var ticket = new Tickets
+                Tickets ticket;
+                lock (_ticketCodeLock)
                 {
-                    TicketCode = GenerateTicketCode(payload.TicketType),
-                    TicketType = payload.TicketType,
-                    Status = "PENDING",
-                    Note = finalNote,
-                    CreatedBy = payload.UserId,
-                    CreatedAt = DateTime.Now,
-                    SendTo = payload.TargetDepartmentId
-                };
+                    ticket = new Tickets
+                    {
+                        TicketCode = GenerateTicketCode(payload.TicketType),
+                        TicketType = payload.TicketType,
+                        Status = "PENDING",
+                        Note = finalNote,
+                        CreatedBy = payload.UserId,
+                        CreatedAt = DateTime.Now,
+                        SendTo = payload.TargetDepartmentId
+                    };
 
-                db.Tickets.Add(ticket);
-                db.SaveChanges(); // Generates ticket.Id
+                    db.Tickets.Add(ticket);
+                    db.SaveChanges(); // Generates ticket.Id
+                }
 
                 // 1.5. Save reason details as a text message in TicketDiscussions if present
                 // Xác định tên người gửi: ưu tiên payload.SenderName, fallback sang user.FullName
@@ -224,8 +235,22 @@ namespace HMDN_QuanLyVatTu.Controllers
                         CreatedAt = ticket.CreatedAt
                     };
                     db.TicketDiscussions.Add(reasonMsg);
-                    db.SaveChanges();
                 }
+
+                if (!string.IsNullOrWhiteSpace(payload.Proposal))
+                {
+                    var proposalMsg = new TicketDiscussion
+                    {
+                        TicketId = ticket.Id,
+                        SenderName = resolvedSenderName,
+                        Message = "[Đề nghị] " + payload.Proposal.Trim(),
+                        FileType = "TEXT",
+                        IsRevoked = false,
+                        CreatedAt = ticket.CreatedAt.AddSeconds(1)
+                    };
+                    db.TicketDiscussions.Add(proposalMsg);
+                }
+                db.SaveChanges();
 
                 // 2. Save items (Inventories / TicketDetails)
                 if (payload.Devices != null && payload.Devices.Count > 0)
@@ -385,13 +410,59 @@ namespace HMDN_QuanLyVatTu.Controllers
 
         private string GenerateTicketCode(string ticketType)
         {
-            string prefix = "PX";
-            if (ticketType == "IMPORT") prefix = "PN";
-            else if (ticketType == "TRANSFER") prefix = "DC";
-            else if (ticketType == "HoTro") prefix = "HT";
+            // Map loại phiếu sang prefix mã
+            string prefix;
+            switch (ticketType)
+            {
+                case "IMPORT":
+                    prefix = "PN";
+                    break;
+                case "TRANSFER":
+                    prefix = "DC";
+                    break;
+                case "SUPPORT":
+                case "HoTro":
+                    prefix = "HT";
+                    break;
+                case "REPAIR":
+                    prefix = "SC";
+                    break;
+                default: // EXPORT và các loại khác
+                    prefix = "PX";
+                    break;
+            }
 
-            int count = db.Tickets.Count(t => t.TicketType == ticketType);
-            return prefix + (count + 1).ToString("D4");
+            // Lấy tất cả TicketCode bắt đầu bằng prefix hiện tại
+            List<string> existingCodes = db.Tickets
+                .Where(t => t.TicketCode.StartsWith(prefix))
+                .Select(t => t.TicketCode)
+                .ToList();
+
+            // Parse phần hậu tố số để tìm giá trị MAX
+            int maxNumber = 0;
+            foreach (var code in existingCodes)
+            {
+                if (string.IsNullOrEmpty(code) || code.Length <= prefix.Length)
+                    continue;
+
+                string suffix = code.Substring(prefix.Length);
+                int num;
+                if (int.TryParse(suffix, out num) && num > maxNumber)
+                {
+                    maxNumber = num;
+                }
+            }
+
+            // Tăng lên 1 và đảm bảo duy nhất bằng vòng lặp do-while (D5 định dạng)
+            string newCode;
+            do
+            {
+                maxNumber++;
+                newCode = prefix + maxNumber.ToString("D5");
+            }
+            while (db.Tickets.Any(t => t.TicketCode == newCode));
+
+            return newCode;
         }
     }
 }

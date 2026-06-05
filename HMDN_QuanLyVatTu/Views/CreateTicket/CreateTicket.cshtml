@@ -4,6 +4,8 @@
 }
 
 <style>
+    @@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
     :root {
         --hm-navy: #0F2C59;
         --hm-navy-light: #1E4A8A;
@@ -15,8 +17,17 @@
         --hm-success: #10b981;
         --hm-danger: #ef4444;
         --hm-chat-bg: #f8fafc;
-        --hm-shadow: 0 4px 20px -2px rgba(15,44,89,.05), 0 2px 8px -1px rgba(0,0,0,.03);
+        --hm-shadow: 0 4px 20px -2px rgba(15,44,89,.04), 0 2px 8px -1px rgba(0,0,0,.02);
         --hm-tr: all .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    .ct-container, 
+    .ct-container input, 
+    .ct-container select, 
+    .ct-container textarea, 
+    .ct-container button,
+    .ct-container table {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     .ct-container {
@@ -55,20 +66,23 @@
         overflow: hidden;
         transition: var(--hm-tr);
     }
-    .p-card:hover { box-shadow: 0 6px 24px -2px rgba(15,44,89,.08), 0 4px 12px -1px rgba(0,0,0,.04); }
+    .p-card:hover { 
+        box-shadow: 0 10px 30px -4px rgba(15,44,89,.08), 0 4px 16px -2px rgba(0,0,0,.03);
+        transform: translateY(-2px);
+    }
     .c-head {
         display: flex; align-items: center; gap: 12px;
-        padding: 18px 24px;
+        padding: 20px 24px;
         border-bottom: 1px solid var(--hm-border);
         flex-wrap: wrap;
     }
     .c-icon {
         display: flex; align-items: center; justify-content: center;
-        width: 38px; height: 38px; border-radius: 10px;
-        background: rgba(15,44,89,.08); color: var(--hm-navy);
-        font-size: 16px; font-weight: bold;
+        width: 40px; height: 40px; border-radius: 10px;
+        background: rgba(15,44,89,.06); color: var(--hm-navy);
+        font-size: 17px; font-weight: bold;
     }
-    .c-title { font-size: 16px; font-weight: 600; color: var(--hm-navy); }
+    .c-title { font-size: 17px; font-weight: 700; color: var(--hm-navy); }
     .c-body { padding: 24px; }
 
     /* ── PAGE HEADER ── */
@@ -85,34 +99,48 @@
     /* ── FORM GRID ── */
     .f-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
     @@media(min-width:576px) { .f-grid { grid-template-columns: 1fr 1fr; } }
-    @@media(min-width:1200px) { .f-grid { grid-template-columns: repeat(5, 1fr); } }
+    @@media(min-width:992px) { .f-grid { grid-template-columns: repeat(3, 1fr); } }
+    @@media(min-width:1400px) { .f-grid { grid-template-columns: repeat(4, 1fr); } }
     .f-group { display: flex; flex-direction: column; gap: 8px; }
     .f-label {
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: .8px; color: var(--hm-text-sec);
+        font-size: 12.5px; font-weight: 600; text-transform: none;
+        letter-spacing: .5px; color: #475569;
     }
     .f-input {
-        width: 100%; height: 44px; padding: 0 16px; border-radius: 10px;
+        width: 100%; height: 48px; padding: 0 18px; border-radius: 10px;
         border: 1.5px solid var(--hm-border); background: #fff;
-        font-size: 13.5px; color: var(--hm-text); font-weight: 500;
+        font-size: 14.5px; color: var(--hm-text); font-weight: 500;
         outline: none; transition: var(--hm-tr);
     }
-    .f-input:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.1); }
-    .f-input:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; border-style: dashed; }
+    .f-input:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.12); }
+    .f-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; border-style: dashed; border-color: #cbd5e1; }
     .icon-wrap { position: relative; display: flex; align-items: center; }
     .icon-wrap i { position: absolute; left: 14px; color: var(--hm-navy); font-size: 14px; }
     .icon-wrap input { padding-left: 40px; }
 
     /* ── REASON TEXTAREA (EXPORT/TRANSFER) ── */
     .reason-textarea {
-        width: 100%; min-height: 200px; border: 1.5px solid var(--hm-border);
-        border-radius: 12px; padding: 16px; font-size: 13.5px;
+        width: 100%; min-height: 160px; border: 1.5px solid var(--hm-border);
+        border-radius: 12px; padding: 16px; font-size: 14.5px;
         color: var(--hm-text); outline: none; resize: vertical;
         transition: var(--hm-tr); background: #fff; line-height: 1.6;
     }
-    .reason-textarea:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.1); }
+    .reason-textarea:focus { border-color: var(--hm-navy); box-shadow: 0 0 0 3px rgba(15,44,89,.12); }
     .reason-hint { display: flex; gap: 8px; margin-top: 12px; color: var(--hm-text-sec); font-size: 12px; line-height: 1.4; }
     .reason-hint i { color: var(--hm-navy); margin-top: 2px; }
+
+    /* ── Reason & Proposal columns grid ── */
+    .reason-proposal-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    @@media(min-width:768px) {
+        .reason-proposal-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
 
     /* ── PURCHASE REQUEST FORM (IMPORT/EXPORT/TRANSFER) ── */
     .pr-form-grid {
@@ -636,19 +664,41 @@
                     </div>
                 </div>
 
-                <!-- 2. LÝ DO YÊU CẦU -->
-                <div class="p-card">
-                    <div class="c-head">
-                        <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                        <span class="c-title">Lý do yêu cầu &amp; Chi tiết <span style="color: var(--hm-danger);">*</span></span>
-                    </div>
-                    <div class="c-body">
-                        <textarea class="reason-textarea"
-                                  placeholder="Nhập chi tiết yêu cầu hỗ trợ kỹ thuật hoặc báo lỗi thiết bị/phần mềm... (Bắt buộc)"
-                                  v-model="form.reasonDetails"></textarea>
-                        <div class="reason-hint">
-                            <i class="fa-solid fa-circle-exclamation"></i>
-                            <span>Gợi ý: Mô tả rõ mã thiết bị, vị trí lắp đặt và tình trạng hiện tại.</span>
+                <!-- 2. LÝ DO YÊU CẦU & ĐỀ NGHỊ -->
+                <div class="p-card" style="padding: 24px;">
+                    <div class="reason-proposal-grid">
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="c-head" style="border-bottom: none; padding-left: 0; padding-right: 0; padding-top: 0;">
+                                <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                                <span class="c-title">Lý do yêu cầu &amp; Chi tiết <span style="color: var(--hm-danger);">*</span></span>
+                            </div>
+                            <div class="c-body" style="padding: 0;">
+                                <textarea class="reason-textarea"
+                                          placeholder="Nhập chi tiết yêu cầu hỗ trợ kỹ thuật hoặc báo lỗi thiết bị/phần mềm... (Bắt buộc)"
+                                          v-model="form.reasonDetails"
+                                          style="min-height:140px;"></textarea>
+                                <div class="reason-hint" style="margin-top: 8px;">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>Gợi ý: Mô tả rõ mã thiết bị, vị trí lắp đặt và tình trạng hiện tại.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="c-head" style="border-bottom: none; padding-left: 0; padding-right: 0; padding-top: 0;">
+                                <div class="c-icon"><i class="fa-solid fa-hand-holding-hand"></i></div>
+                                <span class="c-title">Đề nghị <span style="color: var(--hm-danger);">*</span></span>
+                            </div>
+                            <div class="c-body" style="padding: 0;">
+                                <textarea class="reason-textarea"
+                                          placeholder="Nhập đề nghị, yêu cầu xử lý... (Bắt buộc)"
+                                          v-model="form.proposal"
+                                          style="min-height:140px;"></textarea>
+                                <div class="reason-hint" style="margin-top: 8px;">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>Gợi ý: Nhập đề nghị cụ thể về thiết bị, vật tư, hoặc hành động mong muốn.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -740,20 +790,41 @@
                     </div>
                 </div>
 
-                <!-- LÝ DO / MỤC ĐÍCH -->
-                <div class="p-card">
-                    <div class="c-head">
-                        <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
-                        <span class="c-title">Lý do / Mục đích <span style="color: var(--hm-danger);">*</span></span>
-                    </div>
-                    <div class="c-body">
-                        <textarea class="reason-textarea"
-                                  placeholder="Nhập lý do, mục đích yêu cầu... (VD: Cần tạo form khảo sát và chia sẻ file excel công việc giữa các bộ phận)"
-                                  v-model="form.reasonDetails"
-                                  style="min-height:140px;"></textarea>
-                        <div class="reason-hint">
-                            <i class="fa-solid fa-circle-exclamation"></i>
-                            <span>Gợi ý: Mô tả rõ ràng mục đích để người phê duyệt hiểu và xử lý nhanh hơn.</span>
+                <!-- LÝ DO / MỤC ĐÍCH & ĐỀ NGHỊ -->
+                <div class="p-card" style="padding: 24px;">
+                    <div class="reason-proposal-grid">
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="c-head" style="border-bottom: none; padding-left: 0; padding-right: 0; padding-top: 0;">
+                                <div class="c-icon"><i class="fa-solid fa-pen-fancy"></i></div>
+                                <span class="c-title">Lý do / Mục đích <span style="color: var(--hm-danger);">*</span></span>
+                            </div>
+                            <div class="c-body" style="padding: 0;">
+                                <textarea class="reason-textarea"
+                                          placeholder="Nhập lý do, mục đích yêu cầu... (VD: Cần tạo form khảo sát và chia sẻ file excel công việc giữa các bộ phận)"
+                                          v-model="form.reasonDetails"
+                                          style="min-height:140px;"></textarea>
+                                <div class="reason-hint" style="margin-top: 8px;">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>Gợi ý: Mô tả rõ ràng mục đích để người phê duyệt hiểu và xử lý nhanh hơn.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column;">
+                            <div class="c-head" style="border-bottom: none; padding-left: 0; padding-right: 0; padding-top: 0;">
+                                <div class="c-icon"><i class="fa-solid fa-hand-holding-hand"></i></div>
+                                <span class="c-title">Đề nghị <span style="color: var(--hm-danger);">*</span></span>
+                            </div>
+                            <div class="c-body" style="padding: 0;">
+                                <textarea class="reason-textarea"
+                                          placeholder="Nhập đề nghị... (VD: Đề nghị trang bị 1 máy in nhiệt phục vụ in tem tài sản tại chỗ)"
+                                          v-model="form.proposal"
+                                          style="min-height:140px;"></textarea>
+                                <div class="reason-hint" style="margin-top: 8px;">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>Gợi ý: Nhập đề nghị cụ thể về thiết bị, vật tư, hoặc hành động mong muốn.</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -874,6 +945,7 @@
                     targetDepartmentId: '',
                     note: '',
                     reasonDetails: '',
+                    proposal: '',
                     devices: [],      // Dùng cho SUPPORT / REPAIR
                     prItems: []       // Dùng cho IMPORT / EXPORT / TRANSFER
                 },
@@ -1165,6 +1237,10 @@
                         this.toast('Cảnh báo', 'Vui lòng nhập lý do / mục đích yêu cầu!', 'warning');
                         return;
                     }
+                    if (!this.form.proposal || !this.form.proposal.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập đề nghị!', 'warning');
+                        return;
+                    }
                     // Với IMPORT/EXPORT/TRANSFER: bắt buộc ít nhất 1 dòng hàng hóa
                     if (!this.isDeviceForm && this.form.prItems.length === 0) {
                         this.toast('Cảnh báo', 'Vui lòng thêm ít nhất 1 hàng hóa vào danh sách!', 'warning');
@@ -1188,6 +1264,7 @@
                         AssetType: this.isDeviceForm ? null : this.form.assetType,
                         Note: prNote,
                         ReasonDetails: this.form.reasonDetails,
+                        Proposal: this.form.proposal,
                         UserId: this.form.userId,
                         SenderName: senderName,
                         TargetDepartmentId: this.form.targetDepartmentId,
@@ -1279,6 +1356,7 @@
                     // Reset form khi đổi loại yêu cầu
                     this.form.assetType = '';
                     this.form.reasonDetails = '';
+                    this.form.proposal = '';
                     if (newVal === 'SUPPORT' || newVal === 'REPAIR') {
                         this.form.prItems = [];
                     } else {

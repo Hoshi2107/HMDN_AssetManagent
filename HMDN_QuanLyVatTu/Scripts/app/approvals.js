@@ -79,6 +79,7 @@ var app = new Vue({
                     (
                         (x.TicketCode || '') +
                         (x.TicketType || '') +
+                        this.ticketTypeLabel(x.TicketType) +
                         (x.CreatedBy || '') +
                         (x.CreatedByName || '') +
                         (x.CreatedByUsername || '')
@@ -90,7 +91,12 @@ var app = new Vue({
 
             // FILTER
             if (this.filterType && this.filterType !== 'Tất cả') {
-                list = list.filter(x => x.TicketType === this.filterType)
+                list = list.filter(x => {
+                    if (this.filterType === 'SUPPORT') {
+                        return x.TicketType === 'SUPPORT' || x.TicketType === 'HoTro';
+                    }
+                    return x.TicketType === this.filterType;
+                })
             }
 
             if (this.filterStatus && this.filterStatus !== 'Tất cả') {
@@ -188,7 +194,7 @@ var app = new Vue({
             if (type === 'IMPORT') return 'Nhập kho';
             if (type === 'EXPORT') return 'Xuất kho';
             if (type === 'TRANSFER') return 'Điều chuyển';
-            if (type === 'SUPPORT') return 'Hỗ trợ';
+            if (type === 'SUPPORT' || type === 'HoTro') return 'Hỗ trợ';
             if (type === 'REPAIR') return 'Sửa chữa';
             return type || 'Nhập kho';
         },
@@ -204,7 +210,7 @@ var app = new Vue({
             return parts.slice(1).join(' | ');
         },
         isDeviceFormType(type) {
-            return type === 'SUPPORT' || type === 'REPAIR';
+            return type === 'SUPPORT' || type === 'HoTro' || type === 'REPAIR';
         },
         canApprove() {
             if (!this.currentUser) return false;
@@ -716,15 +722,34 @@ var app = new Vue({
         },
         getReasonDetails() {
             if (!this.chatMessagesList || this.chatMessagesList.length === 0) return '';
-            // Lấy tin nhắn text đầu tiên của người tạo phiếu (không phải msg hệ thống)
-            // Xác định bằng cách tìm tin nhắn mà SenderName đúng với tên người tạo phiếu
+            // Lấy tin nhắn text đầu tiên của người tạo phiếu (không phải msg hệ thống, không phải Đề nghị)
             if (!this.selectedTicket) return '';
             const creatorName = this.selectedTicket.CreatedByName || this.selectedTicket.CreatedByUsername || '';
             const firstTextMsg = this.chatMessagesList.find(m =>
                 !m.isSystem && !m.isRevoked && m.rawFileType === 'TEXT' &&
-                (creatorName === '' || m.sender === creatorName)
+                (creatorName === '' || m.sender === creatorName) &&
+                (!m.content || !m.content.startsWith('[Đề nghị]'))
             );
             return firstTextMsg ? firstTextMsg.content : '';
+        },
+        getProposal() {
+            if (!this.chatMessagesList || this.chatMessagesList.length === 0) return '';
+            if (!this.selectedTicket) return '';
+            const creatorName = this.selectedTicket.CreatedByName || this.selectedTicket.CreatedByUsername || '';
+            const proposalMsg = this.chatMessagesList.find(m =>
+                !m.isSystem && !m.isRevoked && m.rawFileType === 'TEXT' &&
+                (creatorName === '' || m.sender === creatorName) &&
+                m.content && m.content.startsWith('[Đề nghị]')
+            );
+            if (proposalMsg) {
+                return proposalMsg.content.substring(9).trim(); // Bỏ prefix '[Đề nghị]'
+            }
+            return '';
+        },
+        printTicket() {
+            this.$nextTick(() => {
+                window.print();
+            });
         },
         loadDepartments() {
             $.ajax({

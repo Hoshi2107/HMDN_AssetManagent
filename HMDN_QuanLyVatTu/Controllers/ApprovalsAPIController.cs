@@ -296,27 +296,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return Ok(new { success = false, message = "Bạn không có quyền thực hiện hành động này." });
                     }
 
-                    // Preserve the original ticket Note (ReasonDetails) in TicketDiscussions before it gets overwritten by the approver's note
-                    if (!string.IsNullOrWhiteSpace(ticket.Note))
-                    {
-                        string trimmedNote = ticket.Note.Trim();
-                        bool alreadySaved = db.TicketDiscussions.Any(d => d.TicketId == ticket.Id && d.Message == trimmedNote);
-                        if (!alreadySaved)
-                        {
-                            var creator = db.Users.Find(ticket.CreatedBy);
-                            var reasonMsg = new TicketDiscussion
-                            {
-                                TicketId = ticket.Id,
-                                SenderName = creator != null ? creator.FullName : "Người yêu cầu",
-                                Message = trimmedNote,
-                                FileType = "TEXT",
-                                IsRevoked = false,
-                                CreatedAt = ticket.CreatedAt
-                            };
-                            db.TicketDiscussions.Add(reasonMsg);
-                            db.SaveChanges();
-                        }
-                    }
+                    // [ĐÃ LOẠI BỎ] Logic tự động chèn tin nhắn chat từ ticket.Note vào TicketDiscussions khi duyệt để tránh trùng lặp dữ liệu thảo luận.
+
 
                     db.Database.ExecuteSqlCommand(
                         "EXEC sp_Approvals_UpdateStatus @TicketId, @Status, @Note",
