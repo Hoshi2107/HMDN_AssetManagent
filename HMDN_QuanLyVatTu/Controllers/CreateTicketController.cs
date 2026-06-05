@@ -100,7 +100,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Select(x => new
                     {
                         AssetCode = x.AssetCode,
-                        SerialNumber = x.SerialNumber
+                        AssetName = x.Item != null ? x.Item.Name : "",
+                        Model = x.Item != null ? x.Item.Model : "",
+                        SerialNumber = x.SerialNumber,
+                        DepartmentName = x.Department != null ? x.Department.Name : ""
                     })
                     .GroupBy(x => x.AssetCode)
                     .Select(g => g.FirstOrDefault())
