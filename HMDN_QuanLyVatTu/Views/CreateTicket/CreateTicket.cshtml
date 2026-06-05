@@ -1051,6 +1051,10 @@
                                 console.error(res.error);
                             } else {
                                 vm.inventoryAssets = res;
+
+                                // just added
+                                vm.addDeviceFromUrlParams();
+
                             }
                         })
                         .catch(function (err) {
@@ -1349,6 +1353,53 @@
                             this.isDropdownOpen = false;
                         }
                     }
+
+                    // just added
+                },
+                parseEarlyParams() {
+                    var params = new URLSearchParams(window.location.search);
+                    var tType = params.get('ticketType');
+                    var aType = params.get('assetType');
+                    if (tType) {
+                        var matchType = this.listLoaiYeuCau.find(function (x) {
+                            return x.value === tType;
+                        });
+                        if (matchType) {
+                            this.form.ticketType = matchType.value;
+                        }
+                    }
+                    if (aType) {
+                        var matchAsset = this.listLoaiVatTu.find(function (x) {
+                            return x.toLowerCase() === aType.toLowerCase();
+                        });
+                        if (matchAsset) {
+                            this.form.assetType = matchAsset;
+                        }
+                    }
+                },
+                addDeviceFromUrlParams() {
+                    var params = new URLSearchParams(window.location.search);
+                    var aCode = params.get('assetCode');
+                    if (aCode && (this.form.ticketType === 'REPAIR' || this.form.ticketType === 'SUPPORT')) {
+                        var asset = this.inventoryAssets.find(function (x) {
+                            return x.AssetCode && x.AssetCode.toLowerCase() === aCode.trim().toLowerCase();
+                        });
+                        if (asset) {
+                            var exists = this.form.devices.find(function (d) {
+                                return d.itemName.toLowerCase() === asset.AssetCode.toLowerCase();
+                            });
+                            if (!exists) {
+                                this.form.devices.push({
+                                    itemName: asset.AssetCode,
+                                    serialNumber: asset.SerialNumber || '',
+                                    quantity: 1,
+                                    unit: 'Cái',
+                                    note: 'Thêm từ QR Code'
+                                });
+                            }
+                        }
+                    }
+
                 }
             },
             watch: {
@@ -1420,6 +1471,9 @@
                 this.loadDbItems();
                 this.loadInventoryAssets();
                 document.addEventListener('click', this.handleOutsideClick);
+
+                //just added
+                this.parseEarlyParams();
             },
             beforeDestroy() {
                 document.removeEventListener('click', this.handleOutsideClick);

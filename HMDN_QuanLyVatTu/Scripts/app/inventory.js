@@ -564,9 +564,15 @@ var app = new Vue({
 
         requestRepair() {
 
-            this.showQrActionModal = false
+            //this.showQrActionModal = false
 
-            this.openErrorModal(this.qrDevice)
+            //this.openErrorModal(this.qrDevice)
+            this.showQrActionModal = false
+            if (this.qrDevice && this.qrDevice.AssetCode) {
+                window.location.href = '/CreateTicket/Index?ticketType=REPAIR&assetType=' + encodeURIComponent('Khác') + '&assetCode=' + encodeURIComponent(this.qrDevice.AssetCode);
+            } else {
+                window.location.href = '/CreateTicket/Index?ticketType=REPAIR&assetType=' + encodeURIComponent('Khác');
+            }
         },
 
         openChecklist() {
