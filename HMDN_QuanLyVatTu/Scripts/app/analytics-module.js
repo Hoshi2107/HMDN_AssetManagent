@@ -614,24 +614,35 @@ window.addEventListener('DOMContentLoaded', function () {
                                 }
 
                                 var now = new Date();
-                                if (vm.checklistRange === 'week') {
+
+                                function formatLocal(d) {
+                                    var year = d.getFullYear();
+                                    var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                                    var day = ('0' + d.getDate()).slice(-2);
+                                    return year + '-' + month + '-' + day;
+                                }
+
+                                if (vm.checklistRange === 'today') {
+                                    var dateStr = formatLocal(now);
+                                    url += '&fromDate=' + dateStr + '&toDate=' + dateStr;
+                                } else if (vm.checklistRange === 'week') {
                                     var diff = (7 + (now.getDay() - 1)) % 7;
                                     var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
                                     var end = new Date(now.getFullYear(), now.getMonth(), start.getDate() + 6);
-                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
                                 } else if (vm.checklistRange === 'month') {
                                     var start = new Date(now.getFullYear(), now.getMonth(), 1);
                                     var end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
                                 } else if (vm.checklistRange === 'quarter') {
                                     var qStartMonth = Math.floor(now.getMonth() / 3) * 3;
                                     var start = new Date(now.getFullYear(), qStartMonth, 1);
                                     var end = new Date(now.getFullYear(), qStartMonth + 3, 0);
-                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
                                 } else if (vm.checklistRange === 'year') {
                                     var start = new Date(now.getFullYear(), 0, 1);
                                     var end = new Date(now.getFullYear(), 12, 0);
-                                    url += '&fromDate=' + start.toISOString().substring(0, 10) + '&toDate=' + end.toISOString().substring(0, 10);
+                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
                                 }
                                 
                                 window.location.href = url;

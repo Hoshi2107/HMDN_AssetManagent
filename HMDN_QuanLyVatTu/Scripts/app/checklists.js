@@ -117,7 +117,14 @@ new Vue({
                     (s.SerialNumber && s.SerialNumber.toLowerCase().indexOf(q) > -1) ||
                     (s.DepartmentName && s.DepartmentName.toLowerCase().indexOf(q) > -1);
                 
-                var matchStatus = !vm.schedulesFilter.status || s.Status === vm.schedulesFilter.status;
+                var matchStatus = true;
+                if (vm.schedulesFilter.status) {
+                    if (vm.schedulesFilter.status === 'pending') {
+                        matchStatus = s.Status === 'pending' || s.Status === 'overdue';
+                    } else {
+                        matchStatus = s.Status === vm.schedulesFilter.status;
+                    }
+                }
                 var matchCycle = !vm.schedulesFilter.cycleType || s.CycleType === vm.schedulesFilter.cycleType;
                 
                 var matchOverdue = true;
@@ -125,7 +132,10 @@ new Vue({
                     matchOverdue = s.Status === 'overdue';
                 }
 
-                var matchFrom = !vm.schedulesFilter.fromDate || s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                var matchFrom = !vm.schedulesFilter.fromDate || 
+                                s.Status === 'pending' || 
+                                s.Status === 'overdue' || 
+                                s.ScheduledDate >= vm.schedulesFilter.fromDate;
                 var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
                 
                 return matchQuery && matchStatus && matchCycle && matchOverdue && matchFrom && matchTo;

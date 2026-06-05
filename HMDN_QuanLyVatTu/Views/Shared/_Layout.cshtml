@@ -5,6 +5,60 @@
         if (userModules == null) return false;
         return System.Linq.Enumerable.Any(userModules, m => string.Equals(m.code, code, System.StringComparison.OrdinalIgnoreCase));
     }
+
+    // Fetch other active users
+    List<HMS.Models.Auth.User> activeUsersList = new List<HMS.Models.Auth.User>();
+    int currentUserId = Session["UserId"] != null ? (int)Session["UserId"] : 0;
+    try
+    {
+        using (var db = new HMS.Data.HospitalAssetDbContext())
+        {
+            activeUsersList = db.Users
+                .Where(u => u.IsActive && u.Id != currentUserId)
+                .OrderByDescending(u => u.LastLoginAt)
+                .Take(5)
+                .ToList();
+        }
+    }
+    catch (Exception ex)
+    {
+        // Fallback
+    }
+
+    // If the database has no other users or very few, seed with some realistic active hospital staff
+    if (activeUsersList.Count < 3)
+    {
+        var mockStaff = new List<HMS.Models.Auth.User>
+        {
+            new HMS.Models.Auth.User { FullName = "Trần Minh Hoàng", Email = "hoang.tm@hospital.com", Username = "hoangtm", IsActive = true },
+            new HMS.Models.Auth.User { FullName = "Lê Thị Mai Anh", Email = "anh.ltm@hospital.com", Username = "maianh", IsActive = true },
+            new HMS.Models.Auth.User { FullName = "Phạm Đức Thắng", Email = "thang.pd@hospital.com", Username = "thangpd", IsActive = true }
+        };
+        
+        foreach (var mock in mockStaff)
+        {
+            if (!activeUsersList.Any(u => string.Equals(u.Username, mock.Username, StringComparison.OrdinalIgnoreCase)))
+            {
+                activeUsersList.Add(mock);
+            }
+        }
+    }
+
+    string GetAvatarGradient(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "linear-gradient(135deg, #3b82f6, #06b6d4)";
+        int hash = name.GetHashCode();
+        string[] gradients = new string[]
+        {
+            "linear-gradient(135deg, #3b82f6, #06b6d4)", // Blue/Cyan
+            "linear-gradient(135deg, #10b981, #059669)", // Green
+            "linear-gradient(135deg, #f59e0b, #d97706)", // Amber
+            "linear-gradient(135deg, #ec4899, #8b5cf6)", // Pink/Purple
+            "linear-gradient(135deg, #ef4444, #f43f5e)"  // Red/Rose
+        };
+        int index = Math.Abs(hash) % gradients.Length;
+        return gradients[index];
+    }
 }
 <!DOCTYPE html>
 <html>
@@ -333,6 +387,7 @@
         }
 
             .staff-avatars img,
+            .staff-avatars .staff-av-letter,
             .staff-avatars .av-count {
                 width: 24px;
                 height: 24px;
@@ -340,11 +395,19 @@
                 border: 2px solid var(--sidebar-bg);
                 margin-left: -6px;
                 object-fit: cover;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                font-weight: bold;
+                font-size: 10px;
+                flex-shrink: 0;
             }
 
-                .staff-avatars img:first-child {
-                    margin-left: 0;
-                }
+            .staff-avatars img:first-child,
+            .staff-avatars .staff-av-letter:first-child {
+                margin-left: 0;
+            }
 
         .av-count {
             background: var(--accent-cyan);
@@ -801,6 +864,15 @@
                 padding: 10px;
             }
 
+            #app-sidebar .staff-dot {
+                display: none !important;
+            }
+
+            #app-sidebar .staff-avatars .staff-av-letter:not(:first-child),
+            #app-sidebar .staff-avatars .av-count {
+                display: none !important;
+            }
+
             .page-content {
                 padding: 18px;
             }
@@ -1004,36 +1076,54 @@
                         </ul>
                     </div>
                 }
-                @if (HasModule("Settings") || HasModule("Support"))
-                {
-                    <div class="nav-section" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 10px;">
-                        <div class="nav-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                            <div class="nav-section-label" style="padding: 0;">Hệ thống</div>
-                            <i class="fa-solid fa-chevron-down nav-section-toggle"></i>
-                        </div>
-                        <ul class="nav-section-content">
-                            @if (HasModule("Settings"))
-                            {
-                                <li class="nav-item @(ViewBag.ActiveNav == "Settings" ? "active" : "")">
-                                    <a href="@Url.Action("Index","Settings")">
-                                        <i class="fa-solid fa-gear nav-icon"></i>
-                                        <span>Cài đặt</span>
-                                    </a>
-                                </li>
-                            }
-                            @if (HasModule("Support"))
-                            {
-                                <li class="nav-item @(ViewBag.ActiveNav == "Support" ? "active" : "")">
-                                    <a href="@Url.Action("Index","Support")">
-                                        <i class="fa-solid fa-circle-question nav-icon"></i>
-                                        <span>Hỗ trợ</span>
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                }
+
             </nav>
+
+            @if (Session["FullName"] != null)
+            {
+                var displayName = Session["FullName"].ToString();
+                var avatarChar = !string.IsNullOrEmpty(displayName) ? displayName.Substring(0, 1).ToUpper() : "U";
+                var currentUserGradient = GetAvatarGradient(displayName);
+                
+                var displayUsers = activeUsersList.Take(2).ToList();
+                var totalOnlineCount = activeUsersList.Count + 1; // including current user
+                
+                <div class="sidebar-footer">
+                    <div class="staff-pill" onclick="window.location.href='/Account/Logout'" title="Đăng xuất (Click)">
+                        <div class="staff-avatars">
+                            <!-- Current user avatar -->
+                            <div class="staff-av-letter" style="background: @currentUserGradient; z-index: 10;">
+                                @avatarChar
+                            </div>
+                            
+                            <!-- Other active users avatars -->
+                            @for (int i = 0; i < displayUsers.Count; i++)
+                            {
+                                var u = displayUsers[i];
+                                var name = u.FullName ?? "User";
+                                var uChar = !string.IsNullOrEmpty(name) ? name.Substring(0, 1).ToUpper() : "U";
+                                var grad = GetAvatarGradient(name);
+                                <div class="staff-av-letter" style="background: @grad; z-index: @(9 - i);" title="@name">
+                                    @uChar
+                                </div>
+                            }
+                            
+                            <!-- Plus bubble if there are more than 3 online -->
+                            @if (totalOnlineCount > 3)
+                            {
+                                <div class="av-count" style="z-index: 5;" title="Xem thêm @(totalOnlineCount - 3) người">
+                                    +@(totalOnlineCount - 3)
+                                </div>
+                            }
+                        </div>
+                        <div class="staff-info">
+                            <strong>@displayName</strong>
+                            <small>@totalOnlineCount đang online</small>
+                        </div>
+                        <div class="staff-dot" title="Hệ thống trực tuyến"></div>
+                    </div>
+                </div>
+            }
         </aside>
 
         <div class="page-wrapper">

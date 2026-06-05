@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -19,5 +19,6 @@ namespace HMDN_QuanLyVatTu.Models
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public string LifeStatus { get; set; }
+        public string MaintenanceVendor { get; set; }
     }
 }

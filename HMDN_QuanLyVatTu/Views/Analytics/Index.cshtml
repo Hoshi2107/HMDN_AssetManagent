@@ -258,7 +258,9 @@
                                             <span v-if="item.LifeStatus === 'active'" class="badge-status-custom badge-status-active" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Đang chạy tốt</span>
                                             <span v-else-if="item.LifeStatus === 'suspended'" class="badge-status-custom badge-status-suspended" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Đang báo hỏng</span>
                                             <span v-else-if="item.LifeStatus === 'maintenance_bv'" class="badge-status-custom badge-status-maintenance-bv" style="min-width: auto; padding: 2px 6px; font-size: 10px;">BV tự sửa</span>
-                                            <span v-else-if="item.LifeStatus === 'maintenance_hang'" class="badge-status-custom badge-status-maintenance-hang" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Hãng sửa</span>
+                                            <span v-else-if="item.LifeStatus === 'maintenance_hang'" class="badge-status-custom badge-status-maintenance-hang" style="min-width: auto; padding: 2px 6px; font-size: 10px;">
+                                                Hãng sửa <span v-if="item.MaintenanceVendor">({{ item.MaintenanceVendor }})</span>
+                                            </span>
                                             <span v-else class="badge-status-custom badge-status-neutral" style="min-width: auto; padding: 2px 6px; font-size: 10px;">{{ item.LifeStatus }}</span>
                                         </td>
                                         <td class="text-center">
@@ -362,6 +364,12 @@
                                         <span v-else-if="statusModal.selectedDevice.LifeStatus === 'maintenance_hang'" class="badge-status-custom badge-status-maintenance-hang">Hãng sửa</span>
                                         <span v-else class="badge-status-custom badge-status-neutral" v-text="statusModal.selectedDevice.LifeStatus"></span>
                                     </div>
+                                </div>
+
+                                <!-- Hãng bảo trì (chỉ hiển thị khi đang sửa hãng hoặc có tên hãng) -->
+                                <div class="col-12 mt-3" v-if="statusModal.selectedDevice.LifeStatus === 'maintenance_hang' || statusModal.selectedDevice.MaintenanceVendor">
+                                     <div class="modal-readonly-label"><i class="fa-solid fa-building-shield mr-1 text-primary"></i> Hãng sửa / Đối tác bảo trì</div>
+                                     <div class="modal-readonly-value font-weight-bold text-dark bg-white" v-text="statusModal.selectedDevice.MaintenanceVendor || 'Chưa rõ hãng sửa'"></div>
                                 </div>
                             </div>
                         </div>

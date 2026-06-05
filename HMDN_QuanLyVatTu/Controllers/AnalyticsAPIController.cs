@@ -93,8 +93,8 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     // 1. Số lượng đã thực hiện checklist (Đếm từ lịch sử thực hiện ChecklistLogs trong khoảng thời gian)
                     var done = db.ChecklistLogs.Count(l => l.CheckedAt >= startRange && l.CheckedAt < endRange);
-                    // 2. Lịch trình chưa làm (Đếm các lịch trình ChecklistSchedules trong khoảng thời gian có trạng thái pending)
-                    var pending = db.ChecklistSchedules.Count(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && s.Status == "pending");
+                    // 2. Lịch trình chưa làm (Đếm tất cả các lịch trình ChecklistSchedules chưa hoàn thành tính đến thời điểm hiện tại/hết kỳ lọc, bao gồm cả quá hạn)
+                    var pending = db.ChecklistSchedules.Count(s => s.ScheduledDate < endRange && s.Status == "pending");
                     var total = done + pending;
 
                     var progress = new
