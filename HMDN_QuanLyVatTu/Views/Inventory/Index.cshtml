@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Inventory";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -23,7 +23,7 @@
             <div class="topbar-actions">
 
                 <!--<button class="btn-secondary"
-                        @@click="openQrModal()">
+                        v-on:click="openQrModal()">
                     Check QR-->
                 @*<div class="icon">📷</div>
 
@@ -35,7 +35,7 @@
 
                 <button class="btn-primary"
                         v-if="hasPermission('Inventory', 'CREATE')"
-                        @@click="showAddOptionModal = true">
+                        v-on:click="showAddOptionModal = true">
 
                     Thêm thiết bị
 
@@ -114,7 +114,7 @@
 
                     <thead>
                         <tr>
-                            <th @@click="sortBy('id')">Mã</th>
+                            <th v-on:click="sortBy('id')">Mã</th>
                             <th>Tên</th>
                             <th>Model</th>
                             <th>Serial</th>
@@ -129,7 +129,7 @@
 
                         <tr v-for="item in paginatedDevices"
                             :key="item.Id"
-                            @@click="openDetail(item.Id)"
+                            v-on:click="openDetail(item.Id)"
                             class="table-row">
 
                             <td>${ item.Id }</td>
@@ -172,12 +172,12 @@
 
     </td>-->
 
-                            <td @@click.stop>
+                            <td v-on:click.stop>
 
                                 <select class="status-dropdown"
                                         :disabled="!hasPermission('Inventory', 'EDIT') || item.LifeStatus === 'replaced'"
                                         v-model="item.LifeStatus"
-                                        @@change="changeStatus(item)">
+                                        v-on:change="changeStatus(item)">
 
                                     <option value="active">Đang hoạt động</option>
 
@@ -202,7 +202,7 @@
                 <!-- Modal Detail -->
                 <div class="modal-overlay"
                      v-if="showModal"
-                     @@click.self="showModal = false">
+                     v-on:click.self="showModal = false">
 
                     <div class="device-modal">
 
@@ -213,7 +213,7 @@
                                 </h3>
 
                                 <button class="close-btn"
-                                        @@click="showModal = false">
+                                        v-on:click="showModal = false">
 
                                     ×
                                 </button>*@
@@ -221,14 +221,14 @@
                             <div class="detail-tabs">
 
                                 <button :class="{active: activeTab === 'detail'}"
-                                        @@click="activeTab='detail'">
+                                        v-on:click="activeTab='detail'">
 
                                     Chi tiết thiết bị
 
                                 </button>
 
                                 <button :class="{active: activeTab === 'history'}"
-                                        @@click="loadMaintenanceHistory(selectedDevice.Id)">
+                                        v-on:click="loadMaintenanceHistory(selectedDevice.Id)">
 
                                     Hồ sơ bệnh án
 
@@ -430,20 +430,20 @@
 
                                         <button class="btn-primary"
                                                 v-if="hasPermission('Inventory', 'EDIT')"
-                                                @@click="openEditModal(selectedDevice.Id)">
+                                                v-on:click="openEditModal(selectedDevice.Id)">
                                             Sửa
                                         </button>
 
                                         <button class="btn-danger"
                                                 v-if="hasPermission('Inventory', 'EDIT')"
                                                 :disabled="selectedDevice.LifeStatus == 'suspended'"
-                                                @@click="openErrorModal(selectedDevice)">
+                                                v-on:click="openErrorModal(selectedDevice)">
                                             Check có lỗi
                                         </button>
 
                                         <!-- Thêm nút này -->
                                         <button class="btn-secondary"
-                                                @@click="showDeviceQr()">
+                                                v-on:click="showDeviceQr()">
                                             📱 QR Code
                                         </button>
 
@@ -466,13 +466,13 @@
                                 <!-- QR section Modal -->
                                 <div class="modal-overlay"
                                      v-if="showQrInDetail"
-                                     @@click.self="showQrInDetail = false">
+                                     v-on:click.self="showQrInDetail = false">
 
                                     <div class="device-modal small-modal" style="max-width:380px;text-align:center">
 
                                         <div class="modal-header">
                                             <h3>📱 QR Code thiết bị</h3>
-                                            <button class="close-btn" @@click="showQrInDetail = false">×</button>
+                                            <button class="close-btn" v-on:click="showQrInDetail = false">×</button>
                                         </div>
 
                                         <div class="modal-body">
@@ -490,8 +490,8 @@
                                             </p>
 
                                             <div class="modal-actions" style="margin-top:20px">
-                                                <button class="btn-secondary" @@click="downloadDetailQr()">⬇ Tải</button>
-                                                <button class="btn-secondary" @@click="printDetailQr()">🖨 In</button>
+                                                <button class="btn-secondary" v-on:click="downloadDetailQr()">⬇ Tải</button>
+                                                <button class="btn-secondary" v-on:click="printDetailQr()">🖨 In</button>
                                             </div>
 
                                         </div>
@@ -572,7 +572,7 @@
                                     <div class="history-actions">
 
                                         <button class="btn-primary"
-                                                @@click="openHistoryDetail(record)">
+                                                v-on:click="openHistoryDetail(record)">
                                             Chi tiết
                                         </button>
 
@@ -589,7 +589,7 @@
                     <!-- History Detail -->
                     <div class="modal-overlay"
                          v-if="showHistoryDetail"
-                         @@click.self="showHistoryDetail=false">
+                         v-on:click.self="showHistoryDetail=false">
 
                         <div class="device-modal large-modal">
 
@@ -598,7 +598,7 @@
                                 <h3>Chi tiết hồ sơ bệnh án</h3>
 
                                 <button class="close-btn"
-                                        @@click="showHistoryDetail=false">
+                                        v-on:click="showHistoryDetail=false">
                                     ×
                                 </button>
 
@@ -710,7 +710,7 @@
                     <!-- MODAL CHECK LỖI -->
                     @*<div class="modal-overlay"
                              v-if="showSuspendModal"
-                             @@click.self="showSuspendModal = false">
+                             v-on:click.self="showSuspendModal = false">
 
                             <div class="device-modal small-modal">
 
@@ -718,7 +718,7 @@
                                     <h3>Check lỗi thiết bị</h3>
 
                                     <button class="close-btn"
-                                            @@click="showSuspendModal = false">
+                                            v-on:click="showSuspendModal = false">
                                         ×
                                     </button>
                                 </div>
@@ -738,12 +738,12 @@
                                     <div class="modal-actions">
 
                                         <button class="btn-secondary"
-                                                @@click="showSuspendModal = false">
+                                                v-on:click="showSuspendModal = false">
                                             Hủy
                                         </button>
 
                                         <button class="btn-danger"
-                                                @@click="submitSuspend()">
+                                                v-on:click="submitSuspend()">
                                             Xác nhận tạm ngưng
                                         </button>
 
@@ -763,7 +763,7 @@
             </div>
             <div class="pagination">
 
-                <button @@click="prevPage"
+                <button v-on:click="prevPage"
                         :disabled="currentPage == 1">
 
                     Prev
@@ -771,13 +771,13 @@
 
                 <button v-for="page in pages"
                         :key="page"
-                        @@click="changePage(page)"
+                        v-on:click="changePage(page)"
                         :class="{ active: currentPage == page }">
 
                     ${ page }
                 </button>
 
-                <button @@click="nextPage"
+                <button v-on:click="nextPage"
                         :disabled="currentPage == totalPages">
 
                     Next
@@ -788,7 +788,7 @@
             <!-- MODAL CHỌN KIỂU THÊM -->
             <div class="modal-overlay"
                  v-if="showAddOptionModal"
-                 @@click.self="showAddOptionModal = false">
+                 v-on:click.self="showAddOptionModal = false">
 
                 <div class="device-modal small-modal">
 
@@ -797,7 +797,7 @@
                         <h3>Chọn cách thêm thiết bị</h3>
 
                         <button class="close-btn"
-                                @@click="showAddOptionModal = false">
+                                v-on:click="showAddOptionModal = false">
 
                             ×
 
@@ -810,7 +810,7 @@
                         <div class="add-option-grid">
 
                             <button class="add-option-card"
-                                    @@click="openAddWithExcelModal()">
+                                    v-on:click="openAddWithExcelModal()">
 
                                 <div class="icon">📁</div>
 
@@ -821,7 +821,7 @@
                             </button>
 
                             <button class="add-option-card"
-                                    @@click="openManualModal()">
+                                    v-on:click="openManualModal()">
 
                                 <div class="icon">⌨️</div>
 
@@ -842,7 +842,7 @@
             <!-- MODAL MANUAL -->
             <div class="modal-overlay"
                  v-if="showManualModal"
-                 @@click.self="showManualModal = false">
+                 v-on:click.self="showManualModal = false">
 
                 <div class="device-modal large-modal">
 
@@ -852,7 +852,7 @@
                         <h3>Thêm thiết bị thủ công</h3>
 
                         <button class="close-btn"
-                                @@click="showManualModal = false">
+                                v-on:click="showManualModal = false">
                             ×
                         </button>
 
@@ -1255,14 +1255,14 @@
                         <div class="modal-actions mt-3">
 
                             <button class="btn-secondary"
-                                    @@click="showManualModal = false">
+                                    v-on:click="showManualModal = false">
 
                                 Hủy
 
                             </button>
 
                             <button class="btn-primary"
-                                    @@click="createInventory()">
+                                    v-on:click="createInventory()">
 
                                 Lưu thiết bị
 
@@ -1281,7 +1281,7 @@
             <!-- Edit Modal -->
             <div class="modal-overlay"
                  v-if="showEditModal"
-                 @@click.self="showEditModal = false">
+                 v-on:click.self="showEditModal = false">
 
                 <div class="device-modal large-modal">
 
@@ -1291,7 +1291,7 @@
                         <h3>Chỉnh sửa thiết bị</h3>
 
                         <button class="close-btn"
-                                @@click="showEditModal = false">
+                                v-on:click="showEditModal = false">
                             ×
                         </button>
 
@@ -1685,14 +1685,14 @@
                         <div class="modal-actions mt-3">
 
                             <button class="btn-secondary"
-                                    @@click="showEditModal = false">
+                                    v-on:click="showEditModal = false">
 
                                 Hủy
 
                             </button>
 
                             <button class="btn-primary"
-                                    @@click="updateInventory()">
+                                    v-on:click="updateInventory()">
 
                                 Cập nhật
 
@@ -1823,7 +1823,7 @@
 
                 <div class="modal-footer">
                     <button class="btn btn-primary"
-                            @@click="saveError">
+                            v-on:click="saveError">
                         Gửi báo lỗi
                     </button>
 
@@ -1841,13 +1841,13 @@
     <!-- Modal QR Code sau khi tạo tài sản -->
     <div class="modal-overlay"
          v-if="showQrResultModal"
-         @@click.self="showQrResultModal = false">
+         v-on:click.self="showQrResultModal = false">
 
         <div class="device-modal small-modal" style="max-width:400px;text-align:center">
 
             <div class="modal-header">
                 <h3>Tạo thành công! 🎉</h3>
-                <button class="close-btn" @@click="showQrResultModal = false">×</button>
+                <button class="close-btn" v-on:click="showQrResultModal = false">×</button>
             </div>
 
             <div class="modal-body">
@@ -1866,13 +1866,13 @@
                 </p>
 
                 <div class="modal-actions" style="margin-top:20px">
-                    <button class="btn-secondary" @@click="downloadQr()">
+                    <button class="btn-secondary" v-on:click="downloadQr()">
                         ⬇ Tải QR
                     </button>
-                    <button class="btn-secondary" @@click="printQr()">
+                    <button class="btn-secondary" v-on:click="printQr()">
                         🖨 In QR
                     </button>
-                    <button class="btn-primary" @@click="openDetail(newInventoryQr.id); showQrResultModal = false">
+                    <button class="btn-primary" v-on:click="openDetail(newInventoryQr.id); showQrResultModal = false">
                         Xem chi tiết
                     </button>
                 </div>

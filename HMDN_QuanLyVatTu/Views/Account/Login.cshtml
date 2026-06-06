@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = null;
 }
 <!DOCTYPE html>
@@ -412,7 +412,7 @@
                 </div>
 
                 <!-- Main Login Form -->
-                <form @@submit.prevent="handleLogin">
+                <form v-on:submit.prevent="handleLogin">
                     <!-- Username Input -->
                     <div class="input-group">
                         <label class="input-label" for="username">Tên đăng nhập</label>
@@ -445,7 +445,7 @@
                             <i 
                                 :class="showPassword ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye'" 
                                 class="eye-toggle" 
-                                @@click="showPassword = !showPassword"
+                                v-on:click="showPassword = !showPassword"
                             ></i>
                         </div>
                     </div>
@@ -456,7 +456,7 @@
                             <input type="checkbox" v-model="rememberMe" :disabled="isLoading" />
                             Ghi nhớ đăng nhập
                         </label>
-                        <a href="#" class="forgot-link" @@click.prevent="forgotPassword">Quên mật khẩu?</a>
+                        <a href="#" class="forgot-link" v-on:click.prevent="forgotPassword">Quên mật khẩu?</a>
                     </div>
 
                     <!-- Action Button -->

@@ -1,4 +1,4 @@
-@{
+﻿@{
     var userModules = Session["UserModules"] as List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO>;
     bool HasModule(string code)
     {
@@ -1235,21 +1235,21 @@
                             }
                         </style>
                         <div class="notification-dropdown-wrap" id="notification-app">
-                            <button @@click="toggleDropdown($event)" class="topbar-icon-btn" style="position: relative; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
+                            <button v-on:click="toggleDropdown($event)" class="topbar-icon-btn" style="position: relative; background: none; border: none; font-size: 16px; color: #64748b; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; border: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.03)'; this.style.color='#0f172a'" onmouseout="this.style.background='none'; this.style.color='#64748b'">
                                 <i class="fa-solid fa-bell"></i>
                                 <span class="notification-badge" :class="{ show: unreadCount > 0 }">{{ unreadCount }}</span>
                             </button>
-                            <div v-if="isOpen" @@click.stop style="display: block; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-md); z-index: 1000; overflow: hidden; animation: notificationFadeIn 0.2s ease;">
+                            <div v-if="isOpen" v-on:click.stop style="display: block; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-md); z-index: 1000; overflow: hidden; animation: notificationFadeIn 0.2s ease;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
                                     <span style="font-weight: 700; font-size: 13px; color: #1e2a3a;">Cảnh báo mới nhất</span>
-                                    <button @@click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 11.5px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
+                                    <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 11.5px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
                                 </div>
                                 <div style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column;">
                                     <div v-if="alerts.length === 0" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 12.5px;">
                                         <i class="fa-solid fa-bell-slash" style="font-size: 20px; display: block; margin-bottom: 6px;"></i>
                                         Không có cảnh báo chưa xử lý
                                     </div>
-                                    <div v-else v-for="alert in alerts" :key="alert.Id" class="notification-item" :class="{ unread: isUnread(alert.Id) }" @@click="goToAlert(alert)">
+                                    <div v-else v-for="alert in alerts" :key="alert.Id" class="notification-item" :class="{ unread: isUnread(alert.Id) }" v-on:click="goToAlert(alert)">
                                         <div class="notification-item-icon" :class="alert.Severity">
                                             <i class="fa-solid" :class="getIconClass(alert.Severity)"></i>
                                         </div>

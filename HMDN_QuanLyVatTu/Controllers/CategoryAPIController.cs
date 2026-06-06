@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Http;
 using HMDN_QuanLyVatTu.Controllers;
+using HMDN_QuanLyVatTu.Models;
 
 namespace HMDN.Controllers.API
 {
@@ -228,5 +229,150 @@ namespace HMDN.Controllers.API
             }
         }
 
+        // GET: api/category/checklist-definitions/{groupId}
+        [HttpGet]
+        [Route("checklist-definitions/{groupId}")]
+        public IHttpActionResult GetChecklistDefinitions(int groupId)
+        {
+            try
+            {
+                var list = db.ChecklistDefinitions
+                    .Where(d => d.Scope == "global" || (d.Scope == "group" && d.GroupId == groupId))
+                    .OrderBy(d => d.Scope == "global" ? 0 : 1)
+                    .ThenBy(d => d.SortOrder)
+                    .ToList();
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/category/checklist-definition/save
+        [HttpPost]
+        [Route("checklist-definition/save")]
+        public IHttpActionResult SaveDefinition(ChecklistDefinitionSaveDTO dto)
+        {
+            try
+            {
+                if (dto == null) return BadRequest("Dữ liệu không hợp lệ");
+                if (string.IsNullOrEmpty(dto.CheckName)) return BadRequest("Tên hạng mục không được để trống");
+
+                string cycle = null;
+                if (!string.IsNullOrEmpty(dto.CycleType))
+                {
+                    string lower = dto.CycleType.ToLower();
+                    if (lower == "daily" || lower == "weekly" || lower == "monthly" || lower == "yearly")
+                    {
+                        cycle = lower;
+                    }
+                }
+
+                if (dto.Id == 0)
+                {
+                    var def = new ChecklistDefinition
+                    {
+                         Scope = "group",
+                         GroupId = dto.GroupId,
+                         CycleType = cycle,
+                         CheckName = dto.CheckName.Trim(),
+                         Description = dto.Description?.Trim(),
+                         IsRequired = dto.IsRequired,
+                         SortOrder = dto.SortOrder,
+                         IsActive = dto.IsActive,
+                         CreatedAt = DateTime.Now
+                    };
+                    db.ChecklistDefinitions.Add(def);
+                    db.SaveChanges();
+                    return Ok(new { success = true, message = "Thêm hạng mục thành công", data = def });
+                }
+                else
+                {
+                    var def = db.ChecklistDefinitions.Find(dto.Id);
+                    if (def == null) return NotFound();
+                    if (def.Scope == "global") return BadRequest("Không thể sửa hạng mục toàn cục từ đây");
+
+                    def.CycleType = cycle;
+                    def.CheckName = dto.CheckName.Trim();
+                    def.Description = dto.Description?.Trim();
+                    def.IsRequired = dto.IsRequired;
+                    def.SortOrder = dto.SortOrder;
+                    def.IsActive = dto.IsActive;
+
+                    db.SaveChanges();
+                    return Ok(new { success = true, message = "Cập nhật hạng mục thành công", data = def });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // DELETE: api/category/checklist-definition/{id}
+        [HttpDelete]
+        [Route("checklist-definition/{id}")]
+        public IHttpActionResult DeleteDefinition(int id)
+        {
+            try
+            {
+                var def = db.ChecklistDefinitions.Find(id);
+                if (def == null) return NotFound();
+
+                if (def.Scope == "global")
+                    return Ok(new { success = false, message = "Không thể xóa hạng mục toàn cục từ đây." });
+
+                bool hasLogs = db.ChecklistLogItems.Any(li => li.DefinitionId == id);
+                if (hasLogs)
+                {
+                    return Ok(new { 
+                        success = false, 
+                        hasLinkedData = true,
+                        message = "Hạng mục này đã có dữ liệu kiểm tra. Không thể xóa. Bạn có muốn vô hiệu hóa?"
+                    });
+                }
+
+                db.ChecklistDefinitions.Remove(def);
+                db.SaveChanges();
+                return Ok(new { success = true, message = "Đã xóa hạng mục." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // PUT: api/category/checklist-definition/toggle/{id}
+        [HttpPut]
+        [Route("checklist-definition/toggle/{id}")]
+        public IHttpActionResult ToggleDefinition(int id)
+        {
+            try
+            {
+                var def = db.ChecklistDefinitions.Find(id);
+                if (def == null) return NotFound();
+
+                def.IsActive = !def.IsActive;
+                db.SaveChanges();
+                return Ok(new { success = true, message = "Cập nhật trạng thái thành công", isActive = def.IsActive });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+    }
+
+    public class ChecklistDefinitionSaveDTO
+    {
+        public int Id { get; set; }
+        public int GroupId { get; set; }
+        public string CycleType { get; set; }
+        public string CheckName { get; set; }
+        public string Description { get; set; }
+        public bool IsRequired { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsActive { get; set; }
     }
 }

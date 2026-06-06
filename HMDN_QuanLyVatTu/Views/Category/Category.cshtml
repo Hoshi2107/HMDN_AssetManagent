@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Quản lý Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -939,14 +939,14 @@
                 <a class="tab-item" href="/Inventory">Tài sản hiện có</a>*@
             <div class="tab-item"
                  :class="{ active: currentTab === 'category' }"
-                 @@click="currentTab = 'category'">
+                 v-on:click="currentTab = 'category'">
 
                 Quản lý Danh mục
             </div>
 
             <div class="tab-item"
                  :class="{ active: currentTab === 'inventory' }"
-                 @@click="currentTab = 'inventory'">
+                 v-on:click="currentTab = 'inventory'">
 
                 Tài sản hiện có
             </div>
@@ -970,7 +970,7 @@
 
             <div class="group-panel-header">
                 <h4>Nhóm tài sản</h4>
-                <button class="btn-add-group" v-if="hasPermission('Catalog', 'CREATE')" @@click="openAddGroup" title="Thêm nhóm">+</button>
+                <button class="btn-add-group" v-if="hasPermission('Catalog', 'CREATE')" v-on:click="openAddGroup" title="Thêm nhóm">+</button>
             </div>
 
             <div class="group-list">
@@ -983,14 +983,14 @@
                      :key="g.Id"
                      class="group-item"
                      :class="{ active: activeGroup && activeGroup.Id === g.Id }"
-                     @@click="selectGroup(g)">
+                     v-on:click="selectGroup(g)">
 
                     <div class="gi-name">${ g.Name }</div>
                     <div class="gi-sub">${ g.ItemCount } Mẫu tài sản</div>
 
-                    <div class="gi-actions" @@click.stop>
-                        <button class="btn-gi" v-if="hasPermission('Catalog', 'EDIT')" @@click="openEditGroup(g)" title="Sửa">✏️</button>
-                        @*<button class="btn-gi del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>*@
+                    <div class="gi-actions" v-on:click.stop>
+                        <button class="btn-gi" v-if="hasPermission('Catalog', 'EDIT')" v-on:click="openEditGroup(g)" title="Sửa">✏️</button>
+                        @*<button class="btn-gi del" v-on:click="openDeleteGroup(g)" title="Xoá">🗑️</button>*@
                     </div>
 
                 </div>
@@ -1024,102 +1024,183 @@
                         @*DANH MỤC CỤ THỂ*@
                     </div>
                     <div class="item-panel-title">${ activeGroup.Name }</div>
-                </div>
 
-                <div class="item-panel-toolbar">
-                    <div class="item-search-wrap">
-                        <span class="search-ico">🔍</span>
-                        <input type="text"
-                               placeholder="Tìm theo tên hoặc model..."
-                               v-model="itemSearch">
-                    </div>
-                    <div class="toolbar-right">
-                        <select style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;font-family:inherit"
-                                v-model="itemFilterStatus">
-                            <option value="">Tất cả</option>
-                            <option value="1">Đang dùng</option>
-                            <option value="0">Ngưng</option>
-                        </select>
-                        <button class="btn-add-item" v-if="hasPermission('Catalog', 'CREATE')" @@click="openAddItem">
-                            ⊕ Thêm Mẫu Mới
-                        </button>
-                    </div>
-                </div>
-
-                <div class="item-table-wrap">
-                    <div class="table-card">
-
-                        <div v-if="paginatedItems.length === 0" class="empty-state">
-                            <div class="ei">🗂️</div>
-                            <p>Chưa có mẫu thiết bị nào</p>
+                    <!-- TAB BAR FOR SELECTED GROUP -->
+                    <div style="display: flex; gap: 24px; border-bottom: 1px solid #e2e8f0; margin-top: 15px; padding-left: 5px;">
+                        <div style="padding: 10px 0; cursor: pointer; font-size: 13.5px; font-weight: 600;"
+                             :style="{color: groupSubTab === 'items' ? '#2563eb' : '#64748b', borderBottom: groupSubTab === 'items' ? '2.5px solid #2563eb' : '2.5px solid transparent'}"
+                             v-on:click="groupSubTab = 'items'">
+                            📋 Danh sách loại thiết bị
                         </div>
-
-                        <table v-else>
-                            <thead>
-                                <tr>
-                                    <th>Mã Model</th>
-                                    <th>Tên Mẫu</th>
-                                    <th>Hãng sản xuất</th>
-                                    <th>ĐVT</th>
-                                    <th>Thuộc tính</th>
-                                    <th>Trạng thái</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="item in paginatedItems" :key="item.Id">
-                                    <td><span class="td-code">${ item.Code }</span></td>
-                                    <td><span class="td-name">${ item.Name }</span></td>
-                                    <td>${ item.Brand || '—' }</td>
-                                    <td>${ item.Unit }</td>
-                                    <td>
-                                        <span class="td-count" v-if="item.Model">
-                                            ${ item.Model }
-                                        </span>
-                                        <span v-else style="color:#cbd5e1">—</span>
-                                    </td>
-                                    <td>
-                                        @*<label class="toggle" @@click.stop>
-            <input type="checkbox"
-                   :checked="item.IsActive"
-                   @@change="toggleItemStatus(item)">
-            <span class="toggle-slider"></span>
-        </label>*@
-                                        <label class="toggle" @@click.stop>
-                                            <input type="checkbox"
-                                                   v-model="item.IsActive"
-                                                   :disabled="!hasPermission('Catalog', 'EDIT')"
-                                                   @@change="toggleItemStatus(item)">
-                                            <span class="toggle-slider"></span>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <div class="row-actions">
-                                            <button class="btn-row-icon" v-if="hasPermission('Catalog', 'EDIT')" @@click="openEditItem(item)" title="Sửa">✏️</button>
-                                            <button class="btn-row-icon" @@click="openDetailItem(item)" title="Chi tiết">⠿</button>
-                                            @*<button class="btn-row-icon del" @@click="openDeleteItem(item)" title="Xoá">🗑️</button>*@
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
+                        <div style="padding: 10px 0; cursor: pointer; font-size: 13.5px; font-weight: 600;"
+                             :style="{color: groupSubTab === 'checklist' ? '#2563eb' : '#64748b', borderBottom: groupSubTab === 'checklist' ? '2.5px solid #2563eb' : '2.5px solid transparent'}"
+                             v-on:click="groupSubTab = 'checklist'">
+                            ✅ Hạng mục Checklist
+                        </div>
                     </div>
                 </div>
 
-                <!-- PAGINATION -->
-                <div class="item-pagination">
-                    <span>Hiển thị ${ paginationInfo } mẫu</span>
-                    <div class="pg-btns">
-                        <button class="pg-btn" @@click="prevPage" :disabled="currentPage === 1">‹</button>
-                        <button v-for="p in pages"
-                                :key="p"
-                                class="pg-btn"
-                                :class="{ active: currentPage === p }"
-                                @@click="changePage(p)">
-                            ${ p }
+                <div v-show="groupSubTab === 'items'">
+                    <div class="item-panel-toolbar">
+                        <div class="item-search-wrap">
+                            <span class="search-ico">🔍</span>
+                            <input type="text"
+                                   placeholder="Tìm theo tên hoặc model..."
+                                   v-model="itemSearch">
+                        </div>
+                        <div class="toolbar-right">
+                            <select style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;font-family:inherit"
+                                    v-model="itemFilterStatus">
+                                <option value="">Tất cả</option>
+                                <option value="1">Đang dùng</option>
+                                <option value="0">Ngưng</option>
+                            </select>
+                            <button class="btn-add-item" v-if="hasPermission('Catalog', 'CREATE')" v-on:click="openAddItem">
+                                ⊕ Thêm Mẫu Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="item-table-wrap">
+                        <div class="table-card">
+
+                            <div v-if="paginatedItems.length === 0" class="empty-state">
+                                <div class="ei">🗂️</div>
+                                <p>Chưa có mẫu thiết bị nào</p>
+                            </div>
+
+                            <table v-else>
+                                <thead>
+                                    <tr>
+                                        <th>Mã Model</th>
+                                        <th>Tên Mẫu</th>
+                                        <th>Hãng sản xuất</th>
+                                        <th>ĐVT</th>
+                                        <th>Thuộc tính</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in paginatedItems" :key="item.Id">
+                                        <td><span class="td-code">${ item.Code }</span></td>
+                                        <td><span class="td-name">${ item.Name }</span></td>
+                                        <td>${ item.Brand || '—' }</td>
+                                        <td>${ item.Unit }</td>
+                                        <td>
+                                            <span class="td-count" v-if="item.Model">
+                                                ${ item.Model }
+                                            </span>
+                                            <span v-else style="color:#cbd5e1">—</span>
+                                        </td>
+                                        <td>
+                                            <label class="toggle" v-on:click.stop>
+                                                <input type="checkbox"
+                                                       v-model="item.IsActive"
+                                                       :disabled="!hasPermission('Catalog', 'EDIT')"
+                                                       v-on:change="toggleItemStatus(item)">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="row-actions">
+                                                <button class="btn-row-icon" v-if="hasPermission('Catalog', 'EDIT')" v-on:click="openEditItem(item)" title="Sửa">✏️</button>
+                                                <button class="btn-row-icon" v-on:click="openDetailItem(item)" title="Chi tiết">⠿</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    <div class="item-pagination">
+                        <span>Hiển thị ${ paginationInfo } mẫu</span>
+                        <div class="pg-btns">
+                            <button class="pg-btn" v-on:click="prevPage" :disabled="currentPage === 1">‹</button>
+                            <button v-for="p in pages"
+                                    :key="p"
+                                    class="pg-btn"
+                                    :class="{ active: currentPage === p }"
+                                    v-on:click="changePage(p)">
+                                ${ p }
+                            </button>
+                            <button class="pg-btn" v-on:click="nextPage" :disabled="currentPage === totalPages">›</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-show="groupSubTab === 'checklist'" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+                    <div class="item-panel-toolbar" style="display:flex; justify-content:flex-end; align-items:center;">
+                        <button class="btn-add-item" v-if="hasPermission('Catalog', 'CREATE')" v-on:click="openAddDefinition">
+                            ⊕ Thêm Hạng Mục Mới
                         </button>
-                        <button class="pg-btn" @@click="nextPage" :disabled="currentPage === totalPages">›</button>
+                    </div>
+
+                    <div class="item-table-wrap" style="flex:1; overflow-y:auto;">
+                        <div class="table-card">
+                            <div v-if="checklistDefinitions.length === 0" class="empty-state">
+                                <div class="ei">📋</div>
+                                <p>Chưa có hạng mục checklist nào</p>
+                            </div>
+
+                            <table v-else>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 100px;">Phạm vi</th>
+                                        <th style="width: 120px;">Chu kỳ</th>
+                                        <th>Tên hạng mục kiểm tra</th>
+                                        <th>Mô tả cách thực hiện</th>
+                                        <th style="width: 100px; text-align: center;">Bắt buộc</th>
+                                        <th style="width: 100px; text-align: center;">Trạng thái</th>
+                                        <th style="width: 100px; text-align: center;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="def in checklistDefinitions" :key="def.Id">
+                                        <td>
+                                            <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;"
+                                                  :style="{ background: def.Scope === 'global' ? '#f1f5f9' : '#dbeafe', color: def.Scope === 'global' ? '#475569' : '#1d4ed8' }">
+                                                ${ def.Scope === 'global' ? '🔒 Toàn cục' : 'Nhóm' }
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span style="font-weight: 500;">
+                                                ${ def.CycleType === 'daily' ? 'Hàng ngày' :
+                                                   def.CycleType === 'weekly' ? 'Hàng tuần' :
+                                                   def.CycleType === 'monthly' ? 'Hàng tháng' :
+                                                   def.CycleType === 'yearly' ? 'Hàng năm' : 'Mọi chu kỳ' }
+                                            </span>
+                                        </td>
+                                        <td><span class="td-name">${ def.CheckName }</span></td>
+                                        <td style="color:#64748b;">${ def.Description || '—' }</td>
+                                        <td style="text-align: center;">
+                                            <span :style="{ color: def.IsRequired ? '#dc2626' : '#64748b', fontWeight: def.IsRequired ? 'bold' : 'normal' }">
+                                                ${ def.IsRequired ? 'Bắt buộc' : 'Không' }
+                                            </span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <label class="toggle" v-on:click.stop style="margin: 0 auto;">
+                                                <input type="checkbox"
+                                                       v-model="def.IsActive"
+                                                       :disabled="def.Scope === 'global' || !hasPermission('Catalog', 'EDIT')"
+                                                       v-on:change="toggleDefinitionStatus(def)">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <div class="row-actions" v-if="def.Scope !== 'global'" style="justify-content: center;">
+                                                <button class="btn-row-icon" v-if="hasPermission('Catalog', 'EDIT')" v-on:click="openEditDefinition(def)" title="Sửa">✏️</button>
+                                                <button class="btn-row-icon del" v-if="hasPermission('Catalog', 'EDIT')" v-on:click="openDeleteDefinition(def)" title="Xoá">🗑️</button>
+                                            </div>
+                                            <span v-else style="color:#cbd5e1; font-style:italic; font-size:12px;">🔒 Hệ thống</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -1226,7 +1307,7 @@
                 <div class="pg-btns">
 
                     <button class="pg-btn"
-                            @@click="prevInventoryPage"
+                            v-on:click="prevInventoryPage"
                             :disabled="inventoryCurrentPage === 1">
 
                         ‹
@@ -1236,14 +1317,14 @@
                             :key="p"
                             class="pg-btn"
                             :class="{ active: inventoryCurrentPage === p }"
-                            @@click="changeInventoryPage(p)">
+                            v-on:click="changeInventoryPage(p)">
 
                         ${ p }
 
                     </button>
 
                     <button class="pg-btn"
-                            @@click="nextInventoryPage"
+                            v-on:click="nextInventoryPage"
                             :disabled="inventoryCurrentPage === inventoryTotalPages">
 
                         ›
@@ -1261,7 +1342,7 @@
     <!-- ══ ITEM DETAIL MODAL ══ -->
     <div class="modal-overlay"
          v-if="showItemDetail"
-         @@click.self="closeItemDetail">
+         v-on:click.self="closeItemDetail">
 
         <div class="form-modal"
              style="width:1100px;max-width:96vw;">
@@ -1278,7 +1359,7 @@
                 </div>
 
                 <button class="close-btn"
-                        @@click="closeItemDetail">
+                        v-on:click="closeItemDetail">
                     ×
                 </button>
             </div>
@@ -1378,13 +1459,13 @@
     </div>
  
     <!-- ══ FORM GROUP ══ -->
-    <div class="modal-overlay" v-if="showGroupForm" @@click.self="showGroupForm = false">
+    <div class="modal-overlay" v-if="showGroupForm" v-on:click.self="showGroupForm = false">
         <div class="form-modal">
             <div class="modal-header">
                 <div>
                     <h3>${ isEditGroup ? 'Sửa nhóm tài sản' : 'Thêm nhóm mới' }</h3>
                 </div>
-                <button class="close-btn" @@click="showGroupForm = false">×</button>
+                <button class="close-btn" v-on:click="showGroupForm = false">×</button>
             </div>
             <div class="form-body">
                 <div class="form-grid">
@@ -1418,21 +1499,21 @@
                 </div>
             </div>
             <div class="form-footer">
-                <button class="btn-cancel" @@click="showGroupForm = false">Huỷ</button>
-                <button class="btn-save" @@click="saveGroup">${ isEditGroup ? '💾 Lưu' : '+ Thêm' }</button>
+                <button class="btn-cancel" v-on:click="showGroupForm = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveGroup">${ isEditGroup ? '💾 Lưu' : '+ Thêm' }</button>
             </div>
         </div>
     </div>
 
     <!-- ══ FORM ITEM ══ -->
-    <div class="modal-overlay" v-if="showItemForm" @@click.self="showItemForm = false">
+    <div class="modal-overlay" v-if="showItemForm" v-on:click.self="showItemForm = false">
         <div class="form-modal">
             <div class="modal-header">
                 <div>
                     <h3>${ isEditItem ? 'Sửa mẫu thiết bị' : 'Thêm mẫu thiết bị' }</h3>
                     <div class="modal-header-sub" v-if="activeGroup">Nhóm: ${ activeGroup.Name }</div>
                 </div>
-                <button class="close-btn" @@click="showItemForm = false">×</button>
+                <button class="close-btn" v-on:click="showItemForm = false">×</button>
             </div>
             <div class="form-body">
                 <div class="form-grid">
@@ -1470,14 +1551,14 @@
                 </div>
             </div>
             <div class="form-footer">
-                <button class="btn-cancel" @@click="showItemForm = false">Huỷ</button>
-                <button class="btn-save" @@click="saveItem">${ isEditItem ? '💾 Lưu' : '+ Thêm' }</button>
+                <button class="btn-cancel" v-on:click="showItemForm = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveItem">${ isEditItem ? '💾 Lưu' : '+ Thêm' }</button>
             </div>
         </div>
     </div>
 
     <!-- ══ CONFIRM XOÁ ══ -->
-    <div class="modal-overlay" v-if="showDeleteModal" @@click.self="showDeleteModal = false">
+    <div class="modal-overlay" v-if="showDeleteModal" v-on:click.self="showDeleteModal = false">
         <div class="confirm-modal">
             <div class="confirm-body">
                 <div class="ci">⚠️</div>
@@ -1485,8 +1566,87 @@
                 <p>Bạn chắc muốn xoá <strong>${ deleteTarget.Name }</strong>?<br>Hành động này không thể hoàn tác.</p>
             </div>
             <div class="confirm-footer">
-                <button class="btn-cancel" @@click="showDeleteModal = false">Không</button>
-                <button class="btn-danger" @@click="confirmDelete">Xoá luôn</button>
+                <button class="btn-cancel" v-on:click="showDeleteModal = false">Không</button>
+                <button class="btn-danger" v-on:click="confirmDelete">Xoá luôn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: HẠNG MỤC CHECKLIST FORM
+    ══════════════════════════════════════ -->
+    <div class="modal-overlay" v-if="showDefinitionForm" v-on:click.self="showDefinitionForm = false">
+        <div class="form-modal" style="width: 550px;">
+            <div class="modal-header">
+                <div>
+                    <h3>${ isEditDefinition ? 'Cập nhật hạng mục kiểm tra' : 'Thêm hạng mục kiểm tra mới' }</h3>
+                    <div class="modal-header-sub" v-if="activeGroup">Nhóm: ${ activeGroup.Name }</div>
+                </div>
+                <button class="close-btn" v-on:click="showDefinitionForm = false">×</button>
+            </div>
+            
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="fg full">
+                        <label>Tên hạng mục kiểm tra <span style="color:red">*</span></label>
+                        <input type="text" v-model="definitionForm.CheckName" placeholder="VD: Kiểm tra nguồn, Kiểm tra màn hình...">
+                    </div>
+                    
+                    <div class="fg">
+                        <label>Chu kỳ áp dụng</label>
+                        <select v-model="definitionForm.CycleType">
+                            <option value="">Mọi chu kỳ</option>
+                            <option value="daily">Hàng ngày</option>
+                            <option value="weekly">Hàng tuần</option>
+                            <option value="monthly">Hàng tháng</option>
+                            <option value="yearly">Hàng năm</option>
+                        </select>
+                    </div>
+
+                    <div class="fg">
+                        <label>Thứ tự hiển thị</label>
+                        <input type="number" v-model.number="definitionForm.SortOrder">
+                    </div>
+
+                    <div class="fg full">
+                        <label>Mô tả chi tiết cách kiểm tra</label>
+                        <textarea v-model="definitionForm.Description" placeholder="Mô tả các bước kiểm tra (nếu có)..."></textarea>
+                    </div>
+
+                    <div class="fg" style="flex-direction:row; align-items:center; gap:8px; margin-top:10px;">
+                        <input type="checkbox" id="chk-req" v-model="definitionForm.IsRequired" style="width:auto; margin:0;">
+                        <label for="chk-req" style="cursor:pointer; margin:0;">Bắt buộc phải check</label>
+                    </div>
+
+                    <div class="fg" style="flex-direction:row; align-items:center; gap:8px; margin-top:10px;">
+                        <input type="checkbox" id="chk-act" v-model="definitionForm.IsActive" style="width:auto; margin:0;">
+                        <label for="chk-act" style="cursor:pointer; margin:0;">Kích hoạt sử dụng</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <button class="btn-cancel" v-on:click="showDefinitionForm = false">Hủy</button>
+                <button class="btn-save" v-on:click="saveDefinition" :disabled="isSavingDefinition">
+                    ${ isSavingDefinition ? 'Đang lưu...' : (isEditDefinition ? 'Lưu thay đổi' : 'Thêm mới') }
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         MODAL: XÁC NHẬN XOÁ HẠNG MỤC CHECKLIST
+    ══════════════════════════════════════ -->
+    <div class="modal-overlay" v-if="showDeleteDefModal" v-on:click.self="showDeleteDefModal = false">
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="ci">⚠️</div>
+                <h3>Xác nhận xoá hạng mục</h3>
+                <p>Bạn chắc muốn xoá hạng mục <strong>${ deleteDefTarget ? deleteDefTarget.CheckName : '' }</strong>?<br>Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" v-on:click="showDeleteDefModal = false">Không</button>
+                <button class="btn-danger" v-on:click="confirmDeleteDefinition">Xoá luôn</button>
             </div>
         </div>
     </div>

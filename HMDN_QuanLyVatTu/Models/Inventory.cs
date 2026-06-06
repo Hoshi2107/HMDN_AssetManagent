@@ -58,6 +58,7 @@ namespace HMS.Models.Inventory
         public int? ReplacedByInventoryId { get; set; }
 
         public string QrCode { get; set; }
+        public string Criticality { get; set; }
 
         public string Note { get; set; }
 

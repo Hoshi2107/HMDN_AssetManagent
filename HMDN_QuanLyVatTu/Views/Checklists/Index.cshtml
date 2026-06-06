@@ -876,6 +876,138 @@
                 Hàng năm (Yearly)
             </button>
         </div>
+
+        <!-- Technician KPI Cards Panel -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 8px;">
+            <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #bfdbfe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#1e40af; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-clipboard-list mr-1"></i> Hôm Nay Cần Kiểm</span>
+                <span style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:6px;">${ technicianKpis.totalToday }</span>
+            </div>
+            <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1px solid #a7f3d0; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#065f46; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-square-check mr-1"></i> Đã Xong Hôm Nay</span>
+                <span style="font-size:22px; font-weight:800; color:#064e3b; margin-top:6px;">${ technicianKpis.completedToday }</span>
+            </div>
+            <div style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#92400e; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-hourglass-half mr-1"></i> Chờ Kiểm Hôm Nay</span>
+                <span style="font-size:22px; font-weight:800; color:#78350f; margin-top:6px;">${ technicianKpis.pendingToday }</span>
+            </div>
+            <div style="background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border:1px solid #fca5a5; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#991b1b; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Lỗi Hỏng Hôm Nay</span>
+                <span style="font-size:22px; font-weight:800; color:#7f1d1d; margin-top:6px;">${ technicianKpis.failedToday }</span>
+            </div>
+            <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border:1px solid #cbd5e1; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#334155; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-stopwatch mr-1"></i> Thời Gian TB/Thiết Bị</span>
+                <span style="font-size:20px; font-weight:800; color:#0f172a; margin-top:6px;">${ technicianKpis.avgTime } <span style="font-size:12px; font-weight:600; color:#475569;">phút</span></span>
+            </div>
+            <div style="background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border:1px solid #ddd6fe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+                <span style="font-size:11px; color:#5b21b6; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-calendar-check mr-1"></i> Đã Kiểm Tuần Này</span>
+                <span style="font-size:22px; font-weight:800; color:#4c1d95; margin-top:6px;">${ technicianKpis.checkedThisWeek }</span>
+            </div>
+        </div>
+
+        <!-- QR FIRST SCANNER TRIGGERS & SIMULATOR -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:12px;">
+            <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin:0;">
+                <i class="fa-solid fa-list-check mr-2 text-primary"></i>Chọn nhóm thiết bị hoặc quét QR nhanh để làm việc
+            </h4>
+            <button class="cl-btn cl-btn-success" style="height:36px; padding:0 16px; font-size:12.5px;" v-on:click="qrFirstScannerActive = !qrFirstScannerActive">
+                <i class="fa-solid fa-qrcode mr-1"></i> Quét QR Nhanh (QR First)
+            </button>
+        </div>
+
+        <div v-if="qrFirstScannerActive" class="cl-tech-qr-panel mb-4" style="background:#090d16; border-color:#1e293b; color:#fff; box-shadow:inset 0 0 20px rgba(0,0,0,0.8);">
+            <div class="cl-scanner-status-line">
+                <span class="cl-scanner-blink-label">
+                    <span class="cl-scanner-blink-dot"></span> QUÉT QR ĐỂ TÌM THIẾT BỊ KHẨN CẤP
+                </span>
+                <button type="button" v-on:click="qrFirstScannerActive = false" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">&times;</button>
+            </div>
+            
+            <div class="cl-scanner-viewport" style="height:90px;">
+                <div class="cl-scanner-laser-line"></div>
+                <div class="cl-scanner-laser-overlay"></div>
+                <span class="cl-scanner-text" style="font-size:12px; color:#cbd5e1;">Hướng camera về phía mã QR dán trên thiết bị để mở nhanh biểu mẫu.</span>
+            </div>
+            
+            <div class="cl-scanner-controls">
+                <input type="text" class="cl-scanner-input" placeholder="Nhập hoặc quét mã QR thiết bị tại đây..." v-model="qrFirstScannedInput" v-on:keyup.enter="verifyQrFirst" />
+                <button type="button" class="cl-btn cl-btn-success" style="height:38px; padding:0 16px; font-size:12.5px;" v-on:click="verifyQrFirst">
+                    Tìm kiếm & Mở biểu mẫu
+                </button>
+            </div>
+        </div>
+
+        <!-- Group Cards horizontal layout -->
+        <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:10px; margin-bottom:8px;">
+            <div v-for="gCard in batchableGroups" :key="gCard.GroupId + '-' + gCard.CycleType + '-' + gCard.DepartmentName" 
+                 class="cl-kpi-card" 
+                 style="flex:0 0 280px; padding:16px; gap:12px; border-radius:10px; box-shadow:var(--cl-shadow-sm); cursor:pointer; margin:0;"
+                 :style="selectedBatchGroup && selectedBatchGroup.GroupId === gCard.GroupId && selectedBatchGroup.CycleType === gCard.CycleType && selectedBatchGroup.DepartmentName === gCard.DepartmentName ? 'border-color:var(--cl-primary); background:var(--cl-primary-light);' : ''"
+                 v-on:click="selectedBatchGroup = gCard; schedulesFilter.groupId = gCard.GroupId;">
+                <div class="cl-kpi-icon blue" style="width:40px; height:40px; font-size:18px; border-radius:10px;">
+                    <span>${ gCard.GroupIcon || '📦' }</span>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:13px; font-weight:700; color:#0f172a; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${ gCard.GroupName }</div>
+                    <div style="font-size:11px; color:var(--cl-text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">
+                        Khoa: ${ gCard.DepartmentName } | ${ cycleLabel(gCard.CycleType) }
+                    </div>
+                    <div style="font-size:11.5px; font-weight:600; color:var(--cl-primary-dark); margin-top:4px;">
+                        ${ gCard.Schedules.length } thiết bị chờ kiểm
+                    </div>
+                </div>
+            </div>
+            <!-- All Card to clear group filter -->
+            <div class="cl-kpi-card" 
+                 style="flex:0 0 140px; padding:16px; gap:12px; border-radius:10px; box-shadow:var(--cl-shadow-sm); cursor:pointer; margin:0;"
+                 :style="selectedBatchGroup === null ? 'border-color:var(--cl-primary); background:var(--cl-primary-light);' : ''"
+                 v-on:click="selectedBatchGroup = null; schedulesFilter.groupId = 0;">
+                <div class="cl-kpi-icon blue" style="width:40px; height:40px; font-size:18px; border-radius:10px;">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                    <div style="font-size:13px; font-weight:700; color:#0f172a;">Tất cả</div>
+                    <div style="font-size:11px; color:var(--cl-text-muted); margin-top:2px;">Bỏ chọn nhóm</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Group Details & Bulk Actions Banner -->
+        <div v-if="selectedBatchGroup" style="background:#fff; border:1px solid var(--cl-border); border-radius:var(--cl-radius-md); padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow:var(--cl-shadow-sm); margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:12px; margin: 0; width: 100%;">
+                <div>
+                    <h4 style="font-size:14px; font-weight:700; color:#0f172a; margin:0;">
+                        Nhóm: ${ selectedBatchGroup.GroupName } | Khoa: ${ selectedBatchGroup.DepartmentName } | Chu kỳ: ${ cycleLabel(selectedBatchGroup.CycleType) }
+                    </h4>
+                    <div style="font-size:12.5px; color:var(--cl-text-muted); margin-top:4px;">
+                        Số lượng: <strong>${ selectedBatchGroup.Schedules.length } thiết bị</strong> 
+                        <span v-if="isBatchCheckEligible(selectedBatchGroup).eligible && isQuickPassAvailable(selectedBatchGroup)" style="margin-left:12px; color:var(--cl-success);"><i class="fa-solid fa-circle-check"></i> Đủ điều kiện Đạt Nhanh</span>
+                    </div>
+                </div>
+                
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <!-- If restricted, show warning and hide inspect buttons -->
+                    <div v-if="!isBatchCheckEligible(selectedBatchGroup).eligible" style="color:var(--cl-danger); font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Không cho phép kiểm hàng loạt
+                    </div>
+                    
+                    <button v-if="isBatchCheckEligible(selectedBatchGroup).eligible" class="cl-btn cl-btn-primary" style="height:36px; font-size:12.5px;" v-on:click="openBatchCheckModal(selectedBatchGroup)">
+                        <i class="fa-solid fa-check-double mr-1"></i> Kiểm tra hàng loạt nhóm này
+                    </button>
+                    
+                    <button v-if="isBatchCheckEligible(selectedBatchGroup).eligible && isQuickPassAvailable(selectedBatchGroup)" class="cl-btn cl-btn-success" style="height:36px; font-size:12.5px;" v-on:click="quickPassGroup(selectedBatchGroup)">
+                        <i class="fa-solid fa-bolt mr-1"></i> Đạt nhanh toàn bộ nhóm
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Warning indicator directly in banner if restricted -->
+            <div v-if="!isBatchCheckEligible(selectedBatchGroup).eligible" style="background:var(--cl-danger-light); border:1px dashed var(--cl-danger); border-radius:8px; padding:10px; font-size:12px; color:var(--cl-danger-dark); display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size:14px;"></i>
+                <span><strong>Hạn chế:</strong> ${ isBatchCheckEligible(selectedBatchGroup).reason }</span>
+            </div>
+        </div>
+
         <div class="cl-filter-bar">
             <div class="cl-input-group flex-grow">
                 <label><i class="fa-solid fa-magnifying-glass mr-1"></i> Tìm kiếm thiết bị</label>
@@ -1211,9 +1343,11 @@
         <div class="cl-modal-card lg">
             <div class="cl-modal-header">
                 <h3>Thực hiện kiểm tra thiết bị</h3>
-                <button class="cl-modal-close" @@click="showPerformModal=false">×</button>
+                <button class="cl-modal-close" v-on:click="showPerformModal=false">×</button>
             </div>
-            <div class="cl-modal-body">
+            
+            <!-- 1. Normal View (Not submitted yet) -->
+            <div class="cl-modal-body" v-if="!performForm.submitted">
                 <!-- Device Prefilled Info -->
                 <div class="cl-device-info-grid">
                     <div>
@@ -1234,7 +1368,29 @@
                     </div>
                 </div>
 
-                <!-- Simulated QR Scan Verification -->
+                <!-- History Warnings Alert Box -->
+                <div v-if="historyWarnings.length > 0" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.25); border-radius:var(--cl-radius-md); padding:14px; display:flex; flex-direction:column; gap:6px;">
+                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:flex; align-items:center; gap:6px; margin:0;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÃT TÌNH TRẠNG THIẾT BỊ
+                    </strong>
+                    <ul style="margin:0; padding-left:20px; color:var(--cl-text); font-size:12.5px;">
+                        <li v-for="(warn, wIdx) in historyWarnings" :key="wIdx"><strong>${ warn }</strong></li>
+                    </ul>
+                </div>
+
+                <!-- Sub-tab Navigation inside Perform Modal -->
+                <div class="cl-tabs-nav" style="margin-bottom:8px; border-bottom:1px solid var(--cl-border); gap:20px;">
+                    <button type="button" class="cl-tab-btn" :class="{active: activePerformModalTab==='checklist'}" v-on:click="activePerformModalTab='checklist'" style="padding:10px 4px; font-size:13.5px;">
+                        <i class="fa-solid fa-clipboard-check"></i> Biểu mẫu kiểm tra
+                    </button>
+                    <button type="button" class="cl-tab-btn" :class="{active: activePerformModalTab==='history'}" v-on:click="activePerformModalTab='history'" style="padding:10px 4px; font-size:13.5px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Lịch sử kiểm tra (${ recentInspectionHistory.length })
+                    </button>
+                </div>
+
+                <!-- SUB-TAB CONTENT: CHECKLIST FORM -->
+                <div v-if="activePerformModalTab === 'checklist'" style="display:flex; flex-direction:column; gap:16px;">
+                    <!-- Simulated QR Scan Verification -->
                 <div class="cl-tech-qr-panel">
                     <div class="cl-tech-qr-header">
                         <div class="cl-tech-qr-title">
@@ -1246,7 +1402,7 @@
                                 <i class="fa-solid fa-camera"></i> Quét mã QR thiết bị
                             </button>
                             <label class="cl-tech-checkbox-label">
-                                <input type="checkbox" v-model="performForm.qrScanned" /> Đã xác thực tại vị trí
+                                <input type="checkbox" v-model="performForm.qrScanned" disabled /> Đã xác thực tại vị trí
                             </label>
                         </div>
                     </div>
@@ -1322,14 +1478,208 @@
                 <!-- Checklist General Note -->
                 <div class="cl-input-group">
                     <label>Ghi chú chung của toàn bộ ca kiểm tra</label>
-                    <textarea class="cl-input" style="height:80px; padding:8px 12px; resize:none;" placeholder="Nhập tình trạng tổng quát của thiết bị..." v-model="performForm.note"></textarea>
+                    <textarea class="cl-input" style="height:60px; padding:8px 12px; resize:none;" placeholder="Nhập tình trạng tổng quát của thiết bị..." v-model="performForm.note"></textarea>
+                </div>
+                </div>
+
+                <!-- SUB-TAB CONTENT: HISTORY LOGS -->
+                <div v-if="activePerformModalTab === 'history'" style="display:flex; flex-direction:column; gap:12px;">
+                    <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0; border-bottom:1px solid var(--cl-border); padding-bottom:8px;">
+                        <i class="fa-solid fa-history mr-1 text-primary"></i> 5 lần kiểm tra gần nhất
+                    </h4>
+                    <div v-if="recentInspectionHistory.length === 0" style="padding:24px; text-align:center; color:var(--cl-text-muted); font-style:italic;">
+                        Chưa có lịch sử kiểm tra cho thiết bị này.
+                    </div>
+                    <div v-else class="cl-card-table">
+                        <table class="cl-table">
+                            <thead>
+                                <tr style="background:#f8fafc;">
+                                    <th>Thời gian</th>
+                                    <th>Người kiểm</th>
+                                    <th>Kết quả</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="hLog in recentInspectionHistory" :key="hLog.Id">
+                                    <td>${ hLog.CheckedAt }</td>
+                                    <td>${ hLog.CheckedByName }</td>
+                                    <td>
+                                        <span class="cl-badge" :class="'cl-badge-' + hLog.OverallResult">${ resultLabel(hLog.OverallResult) }</span>
+                                    </td>
+                                    <td><small>${ hLog.Note || '—' }</small></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="cl-modal-footer">
-                <button class="cl-btn cl-btn-outline" @@click="showPerformModal=false">Hủy bỏ</button>
-                <button class="cl-btn cl-btn-success" @@click="submitChecklist" :disabled="isSubmitting">
+            <div class="cl-modal-footer" v-if="!performForm.submitted">
+                <button class="cl-btn cl-btn-outline" v-on:click="showPerformModal=false">Hủy bỏ</button>
+                <button class="cl-btn cl-btn-success" v-on:click="submitChecklist" :disabled="isSubmitting">
                     <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu...</span>
                     <span v-else><i class="fa-solid fa-cloud-arrow-up"></i> Hoàn thành & Lưu kết quả</span>
+                </button>
+            </div>
+
+            <!-- 2. Success Completion View -->
+            <div class="cl-modal-body" v-if="performForm.submitted" style="text-align:center; padding:40px 24px; display:flex; flex-direction:column; align-items:center; gap:20px;">
+                <div style="width:72px; height:72px; border-radius:50%; background:var(--cl-success-light); display:flex; align-items:center; justify-content:center; color:var(--cl-success); font-size:36px; border: 2px solid var(--cl-success);">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:18px; font-weight:700; color:var(--cl-success-dark); margin:0;">Checklist completed successfully.</h3>
+                    <p style="font-size:13.5px; color:var(--cl-text-muted); margin-top:8px; max-width:400px; margin-left:auto; margin-right:auto;">
+                        Nhật ký kiểm tra đã được ghi nhận và lưu trữ.
+                    </p>
+                </div>
+                
+                <!-- Repair Ticket creation suggestion -->
+                <div v-if="lastSubmitResult === 'fail' && lastSubmitLogId" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.2); border-radius:var(--cl-radius-md); padding:16px; width:100%; max-width:440px; text-align:left; margin-bottom:8px;">
+                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:block;">Phát hiện lỗi/hỏng trong quá trình kiểm tra</strong>
+                    <span style="font-size:12.5px; color:var(--cl-text-muted); display:block; margin-top:4px;">
+                        Thiết bị không đạt chuẩn. Hệ thống khuyên bạn nên tạo Ticket sửa chữa để khắc phục sự cố.
+                    </span>
+                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger);" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: activeSchedule.InventoryId, Note: performForm.note })">
+                        <i class="fa-solid fa-wrench mr-1"></i> Tạo Ticket Sửa Chữa Ngay
+                    </button>
+                </div>
+                
+                <!-- Next Asset Suggestion Card -->
+                <div v-if="nextPendingAsset" style="background:var(--cl-primary-light); border:1px solid rgba(59,130,246,0.2); border-radius:var(--cl-radius-md); padding:16px; width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; text-align:left;">
+                    <small style="color:var(--cl-primary); font-weight:700; text-transform:uppercase; font-size:10.5px; letter-spacing:0.5px;">Gợi ý thiết bị tiếp theo trong nhóm</small>
+                    <div>
+                        <strong style="color:#0f172a; font-size:13.5px;">${ nextPendingAsset.ItemName }</strong>
+                        <div style="font-size:12.5px; color:var(--cl-text-muted); margin-top:2px;">
+                            Mã TS: ${ nextPendingAsset.AssetCode } | Khoa: ${ nextPendingAsset.DepartmentName }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cl-modal-footer" v-if="performForm.submitted">
+                <button v-if="nextPendingAsset" class="cl-btn cl-btn-primary" v-on:click="goToNextAsset">
+                    <i class="fa-solid fa-forward mr-1"></i> Next Asset
+                </button>
+                <button class="cl-btn cl-btn-outline" v-on:click="showPerformModal=false; loadSchedules(); loadLogs();">
+                    <i class="fa-solid fa-list mr-1"></i> Back to Schedule List
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== MODAL: KIỂM TRA HÀNG LOẠT NHÓM THIẾT BỊ ===== -->
+    <div class="cl-modal-overlay" v-if="showBatchCheckModal" v-on:click.self="showBatchCheckModal=false">
+        <div class="cl-modal-card lg" v-if="batchCheckGroup">
+            <div class="cl-modal-header">
+                <h3>Thực hiện kiểm tra hàng loạt</h3>
+                <button class="cl-modal-close" v-on:click="showBatchCheckModal=false">×</button>
+            </div>
+            
+            <!-- Side-by-side Layout -->
+            <div class="cl-modal-body" style="display:flex; flex-direction:row; gap:24px; min-height:450px; padding:20px;" v-if="!performForm.submitted">
+                <!-- LEFT PANEL: Asset Selection -->
+                <div style="flex: 2; border-right: 1px solid var(--cl-border); padding-right:20px; display:flex; flex-direction:column; gap:16px;">
+                    <div>
+                        <h4 style="font-size:13.5px; font-weight:700; color:var(--cl-text); margin: 0;">Danh sách thiết bị áp dụng</h4>
+                        <small style="color:var(--cl-text-muted); display:block; margin-top:2px;">Bỏ chọn thiết bị gặp sự cố riêng để kiểm tra cá nhân.</small>
+                    </div>
+                    
+                    <div style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex: 1; max-height:300px; padding-right:4px;">
+                        <label v-for="sch in batchCheckGroup.Schedules" :key="sch.Id" style="display:flex; align-items:start; gap:10px; padding:10px; border:1px solid var(--cl-border); border-radius:8px; cursor:pointer; background:#fff; margin:0; transition:var(--cl-tr);" :style="selectedBatchScheduleIds.includes(sch.Id) ? 'border-color:var(--cl-primary); background:var(--cl-primary-light);' : ''">
+                            <input type="checkbox" :value="sch.Id" v-model="selectedBatchScheduleIds" style="margin-top:3px; accent-color:var(--cl-primary);" />
+                            <div style="font-size:12.5px;">
+                                <strong style="color:#0f172a;">${ sch.AssetCode }</strong> - <small style="font-weight:600;">${ sch.SerialNumber || 'No Serial' }</small>
+                                <div style="color:var(--cl-text-muted); font-size:11.5px; margin-top:2px;">
+                                    Tên: ${ sch.ItemName } | Hạn: ${ sch.DueDate }
+                                </div>
+                                <span class="cl-badge" :style="sch.Criticality === 'High' || sch.Criticality === 'Critical' ? 'background:var(--cl-danger-light); color:var(--cl-danger-dark); border-color:transparent; font-size:9.5px;' : 'font-size:9.5px;'" style="margin-top:4px; padding:1px 6px;">
+                                    Độ quan trọng: ${ sch.Criticality }
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- Statistics & Savings -->
+                    <div style="background:var(--cl-neutral-light); border:1px solid var(--cl-border); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; justify-content:space-between; font-size:12.5px;">
+                            <span>Đã chọn:</span>
+                            <strong style="color:var(--cl-primary-dark);">${ selectedBatchScheduleIds.length } / ${ batchCheckGroup.Schedules.length } thiết bị</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:12.5px;" v-if="estimatedBatchSavings > 0">
+                            <span>Thời gian tiết kiệm:</span>
+                            <strong style="color:var(--cl-success-dark);"><i class="fa-solid fa-gauge mr-1"></i>~${ estimatedBatchSavings } phút</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RIGHT PANEL: Checklist Form -->
+                <div style="flex: 3; display:flex; flex-direction:column; gap:16px; overflow-y:auto; max-height:480px; padding-left:4px;">
+                    <div>
+                        <h4 style="font-size:13.5px; font-weight:700; color:var(--cl-text); margin: 0;">Biểu mẫu kiểm tra đại diện</h4>
+                        <small style="color:var(--cl-text-muted); display:block; margin-top:2px;">Nhập đánh giá chung cho tất cả các thiết bị đã chọn.</small>
+                    </div>
+                    
+                    <div class="cl-exec-grid">
+                        <div class="cl-exec-item" v-for="(item, idx) in batchCheckItems" :key="item.DefinitionId" style="padding:12px; grid-template-columns: 1fr;">
+                            <div>
+                                <div class="cl-exec-name" style="font-size:13px;">${ item.CheckName }</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                                <button type="button" class="cl-toggle-btn pass" style="height:32px; padding:0 12px; font-size:12px;" :class="{active: item.IsPassed === true}" v-on:click="item.IsPassed = true">
+                                    <i class="fa-solid fa-circle-check"></i> Đạt
+                                </button>
+                                <button type="button" class="cl-toggle-btn fail" style="height:32px; padding:0 12px; font-size:12px;" :class="{active: item.IsPassed === false}" v-on:click="item.IsPassed = false">
+                                    <i class="fa-solid fa-circle-xmark"></i> Lỗi
+                                </button>
+                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi..." style="height:32px; font-size:12px; flex: 1;" v-model="item.Note" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cl-input-group">
+                        <label>Ghi chú chung cho đợt kiểm tra hàng loạt</label>
+                        <textarea class="cl-input" style="height:60px; padding:8px 12px; resize:none;" placeholder="Nhập tình trạng tổng quát..." v-model="batchCheckNote"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cl-modal-footer" v-if="!performForm.submitted">
+                <button class="cl-btn cl-btn-outline" v-on:click="showBatchCheckModal=false">Hủy bỏ</button>
+                <button class="cl-btn cl-btn-success" v-on:click="submitBatchCheck" :disabled="selectedBatchScheduleIds.length === 0 || isBatchSubmitting">
+                    <span v-if="isBatchSubmitting"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang xử lý...</span>
+                    <span v-else><i class="fa-solid fa-check-double mr-1"></i> Áp dụng kết quả cho ${ selectedBatchScheduleIds.length } thiết bị</span>
+                </button>
+            </div>
+            
+            <!-- Batch check success card -->
+            <div class="cl-modal-body" v-if="performForm.submitted" style="text-align:center; padding:40px 24px; display:flex; flex-direction:column; align-items:center; gap:20px;">
+                <div style="width:72px; height:72px; border-radius:50%; background:var(--cl-success-light); display:flex; align-items:center; justify-content:center; color:var(--cl-success); font-size:36px; border: 2px solid var(--cl-success);">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:18px; font-weight:700; color:var(--cl-success-dark); margin:0;">Kiểm tra hàng loạt hoàn thành!</h3>
+                    <p style="font-size:13.5px; color:var(--cl-text-muted); margin-top:8px; max-width:450px;">
+                        Đã cập nhật kết quả kiểm tra thành công cho các thiết bị được chọn trong nhóm.
+                    </p>
+                </div>
+                
+                <!-- If there was a failure in batch check, suggest redirecting to repair ticket creation -->
+                <div v-if="lastSubmitResult !== 'pass' && lastSubmitLogId" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.2); border-radius:var(--cl-radius-md); padding:16px; width:100%; max-width:480px; text-align:left;">
+                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:block;">Phát hiện lỗi/hỏng trong đợt kiểm tra</strong>
+                    <span style="font-size:12.5px; color:var(--cl-text-muted); display:block; margin-top:4px;">
+                        Một hoặc nhiều thiết bị không đạt chuẩn. Hệ thống khuyên bạn nên tạo Ticket sửa chữa để khắc phục sự cố.
+                    </span>
+                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger);" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: batchCheckGroup.Schedules[0].InventoryId, Note: batchCheckNote })">
+                        <i class="fa-solid fa-wrench mr-1"></i> Tạo Ticket Sửa Chữa Ngay
+                    </button>
+                </div>
+            </div>
+            
+            <div class="cl-modal-footer" v-if="performForm.submitted">
+                <button class="cl-btn cl-btn-primary" v-on:click="showBatchCheckModal=false; loadSchedules(); loadLogs();">
+                    <i class="fa-solid fa-circle-check mr-1"></i> Xác nhận và Đóng
                 </button>
             </div>
         </div>

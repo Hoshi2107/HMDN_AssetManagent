@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Nhật ký sửa chữa";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -89,7 +89,7 @@
         <button type="button" 
                 class="btn-vendor" 
                 style="padding: 9px 16px; margin: 0; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap;"
-                @@click="showRepairedDevices = !showRepairedDevices"
+                v-on:click="showRepairedDevices = !showRepairedDevices"
                 :style="showRepairedDevices ? 'background: #10b981; color: white; border: 1px solid #10b981;' : 'background: white; color: #475569; border: 1px solid #cbd5e1;'">
             <i class="fa-solid fa-check-circle" :style="showRepairedDevices ? 'color: white' : 'color: #10b981'"></i> 
             <span v-if="!showRepairedDevices">Thiết bị đã sửa chữa</span>
@@ -124,7 +124,7 @@
             <tbody>
                 <tr v-for="device in paginatedDevices"
                     :key="device.Id"
-                    @@click="openHistory(device.Id)"
+                    v-on:click="openHistory(device.Id)"
                     :class="{ 'row-has-issue': device.OpenLogs > 0 || device.InProgressLogs > 0 }">
 
                     <td><strong>#${ device.Id }</strong></td>
@@ -190,18 +190,18 @@
 
     <!-- PAGINATION -->
     <div class="maint-pagination" v-if="totalPages > 1">
-        <button @@click="currentPage--" :disabled="currentPage <= 1">
+        <button v-on:click="currentPage--" :disabled="currentPage <= 1">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
 
         <button v-for="page in pages"
                 :key="page"
-                @@click="currentPage = page"
+                v-on:click="currentPage = page"
                 :class="{ active: currentPage === page }">
             ${ page }
         </button>
 
-        <button @@click="currentPage++" :disabled="currentPage >= totalPages">
+        <button v-on:click="currentPage++" :disabled="currentPage >= totalPages">
             <i class="fa-solid fa-chevron-right"></i>
         </button>
     </div>
@@ -210,13 +210,13 @@
     <!-- ═══ MODAL: LỊCH SỬ SỬA CHỮA THIẾT BỊ ═══ -->
     <div class="modal-overlay"
          v-if="showHistoryModal"
-         @@click.self="showHistoryModal = false">
+         v-on:click.self="showHistoryModal = false">
 
         <div class="modal-panel modal-panel-fullscreen" style="background:#f8fafc">
 
             <div class="modal-top" style="background:#fff; border-bottom:none">
                 <h3>Nhật ký bệnh án thiết bị</h3>
-                <button class="modal-close" @@click="showHistoryModal = false">×</button>
+                <button class="modal-close" v-on:click="showHistoryModal = false">×</button>
             </div>
 
             <!-- Loading -->
@@ -237,7 +237,7 @@
                             <div class="profile-title">
                                 <h2>
                                     ${ selectedDevice.ItemName }
-                                    <select class="badge-status-maint" style="background:#f1f5f9; color:#334155; border: 1px solid #cbd5e1; cursor: pointer; padding: 4px 24px 4px 8px; font-weight: 600; outline: none; appearance: auto;" v-model="selectedDevice.LifeStatus" @@change="updateDeviceStatus(selectedDevice.Id, selectedDevice.LifeStatus)">
+                                    <select class="badge-status-maint" style="background:#f1f5f9; color:#334155; border: 1px solid #cbd5e1; cursor: pointer; padding: 4px 24px 4px 8px; font-weight: 600; outline: none; appearance: auto;" v-model="selectedDevice.LifeStatus" v-on:change="updateDeviceStatus(selectedDevice.Id, selectedDevice.LifeStatus)">
                                         <option value="active">Đang sử dụng</option>
                                         <option value="suspended">Tạm ngưng</option>
                                         <option value="broken">Hỏng</option>
@@ -266,7 +266,7 @@
                         <button class="btn-outline">
                             <i class="fa-solid fa-file-pdf"></i> PDF/Excel
                         </button>
-                        <button class="btn-create" v-if="hasPermission('Maintenance', 'CREATE')" @@click="openCreateFromHistory()" style="padding:9px 20px">
+                        <button class="btn-create" v-if="hasPermission('Maintenance', 'CREATE')" v-on:click="openCreateFromHistory()" style="padding:9px 20px">
                             <i class="fa-solid fa-triangle-exclamation"></i> Thêm phiếu báo hỏng
                         </button>
                     </div>
@@ -369,7 +369,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="tcr-action-link" @@click="openDetail(log.Id)">
+                                    <div class="tcr-action-link" v-on:click="openDetail(log.Id)">
                                         Xem chi tiết phiếu <i class="fa-solid fa-chevron-right" style="font-size:10px"></i>
                                     </div>
                                 </div>
@@ -419,7 +419,7 @@
                                 <p style="margin: 0; font-size: 13px; color: #475569; font-weight: 500" v-if="!uploading">Kéo thả ảnh vào đây hoặc nhấn để tải lên</p>
                                 <p style="margin: 0; font-size: 13px; color: #3b82f6; font-weight: 500" v-else>Đang tải tệp lên <i class="fa-solid fa-spinner fa-spin"></i></p>
                                 <p style="margin: 4px 0 0; font-size: 11px; color: #94a3b8">Hỗ trợ JPG, PNG, PDF (Tối đa 5MB)</p>
-                                <input type="file" id="fileUploadInput" style="display: none" accept="image/*,application/pdf" multiple @@change="uploadAttachment" />
+                                <input type="file" id="fileUploadInput" style="display: none" accept="image/*,application/pdf" multiple v-on:change="uploadAttachment" />
                             </div>
                             
                             <div v-if="attachments.length > 0" style="margin-bottom: 16px;">
@@ -464,7 +464,7 @@
     <!-- ═══ MODAL: CHI TIẾT CA SỬA CHỮA ═══ -->
     <div class="modal-overlay"
          v-if="showDetailModal"
-         @@click.self="showDetailModal = false">
+         v-on:click.self="showDetailModal = false">
 
         <div class="modal-panel modal-panel-lg">
 
@@ -473,7 +473,7 @@
                     <i class="fa-solid fa-file-medical" style="color:#2563eb;margin-right:8px"></i>
                     Chi tiết ca sửa chữa #${ detail.Id }
                 </h3>
-                <button class="modal-close" @@click="showDetailModal = false">×</button>
+                <button class="modal-close" v-on:click="showDetailModal = false">×</button>
             </div>
 
             <div class="modal-body" v-if="detail">
@@ -579,17 +579,17 @@
 
             <!-- Footer actions -->
             <div class="modal-footer" v-if="detail && detail.Status !== 'closed'">
-                <button class="btn-cancel" @@click="showDetailModal = false">Đóng</button>
+                <button class="btn-cancel" v-on:click="showDetailModal = false">Đóng</button>
 
                 <button class="btn-progress"
                         v-if="detail.Status === 'open' && hasPermission('Maintenance', 'EDIT')"
-                        @@click="updateStatus(detail.Id, 'in_progress')">
+                        v-on:click="updateStatus(detail.Id, 'in_progress')">
                     <i class="fa-solid fa-play"></i> Bắt đầu sửa
                 </button>
 
                 <button class="btn-close-log"
                         v-if="detail.Status === 'in_progress' && hasPermission('Maintenance', 'EDIT')"
-                        @@click="showCloseForm = !showCloseForm">
+                        v-on:click="showCloseForm = !showCloseForm">
                     <i class="fa-solid fa-check"></i> Đóng ca sửa chữa
                 </button>
             </div>
@@ -622,7 +622,7 @@
                                    placeholder="Ví dụ: 1.500.000" />
                         </div>
                         <div class="form-group" style="justify-content:flex-end">
-                            <button class="btn-submit" @@click="closeLog()">
+                            <button class="btn-submit" v-on:click="closeLog()">
                                 <i class="fa-solid fa-check-double"></i> Xác nhận đóng ca
                             </button>
                         </div>
@@ -636,7 +636,7 @@
     <!-- ═══ MODAL: TẠO CA MỚI ═══ -->
     <div class="modal-overlay"
          v-if="showCreateModal"
-         @@click.self="showCreateModal = false">
+         v-on:click.self="showCreateModal = false">
 
         <div class="modal-panel">
 
@@ -648,7 +648,7 @@
                         — ${ createFromDevice.ItemName }
                     </span>
                 </h3>
-                <button class="modal-close" @@click="showCreateModal = false">×</button>
+                <button class="modal-close" v-on:click="showCreateModal = false">×</button>
             </div>
 
             <div class="modal-body">
@@ -721,9 +721,9 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn-cancel" @@click="showCreateModal = false">Hủy</button>
+                <button class="btn-cancel" v-on:click="showCreateModal = false">Hủy</button>
                 <button class="btn-submit"
-                        @@click="createLog()"
+                        v-on:click="createLog()"
                         :disabled="!newLog.InventoryId || !newLog.Title">
                     <i class="fa-solid fa-paper-plane"></i> Tạo ca sửa chữa
                 </button>

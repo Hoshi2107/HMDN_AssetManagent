@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Location";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -31,7 +31,7 @@
                     <h2>Quản lý vị trí</h2>
                     <p>Danh sách phòng / tầng / tòa nhà trong bệnh viện</p>
                 </div>
-                <button class="btn-primary" @@click="openAdd">
+                <button class="btn-primary" v-on:click="openAdd">
                     ＋ Thêm vị trí
                 </button>
             </div>
@@ -79,16 +79,16 @@
                 <table>
                     <thead>
                         <tr>
-                            <th class="sortable" @@click="sortBy('Id')">
+                            <th class="sortable" v-on:click="sortBy('Id')">
                                 ID ${ sortIcon('Id') }
                             </th>
-                            <th class="sortable" @@click="sortBy('Name')">
+                            <th class="sortable" v-on:click="sortBy('Name')">
                                 Tên vị trí ${ sortIcon('Name') }
                             </th>
-                            <th class="sortable" @@click="sortBy('Building')">
+                            <th class="sortable" v-on:click="sortBy('Building')">
                                 Tòa nhà ${ sortIcon('Building') }
                             </th>
-                            <th class="sortable" @@click="sortBy('Floor')">
+                            <th class="sortable" v-on:click="sortBy('Floor')">
                                 Tầng ${ sortIcon('Floor') }
                             </th>
                             <th>Trạng Thái</th>
@@ -113,7 +113,7 @@
                         <tr v-for="item in paginatedLocations"
                             :key="item.Id"
                             class="table-row"
-                            @@click="openDetail(item)">
+                            v-on:click="openDetail(item)">
 
                             <td><span class="mono">#${ item.Id }</span></td>
                             <td><strong>${ item.Name }</strong></td>
@@ -130,18 +130,18 @@
                                     ${ item.Description || '—' }
                                 </td>*@
                             <td>
-                                <div class="action-btns" @@click.stop>
+                                <div class="action-btns" v-on:click.stop>
 
                                     <button class="btn-icon"
-                                            @@click="openEdit(item)"
+                                            v-on:click="openEdit(item)"
                                             title="Sửa">
 
                                         ✏️
                                     </button>
 
                                     <button class="btn-icon lock"
-                                            @*@@click="toggleStatus(item)"*@
-                                            @@click="openToggleStatus(item)"
+                                            @*v-on:click="toggleStatus(item)"*@
+                                            v-on:click="openToggleStatus(item)"
                                             :title="item.IsActive ? 'Ngưng sử dụng' : 'Kích hoạt'">
 
                                         ${ item.IsActive ? '🔒' : '🔓' }
@@ -156,14 +156,14 @@
 
             <!-- PAGINATION -->
             <div class="pagination">
-                <button @@click="prevPage" :disabled="currentPage == 1">← Prev</button>
+                <button v-on:click="prevPage" :disabled="currentPage == 1">← Prev</button>
                 <button v-for="page in pages"
                         :key="page"
-                        @@click="changePage(page)"
+                        v-on:click="changePage(page)"
                         :class="{ active: currentPage == page }">
                     ${ page }
                 </button>
-                <button @@click="nextPage" :disabled="currentPage == totalPages">Next →</button>
+                <button v-on:click="nextPage" :disabled="currentPage == totalPages">Next →</button>
             </div>
 
         </main>
@@ -172,7 +172,7 @@
     <!-- ── MODAL THÊM / SỬA ── -->
     <div class="modal-overlay"
          v-if="showModal"
-         @@click.self="showModal = false">
+         v-on:click.self="showModal = false">
 
         <div class="loc-modal">
 
@@ -181,7 +181,7 @@
                     <h3>${ isEdit ? 'Chỉnh sửa vị trí' : 'Thêm vị trí mới' }</h3>
                     <div class="modal-subtitle" v-if="isEdit">#${ form.Id }</div>
                 </div>
-                <button class="close-btn" @@click="showModal = false">×</button>
+                <button class="close-btn" v-on:click="showModal = false">×</button>
             </div>
 
             <div class="modal-body">
@@ -218,8 +218,8 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn-cancel" @@click="showModal = false">Huỷ</button>
-                <button class="btn-save" @@click="saveLocation">
+                <button class="btn-cancel" v-on:click="showModal = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveLocation">
                     ${ isEdit ? '💾 Lưu thay đổi' : '＋ Thêm vị trí' }
                 </button>
             </div>
@@ -230,7 +230,7 @@
     <!-- ── MODAL TOGGLE STATUS ── -->
     <div class="modal-overlay"
          v-if="showStatusModal"
-         @@click.self="showStatusModal = false">
+         v-on:click.self="showStatusModal = false">
 
         <div class="confirm-modal">
 
@@ -276,13 +276,13 @@
             <div class="confirm-footer">
 
                 <button class="btn-cancel"
-                        @@click="showStatusModal = false">
+                        v-on:click="showStatusModal = false">
 
                     Huỷ
                 </button>
 
                 <button class="btn-danger"
-                        @@click="confirmToggleStatus">
+                        v-on:click="confirmToggleStatus">
 
                     ${ statusTarget?.IsActive
                     ? '🔒 Ngưng sử dụng'
@@ -300,7 +300,7 @@
     <!-- DETAIL MODAL -->
     <div class="modal-overlay"
          v-if="showDetailModal"
-         @@click.self="showDetailModal = false">
+         v-on:click.self="showDetailModal = false">
 
         <div class="detail-modal">
 
@@ -321,7 +321,7 @@
                 </div>
 
                 <button class="close-btn"
-                        @@click="showDetailModal = false">
+                        v-on:click="showDetailModal = false">
 
                     ×
 

@@ -410,12 +410,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                         log.EndDate = DateTime.Now;
 
                         // Chuyển lại trạng thái thiết bị thành "active" nếu tất cả ca sửa chữa khác đã đóng
+                        // (Không tự động kích hoạt lại thiết bị nếu đang bị suspended do hỏng checklist)
                         if (inventory != null)
                         {
                             bool hasActiveLogs = db.MaintenanceLogs.Any(l => l.InventoryId == log.InventoryId && l.Id != log.Id && l.Status != "closed");
                             if (!hasActiveLogs)
                             {
-                                inventory.LifeStatus = "active"; // Đang sử dụng
+                                if (inventory.LifeStatus != "suspended")
+                                {
+                                    inventory.LifeStatus = "active"; // Đang sử dụng
+                                }
                             }
                         }
 

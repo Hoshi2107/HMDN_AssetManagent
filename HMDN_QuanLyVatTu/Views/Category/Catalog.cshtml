@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -446,7 +446,7 @@
                     <h2>Danh mục thiết bị</h2>
                     <p>Quản lý nhóm và loại thiết bị y tế</p>
                 </div>
-                <button class="btn-primary" @@click="openAddGroup">
+                <button class="btn-primary" v-on:click="openAddGroup">
                     + Thêm nhóm
                 </button>
             </div>
@@ -472,7 +472,7 @@
                      :key="g.Id"
                      class="group-card"
                      :class="{ inactive: !g.IsActive }"
-                     @@click="openGroupItems(g)">
+                     v-on:click="openGroupItems(g)">
 
                     <span class="group-icon">${ g.Icon || '📦' }</span>
                     <div class="group-name">${ g.Name }</div>
@@ -483,9 +483,9 @@
                         <span class="item-count-badge">
                             ${ itemCountOf(g.Id) } loại
                         </span>
-                        <div class="action-btns" @@click.stop>
-                            <button class="btn-icon-sm" @@click="openEditGroup(g)" title="Sửa">✏️</button>
-                            <button class="btn-icon-sm del" @@click="openDeleteGroup(g)" title="Xoá">🗑️</button>
+                        <div class="action-btns" v-on:click.stop>
+                            <button class="btn-icon-sm" v-on:click="openEditGroup(g)" title="Sửa">✏️</button>
+                            <button class="btn-icon-sm del" v-on:click="openDeleteGroup(g)" title="Xoá">🗑️</button>
                         </div>
                     </div>
 
@@ -501,7 +501,7 @@
     ══════════════════════════════════════ -->
     <div class="modal-overlay"
          v-if="showItemsModal"
-         @@click.self="showItemsModal = false">
+         v-on:click.self="showItemsModal = false">
 
         <div class="items-modal">
 
@@ -514,10 +514,10 @@
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:10px">
-                    <button class="btn-primary" style="font-size:12px;padding:7px 14px" @@click="openAddItem">
+                    <button class="btn-primary" style="font-size:12px;padding:7px 14px" v-on:click="openAddItem">
                         + Thêm loại
                     </button>
-                    <button class="close-btn" @@click="showItemsModal = false">×</button>
+                    <button class="close-btn" v-on:click="showItemsModal = false">×</button>
                 </div>
             </div>
 
@@ -573,8 +573,8 @@
                             </td>
                             <td>
                                 <div class="action-btns">
-                                    <button class="btn-icon-sm" @@click="openEditItem(item)" title="Sửa">✏️</button>
-                                    <button class="btn-icon-sm del" @@click="openDeleteItem(item)" title="Xoá">🗑️</button>
+                                    <button class="btn-icon-sm" v-on:click="openEditItem(item)" title="Sửa">✏️</button>
+                                    <button class="btn-icon-sm del" v-on:click="openDeleteItem(item)" title="Xoá">🗑️</button>
                                 </div>
                             </td>
                         </tr>
@@ -596,12 +596,12 @@
     ══════════════════════════════════════ -->
     <div class="form-overlay"
          v-if="showGroupForm"
-         @@click.self="showGroupForm = false">
+         v-on:click.self="showGroupForm = false">
 
         <div class="form-modal">
             <div class="modal-header">
                 <h3>${ isEditGroup ? 'Sửa nhóm thiết bị' : 'Thêm nhóm mới' }</h3>
-                <button class="close-btn" @@click="showGroupForm = false">×</button>
+                <button class="close-btn" v-on:click="showGroupForm = false">×</button>
             </div>
             <div class="form-body">
                 <div class="form-grid">
@@ -635,8 +635,8 @@
                 </div>
             </div>
             <div class="form-footer">
-                <button class="btn-cancel" @@click="showGroupForm = false">Huỷ</button>
-                <button class="btn-save" @@click="saveGroup">
+                <button class="btn-cancel" v-on:click="showGroupForm = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveGroup">
                     ${ isEditGroup ? '💾 Lưu' : '+ Thêm' }
                 </button>
             </div>
@@ -649,7 +649,7 @@
     ══════════════════════════════════════ -->
     <div class="form-overlay"
          v-if="showItemForm"
-         @@click.self="showItemForm = false">
+         v-on:click.self="showItemForm = false">
 
         <div class="form-modal">
             <div class="modal-header">
@@ -657,7 +657,7 @@
                     <h3>${ isEditItem ? 'Sửa loại thiết bị' : 'Thêm loại thiết bị' }</h3>
                     <div class="modal-header-sub">Nhóm: ${ activeGroup.Name }</div>
                 </div>
-                <button class="close-btn" @@click="showItemForm = false">×</button>
+                <button class="close-btn" v-on:click="showItemForm = false">×</button>
             </div>
             <div class="form-body">
                 <div class="form-grid">
@@ -695,8 +695,8 @@
                 </div>
             </div>
             <div class="form-footer">
-                <button class="btn-cancel" @@click="showItemForm = false">Huỷ</button>
-                <button class="btn-save" @@click="saveItem">
+                <button class="btn-cancel" v-on:click="showItemForm = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveItem">
                     ${ isEditItem ? '💾 Lưu' : '+ Thêm' }
                 </button>
             </div>
@@ -709,7 +709,7 @@
     ══════════════════════════════════════ -->
     <div class="form-overlay"
          v-if="showDeleteModal"
-         @@click.self="showDeleteModal = false">
+         v-on:click.self="showDeleteModal = false">
 
         <div class="confirm-modal">
             <div class="confirm-body">
@@ -718,8 +718,8 @@
                 <p>Bạn chắc muốn xoá <strong>${ deleteTarget.Name }</strong>?<br>Hành động này không thể hoàn tác.</p>
             </div>
             <div class="confirm-footer">
-                <button class="btn-cancel" @@click="showDeleteModal = false">Không</button>
-                <button class="btn-danger" @@click="confirmDelete">Xoá luôn</button>
+                <button class="btn-cancel" v-on:click="showDeleteModal = false">Không</button>
+                <button class="btn-danger" v-on:click="confirmDelete">Xoá luôn</button>
             </div>
         </div>
 

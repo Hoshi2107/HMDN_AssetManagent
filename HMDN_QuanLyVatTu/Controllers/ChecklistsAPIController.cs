@@ -22,6 +22,39 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
+                // Self-healing: Ensure Criticality column exists in Inventory table and set defaults
+                db.Database.ExecuteSqlCommand(@"
+                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Inventory') AND name = 'Criticality')
+                    BEGIN
+                        ALTER TABLE Inventory ADD Criticality NVARCHAR(50) NULL;
+                    END
+                ");
+                
+                db.Database.ExecuteSqlCommand(@"
+                    IF EXISTS (SELECT 1 FROM Inventory WHERE Criticality IS NULL)
+                    BEGIN
+                        UPDATE Inventory SET Criticality = 'Low' WHERE Criticality IS NULL;
+                        
+                        UPDATE inv
+                        SET inv.Criticality = 'Critical'
+                        FROM Inventory inv
+                        JOIN Items it ON inv.ItemId = it.Id
+                        WHERE it.Name LIKE N'%máy thở%' OR it.Name LIKE N'%ventilator%' OR it.Name LIKE N'%mri%' OR it.Name LIKE N'%icu%';
+                        
+                        UPDATE inv
+                        SET inv.Criticality = 'High'
+                        FROM Inventory inv
+                        JOIN Items it ON inv.ItemId = it.Id
+                        WHERE it.Name LIKE N'%máy chủ%' OR it.Name LIKE N'%server%';
+                        
+                        UPDATE inv
+                        SET inv.Criticality = 'Medium'
+                        FROM Inventory inv
+                        JOIN Items it ON inv.ItemId = it.Id
+                        WHERE it.Name LIKE N'%ups%' OR it.Name LIKE N'%lưu điện%';
+                    END
+                ");
+
                 // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
                 if (!db.ChecklistSchedules.Any())
                 {
@@ -57,6 +90,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                     query = query.Where(s => s.CycleType == cycleType);
                 }
 
+                var openRepairInventoryIds = db.MaintenanceLogs
+                    .Where(ml => ml.Status == "open" || ml.Status == "in_progress")
+                    .Select(ml => ml.InventoryId)
+                    .Distinct()
+                    .ToList();
+
                 var schedules = query
                     .OrderBy(s => s.ScheduledDate)
                     .ThenBy(s => s.Id)
@@ -74,7 +113,15 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.Status,
                         s.DueDate,
                         s.AssignedTo,
-                        AssigneeName = s.Assignee != null ? s.Assignee.FullName : ""
+                        AssigneeName = s.Assignee != null ? s.Assignee.FullName : "",
+                        GroupId = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
+                            ? s.Inventory.Item.Group.Id : 0,
+                        GroupName = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
+                            ? s.Inventory.Item.Group.Name : "Chưa phân nhóm",
+                        GroupIcon = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
+                            ? s.Inventory.Item.Group.Icon : "📦",
+                        LifeStatus = s.Inventory != null ? s.Inventory.LifeStatus : "active",
+                        Criticality = s.Inventory != null ? s.Inventory.Criticality : "Low"
                     })
                     .ToList()
                     .Select(s => new
@@ -91,7 +138,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                         Status = (s.Status == "pending" && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
                         DueDate = s.DueDate.ToString("yyyy-MM-dd"),
                         s.AssignedTo,
-                        s.AssigneeName
+                        s.AssigneeName,
+                        s.GroupId,
+                        s.GroupName,
+                        s.GroupIcon,
+                        s.LifeStatus,
+                        Criticality = string.IsNullOrEmpty(s.Criticality) ? "Low" : s.Criticality,
+                        HasOpenRepair = openRepairInventoryIds.Contains(s.InventoryId)
                     })
                     .ToList();
 
@@ -149,6 +202,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                     new SqlParameter("@InventoryId", inventoryId),
                     new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
                 ).ToList();
+
+                // Group overrides global
+                if (items.Any(i => i.Scope == "group"))
+                {
+                    items.RemoveAll(i => i.Scope == "global");
+                }
 
                 return Ok(new { success = true, data = items });
             }
@@ -224,6 +283,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             }
                         }
 
+                        var checkedByUserId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
                         if (payload.OverallResult == "fail")
                         {
                             var inventory = db.Inventories.Find(payload.InventoryId);
@@ -231,8 +291,26 @@ namespace HMDN_QuanLyVatTu.Controllers
                             {
                                 inventory.LifeStatus = "suspended";
                                 inventory.UpdatedAt = DateTime.Now;
-                                inventory.UpdatedBy = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
+                                inventory.UpdatedBy = checkedByUserId;
                                 db.SaveChanges();
+                            }
+                        }
+                        else if (payload.OverallResult == "pass")
+                        {
+                            var inventory = db.Inventories.Find(payload.InventoryId);
+                            if (inventory != null && inventory.LifeStatus == "suspended")
+                            {
+                                // Reactivation requires both completed repair ticket AND successful re-inspection
+                                bool hasCompletedRepair = db.MaintenanceLogs.Any(ml => ml.InventoryId == payload.InventoryId && (ml.Status == "closed" || ml.Status == "completed"));
+                                bool hasOpenRepair = db.MaintenanceLogs.Any(ml => ml.InventoryId == payload.InventoryId && (ml.Status == "open" || ml.Status == "in_progress"));
+                                
+                                if (hasCompletedRepair && !hasOpenRepair)
+                                {
+                                    inventory.LifeStatus = "active";
+                                    inventory.UpdatedAt = DateTime.Now;
+                                    inventory.UpdatedBy = checkedByUserId;
+                                    db.SaveChanges();
+                                }
                             }
                         }
 
@@ -265,11 +343,16 @@ namespace HMDN_QuanLyVatTu.Controllers
         [HttpGet]
         [Route("logs")]
         [Route("~/api/checklist/logs")]
-        public IHttpActionResult GetLogs(string fromDate = null, string toDate = null, string result = null, string approvalStatus = null)
+        public IHttpActionResult GetLogs(string fromDate = null, string toDate = null, string result = null, string approvalStatus = null, int? inventoryId = null)
         {
             try
             {
                 var query = db.ChecklistLogs.AsQueryable();
+
+                if (inventoryId.HasValue && inventoryId.Value > 0)
+                {
+                    query = query.Where(l => l.InventoryId == inventoryId.Value);
+                }
 
                 if (!string.IsNullOrEmpty(fromDate))
                 {
@@ -306,7 +389,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                         l.CycleType,
                         l.OverallResult,
                         l.ApprovalStatus,
-                        l.Note
+                        l.Note,
+                        GroupId = (l.Inventory != null && l.Inventory.Item != null && l.Inventory.Item.Group != null) 
+                            ? l.Inventory.Item.Group.Id : 0,
+                        GroupName = (l.Inventory != null && l.Inventory.Item != null && l.Inventory.Item.Group != null) 
+                            ? l.Inventory.Item.Group.Name : "Chưa phân nhóm",
+                        GroupIcon = (l.Inventory != null && l.Inventory.Item != null && l.Inventory.Item.Group != null) 
+                            ? l.Inventory.Item.Group.Icon : "📦",
                     })
                     .ToList()
                     .Select(l => new
@@ -323,7 +412,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                         l.CycleType,
                         l.OverallResult,
                         l.ApprovalStatus,
-                        l.Note
+                        l.Note,
+                        l.GroupId,
+                        l.GroupName,
+                        l.GroupIcon
                     })
                     .ToList();
 
@@ -414,26 +506,46 @@ namespace HMDN_QuanLyVatTu.Controllers
                 // Lấy tất cả phòng ban
                 var departments = db.Departments.ToList();
 
-                // Đếm số lượng logs đã hoàn thành theo từng khoa phòng
-                var doneCounts = db.ChecklistLogs
+                // Group stats from logs
+                var doneStats = db.ChecklistLogs
                     .Where(l => l.CheckedAt >= startRange && l.CheckedAt < endRange)
                     .GroupBy(l => l.Inventory.DepartmentId)
-                    .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
-                    .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
+                    .Select(g => new { 
+                        DepartmentId = g.Key, 
+                        DoneCount = g.Count(),
+                        PassCount = g.Count(x => x.OverallResult == "pass"),
+                        FailCount = g.Count(x => x.OverallResult != "pass")
+                    })
+                    .ToDictionary(g => g.DepartmentId ?? 0, g => g);
 
-                // Đếm số lượng schedules chờ xử lý theo từng khoa phòng
+                // Count pending schedules
                 var pendingCounts = db.ChecklistSchedules
                     .Where(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && s.Status == "pending")
                     .GroupBy(s => s.Inventory.DepartmentId)
                     .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
                     .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
 
+                // Count overdue schedules
+                var overdueCounts = db.ChecklistSchedules
+                    .Where(s => s.ScheduledDate < startRange && s.Status == "pending")
+                    .GroupBy(s => s.Inventory.DepartmentId)
+                    .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
+                    .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
+
                 var progressData = departments.Select(d =>
                 {
-                    int done = doneCounts.ContainsKey(d.Id) ? doneCounts[d.Id] : 0;
+                    var stat = doneStats.ContainsKey(d.Id) ? doneStats[d.Id] : null;
+                    int done = stat != null ? stat.DoneCount : 0;
+                    int passed = stat != null ? stat.PassCount : 0;
+                    int failed = stat != null ? stat.FailCount : 0;
+                    
                     int pending = pendingCounts.ContainsKey(d.Id) ? pendingCounts[d.Id] : 0;
-                    int total = done + pending;
-                    int compliance = total > 0 ? (int)Math.Round((double)done / total * 100) : 100;
+                    int overdue = overdueCounts.ContainsKey(d.Id) ? overdueCounts[d.Id] : 0;
+                    int total = done + pending + overdue;
+                    
+                    int completionRate = total > 0 ? (int)Math.Round((double)done / total * 100) : 0;
+                    int passRate = done > 0 ? (int)Math.Round((double)passed / done * 100) : 0;
+                    int failRate = done > 0 ? (int)Math.Round((double)failed / done * 100) : 0;
 
                     return new
                     {
@@ -441,8 +553,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                         DepartmentName = d.Name,
                         DoneCount = done,
                         PendingCount = pending,
+                        OverdueCount = overdue,
                         TotalCount = total,
-                        ComplianceRate = compliance
+                        CompletionRate = completionRate,
+                        PassRate = passRate,
+                        FailRate = failRate
                     };
                 })
                 .OrderByDescending(p => p.TotalCount)
@@ -456,33 +571,111 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        public class ReviewMultiplePayload
+        {
+            public List<int> logIds { get; set; }
+            public string status { get; set; } // 'Approved' | 'Rejected'
+        }
+
         // POST: api/checklists/approve-multiple
         [HttpPost]
         [Route("approve-multiple")]
         [Route("~/api/checklist/approve-multiple")]
-        public IHttpActionResult ApproveMultiple([FromBody] List<int> logIds)
+        public IHttpActionResult ApproveMultiple([FromBody] ReviewMultiplePayload payload)
         {
             try
             {
-                if (logIds == null || !logIds.Any())
+                if (payload == null || payload.logIds == null || !payload.logIds.Any())
                 {
-                    return Ok(new { success = false, message = "Vui lòng chọn ít nhất một nhật ký để duyệt." });
+                    return Ok(new { success = false, message = "Vui lòng chọn ít nhất một nhật ký để duyệt/từ chối." });
                 }
+
+                string newStatus = string.IsNullOrEmpty(payload.status) ? "Approved" : payload.status;
+                if (newStatus != "Approved" && newStatus != "Rejected") 
+                    newStatus = "Approved";
 
                 var userId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? 1;
 
-                var logs = db.ChecklistLogs.Where(l => logIds.Contains(l.Id) && l.ApprovalStatus == "Pending").ToList();
+                var logs = db.ChecklistLogs.Where(l => payload.logIds.Contains(l.Id) && l.ApprovalStatus == "Pending").ToList();
                 foreach (var log in logs)
                 {
-                    log.ApprovalStatus = "Approved";
+                    log.ApprovalStatus = newStatus;
+                    
+                    // If rejected, set schedule back to NeedsReinspection
+                    if (newStatus == "Rejected" && log.ScheduleId.HasValue)
+                    {
+                        var schedule = db.ChecklistSchedules.Find(log.ScheduleId.Value);
+                        if (schedule != null)
+                        {
+                            schedule.Status = "NeedsReinspection";
+                        }
+                    }
                 }
                 db.SaveChanges();
 
-                return Ok(new { success = true, message = $"Đã duyệt thành công {logs.Count} nhật ký checklist!" });
+                return Ok(new { success = true, message = $"Đã { (newStatus == "Approved" ? "duyệt" : "từ chối") } thành công {logs.Count} nhật ký checklist!" });
             }
             catch (Exception ex)
             {
-                return Ok(new { success = false, message = "Lỗi khi duyệt hàng loạt: " + ex.Message });
+                return Ok(new { success = false, message = "Lỗi khi xử lý hàng loạt: " + ex.Message });
+            }
+        }
+
+        // GET: api/checklists/operational-kpis
+        [HttpGet]
+        [Route("operational-kpis")]
+        [Route("~/api/checklist/operational-kpis")]
+        public IHttpActionResult GetOperationalKPIs()
+        {
+            try
+            {
+                // All time or limited time, for now let's do all time or current month
+                DateTime startRange = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                
+                var totalSchedules = db.ChecklistSchedules.Count();
+                var completedSchedules = db.ChecklistLogs.Count();
+                var pendingSchedules = db.ChecklistSchedules.Count(s => s.Status == "pending" || s.Status == "NeedsReinspection");
+                var overdueSchedules = db.ChecklistSchedules.Count(s => s.ScheduledDate < DateTime.Today && (s.Status == "pending" || s.Status == "NeedsReinspection"));
+
+                var passedLogs = db.ChecklistLogs.Count(l => l.OverallResult == "pass");
+                var failedLogs = db.ChecklistLogs.Count(l => l.OverallResult != "pass");
+                var totalReviewed = passedLogs + failedLogs;
+
+                int completionRate = totalSchedules > 0 ? (int)Math.Round((double)completedSchedules / totalSchedules * 100) : 0;
+                int passRate = totalReviewed > 0 ? (int)Math.Round((double)passedLogs / totalReviewed * 100) : 0;
+                int failRate = totalReviewed > 0 ? (int)Math.Round((double)failedLogs / totalReviewed * 100) : 0;
+
+                var totalInspectedAssets = db.ChecklistLogs.Select(l => l.InventoryId).Distinct().Count();
+                var passedAssets = db.ChecklistLogs.Where(l => l.OverallResult == "pass").Select(l => l.InventoryId).Distinct().Count();
+                int complianceRate = totalInspectedAssets > 0 ? (int)Math.Round((double)passedAssets / totalInspectedAssets * 100) : 0;
+
+                // Mocking tickets for now since we may not have a clear link
+                var repairTicketsCreated = 0;
+                var repairTicketsCompleted = 0;
+
+                var suspendedAssets = db.Inventories.Count(i => i.LifeStatus == "suspended");
+
+                return Ok(new { 
+                    success = true, 
+                    data = new {
+                        TotalScheduled = totalSchedules,
+                        TotalCompleted = completedSchedules,
+                        TotalPending = pendingSchedules,
+                        Overdue = overdueSchedules,
+                        CompletionRate = completionRate,
+                        PassRate = passRate,
+                        FailRate = failRate,
+                        ComplianceRate = complianceRate,
+                        FailedChecklists = failedLogs,
+                        RepairTicketsCreated = repairTicketsCreated,
+                        RepairTicketsCompleted = repairTicketsCompleted,
+                        SuspendedAssets = suspendedAssets
+                    } 
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
@@ -494,6 +687,227 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
             base.Dispose(disposing);
         }
+
+        // GET: api/checklists/active-groups
+        [HttpGet]
+        [Route("active-groups")]
+        public IHttpActionResult GetActiveGroups()
+        {
+            try
+            {
+                var groups = db.Groups
+                    .Where(g => g.IsActive)
+                    .OrderBy(g => g.SortOrder)
+                    .Select(g => new
+                    {
+                        g.Id,
+                        g.Name,
+                        g.Icon
+                    })
+                    .ToList();
+                return Ok(new { success = true, data = groups });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // GET: api/checklists/group-definitions
+        [HttpGet]
+        [Route("group-definitions")]
+        public IHttpActionResult GetGroupDefinitions(int groupId, string cycleType = null)
+        {
+            try
+            {
+                var query = db.ChecklistDefinitions.Where(d => d.IsActive);
+
+                query = query.Where(d => 
+                    (d.Scope == "global" && (string.IsNullOrEmpty(cycleType) || d.CycleType == null || d.CycleType == cycleType)) ||
+                    (d.Scope == "group" && d.GroupId == groupId && (string.IsNullOrEmpty(cycleType) || d.CycleType == null || d.CycleType == cycleType))
+                );
+
+                var list = query
+                    .OrderBy(d => d.Scope == "global" ? 0 : 1)
+                    .ThenBy(d => d.SortOrder)
+                    .ToList();
+
+                // Group overrides global
+                if (list.Any(i => i.Scope == "group"))
+                {
+                    list.RemoveAll(i => i.Scope == "global");
+                }
+
+                return Ok(new { success = true, data = list });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/checklists/batch-check-group
+        [HttpPost]
+        [Route("batch-check-group")]
+        public IHttpActionResult BatchCheckGroup([FromBody] BatchCheckPayload payload)
+        {
+            if (payload == null || payload.ScheduleIds == null || !payload.ScheduleIds.Any())
+            {
+                return Ok(new { success = false, message = "Vui lòng chọn ít nhất một lịch trình." });
+            }
+
+            using (var transaction = db.Database.BeginTransaction())
+            {
+                try
+                {
+                    var userId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) 
+                                 ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
+
+                    // 1. Lọc chỉ lấy schedules CÒN pending/overdue/NeedsReinspection (chống trùng lặp concurrent)
+                    var schedules = db.ChecklistSchedules
+                        .Where(s => payload.ScheduleIds.Contains(s.Id) 
+                                 && (s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection"))
+                        .ToList();
+
+                    if (schedules.Count == 0)
+                    {
+                        return Ok(new { success = false, 
+                            message = "Tất cả lịch trình đã được check bởi người khác hoặc không hợp lệ." });
+                    }
+
+                    // 1b. Validation: Ensure all schedules belong to the same GroupId and CycleType
+                    var firstSch = schedules.First();
+                    var firstGroupId = (firstSch.Inventory != null && firstSch.Inventory.Item != null) ? firstSch.Inventory.Item.GroupId : (int?)null;
+                    var firstCycleType = firstSch.CycleType;
+                    var firstDeptId = firstSch.Inventory != null ? firstSch.Inventory.DepartmentId : (int?)null;
+
+                    foreach(var sch in schedules)
+                    {
+                        var groupId = (sch.Inventory != null && sch.Inventory.Item != null) ? sch.Inventory.Item.GroupId : (int?)null;
+                        if (groupId != firstGroupId)
+                            return Ok(new { success = false, message = "Không được mix nhiều nhóm tài sản (Asset Groups) trong cùng một lượt check hàng loạt." });
+                        if (sch.CycleType != firstCycleType)
+                            return Ok(new { success = false, message = "Không được mix nhiều chu kỳ kiểm tra (Cycle Type) trong cùng một lượt check hàng loạt." });
+                        // Optionally validate department if required by business logic. The user stated "Department (if applicable)". We'll enforce strict department matching.
+                        var deptId = sch.Inventory != null ? sch.Inventory.DepartmentId : null;
+                        if (deptId != firstDeptId)
+                            return Ok(new { success = false, message = "Không được mix nhiều phòng ban trong cùng một lượt check hàng loạt." });
+
+                        if (sch.Inventory != null)
+                        {
+                            var crit = string.IsNullOrEmpty(sch.Inventory.Criticality) ? "Low" : sch.Inventory.Criticality;
+                            if (crit == "High" || crit == "Critical")
+                            {
+                                return Ok(new { success = false, message = $"Thiết bị {sch.Inventory.AssetCode} có độ quan trọng cao ({crit}), bắt buộc phải kiểm tra riêng lẻ." });
+                            }
+                            if (sch.Inventory.LifeStatus != "active")
+                            {
+                                return Ok(new { success = false, message = $"Thiết bị {sch.Inventory.AssetCode} không ở trạng thái Hoạt động (Active), không thể kiểm tra hàng loạt." });
+                            }
+                        }
+                    }
+
+                    int skippedCount = payload.ScheduleIds.Count - schedules.Count;
+
+                    // 2. Tạo logs + items bằng AddRange (tối ưu SQL batch INSERT)
+                    var allLogs = new List<ChecklistLog>();
+
+                    foreach (var sch in schedules)
+                    {
+                        string cycleLower = (sch.CycleType ?? "adhoc").ToLower();
+                        string result = payload.Mode == "quick" ? "pass" : payload.OverallResult;
+
+                        var log = new ChecklistLog
+                        {
+                            ScheduleId = sch.Id,
+                            InventoryId = sch.InventoryId,
+                            CheckedBy = userId,
+                            CheckedAt = DateTime.Now,
+                            CycleType = sch.CycleType,
+                            OverallResult = result,
+                            ApprovalStatus = (result == "pass" && 
+                                (cycleLower == "daily" || cycleLower == "weekly")) 
+                                ? "Approved" : "Pending",
+                            Note = payload.Note
+                        };
+                        allLogs.Add(log);
+                        sch.Status = "done";  // Cập nhật schedule
+                    }
+
+                    // AddRange cho logs
+                    db.ChecklistLogs.AddRange(allLogs);
+                    db.SaveChanges();  // Flush để có Log.Id
+
+                    // 3. Tạo log items (nếu có)
+                    var allLogItems = new List<ChecklistLogItem>();
+                    if (payload.Items != null && payload.Items.Any())
+                    {
+                        foreach (var log in allLogs)
+                        {
+                            foreach (var item in payload.Items)
+                            {
+                                allLogItems.Add(new ChecklistLogItem
+                                {
+                                    LogId = log.Id,
+                                    DefinitionId = item.DefinitionId,
+                                    IsPassed = payload.Mode == "quick" ? true : item.IsPassed,
+                                    Note = payload.Mode == "quick" ? null : item.Note
+                                });
+                            }
+                        }
+                        db.ChecklistLogItems.AddRange(allLogItems);
+                        db.SaveChanges();
+                    }
+
+                    // 4. Nếu có thiết bị có OverallResult == "fail" -> đổi trạng thái thành "suspended" (tạm ngưng)
+                    if (payload.Mode != "quick" && payload.OverallResult == "fail")
+                    {
+                        var inventoryIds = schedules.Select(s => s.InventoryId).Distinct().ToList();
+                        var inventories = db.Inventories.Where(i => inventoryIds.Contains(i.Id)).ToList();
+                        foreach (var inv in inventories)
+                        {
+                            inv.LifeStatus = "suspended";
+                            inv.UpdatedAt = DateTime.Now;
+                            inv.UpdatedBy = userId;
+                        }
+                        db.SaveChanges();
+                    }
+
+                    transaction.Commit();
+
+                    string msg = $"Đã check thành công {schedules.Count} thiết bị.";
+                    if (skippedCount > 0)
+                        msg += $" ({skippedCount} thiết bị đã được check trước đó, bỏ qua.)";
+
+                    int? firstLogId = allLogs.FirstOrDefault()?.Id;
+                    int? failedLogId = allLogs.FirstOrDefault(l => l.OverallResult != "pass")?.Id;
+
+                    return Ok(new { 
+                        success = true, 
+                        message = msg, 
+                        checkedCount = schedules.Count, 
+                        skippedCount = skippedCount,
+                        firstLogId = firstLogId,
+                        failedLogId = failedLogId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    return Ok(new { success = false, message = "Lỗi batch check: " + ex.Message });
+                }
+            }
+        }
+    }
+
+    public class BatchCheckPayload
+    {
+        public List<int> ScheduleIds { get; set; }
+        public string Mode { get; set; } // "quick" | "template"
+        public string OverallResult { get; set; } // "pass" | "fail" | "partial"
+        public List<ChecklistLogItemPayload> Items { get; set; }
+        public string Note { get; set; }
+        public int CheckedBy { get; set; }
     }
 
     public class GenerateSchedulesPayload

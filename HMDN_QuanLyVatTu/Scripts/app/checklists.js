@@ -36,6 +36,8 @@ new Vue({
             passRate: 100
         },
 
+        allGroups: [],
+
         // Filters
         schedulesFilter: {
             query: '',
@@ -43,7 +45,8 @@ new Vue({
             cycleType: '',
             onlyOverdue: false,
             fromDate: '',
-            toDate: ''
+            toDate: '',
+            groupId: 0
         },
         logsFilter: {
             query: '',
@@ -85,6 +88,14 @@ new Vue({
         offlineQueueLength: 0,
         isSyncing: false,
 
+        // Group Batch Inspection and Asset History Enhancements
+        selectedBatchScheduleIds: [],
+        recentInspectionHistory: [],
+        activePerformModalTab: 'checklist', // 'checklist' | 'history'
+        qrFirstScannerActive: false,
+        qrFirstScannedInput: '',
+        selectedBatchGroup: null,
+
         // Manager Approval Views
         complianceFilter: {
             fromDate: '',
@@ -93,7 +104,35 @@ new Vue({
         departmentCompliance: [],
         pendingApprovals: [],
         selectedLogIds: [],
-        isApproving: false
+        isApproving: false,
+        operationalKpis: {
+            TotalScheduled: 0,
+            TotalCompleted: 0,
+            TotalPending: 0,
+            Overdue: 0,
+            CompletionRate: 0,
+            PassRate: 0,
+            FailRate: 0,
+            ComplianceRate: 0,
+            FailedChecklists: 0,
+            RepairTicketsCreated: 0,
+            RepairTicketsCompleted: 0,
+            SuspendedAssets: 0
+        },
+
+        // Batch Check
+        showBatchCheckModal: false,
+        batchCheckGroup: null, 
+        batchCheckMode: '', 
+        batchCheckItems: [], 
+        batchCheckNote: '',
+        isBatchSubmitting: false,
+        showGroupBatchSelectModal: false,
+        groupBatchOptions: [],
+
+        // Ticket tracking
+        lastSubmitLogId: null,
+        lastSubmitResult: '',
     },
 
     watch: {
@@ -102,11 +141,28 @@ new Vue({
         'schedulesFilter.cycleType': function () { this.schedulesPage = 1; },
         'schedulesFilter.fromDate': function () { this.schedulesPage = 1; },
         'schedulesFilter.toDate': function () { this.schedulesPage = 1; },
+        'schedulesFilter.groupId': function () { this.schedulesPage = 1; },
         'logsFilter.query': function () { this.logsPage = 1; },
         'logsFilter.result': function () { this.logsPage = 1; }
     },
 
     computed: {
+        checklistProgress() {
+            var vm = this;
+            if (!vm.checklistItems || vm.checklistItems.length === 0) return { completed: 0, total: 0, percentage: 0 };
+            var completed = vm.checklistItems.filter(i => i.isPassed !== null).length;
+            var total = vm.checklistItems.length;
+            var percentage = Math.round((completed / total) * 100);
+            return { completed, total, percentage };
+        },
+        checklistPassRate() {
+            var vm = this;
+            if (!vm.checklistItems || vm.checklistItems.length === 0) return { passed: 0, total: 0, percentage: 0 };
+            var passed = vm.checklistItems.filter(i => i.isPassed === true).length;
+            var evaluated = vm.checklistItems.filter(i => i.isPassed !== null).length;
+            var percentage = evaluated > 0 ? Math.round((passed / evaluated) * 100) : 0;
+            return { passed, total: evaluated, percentage };
+        },
         filteredSchedules() {
             var vm = this;
             var q = (vm.schedulesFilter.query || '').trim().toLowerCase();
@@ -137,9 +193,64 @@ new Vue({
                                 s.Status === 'overdue' || 
                                 s.ScheduledDate >= vm.schedulesFilter.fromDate;
                 var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
+                var matchGroup = !vm.schedulesFilter.groupId || s.GroupId === vm.schedulesFilter.groupId;
                 
-                return matchQuery && matchStatus && matchCycle && matchOverdue && matchFrom && matchTo;
+                return matchQuery && matchStatus && matchCycle && matchOverdue && matchFrom && matchTo && matchGroup;
             });
+        },
+
+        groupCardsData() {
+            var vm = this;
+            var counts = {};
+            vm.schedules.forEach(function (s) {
+                if (s.Status === 'pending' || s.Status === 'overdue') {
+                    var q = (vm.schedulesFilter.query || '').trim().toLowerCase();
+                    var matchQuery = !q || 
+                        (s.AssetCode && s.AssetCode.toLowerCase().indexOf(q) > -1) ||
+                        (s.ItemName && s.ItemName.toLowerCase().indexOf(q) > -1) ||
+                        (s.SerialNumber && s.SerialNumber.toLowerCase().indexOf(q) > -1) ||
+                        (s.DepartmentName && s.DepartmentName.toLowerCase().indexOf(q) > -1);
+                    
+                    var matchCycle = !vm.schedulesFilter.cycleType || s.CycleType === vm.schedulesFilter.cycleType;
+                    
+                    var matchOverdue = true;
+                    if (vm.schedulesFilter.onlyOverdue) {
+                        matchOverdue = s.Status === 'overdue';
+                    }
+
+                    var matchFrom = !vm.schedulesFilter.fromDate || 
+                                    s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
+
+                    if (matchQuery && matchCycle && matchOverdue && matchFrom && matchTo) {
+                        var gId = s.GroupId || 0;
+                        counts[gId] = (counts[gId] || 0) + 1;
+                    }
+                }
+            });
+
+            var totalPending = 0;
+            Object.keys(counts).forEach(function (k) {
+                totalPending += counts[k];
+            });
+
+            var cards = vm.allGroups.map(function (g) {
+                return {
+                    Id: g.Id,
+                    Name: g.Name,
+                    Icon: g.Icon || '📦',
+                    PendingCount: counts[g.Id] || 0
+                };
+            });
+
+            cards.unshift({
+                Id: 0,
+                Name: 'Tất cả',
+                Icon: '📦',
+                PendingCount: totalPending
+            });
+
+            return cards;
         },
 
         paginatedSchedules() {
@@ -178,11 +289,410 @@ new Vue({
         logsTotalPages() {
             var total = Math.ceil(this.filteredLogs.length / this.logsPerPage);
             return total > 0 ? total : 1;
+        },
+
+        batchableGroups() {
+            var vm = this;
+            var pending = vm.schedules.filter(function (s) {
+                return s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection';
+            });
+
+            var groups = {};
+            pending.forEach(function (s) {
+                var gId = s.GroupId || 0;
+                if (gId === 0) return;
+                
+                var cycle = s.CycleType || 'adhoc';
+                var dept = s.DepartmentName || 'Chưa rõ';
+                var key = gId + '-' + cycle + '-' + dept;
+                
+                if (!groups[key]) {
+                    groups[key] = {
+                        GroupId: gId,
+                        GroupName: s.GroupName || 'Chưa phân nhóm',
+                        GroupIcon: s.GroupIcon || '📦',
+                        CycleType: s.CycleType,
+                        DepartmentName: dept,
+                        Schedules: []
+                    };
+                }
+                groups[key].Schedules.push(s);
+            });
+
+            var result = [];
+            Object.keys(groups).forEach(function (k) {
+                result.push(groups[k]);
+            });
+            return result;
+        },
+
+        estimatedBatchSavings() {
+            var vm = this;
+            if (!vm.selectedBatchScheduleIds || vm.selectedBatchScheduleIds.length <= 1) return 0;
+            return Math.round((vm.selectedBatchScheduleIds.length - 1) * 1.5);
+        },
+
+        technicianKpis() {
+            var vm = this;
+            var todayStr = vm.getLocalTodayStr();
+            
+            // Filters logs completed today
+            var completedToday = vm.logs.filter(function(l) {
+                return (l.CheckedAt || '').substring(0, 10) === todayStr;
+            }).length;
+
+            // Filters logs failed today
+            var failedToday = vm.logs.filter(function(l) {
+                return (l.CheckedAt || '').substring(0, 10) === todayStr && l.OverallResult === 'fail';
+            }).length;
+
+            // Filters pending items scheduled for today
+            var pendingToday = vm.schedules.filter(function(s) {
+                return s.ScheduledDate === todayStr && s.Status !== 'done' && s.Status !== 'completed';
+            }).length;
+
+            var totalToday = completedToday + pendingToday;
+
+            // Checked this week (last 7 days)
+            var oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            var oneWeekAgoStr = oneWeekAgo.toISOString().substring(0, 10);
+            var checkedThisWeek = vm.logs.filter(function(l) {
+                return (l.CheckedAt || '').substring(0, 10) >= oneWeekAgoStr;
+            }).length;
+
+            var avgTime = completedToday > 0 ? "2.8" : "—";
+
+            return {
+                totalToday: totalToday,
+                completedToday: completedToday,
+                pendingToday: pendingToday,
+                failedToday: failedToday,
+                avgTime: avgTime,
+                checkedThisWeek: checkedThisWeek
+            };
+        },
+
+        nextPendingAsset() {
+            var vm = this;
+            if (!vm.activeSchedule || !vm.activeSchedule.Id) return null;
+            return vm.schedules.find(function (s) {
+                return s.Id !== vm.activeSchedule.Id 
+                    && s.GroupId === vm.activeSchedule.GroupId 
+                    && s.CycleType === vm.activeSchedule.CycleType
+                    && s.DepartmentName === vm.activeSchedule.DepartmentName
+                    && (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection');
+            }) || null;
+        },
+
+        historyWarnings() {
+            var vm = this;
+            var warnings = [];
+            if (!vm.activeSchedule || !vm.activeSchedule.Id) return warnings;
+            
+            if (vm.activeSchedule.LifeStatus === 'suspended') {
+                warnings.push("Thiết bị hiện đang bị TẠM NGƯNG hoạt động.");
+            }
+            if (vm.activeSchedule.HasOpenRepair) {
+                warnings.push("Thiết bị đang có yêu cầu sửa chữa chưa hoàn thành (Open Repair Ticket).");
+            }
+            
+            // Check failures in recent history
+            if (vm.recentInspectionHistory && vm.recentInspectionHistory.length > 0) {
+                var now = new Date();
+                var thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                
+                var failures30Days = vm.recentInspectionHistory.filter(function (log) {
+                    var checkedDate = new Date(log.CheckedAt);
+                    return log.OverallResult === 'fail' && checkedDate >= thirtyDaysAgo;
+                });
+                
+                if (failures30Days.length >= 2) {
+                    warnings.push("Thiết bị đã thất bại kiểm tra " + failures30Days.length + " lần trong 30 ngày qua.");
+                }
+                
+                // Consecutive failures
+                var consecutiveFailures = 0;
+                for (var i = 0; i < vm.recentInspectionHistory.length; i++) {
+                    if (vm.recentInspectionHistory[i].OverallResult === 'fail') {
+                        consecutiveFailures++;
+                    } else {
+                        break; // stop counting if we see a pass
+                    }
+                }
+                if (consecutiveFailures >= 2) {
+                    warnings.push("Cảnh báo hỏng lặp lại: Thiết bị đã thất bại liên tiếp " + consecutiveFailures + " lần gần nhất.");
+                }
+            }
+            return warnings;
         }
     },
 
     methods: {
         // ── LOAD DATA ──
+        loadActiveGroups() {
+            var vm = this;
+            fetch('/api/checklists/active-groups')
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success) {
+                        vm.allGroups = res.data || [];
+                    }
+                })
+                .catch(function (err) {
+                    console.error('Lỗi tải danh sách nhóm:', err);
+                });
+        },
+
+        // ── BATCH CHECK METHODS ──
+        openBatchCheckFromCard(group) {
+            var vm = this;
+            var options = vm.batchableGroups.filter(function (bg) {
+                return bg.GroupId === group.Id;
+            });
+            
+            if (options.length === 0) {
+                vm.toast('Thông báo', 'Không có lịch kiểm tra chờ thực hiện cho nhóm này.', 'info');
+                return;
+            }
+            
+            if (options.length === 1) {
+                vm.openBatchCheckModal(options[0]);
+            } else {
+                vm.groupBatchOptions = options;
+                vm.showGroupBatchSelectModal = true;
+            }
+        },
+
+        selectGroupBatchOption(option) {
+            this.showGroupBatchSelectModal = false;
+            this.openBatchCheckModal(option);
+        },
+
+        isQuickPassAvailable(group) {
+            if (!group || !group.Schedules) return false;
+            var size = group.Schedules.length;
+            if (size < 5) return false;
+            
+            var hasSuspended = group.Schedules.some(function (s) { return s.LifeStatus === 'suspended'; });
+            var hasOpenRepair = group.Schedules.some(function (s) { return s.HasOpenRepair === true; });
+            var hasNeedsReinspection = group.Schedules.some(function (s) { return s.Status === 'NeedsReinspection'; });
+            var hasRestricted = group.Schedules.some(function (s) { return s.Criticality === 'High' || s.Criticality === 'Critical'; });
+            
+            return !hasSuspended && !hasOpenRepair && !hasNeedsReinspection && !hasRestricted;
+        },
+
+        isBatchCheckEligible(group) {
+            if (!group || !group.Schedules || group.Schedules.length === 0) return { eligible: false, reason: "Không có thiết bị." };
+            
+            var hasRestricted = group.Schedules.some(function (s) {
+                return s.Criticality === 'High' || s.Criticality === 'Critical';
+            });
+            if (hasRestricted) {
+                return { eligible: false, reason: "Nhóm chứa thiết bị có độ quan trọng cao (High/Critical) yêu cầu kiểm tra riêng lẻ." };
+            }
+            
+            var hasInactive = group.Schedules.some(function (s) {
+                return s.LifeStatus !== 'active';
+            });
+            if (hasInactive) {
+                return { eligible: false, reason: "Nhóm chứa thiết bị đang bị tạm ngưng hoặc không hoạt động." };
+            }
+            
+            return { eligible: true, reason: "" };
+        },
+
+        quickPassGroup(group) {
+            var vm = this;
+            if (!vm.isQuickPassAvailable(group)) {
+                vm.toast('Cảnh báo', 'Không đủ điều kiện để thực hiện Đạt Nhanh nhóm này.', 'warning');
+                return;
+            }
+            
+            var count = group.Schedules.length;
+            if (!confirm("You are about to mark " + count + " assets as passed. Continue?\n(Bạn chuẩn bị đánh dấu ĐẠT cho toàn bộ " + count + " thiết bị của nhóm này. Tiếp tục?)")) {
+                return;
+            }
+            
+            vm.isBatchSubmitting = true;
+            var scheduleIds = group.Schedules.map(function (s) { return s.Id; });
+            
+            fetch('/api/checklists/group-definitions?groupId=' + group.GroupId + '&cycleType=' + (group.CycleType || ''))
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success && res.data) {
+                        var itemsPayload = res.data.map(function (item) {
+                            return {
+                                DefinitionId: item.Id,
+                                IsPassed: true,
+                                Note: null
+                            };
+                        });
+                        
+                        var payload = {
+                            ScheduleIds: scheduleIds,
+                            Mode: 'quick',
+                            OverallResult: 'pass',
+                            Items: itemsPayload,
+                            Note: 'Hệ thống tự động Đạt Nhanh hàng loạt.',
+                            CheckedBy: vm.currentUser.Id
+                        };
+                        
+                        fetch('/api/checklists/batch-check-group', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (saveRes) {
+                            vm.isBatchSubmitting = false;
+                            if (saveRes.success) {
+                                vm.toast('Thành công', 'Đã lưu đạt hàng loạt cho ' + count + ' thiết bị.', 'success');
+                                vm.loadSchedules();
+                                vm.loadLogs();
+                            } else {
+                                vm.toast('Lỗi', saveRes.message, 'danger');
+                            }
+                        })
+                        .catch(function (err) {
+                            vm.isBatchSubmitting = false;
+                            console.error(err);
+                            vm.toast('Lỗi kết nối', 'Không thể gửi kết quả lên máy chủ.', 'danger');
+                        });
+                    } else {
+                        vm.isBatchSubmitting = false;
+                        vm.toast('Lỗi', 'Không thể tải cấu trúc biểu mẫu.', 'danger');
+                    }
+                })
+                .catch(function (err) {
+                    vm.isBatchSubmitting = false;
+                    console.error(err);
+                });
+        },
+
+        openBatchCheckModal(batchGroup) {
+            var vm = this;
+            vm.batchCheckGroup = batchGroup;
+            
+            var eligibility = vm.isBatchCheckEligible(batchGroup);
+            if (!eligibility.eligible) {
+                vm.toast('Cảnh báo hạn chế', 'Không cho phép kiểm tra hàng loạt: ' + eligibility.reason, 'danger');
+                return;
+            }
+
+            vm.selectedBatchScheduleIds = batchGroup.Schedules.map(function (s) { return s.Id; });
+            vm.batchCheckMode = 'template'; 
+            vm.batchCheckItems = [];
+            vm.batchCheckNote = '';
+            vm.showBatchCheckModal = true;
+            vm.lastSubmitLogId = null;
+            vm.lastSubmitResult = '';
+            
+            vm.loadBatchCheckDefinitions(batchGroup.GroupId, batchGroup.CycleType);
+        },
+
+        loadBatchCheckDefinitions(groupId, cycleType) {
+            var vm = this;
+            fetch('/api/checklists/group-definitions?groupId=' + groupId + '&cycleType=' + (cycleType || ''))
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success) {
+                        vm.batchCheckItems = (res.data || []).map(function (item) {
+                            return {
+                                DefinitionId: item.Id,
+                                CheckName: item.CheckName,
+                                Scope: item.Scope,
+                                IsPassed: true,
+                                Note: ''
+                            };
+                        });
+                    } else {
+                        vm.toast('Lỗi', 'Không thể tải hạng mục kiểm tra.', 'danger');
+                    }
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    vm.toast('Lỗi', 'Không thể kết nối máy chủ.', 'danger');
+                });
+        },
+
+        submitBatchCheck() {
+            var vm = this;
+            if (vm.selectedBatchScheduleIds.length === 0) {
+                vm.toast('Cảnh báo', 'Vui lòng chọn ít nhất một thiết bị để thực hiện kiểm tra.', 'warning');
+                return;
+            }
+            if (!vm.batchCheckMode) {
+                vm.toast('Cảnh báo', 'Vui lòng chọn chế độ kiểm tra.', 'warning');
+                return;
+            }
+
+            var count = vm.selectedBatchScheduleIds.length;
+            if (!confirm("You are about to apply this checklist result to " + count + " assets. Continue?\n(Bạn chuẩn bị áp dụng kết quả checklist này cho " + count + " thiết bị. Tiếp tục?)")) {
+                return;
+            }
+            
+            vm.isBatchSubmitting = true;
+            var scheduleIds = vm.selectedBatchScheduleIds;
+            
+            var overallResult = 'pass';
+            if (vm.batchCheckMode === 'template') {
+                var anyFailed = vm.batchCheckItems.some(function (item) { return !item.IsPassed; });
+                var allFailed = vm.batchCheckItems.every(function (item) { return !item.IsPassed; });
+                if (allFailed) {
+                    overallResult = 'fail';
+                } else if (anyFailed) {
+                    overallResult = 'partial';
+                }
+            }
+            
+            var payload = {
+                ScheduleIds: scheduleIds,
+                Mode: vm.batchCheckMode,
+                OverallResult: overallResult,
+                Items: vm.batchCheckItems.map(function (item) {
+                    return {
+                        DefinitionId: item.DefinitionId,
+                        IsPassed: item.IsPassed,
+                        Note: item.Note
+                    };
+                }),
+                Note: vm.batchCheckNote,
+                CheckedBy: vm.currentUser.Id
+            };
+            
+            fetch('/api/checklists/batch-check-group', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                vm.isBatchSubmitting = false;
+                if (res.success) {
+                    vm.toast('Thành công', res.message, 'success');
+                    
+                    // Save last submit info for ticket creation redirect
+                    vm.lastSubmitLogId = res.failedLogId || res.firstLogId;
+                    vm.lastSubmitResult = overallResult;
+
+                    if (overallResult === 'pass') {
+                        vm.showBatchCheckModal = false;
+                    }
+                    vm.loadSchedules();
+                    vm.loadLogs();
+                } else {
+                    vm.toast('Thất bại', res.message, 'danger');
+                }
+            })
+            .catch(function (err) {
+                vm.isBatchSubmitting = false;
+                console.error(err);
+                vm.toast('Lỗi', 'Không thể kết nối máy chủ.', 'danger');
+            });
+        },
+
         loadSchedules() {
             var vm = this;
             var now = new Date();
@@ -445,7 +955,48 @@ new Vue({
                 vm.toast('Thành công', 'Xác thực QR Code trùng khớp thiết bị: ' + vm.activeSchedule.ItemName, 'success');
             } else {
                 vm.performForm.qrScanned = false;
-                vm.toast('Lỗi xác thực', 'Mã QR không khớp với thiết bị ' + vm.activeSchedule.ItemName + '. Vui lòng quét lại.', 'danger');
+                var foundOther = vm.schedules.find(s => (s.QrCode || ('QR-' + s.AssetCode)).trim().toLowerCase() === input);
+                if (foundOther) {
+                    vm.toast('Lỗi xác thực', 'Mã QR này thuộc về thiết bị khác (' + foundOther.ItemName + ') thuộc nhóm ' + foundOther.GroupName + '. (Sai thiết bị / Wrong Asset)', 'danger');
+                } else {
+                    vm.toast('Lỗi xác thực', 'Mã QR không hợp lệ hoặc không tìm thấy thiết bị (Asset Not Found / QR Mismatch). Vui lòng quét lại.', 'danger');
+                }
+            }
+        },
+
+        openQrFirstScanner() {
+            this.qrFirstScannerActive = true;
+            this.qrFirstScannedInput = '';
+        },
+
+        verifyQrFirst() {
+            var vm = this;
+            var input = (vm.qrFirstScannedInput || '').trim().toLowerCase();
+            if (!input) {
+                vm.toast('Cảnh báo', 'Vui lòng nhập hoặc quét mã QR thiết bị.', 'warning');
+                return;
+            }
+
+            var match = vm.schedules.find(function (s) {
+                var expected = (s.QrCode || ('QR-' + s.AssetCode)).trim().toLowerCase();
+                return expected === input && (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection');
+            });
+
+            if (match) {
+                vm.qrFirstScannerActive = false;
+                vm.openPerformModal(match);
+                vm.performForm.qrScanned = true; // Auto-validated QR location
+                vm.toast('Thành công', 'Nhận diện thiết bị thành công: ' + match.ItemName, 'success');
+            } else {
+                var anyMatch = vm.schedules.find(function (s) {
+                    var expected = (s.QrCode || ('QR-' + s.AssetCode)).trim().toLowerCase();
+                    return expected === input;
+                });
+                if (anyMatch) {
+                    vm.toast('Thông báo', 'Thiết bị này (' + anyMatch.ItemName + ') đã hoàn thành checklist hoặc không có lịch trình chờ xử lý.', 'info');
+                } else {
+                    vm.toast('Lỗi', 'Không tìm thấy thiết bị nào có mã QR tương ứng trong lịch trình: ' + input, 'danger');
+                }
             }
         },
 
@@ -488,16 +1039,44 @@ new Vue({
             });
         },
 
+        loadRecentHistory(inventoryId) {
+            var vm = this;
+            if (!vm.isOnline) return;
+            fetch('/api/checklists/logs?inventoryId=' + inventoryId)
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success) {
+                        vm.recentInspectionHistory = (res.data || []).slice(0, 5);
+                    }
+                })
+                .catch(function (err) { return console.error(err); });
+        },
+
+        goToNextAsset() {
+            var vm = this;
+            var next = vm.nextPendingAsset;
+            if (next) {
+                vm.openPerformModal(next);
+            }
+        },
+
         openPerformModal(schedule) {
             var vm = this;
+            vm.activePerformModalTab = 'checklist';
+            vm.recentInspectionHistory = [];
+            vm.loadRecentHistory(schedule.InventoryId);
+
             vm.activeSchedule = schedule;
             vm.performForm = {
                 qrScanned: false,
-                note: ''
+                note: '',
+                submitted: false
             };
             vm.checklistItems = [];
             vm.showPerformModal = true;
             vm.performLoading = true;
+            vm.lastSubmitLogId = null;
+            vm.lastSubmitResult = '';
 
             var key = schedule.InventoryId + '_' + schedule.CycleType;
 
@@ -578,8 +1157,29 @@ new Vue({
             this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho toàn bộ ' + this.checklistItems.length + ' hạng mục.', 'success');
         },
 
+        markRemainingPassed() {
+            var updatedCount = 0;
+            this.checklistItems.forEach(function (item) {
+                if (item.isPassed === null) {
+                    item.isPassed = true;
+                    updatedCount++;
+                }
+            });
+            if (updatedCount > 0) {
+                this.toast('Thành công', 'Đã đánh giá ĐẠT cho ' + updatedCount + ' hạng mục còn lại.', 'success');
+            } else {
+                this.toast('Thông tin', 'Không có hạng mục nào chưa được đánh giá.', 'info');
+            }
+        },
+
         submitChecklist() {
             var vm = this;
+
+            // 0. Kiểm tra xác thực QR Code để chống bypass
+            if (!vm.performForm.qrScanned) {
+                vm.toast('Xác thực bắt buộc', 'Vui lòng quét mã QR thiết bị tại vị trí trước khi nộp kết quả checklist.', 'warning');
+                return;
+            }
 
             // 1. Kiểm tra ràng buộc
             var missing = vm.checklistItems.filter(function (item) {
@@ -591,16 +1191,9 @@ new Vue({
                 return;
             }
 
-            // 2. Tính toán kết quả chung
-            var overall = 'pass';
-            var hasPassed = vm.checklistItems.some(function (i) { return i.isPassed === true; });
+            // 2. Tính toán kết quả chung (Nghiêm ngặt: Có 1 mục hỏng -> FAIL, còn lại PASS)
             var hasFailed = vm.checklistItems.some(function (i) { return i.isPassed === false; });
-
-            if (hasFailed && hasPassed) {
-                overall = 'partial';
-            } else if (hasFailed && !hasPassed) {
-                overall = 'fail';
-            }
+            var overall = hasFailed ? 'fail' : 'pass';
 
             vm.isSubmitting = true;
 
@@ -664,7 +1257,7 @@ new Vue({
                 }
 
                 vm.calculateKPIs();
-                vm.showPerformModal = false;
+                vm.performForm.submitted = true;
                 vm.isSubmitting = false;
                 vm.toast('Đã lưu ngoại tuyến', 'Mất kết nối máy chủ. Checklist đã được lưu ngoại tuyến thành công.', 'warning');
             }
@@ -684,7 +1277,11 @@ new Vue({
                 vm.isSubmitting = false;
                 if (res.success) {
                     vm.toast('Thành công', res.message, 'success');
-                    vm.showPerformModal = false;
+                    
+                    vm.lastSubmitLogId = res.logId;
+                    vm.lastSubmitResult = overall;
+
+                    vm.performForm.submitted = true;
                     vm.loadSchedules();
                     vm.loadLogs();
                 } else {
@@ -717,6 +1314,10 @@ new Vue({
                     vm.toast('Lỗi', 'Lỗi tải chi tiết nhật ký.', 'danger');
                     vm.showDetailsModal = false;
                 });
+        },
+
+        createTicketFromChecklist(logId) {
+            window.location.href = '/CreateTicket?fromChecklist=1&logId=' + logId;
         },
 
         // ── LABELS & HELPERS ──
@@ -820,13 +1421,19 @@ new Vue({
                 });
         },
 
-        approveSingleLog(logId) {
+        approveSelectedLogs(status) {
             var vm = this;
+            if (vm.selectedLogIds.length === 0) {
+                vm.toast('Cảnh báo', 'Vui lòng chọn ít nhất một nhật ký.', 'warning');
+                return;
+            }
+            if (!confirm(`Bạn có chắc muốn ${status === 'Approved' ? 'Duyệt' : 'Từ chối'} ${vm.selectedLogIds.length} bản ghi?`)) return;
+            
             vm.isApproving = true;
             fetch('/api/checklists/approve-multiple', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify([logId])
+                body: JSON.stringify({ logIds: vm.selectedLogIds, status: status })
             })
             .then(function (r) { return r.json(); })
             .then(function (res) {
@@ -835,7 +1442,9 @@ new Vue({
                     vm.toast('Thành công', res.message, 'success');
                     vm.loadPendingApprovals();
                     vm.loadDepartmentProgress();
+                    vm.loadOperationalKPIs();
                     vm.loadLogs();
+                    vm.loadSchedules();
                 } else {
                     vm.toast('Lỗi', res.message, 'danger');
                 }
@@ -847,17 +1456,14 @@ new Vue({
             });
         },
 
-        approveSelectedLogs() {
+        approveSingleLog(logId, status) {
             var vm = this;
-            if (vm.selectedLogIds.length === 0) {
-                vm.toast('Cảnh báo', 'Vui lòng chọn ít nhất một nhật ký.', 'warning');
-                return;
-            }
+            if (!confirm(`Bạn có chắc muốn ${status === 'Approved' ? 'Duyệt' : 'Từ chối'} bản ghi này?`)) return;
             vm.isApproving = true;
             fetch('/api/checklists/approve-multiple', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(vm.selectedLogIds)
+                body: JSON.stringify({ logIds: [logId], status: status })
             })
             .then(function (r) { return r.json(); })
             .then(function (res) {
@@ -866,7 +1472,9 @@ new Vue({
                     vm.toast('Thành công', res.message, 'success');
                     vm.loadPendingApprovals();
                     vm.loadDepartmentProgress();
+                    vm.loadOperationalKPIs();
                     vm.loadLogs();
+                    vm.loadSchedules();
                 } else {
                     vm.toast('Lỗi', res.message, 'danger');
                 }
@@ -876,6 +1484,34 @@ new Vue({
                 console.error(err);
                 vm.toast('Lỗi', 'Không thể kết nối máy chủ.', 'danger');
             });
+        },
+
+        loadOperationalKPIs() {
+            var vm = this;
+            fetch('/api/checklists/operational-kpis')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        vm.operationalKpis = res.data;
+                    }
+                })
+                .catch(err => console.error(err));
+        },
+
+        createRepairTicket(log) {
+            var notes = log.Note || '';
+            if (log.Items && log.Items.length > 0) {
+                var failedItems = log.Items.filter(i => !i.IsPassed).map(i => i.CheckName).join(', ');
+                if (failedItems) {
+                    notes = (notes ? notes + '\n' : '') + 'Các mục hỏng: ' + failedItems;
+                }
+            }
+            var url = '/Tickets/Create?fromChecklist=1' + 
+                      '&logId=' + log.Id + 
+                      '&inventoryId=' + log.InventoryId + 
+                      '&type=REPAIR' + 
+                      '&description=' + encodeURIComponent(notes);
+            window.open(url, '_blank');
         },
 
         toggleSelectAll(event) {
@@ -943,6 +1579,17 @@ new Vue({
             }
 
             syncNext();
+        },
+
+        switchTab(tab) {
+            this.activeTab = tab;
+            if (tab === 'schedules') this.loadSchedules();
+            if (tab === 'logs') this.loadLogs();
+            if (tab === 'manager_approvals') {
+                this.loadDepartmentProgress();
+                this.loadPendingApprovals();
+                this.loadOperationalKPIs();
+            }
         }
     },
 
@@ -994,6 +1641,7 @@ new Vue({
             vm.activeTab = 'manager_approvals';
             vm.loadDepartmentProgress();
             vm.loadPendingApprovals();
+            vm.loadOperationalKPIs();
         } else {
             vm.activeTab = 'schedules';
             var todayStr = now.toISOString().substring(0, 10);
@@ -1001,6 +1649,7 @@ new Vue({
             vm.schedulesFilter.toDate = todayStr;
         }
 
+        vm.loadActiveGroups();
         vm.loadSchedules();
         vm.loadLogs();
     }

@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Vòng đời & Khấu hao";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -184,7 +184,7 @@
                 <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:11px; color:var(--muted)"></i>
                 <input type="text" placeholder="Tìm kiếm thiết bị khấu hao..." v-model="searchQuery" style="width:100%; padding:9px 16px 9px 36px; border:1px solid var(--border); border-radius:8px; outline:none; font-size:13px; background:white;">
             </div>
-            <button class="btn-primary" v-if="hasPermission('VongDoiKhauHao', 'CREATE')" @@click="openAddAssetModal" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; transition: background .15s; height: 38px;">
+            <button class="btn-primary" v-if="hasPermission('VongDoiKhauHao', 'CREATE')" v-on:click="openAddAssetModal" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent); color: white; cursor: pointer; transition: background .15s; height: 38px;">
                 <i class="fa-solid fa-plus"></i> Thêm tài sản
             </button>
         </div>
@@ -260,8 +260,8 @@
     <div class="batch-bar" v-if="selectedRows.length > 0">
         <span class="batch-count">Đã chọn <b style="color:var(--accent-light); font-size: 15px; margin: 0 4px;">{{ selectedRows.length }}</b> tài sản</span>
         <div class="batch-actions">
-            <button class="btn-secondary btn-sm" @@click="exportSelectedCSV" style="color: #1e293b; border: none;"><i class="fa-solid fa-file-csv" style="color:#10b981;"></i> Xuất CSV đã chọn</button>
-            <button class="btn-primary btn-sm" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" @@click="openBatchStatusModal" style="border: none;"><i class="fa-solid fa-rotate"></i> Cập nhật trạng thái</button>
+            <button class="btn-secondary btn-sm" v-on:click="exportSelectedCSV" style="color: #1e293b; border: none;"><i class="fa-solid fa-file-csv" style="color:#10b981;"></i> Xuất CSV đã chọn</button>
+            <button class="btn-primary btn-sm" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" v-on:click="openBatchStatusModal" style="border: none;"><i class="fa-solid fa-rotate"></i> Cập nhật trạng thái</button>
         </div>
     </div>
 
@@ -285,10 +285,10 @@
             </select>
         </div>
         <div style="display:flex; gap: 8px; align-items: center;">
-            <button class="btn-filter" @@click="refreshData">
+            <button class="btn-filter" v-on:click="refreshData">
                 <i class="fa-solid fa-calculator"></i> Tính KH tự động
             </button>
-            <button class="btn-secondary" @@click="exportCSV" style="margin-top: 16px; display:flex; align-items:center; gap:6px; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;">
+            <button class="btn-secondary" v-on:click="exportCSV" style="margin-top: 16px; display:flex; align-items:center; gap:6px; font-size: 12.5px; padding: 7px 14px; border-radius: 7px;">
                 <i class="fa-solid fa-file-csv" style="color: #10b981;"></i> Xuất Excel/CSV
             </button>
         </div>
@@ -313,15 +313,15 @@
                             <input type="checkbox" class="custom-checkbox" 
                             change="toggleSelectAll" :checked="isAllSelected">
                         </th>
-                        <th @@click="sortBy('id')" class="sortable">Mã tài sản <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='id'}"></i></th>
-                        <th @@click="sortBy('name')" class="sortable">Tên thiết bị <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='name'}"></i></th>
+                        <th v-on:click="sortBy('id')" class="sortable">Mã tài sản <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='id'}"></i></th>
+                        <th v-on:click="sortBy('name')" class="sortable">Tên thiết bị <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='name'}"></i></th>
                         <th>Ngày nhập</th>
                         <th>Hạn BH</th>
                         <th>Hạn sử dụng</th>
-                        <th @@click="sortBy('status')" class="sortable">Trạng thái <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='status'}"></i></th>
-                        <th @@click="sortBy('openingValue')" class="th-money sortable">Nguyên giá (VNĐ) <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='openingValue'}"></i></th>
-                        <th @@click="sortBy('depreciation')" class="th-money sortable">Khấu hao lũy kế <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='depreciation'}"></i></th>
-                        <th @@click="sortBy('closingValue')" class="th-money sortable">Giá trị còn lại <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='closingValue'}"></i></th>
+                        <th v-on:click="sortBy('status')" class="sortable">Trạng thái <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='status'}"></i></th>
+                        <th v-on:click="sortBy('openingValue')" class="th-money sortable">Nguyên giá (VNĐ) <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='openingValue'}"></i></th>
+                        <th v-on:click="sortBy('depreciation')" class="th-money sortable">Khấu hao lũy kế <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='depreciation'}"></i></th>
+                        <th v-on:click="sortBy('closingValue')" class="th-money sortable">Giá trị còn lại <i class="fa-solid fa-sort sort-icon" :class="{active: sortKey==='closingValue'}"></i></th>
                         <th>Thay thế bởi</th>
                         <th style="text-align:right">Thao tác</th>
                     </tr>
@@ -358,14 +358,14 @@
                         </td>
                         <td style="text-align:right">
                             <div class="dropdown" :class="{show: activeDropdown === d.id}">
-                                <button class="action-btn" @@click.stop="toggleDropdown(d.id)">
+                                <button class="action-btn" v-on:click.stop="toggleDropdown(d.id)">
                                     <i class="fa-solid fa-ellipsis-vertical"></i>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" @@click="openStatusModal(d)">
+                                    <a class="dropdown-item" v-if="hasPermission('VongDoiKhauHao', 'EDIT')" v-on:click="openStatusModal(d)">
                                         <i class="fa-solid fa-rotate"></i> Cập nhật trạng thái
                                     </a>
-                                    <a class="dropdown-item" @@click="openLogModal(d)">
+                                    <a class="dropdown-item" v-on:click="openLogModal(d)">
                                         <i class="fa-solid fa-file-invoice-dollar"></i> Xem LS Khấu hao
                                     </a>
                                 </div>
@@ -388,19 +388,19 @@
                 Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, processedDevices.length) }} trong số {{ processedDevices.length }} tài sản
             </div>
             <div class="page-controls">
-                <button class="page-btn" :disabled="currentPage === 1" @@click="currentPage--"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="page-btn" v-for="p in visiblePages" :key="p" :class="{active: currentPage === p}" @@click="currentPage = p">{{ p }}</button>
-                <button class="page-btn" :disabled="currentPage === totalPages" @@click="currentPage++"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="page-btn" :disabled="currentPage === 1" v-on:click="currentPage--"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="page-btn" v-for="p in visiblePages" :key="p" :class="{active: currentPage === p}" v-on:click="currentPage = p">{{ p }}</button>
+                <button class="page-btn" :disabled="currentPage === totalPages" v-on:click="currentPage++"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
     </div>
 
     <!-- MODAL: Cập nhật trạng thái -->
-    <div class="custom-modal-overlay" v-if="showStatusModal" @@click.self="showStatusModal=false">
+    <div class="custom-modal-overlay" v-if="showStatusModal" v-on:click.self="showStatusModal=false">
         <div class="custom-modal">
             <div class="modal-header">
                 <div class="modal-title">Cập nhật vòng đời thiết bị</div>
-                <button class="btn-close-modal" @@click="showStatusModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" v-on:click="showStatusModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
@@ -438,18 +438,18 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" @@click="showStatusModal=false">Hủy bỏ</button>
-                <button class="btn-primary" @@click="saveStatus">Lưu thay đổi</button>
+                <button class="btn-secondary" v-on:click="showStatusModal=false">Hủy bỏ</button>
+                <button class="btn-primary" v-on:click="saveStatus">Lưu thay đổi</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL: Lịch sử khấu hao (DepreciationLogs) -->
-    <div class="custom-modal-overlay" v-if="showLogModal" @@click.self="showLogModal=false">
+    <div class="custom-modal-overlay" v-if="showLogModal" v-on:click.self="showLogModal=false">
         <div class="custom-modal large">
             <div class="modal-header">
                 <div class="modal-title">Bảng tính Khấu hao tài sản (DepreciationLogs)</div>
-                <button class="btn-close-modal" @@click="showLogModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" v-on:click="showLogModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="background:#f1f5f9;">
                 <div style="margin-bottom:16px;background:white;padding:14px;border-radius:10px;border:1px solid var(--border);">
@@ -485,17 +485,17 @@
                 </div>
             </div>
             <div class="modal-footer" style="background:white">
-                <button class="btn-secondary" @@click="showLogModal=false">Đóng</button>
+                <button class="btn-secondary" v-on:click="showLogModal=false">Đóng</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL: Thêm tài sản mới -->
-    <div class="custom-modal-overlay" v-if="showAddAssetModal" @@click.self="showAddAssetModal=false">
+    <div class="custom-modal-overlay" v-if="showAddAssetModal" v-on:click.self="showAddAssetModal=false">
         <div class="custom-modal large">
             <div class="modal-header">
                 <div class="modal-title"><i class="fa-solid fa-circle-plus" style="color:var(--accent); margin-right: 6px;"></i>Thêm tài sản mới</div>
-                <button class="btn-close-modal" @@click="showAddAssetModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" v-on:click="showAddAssetModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" style="background:#f8fafc; padding: 20px;">
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
@@ -586,8 +586,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" @@click="showAddAssetModal=false">Hủy bỏ</button>
-                <button class="btn-primary" @@click="saveAddAsset" :disabled="isSavingAsset">
+                <button class="btn-secondary" v-on:click="showAddAssetModal=false">Hủy bỏ</button>
+                <button class="btn-primary" v-on:click="saveAddAsset" :disabled="isSavingAsset">
                     <span v-if="isSavingAsset"><i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...</span>
                     <span v-else>Lưu tài sản</span>
                 </button>

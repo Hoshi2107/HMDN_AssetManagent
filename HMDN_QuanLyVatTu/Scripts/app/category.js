@@ -1,4 +1,4 @@
-﻿var appCatalog = new Vue({
+var appCatalog = new Vue({
     el: '#app-catalog',
     delimiters: ['${', '}'],
 
@@ -60,6 +60,16 @@
 
         deleteTarget: {},
         deleteType: '',
+
+        // Checklist Definitions
+        groupSubTab: 'items',
+        checklistDefinitions: [],
+        showDefinitionForm: false,
+        isEditDefinition: false,
+        definitionForm: { Id: 0, GroupId: 0, CycleType: '', CheckName: '', Description: '', IsRequired: true, SortOrder: 0, IsActive: true },
+        isSavingDefinition: false,
+        showDeleteDefModal: false,
+        deleteDefTarget: null,
 
         toast: { show: false, msg: '' }
     },
@@ -400,8 +410,10 @@
             this.itemSearch = '';
             this.itemFilterStatus = '';
             this.currentPage = 1;
+            this.groupSubTab = 'items';
 
             this.loadItems(group.Id);
+            this.loadChecklistDefinitions(group.Id);
         },
 
         // ── PAGINATION ──
@@ -693,6 +705,141 @@
                 }
             });
 
+        },
+
+        // ── CHECKLIST DEFINITIONS METHODS ──
+        loadChecklistDefinitions(groupId) {
+            if (!groupId) return;
+            $.ajax({
+                url: '/api/category/checklist-definitions/' + groupId,
+                type: 'GET',
+                success: (res) => {
+                    this.checklistDefinitions = res || [];
+                },
+                error: () => {
+                    this.showToast('❌ Tải hạng mục checklist thất bại');
+                }
+            });
+        },
+
+        openAddDefinition() {
+            this.isEditDefinition = false;
+            this.definitionForm = {
+                Id: 0,
+                GroupId: this.activeGroup.Id,
+                CycleType: '',
+                CheckName: '',
+                Description: '',
+                IsRequired: true,
+                SortOrder: this.checklistDefinitions.filter(d => d.Scope === 'group').length + 1,
+                IsActive: true
+            };
+            this.showDefinitionForm = true;
+        },
+
+        openEditDefinition(def) {
+            if (def.Scope === 'global') return;
+            this.isEditDefinition = true;
+            this.definitionForm = {
+                Id: def.Id,
+                GroupId: def.GroupId,
+                CycleType: def.CycleType || '',
+                CheckName: def.CheckName,
+                Description: def.Description || '',
+                IsRequired: def.IsRequired,
+                SortOrder: def.SortOrder,
+                IsActive: def.IsActive
+            };
+            this.showDefinitionForm = true;
+        },
+
+        saveDefinition() {
+            if (!this.definitionForm.CheckName.trim()) {
+                this.showToast('⚠️ Tên hạng mục không được để trống!');
+                return;
+            }
+            this.isSavingDefinition = true;
+            $.ajax({
+                url: '/api/category/checklist-definition/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.definitionForm),
+                success: (res) => {
+                    this.showDefinitionForm = false;
+                    this.loadChecklistDefinitions(this.activeGroup.Id);
+                    this.showToast(this.isEditDefinition ? '✅ Cập nhật hạng mục thành công!' : '✅ Thêm hạng mục thành công!');
+                },
+                error: (err) => {
+                    this.showToast(err.responseJSON?.message || '❌ Lỗi khi lưu hạng mục!');
+                },
+                complete: () => {
+                    this.isSavingDefinition = false;
+                }
+            });
+        },
+
+        toggleDefinitionStatus(def) {
+            $.ajax({
+                url: '/api/category/checklist-definition/toggle/' + def.Id,
+                type: 'PUT',
+                success: (res) => {
+                    if (res.success) {
+                        this.showToast(res.message);
+                    }
+                },
+                error: () => {
+                    def.IsActive = !def.IsActive; // rollback
+                    this.showToast('❌ Cập nhật trạng thái thất bại!');
+                }
+            });
+        },
+
+        openDeleteDefinition(def) {
+            if (def.Scope === 'global') return;
+            this.deleteDefTarget = def;
+            this.showDeleteDefModal = true;
+        },
+
+        confirmDeleteDefinition() {
+            if (!this.deleteDefTarget) return;
+            $.ajax({
+                url: '/api/category/checklist-definition/' + this.deleteDefTarget.Id,
+                type: 'DELETE',
+                success: (res) => {
+                    this.showDeleteDefModal = false;
+                    if (res.success) {
+                        this.showToast('🗑️ Đã xóa hạng mục!');
+                        this.loadChecklistDefinitions(this.activeGroup.Id);
+                    } else if (res.hasLinkedData) {
+                        // Chặn xóa do có dữ liệu log liên kết, hiện confirm vô hiệu hóa
+                        if (confirm(res.message)) {
+                            this.disableDefinition(this.deleteDefTarget.Id);
+                        }
+                    } else {
+                        this.showToast('❌ ' + res.message);
+                    }
+                },
+                error: () => {
+                    this.showDeleteDefModal = false;
+                    this.showToast('❌ Không thể xóa!');
+                }
+            });
+        },
+
+        disableDefinition(id) {
+            $.ajax({
+                url: '/api/category/checklist-definition/toggle/' + id,
+                type: 'PUT',
+                success: (res) => {
+                    if (res.success) {
+                        this.showToast('⏸️ Đã vô hiệu hóa hạng mục!');
+                        this.loadChecklistDefinitions(this.activeGroup.Id);
+                    }
+                },
+                error: () => {
+                    this.showToast('❌ Không thể vô hiệu hóa!');
+                }
+            });
         },
     },
 

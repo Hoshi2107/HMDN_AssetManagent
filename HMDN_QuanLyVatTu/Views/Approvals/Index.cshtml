@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Danh sách Phê duyệt";
     ViewBag.ActiveNav = "Approvals";
 }
@@ -1648,7 +1648,7 @@
                     <option value="REJECTED">Rejected</option>
                 </select>
             </div>
-            <button class="btn-filter" @@click="filterType = ''; filterStatus = ''; filterDepartment = ''; searchQuery = ''">
+            <button class="btn-filter" v-on:click="filterType = ''; filterStatus = ''; filterDepartment = ''; searchQuery = ''">
                 <i class="fa-solid fa-filter-list"></i>
                 <i class="fa-solid fa-filter"></i> Xóa Lọc
             </button>
@@ -1660,9 +1660,9 @@
             <table class="approvals-table">
                 <thead>
                     <tr>
-                        <th @@click="sort.key = 'TicketCode'; sort.dir *= -1" style="cursor: pointer;">MÃ YÊU CẦU <i class="fa-solid fa-sort"></i></th>
-                        <th @@click="sort.key = 'TicketType'; sort.dir *= -1" style="cursor: pointer;">LOẠI YÊU CẦU <i class="fa-solid fa-sort"></i></th>
-                        <th @@click="sort.key = 'CreatedBy'; sort.dir *= -1" style="cursor: pointer;">NGƯỜI TẠO <i class="fa-solid fa-sort"></i></th>
+                        <th v-on:click="sort.key = 'TicketCode'; sort.dir *= -1" style="cursor: pointer;">MÃ YÊU CẦU <i class="fa-solid fa-sort"></i></th>
+                        <th v-on:click="sort.key = 'TicketType'; sort.dir *= -1" style="cursor: pointer;">LOẠI YÊU CẦU <i class="fa-solid fa-sort"></i></th>
+                        <th v-on:click="sort.key = 'CreatedBy'; sort.dir *= -1" style="cursor: pointer;">NGƯỜI TẠO <i class="fa-solid fa-sort"></i></th>
                         <th>GỬI TỚI PHÒNG BAN</th>
                         <th>NGÀY TẠO</th>
                         <th>TRẠNG THÁI</th>
@@ -1686,7 +1686,7 @@
                                 ${statusLabel(item.Status)}
                             </span>
                         </td>
-                        <td style="text-align: right;"><a href="#" class="btn-action" @@click.prevent="viewDetail(item)">Chi tiết <i class="fa-solid fa-arrow-right"></i></a></td>
+                        <td style="text-align: right;"><a href="#" class="btn-action" v-on:click.prevent="viewDetail(item)">Chi tiết <i class="fa-solid fa-arrow-right"></i></a></td>
                     </tr>
                     <tr v-if="paginatedTickets.length === 0">
                         <td colspan="7" style="text-align: center; padding: 30px;">Không có dữ liệu</td>
@@ -1697,21 +1697,21 @@
         <div class="card-footer">
             <div class="footer-text">Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(currentPage * pageSize, filteredTickets.length)} of ${filteredTickets.length} entries</div>
             <div class="pagination">
-                <button class="page-btn" @@click="prevPage" :disabled="currentPage === 1"><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="page-btn" v-for="page in pages" :key="page" :class="{active: page === currentPage}" @@click="changePage(page)">
+                <button class="page-btn" v-on:click="prevPage" :disabled="currentPage === 1"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="page-btn" v-for="page in pages" :key="page" :class="{active: page === currentPage}" v-on:click="changePage(page)">
                     ${page}
                 </button>
-                <button class="page-btn" @@click="nextPage" :disabled="currentPage === totalPages || totalPages === 0"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="page-btn" v-on:click="nextPage" :disabled="currentPage === totalPages || totalPages === 0"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
         </div>
     </div>
 
     <!-- Advanced Modal Chi Tiết -->
-    <div class="detail-modal" v-if="showModal && selectedTicket" @@click="showModal = false">
-        <div class="dm-container" @@click.stop>
+    <div class="detail-modal" v-if="showModal && selectedTicket" v-on:click="showModal = false">
+        <div class="dm-container" v-on:click.stop>
             <div class="dm-header">
                 <div class="dm-header-left">
-                    <button class="dm-back-btn" @@click="showModal = false"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button class="dm-back-btn" v-on:click="showModal = false"><i class="fa-solid fa-arrow-left"></i></button>
                     <div class="dm-title">
                         <h2>
                             Chi tiết Yêu cầu
@@ -1723,8 +1723,8 @@
                 <div class="dm-header-right">
                     <button class="dm-btn-print" @@click="printTicket()"><i class="fa-solid fa-print"></i> In phiếu</button>
                     <template v-if="selectedTicket && selectedTicket.Status === 'PENDING' && canApprove()">
-                        <button class="dm-btn-reject" @@click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
-                        <button class="dm-btn-approve" @@click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
+                        <button class="dm-btn-reject" v-on:click="updateTicketStatus('REJECTED')"><i class="fa-solid fa-xmark"></i> Từ chối</button>
+                        <button class="dm-btn-approve" v-on:click="updateTicketStatus('APPROVED')"><i class="fa-solid fa-check"></i> Phê duyệt</button>
                     </template>
                 </div>
             </div>
@@ -1783,10 +1783,10 @@
                                             </div>
                                             <!-- Image Message -->
                                             <div v-else-if="isImageMsg(msg.content)">
-                                                <img :src="getImageUrl(msg.content)" class="chat-msg-image" alt="Hình ảnh đính kèm" @@click="openLightbox(getImageUrl(msg.content), 'IMAGE')" />
+                                                <img :src="getImageUrl(msg.content)" class="chat-msg-image" alt="Hình ảnh đính kèm" v-on:click="openLightbox(getImageUrl(msg.content), 'IMAGE')" />
                                             </div>
                                             <!-- Video Message -->
-                                            <div v-else-if="isVideoMsg(msg.content)" class="chat-msg-video-wrap" @@click="openLightbox(getVideoUrl(msg.content), 'VIDEO')">
+                                            <div v-else-if="isVideoMsg(msg.content)" class="chat-msg-video-wrap" v-on:click="openLightbox(getVideoUrl(msg.content), 'VIDEO')">
                                                 <video :src="getVideoUrl(msg.content)" preload="metadata"></video>
                                                 <div class="chat-video-play-overlay">
                                                     <i class="fa-solid fa-circle-play"></i>
@@ -1808,15 +1808,15 @@
                                             <!-- Hover Actions Menu (3 buttons Zalo style) - HIDDEN when chat is locked -->
                                             <div v-if="!msg.isSystem && msg.id > 0 && !msg.isRevoked && !isChatLocked" class="chat-msg-actions" :class="{ show: msg.showActions }">
                                                 <!-- Reply Button -->
-                                                <button class="btn-chat-action" @@click.stop="replyMessage(msg)" title="Phản hồi">
+                                                <button class="btn-chat-action" v-on:click.stop="replyMessage(msg)" title="Phản hồi">
                                                     <i class="fa-solid fa-reply"></i>
                                                 </button>
                                                 <!-- Forward Button -->
-                                                <button class="btn-chat-action" @@click.stop="forwardMessage(msg)" title="Chuyển tiếp">
+                                                <button class="btn-chat-action" v-on:click.stop="forwardMessage(msg)" title="Chuyển tiếp">
                                                     <i class="fa-solid fa-share"></i>
                                                 </button>
                                                 <!-- Revoke/Delete Button (Only for own messages) -->
-                                                <button v-if="msg.isOwnerMsg" class="btn-chat-action text-danger" @@click.stop="revokeMessage(msg)" title="Thu hồi/Xóa">
+                                                <button v-if="msg.isOwnerMsg" class="btn-chat-action text-danger" v-on:click.stop="revokeMessage(msg)" title="Thu hồi/Xóa">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </div>
@@ -1829,15 +1829,15 @@
                             </div>
                             <!-- Input area -->
                             <div class="chat-input-area" :class="{ 'chat-disabled': isChatLocked }">
-                                <button class="chat-btn-attach" @@click="triggerAttachFile" title="Gửi hình ảnh / File đính kèm" :disabled="isUploadingChatFile || isChatLocked">
+                                <button class="chat-btn-attach" v-on:click="triggerAttachFile" title="Gửi hình ảnh / File đính kèm" :disabled="isUploadingChatFile || isChatLocked">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
-                                <input type="text" ref="chatInput" class="chat-input" v-model="chatMessage" @@keyup.enter="sendChatMessage" placeholder="Nhập tin nhắn..." :disabled="isUploadingChatFile || isChatLocked" />
-                                <button class="chat-btn-send" @@click="sendChatMessage" title="Gửi tin nhắn" :disabled="isUploadingChatFile || isChatLocked">
+                                <input type="text" ref="chatInput" class="chat-input" v-model="chatMessage" v-on:keyup.enter="sendChatMessage" placeholder="Nhập tin nhắn..." :disabled="isUploadingChatFile || isChatLocked" />
+                                <button class="chat-btn-send" v-on:click="sendChatMessage" title="Gửi tin nhắn" :disabled="isUploadingChatFile || isChatLocked">
                                     <i class="fa-solid fa-paper-plane"></i>
                                 </button>
                             </div>
-                            <input type="file" ref="chatFileInput" @@change="handleChatFileUpload" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mov,.avi" style="display: none;" />
+                            <input type="file" ref="chatFileInput" v-on:change="handleChatFileUpload" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mov,.avi" style="display: none;" />
                         </div>
                     </div>
 
@@ -1850,13 +1850,13 @@
                         <div class="dm-card" style="margin-bottom: 0; box-sizing: border-box; flex: 2; display: flex; flex-direction: column; overflow: hidden;">
                             <div class="zalo-media-sidebar">
                                 <div class="zalo-media-tabs">
-                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'media' }" @@click="activeMediaTab = 'media'">
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'media' }" v-on:click="activeMediaTab = 'media'">
                                         <i class="fa-solid fa-image" style="margin-right: 4px;"></i> Ảnh/Video
                                     </button>
-                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'file' }" @@click="activeMediaTab = 'file'">
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'file' }" v-on:click="activeMediaTab = 'file'">
                                         <i class="fa-solid fa-file" style="margin-right: 4px;"></i> File
                                     </button>
-                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'link' }" @@click="activeMediaTab = 'link'">
+                                    <button class="zalo-media-tab" :class="{ active: activeMediaTab === 'link' }" v-on:click="activeMediaTab = 'link'">
                                         <i class="fa-solid fa-link" style="margin-right: 4px;"></i> Link
                                     </button>
                                 </div>
@@ -1864,7 +1864,7 @@
                                     <!-- Tab: Ảnh/Video -->
                                     <div v-if="activeMediaTab === 'media'">
                                         <div v-if="mediaFiles.length > 0" class="zalo-media-grid">
-                                            <div v-for="m in mediaFiles" :key="m.id + '-' + m.url" class="zalo-media-item" @@click="openLightbox(m.url, m.type)">
+                                            <div v-for="m in mediaFiles" :key="m.id + '-' + m.url" class="zalo-media-item" v-on:click="openLightbox(m.url, m.type)">
                                                 <img v-if="m.type === 'IMAGE'" :src="m.url" :alt="m.name" />
                                                 <template v-else>
                                                     <video :src="m.url" preload="metadata"></video>
@@ -2012,13 +2012,13 @@
     </div>
 
     <!-- Confirm Modal -->
-    <div class="modal-overlay" v-if="showConfirmModal" @@click="showConfirmModal = false" style="z-index: 1100; position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);">
-        <div class="modal-content" style="width: 500px; padding: 0; background: #ffffff; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);" @@click.stop>
+    <div class="modal-overlay" v-if="showConfirmModal" v-on:click="showConfirmModal = false" style="z-index: 1100; position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);">
+        <div class="modal-content" style="width: 500px; padding: 0; background: #ffffff; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);" v-on:click.stop>
             <div class="modal-header" style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 8px; font-weight: 700;">
                     <i class="fa-solid fa-clipboard-check" style="color: #0ea5e9; font-size: 16px;"></i> Xác nhận Phê duyệt / Từ chối
                 </h3>
-                <button class="close-btn" @@click="showConfirmModal = false" style="background: transparent; border: none; font-size: 16px; color: #64748b; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                <button class="close-btn" v-on:click="showConfirmModal = false" style="background: transparent; border: none; font-size: 16px; color: #64748b; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="modal-body" style="padding: 24px;">
@@ -2033,13 +2033,13 @@
             </div>
 
             <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
-                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; color: #475569; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'" @@click="showConfirmModal = false">
+                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; color: #475569; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#ffffff'" v-on:click="showConfirmModal = false">
                     Hủy
                 </button>
-                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #ef4444; background: #ef4444; color: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" @@click="executeAction('REJECTED')">
+                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #ef4444; background: #ef4444; color: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'" v-on:click="executeAction('REJECTED')">
                     <i class="fa-solid fa-xmark" style="font-size: 14px;"></i> Xác nhận Từ chối
                 </button>
-                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #10b981; background: #10b981; color: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" @@click="executeAction('APPROVED')">
+                <button style="padding: 8px 16px; border-radius: 6px; border: 1px solid #10b981; background: #10b981; color: #ffffff; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'" v-on:click="executeAction('APPROVED')">
                     <i class="fa-solid fa-check" style="font-size: 14px;"></i> Xác nhận Duyệt
                 </button>
             </div>
@@ -2047,16 +2047,16 @@
     </div>
 
     <!-- Lightbox Gallery -->
-    <div class="lightbox-modal" v-if="lightbox.show" @@click="closeLightbox">
-        <button class="lightbox-close" @@click.stop="closeLightbox"><i class="fa-solid fa-xmark"></i></button>
-        <button class="lightbox-nav prev" @@click.stop="prevLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-left"></i></button>
-        <div class="lightbox-content" @@click.stop>
+    <div class="lightbox-modal" v-if="lightbox.show" v-on:click="closeLightbox">
+        <button class="lightbox-close" v-on:click.stop="closeLightbox"><i class="fa-solid fa-xmark"></i></button>
+        <button class="lightbox-nav prev" v-on:click.stop="prevLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="lightbox-content" v-on:click.stop>
             <template v-if="lightbox.items.length > 0">
                 <img v-if="lightbox.items[lightbox.currentIndex].type === 'IMAGE'" :src="lightbox.items[lightbox.currentIndex].url" />
                 <video v-else :src="lightbox.items[lightbox.currentIndex].url" controls autoplay style="outline: none;"></video>
             </template>
         </div>
-        <button class="lightbox-nav next" @@click.stop="nextLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-right"></i></button>
+        <button class="lightbox-nav next" v-on:click.stop="nextLightbox" v-if="lightbox.items.length > 1"><i class="fa-solid fa-chevron-right"></i></button>
         <div class="lightbox-counter" v-if="lightbox.items.length > 1">${lightbox.currentIndex + 1} / ${lightbox.items.length}</div>
     </div>
 
