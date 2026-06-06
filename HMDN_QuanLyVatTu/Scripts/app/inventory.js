@@ -18,6 +18,10 @@
     Send_for_warranty: {
         label: 'Gửi về bảo hành',
         class: 's-Send_for_warranty'
+    },
+    replaced: {
+        label: 'Thay thế',
+        class: 's-replaced'
     }
 }
 
@@ -28,6 +32,14 @@ var app = new Vue({
 
     data: {
         STATUS: STATUS,
+
+
+        // === REPLACE MODAL STATE ===
+        showReplaceModal: false,
+        replaceableDevices: [],
+        replaceNote: '',
+        selectedReplaceId: null,
+        replaceLoading: false,
 
         showScheduleModal: false,
         maintenanceSchedules: [],
@@ -428,6 +440,63 @@ var app = new Vue({
     },
 
     methods: {
+
+        // ============================================
+        // REPLACE DEVICE - Thay thế tài sản
+        // ============================================
+        openReplaceModal() {
+            if (!this.selectedDevice) return
+            const status = this.selectedDevice.LifeStatus
+            if (status !== 'suspended' && status !== 'liquidated' && status !== 'replaced') {
+                alert('Chỉ có thể thay thế tài sản đang Tạm ngưng hoặc đã Thanh lý!')
+                return
+            }
+            this.replaceNote = ''
+            this.selectedReplaceId = null
+            this.replaceableDevices = []
+            this.showReplaceModal = true
+            this.loadReplaceableDevices()
+        },
+        loadReplaceableDevices() {
+            this.replaceLoading = true
+            $.get('/api/device/active-replaceable?inventoryId=' + this.selectedDevice.Id, (res) => {
+                this.replaceableDevices = res
+                this.replaceLoading = false
+            }).fail(() => {
+                alert('Không tải được danh sách tài sản thay thế')
+                this.replaceLoading = false
+            })
+        },
+        confirmReplace() {
+            if (!this.selectedReplaceId) {
+                alert('Vui lòng chọn tài sản thay thế!')
+                return
+            }
+            const replaceName = this.replaceableDevices.find(d => d.Id == this.selectedReplaceId)
+            const confirmMsg = `Xác nhận thay thế "${this.selectedDevice.AssetCode}" bằng "${replaceName ? replaceName.AssetCode : this.selectedReplaceId}"?`
+            if (!confirm(confirmMsg)) return
+            const currentUser = JSON.parse(localStorage.getItem('current_user'))
+            $.ajax({
+                url: '/api/device/replace',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    OldInventoryId: this.selectedDevice.Id,
+                    NewInventoryId: this.selectedReplaceId,
+                    ReplacedBy: currentUser ? currentUser.Id : 1,
+                    Note: this.replaceNote
+                }),
+                success: () => {
+                    alert('✅ Thay thế tài sản thành công! Lịch sử bệnh án đã được ghi nhận.')
+                    this.showReplaceModal = false
+                    this.showModal = false
+                    this.loadDevices()
+                },
+                error: (xhr) => {
+                    alert('Thay thế thất bại: ' + xhr.responseText)
+                }
+            })
+        },
 
         showMaintenanceSchedule() {
             if (!this.selectedDevice) return
@@ -851,6 +920,15 @@ var app = new Vue({
                         color: "#2563eb",
                         icon: "📦"
                     }
+
+                case "replaced":
+                    return {
+                        text: "Đã thay thế",
+                        bg: "#e0f2fe",
+                        color: "#0369a1",
+                        icon: "🔁"
+                    }
+
                 default:
                     return {
                         text: "Không xác định",

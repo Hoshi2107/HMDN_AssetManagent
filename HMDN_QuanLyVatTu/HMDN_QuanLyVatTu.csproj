@@ -206,6 +206,7 @@
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
+    <Compile Include="Models\ReplaceDeviceVM.cs" />
     <Compile Include="Models\ReportErrorVM.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\SuspendedDeviceVM.cs" />

@@ -146,24 +146,47 @@
 
                             @*<td>${ item.ApprovalStatus || '-' }</td>*@
 
+                            <!--<td @@click.stop>
+
+        <select class="status-dropdown"
+                :disabled="!hasPermission('Inventory', 'EDIT')"
+                v-model="item.LifeStatus"
+                @@change="changeStatus(item)">
+
+            <option value="active">
+                Đang hoạt động
+            </option>
+
+            <option value="replaced" >
+                Thay thế + ${ item.ReplacedId }
+            </option>-->
+                            <!-- suspended KHÔNG CHO CHỌN -->
+                            <!--<option v-if="item.LifeStatus == 'suspended'"
+                    value="suspended">
+
+                Tạm ngưng
+
+            </option>
+
+        </select>
+
+    </td>-->
+
                             <td @@click.stop>
 
                                 <select class="status-dropdown"
-                                        :disabled="!hasPermission('Inventory', 'EDIT')"
+                                        :disabled="!hasPermission('Inventory', 'EDIT') || item.LifeStatus === 'replaced'"
                                         v-model="item.LifeStatus"
                                         @@change="changeStatus(item)">
 
-                                    <option value="active">
-                                        Đang hoạt động
+                                    <option value="active">Đang hoạt động</option>
+
+                                    <option value="replaced" v-if="item.LifeStatus === 'replaced'">
+                                        🔁 Thay thế bởi ${ item.ReplacedByAssetCode || '—' }
                                     </option>
 
-
-                                    <!-- suspended KHÔNG CHO CHỌN -->
-                                    <option v-if="item.LifeStatus == 'suspended'"
-                                            value="suspended">
-
+                                    <option v-if="item.LifeStatus === 'suspended'" value="suspended">
                                         Tạm ngưng
-
                                     </option>
 
                                 </select>
@@ -428,6 +451,13 @@
                                                 @@click="showMaintenanceSchedule()">
                                             Thêm lịch bảo trì
                                         </button>
+
+                                        <button class="btn-replace"
+                                                v-if="hasPermission('Inventory', 'EDIT') && (selectedDevice.LifeStatus === 'suspended' || selectedDevice.LifeStatus === 'liquidated')"
+                                                @@click="openReplaceModal()">
+                                            🔁 Thay thế
+                                        </button>
+
 
                                     </div>
 
@@ -1932,8 +1962,7 @@
                             <label>Tên lịch</label>
                             <input type="text" class="form-control"
                                    placeholder="VD: Bảo trì định kỳ Q1"
-                                   v-model="scheduleForm.ScheduleName"
-                                  >
+                                   v-model="scheduleForm.ScheduleName">
                         </div>
 
                         <div class="form-group">
@@ -1949,22 +1978,19 @@
                         <div class="form-group">
                             <label>Ngày bảo trì gần nhất</label>
                             <input type="date" class="form-control"
-                                   v-model="scheduleForm.LastMaintenanceDate"
-                                   >
+                                   v-model="scheduleForm.LastMaintenanceDate">
                         </div>
 
                         <div class="form-group">
                             <label>Ngày bảo trì tiếp theo <span style="color:#dc2626">*</span></label>
                             <input type="date" class="form-control"
-                                   v-model="scheduleForm.NextMaintenanceDate"
-                                   >
+                                   v-model="scheduleForm.NextMaintenanceDate">
                         </div>
 
                         <div class="form-group">
                             <label>Nhắc trước (ngày)</label>
                             <input type="number" class="form-control" min="1" max="90"
-                                   v-model="scheduleForm.ReminderDays"
-                                   >
+                                   v-model="scheduleForm.ReminderDays">
                         </div>
 
                         <div class="form-group">
@@ -1975,7 +2001,7 @@
                             </select>
                         </div>
 
-                        <div class="form-group" v-if="scheduleForm.IsRecurring" >
+                        <div class="form-group" v-if="scheduleForm.IsRecurring">
                             <label>Chu kỳ (tháng)</label>
                             <input type="number" class="form-control" min="1"
                                    v-model="scheduleForm.RecurringMonths">
@@ -2046,7 +2072,93 @@
         </div>
     </div>
 
-
+    <!-- MODAL THAY THẾ TÀI SẢN (Replace Device Modal) -->
+    <div class="modal-overlay replace-modal-overlay"
+         v-if="showReplaceModal"
+         @@click.self="showReplaceModal = false">
+        <div class="device-modal replace-modal">
+            <div class="modal-header replace-modal-header">
+                <div>
+                    <h3>🔁 Thay thế tài sản</h3>
+                    <p style="margin:4px 0 0;font-size:13px;color:#94a3b8">
+                        Thay thế cho: <strong style="color:#f59e0b">${ selectedDevice ? selectedDevice.AssetCode : '' }</strong>
+                        <span style="padding:2px 8px;border-radius:12px;font-size:11px;background:#fee2e2;color:#dc2626;margin-left:8px">
+                            ${ selectedDevice ? getLifeStatusMeta(selectedDevice.LifeStatus).text : '' }
+                        </span>
+                    </p>
+                </div>
+                <button class="close-btn" @@click="showReplaceModal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading state -->
+                <div v-if="replaceLoading"
+                     style="text-align:center;padding:40px;color:#94a3b8">
+                    ⏳ Đang tải danh sách...
+                </div>
+                <div v-else>
+                    <!-- Empty state -->
+                    <div v-if="replaceableDevices.length === 0"
+                         class="replace-empty-state">
+                        <div style="font-size:48px;margin-bottom:12px">📦</div>
+                        <p style="color:#64748b;font-size:14px">Không có tài sản cùng loại nào đang hoạt động và chưa được xếp phòng ban.</p>
+                    </div>
+                    <div v-else>
+                        <p style="font-size:13px;color:#475569;margin-bottom:14px">
+                            Chọn tài sản thay thế: (đang active, chưa có phòng ban)
+                        </p>
+                        <!-- Danh sách tài sản thay thế -->
+                        <div class="replace-device-list">
+                            <div v-for="dev in replaceableDevices"
+                                 :key="dev.Id"
+                                 class="replace-device-card"
+                                 :class="{ selected: selectedReplaceId === dev.Id }"
+                                 @@click="selectedReplaceId = dev.Id">
+                                <div class="replace-card-radio">
+                                    <input type="radio"
+                                           :value="dev.Id"
+                                           v-model="selectedReplaceId"
+                                           @@click.stop>
+                                </div>
+                                <div class="replace-card-info">
+                                    <div class="replace-card-name">
+                                        ${ dev.ItemName }
+                                    </div>
+                                    <div class="replace-card-meta">
+                                        <span>🏷️ ${ dev.AssetCode }</span>
+                                        <span v-if="dev.SerialNumber"> | Serial: ${ dev.SerialNumber }</span>
+                                        <span v-if="dev.Model"> | ${ dev.Model }</span>
+                                    </div>
+                                </div>
+                                <span class="replace-status-badge">
+                                    🟢 Đang hoạt động
+                                </span>
+                            </div>
+                        </div>
+                        <!-- Ghi chú thay thế -->
+                        <div class="form-group" style="margin-top:18px">
+                            <label style="font-size:13px;font-weight:600;color:#374151">Ghi chú lý do thay thế</label>
+                            <textarea class="form-control"
+                                      rows="3"
+                                      placeholder="VD: Thay thế do tài sản cũ hư hỏng nặng, không sửa được..."
+                                      v-model="replaceNote">
+                        </textarea>
+                        </div>
+                        <!-- Actions -->
+                        <div class="modal-actions" style="margin-top:16px">
+                            <button class="btn-secondary" @@click="showReplaceModal = false">
+                                Hủy
+                            </button>
+                            <button class="btn-replace-confirm"
+                                    :disabled="!selectedReplaceId"
+                                    @@click="confirmReplace()">
+                                ✅ Xác nhận thay thế
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 

@@ -743,7 +743,7 @@ namespace HMDN.Controllers.API
         public IHttpActionResult Tickets()
         {
             var data = db.Database.SqlQuery<TicketDropdownVM>(
-                "SELECT Id, TicketCode FROM Tickets WHERE TicketType = 'REPAIR' AND Status = 'PENDING' ORDER BY TicketCode"
+                "SELECT Id, TicketCode, Status, CreatedAt FROM Tickets WHERE TicketType = 'REPAIR' AND Status = 'PENDING' ORDER BY TicketCode"
             ).ToList();
             return Ok(data);
         }
@@ -767,5 +767,59 @@ namespace HMDN.Controllers.API
             ).ToList();
             return Ok(data);
         }
+
+        [HttpGet]
+        [Route("active-replaceable")]
+        public IHttpActionResult ActiveReplaceable(int inventoryId)
+        {
+            var data = db.Database
+                .SqlQuery<InventoryListVM>(
+                    @"SELECT i.Id,
+                             i.AssetCode,
+                             it.Name  AS ItemName,
+                             it.Model AS Model,
+                             i.SerialNumber,
+                             NULL     AS DepartmentName,
+                             NULL     AS LocationName,
+                             i.LifeStatus,
+                             NULL     AS TicketCode,
+                             NULL     AS GroupName,
+                             NULL     AS ApprovalStatus
+                      FROM   Inventory i
+                      JOIN   Items     it ON it.Id = i.ItemId
+                      WHERE  i.LifeStatus  = 'active'
+                        AND  i.DepartmentId IS NULL
+                        AND  i.ItemId = (
+                                 SELECT ItemId FROM Inventory
+                                 WHERE  Id = @InventoryId
+                             )
+                        AND  i.Id <> @InventoryId",
+                    new SqlParameter("@InventoryId", inventoryId)
+                )
+                .ToList();
+            return Ok(data);
+        }
+
+        [HttpPost]
+        [Route("replace")]
+        public IHttpActionResult Replace(ReplaceDeviceVM model)
+        {
+            try
+            {
+                db.Database.ExecuteSqlCommand(
+                    "EXEC sp_Device_Replace @OldInventoryId, @NewInventoryId, @ReplacedBy, @Note",
+                    new SqlParameter("@OldInventoryId", model.OldInventoryId),
+                    new SqlParameter("@NewInventoryId", model.NewInventoryId),
+                    new SqlParameter("@ReplacedBy", model.ReplacedBy),
+                    new SqlParameter("@Note", (object)model.Note ?? DBNull.Value)
+                );
+                return Ok(new { success = true, message = "Thay thế tài sản thành công" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }
