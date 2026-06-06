@@ -161,13 +161,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                 }
 
                 // --- Backend Validation Sync ---
-                if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
+                if (payload.TicketType == "SUPPORT" || payload.TicketType == "REPAIR")
                 {
-                    return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
-                }
-                if (string.IsNullOrWhiteSpace(payload.Proposal))
-                {
-                    return Json(new { success = false, message = "Vui lòng nhập đề nghị!" });
+                    if (string.IsNullOrWhiteSpace(payload.ReasonDetails))
+                    {
+                        return Json(new { success = false, message = "Vui lòng nhập lý do chi tiết yêu cầu!" });
+                    }
+                    if (string.IsNullOrWhiteSpace(payload.Proposal))
+                    {
+                        return Json(new { success = false, message = "Vui lòng nhập đề nghị!" });
+                    }
                 }
 
                 // Get user's department
@@ -263,67 +266,45 @@ namespace HMDN_QuanLyVatTu.Controllers
                         {
                             if (string.IsNullOrWhiteSpace(device.ItemName)) continue;
 
-                            // Check if an item with the same name exists
-                            string trimmedName = device.ItemName.Trim();
-                            var item = db.Items.FirstOrDefault(x => x.Name.Trim().ToLower() == trimmedName.ToLower());
-                            if (item == null)
-                            {
-                                // Get first group or create a default group
-                                var group = db.Groups.FirstOrDefault();
-                                int groupId = 1;
-                                if (group != null)
-                                {
-                                    groupId = group.Id;
-                                }
-                                else
-                                {
-                                    var newGroup = new Group
-                                    {
-                                        Code = "DEFAULT",
-                                        Name = "Nhóm mặc định",
-                                        IsActive = true,
-                                        CreatedAt = DateTime.Now
-                                    };
-                                    db.Groups.Add(newGroup);
-                                    db.SaveChanges();
-                                    groupId = newGroup.Id;
-                                }
+                            string assetCode = device.ItemName.Trim();
+                            var existingInventory = db.Inventories.FirstOrDefault(i => i.AssetCode == assetCode);
 
-                                // Create new item under catalog
-                                item = new Item
+                            if (existingInventory != null)
+                            {
+                                // Tạo phiếu sửa chữa bên bảo trì
+                                var mLog = new MaintenanceLog
                                 {
-                                    GroupId = groupId,
-                                    Code = "ITEM_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
-                                    Name = trimmedName,
-                                    Unit = "Cái",
-                                    IsActive = true,
-                                    CreatedAt = DateTime.Now
+                                    InventoryId = existingInventory.Id,
+                                    MaintenanceType = "corrective",
+                                    Title = "Sửa chữa từ phiếu " + ticket.TicketCode,
+                                    Description = string.IsNullOrWhiteSpace(payload.ReasonDetails) ? "Yêu cầu sửa chữa" : payload.ReasonDetails,
+                                    ErrorDescription = payload.ReasonDetails,
+                                    StartDate = DateTime.Now,
+                                    Status = "open",
+                                    Priority = "normal",
+                                    ReportedBy = payload.UserId,
+                                    CreatedAt = DateTime.Now,
+                                    TicketId = ticket.Id
                                 };
-                                db.Items.Add(item);
-                                db.SaveChanges(); // Generates item.Id
-                            }
+                                db.MaintenanceLogs.Add(mLog);
 
-                            var inventory = new HMS.Models.Inventory.Inventory
+                                // Cập nhật trạng thái thiết bị thành hỏng
+                                existingInventory.LifeStatus = "broken";
+                            }
+                            
+                            // Tạo chi tiết yêu cầu để hiện bên phê duyệt (luôn tạo kể cả khi existingInventory == null)
+                            var detail = new TicketDetail
                             {
-                                ItemId = item.Id,
-                                AssetCode = "TS-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper(),
-                                SerialNumber = string.IsNullOrWhiteSpace(device.SerialNumber)
-                                    ? "SN-" + DateTime.Now.ToString("yyMMdd") + Guid.NewGuid().ToString().Substring(0, 4).ToUpper()
-                                    : device.SerialNumber.Trim(),
+                                TicketId = ticket.Id,
+                                ItemName = assetCode + (string.IsNullOrWhiteSpace(device.SerialNumber) ? "" : $" (SN: {device.SerialNumber})"),
+                                Unit = string.IsNullOrWhiteSpace(device.Unit) ? "Cái" : device.Unit.Trim(),
                                 Quantity = device.Quantity,
-                                IdTicket = ticket.Id,
-                                ApprovalStatus = "PENDING",
-                                LifeStatus = "active",
-                                ImportDate = DateTime.Now,
-                                UnitPrice = 0,
-                                TotalPrice = 0,
-                                CreatedBy = payload.UserId,
-                                CreatedAt = DateTime.Now,
                                 Note = device.Note,
-                                DepartmentId = payload.TargetDepartmentId ?? userDeptId,
-                                QrCode = "QR-" + Guid.NewGuid().ToString("N").ToUpper()
+                                ApprovalStatus = "PENDING",
+                                ApprovedQuantity = device.Quantity,
+                                ApprovalNote = ""
                             };
-                            db.Inventories.Add(inventory);
+                            db.TicketDetails.Add(detail);
                         }
                     }
                     else

@@ -418,6 +418,26 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 inventory.LifeStatus = "active"; // Đang sử dụng
                             }
                         }
+
+                        // Cập nhật trạng thái phiếu bên phê duyệt thành Hoàn thành (APPROVED)
+                        if (log.TicketId.HasValue && log.TicketId.Value > 0)
+                        {
+                            var ticket = db.Tickets.FirstOrDefault(t => t.Id == log.TicketId.Value);
+                            if (ticket != null)
+                            {
+                                ticket.Status = "APPROVED";
+                                ticket.ApprovedBy = log.ClosedBy;
+                                ticket.ApprovedAt = DateTime.Now;
+
+                                var tDetails = db.TicketDetails.Where(td => td.TicketId == ticket.Id).ToList();
+                                foreach (var td in tDetails)
+                                {
+                                    td.ApprovalStatus = "approved";
+                                    td.ApprovedQuantity = td.Quantity;
+                                    td.ApprovalNote = "Đã hoàn thành sửa chữa thiết bị";
+                                }
+                            }
+                        }
                     }
 
                     db.SaveChanges();

@@ -178,7 +178,7 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     bool hasTicketDetails = db.TicketDetails.Any(x => x.TicketId == ticketId);
 
-                    if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR" || !hasTicketDetails)
+                    if (!hasTicketDetails)
                     {
                         var data = db.Inventories
                             .Where(x => x.IdTicket == ticketId)
@@ -308,10 +308,25 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     if (request.Items != null)
                     {
-                        bool isDeviceTicket = ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR";
+                        // Kiểm tra xem phiếu có dữ liệu trong TicketDetails không
+                        bool hasTicketDetails = db.TicketDetails.Any(td => td.TicketId == request.TicketId);
 
-                        if (isDeviceTicket)
+                        if (hasTicketDetails)
                         {
+                            foreach (var itemInput in request.Items)
+                            {
+                                var td = db.TicketDetails.Find(itemInput.Id);
+                                if (td != null)
+                                {
+                                    td.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
+                                    td.ApprovedQuantity = itemInput.ApprovedQuantity;
+                                    td.ApprovalNote = itemInput.ApprovalNote;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: Phiếu cũ lưu trong Inventories
                             foreach (var itemInput in request.Items)
                             {
                                 var inv = db.Inventories.Find(itemInput.Id);
@@ -322,41 +337,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                                     inv.ApprovalNote = itemInput.ApprovalNote;
                                     inv.ApprovedBy = request.UserId;
                                     inv.ApprovedAt = DateTime.Now;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Kiểm tra xem phiếu có dữ liệu trong TicketDetails không
-                            bool hasTicketDetails = db.TicketDetails.Any(td => td.TicketId == request.TicketId);
-
-                            if (hasTicketDetails)
-                            {
-                                foreach (var itemInput in request.Items)
-                                {
-                                    var td = db.TicketDetails.Find(itemInput.Id);
-                                    if (td != null)
-                                    {
-                                        td.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
-                                        td.ApprovedQuantity = itemInput.ApprovedQuantity;
-                                        td.ApprovalNote = itemInput.ApprovalNote;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                // Fallback: Phiếu cũ lưu trong Inventories
-                                foreach (var itemInput in request.Items)
-                                {
-                                    var inv = db.Inventories.Find(itemInput.Id);
-                                    if (inv != null)
-                                    {
-                                        inv.ApprovalStatus = (request.Status == "REJECTED" ? "rejected" : (itemInput.IsApproved ? "approved" : "rejected"));
-                                        inv.ApprovedQuantity = itemInput.ApprovedQuantity;
-                                        inv.ApprovalNote = itemInput.ApprovalNote;
-                                        inv.ApprovedBy = request.UserId;
-                                        inv.ApprovedAt = DateTime.Now;
-                                    }
                                 }
                             }
                         }
