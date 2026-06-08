@@ -746,6 +746,91 @@ var app = new Vue({
             }
             return '';
         },
+        getDay(dateStr) {
+            if (!dateStr) return '...';
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) {
+                var parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return parseInt(parts[2], 10);
+                }
+                return '...';
+            }
+            return d.getDate();
+        },
+        getMonth(dateStr) {
+            if (!dateStr) return '...';
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) {
+                var parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return parseInt(parts[1], 10);
+                }
+                return '...';
+            }
+            return d.getMonth() + 1;
+        },
+        getYear(dateStr) {
+            if (!dateStr) return '...';
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) {
+                var parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return parts[0];
+                }
+                return '...';
+            }
+            return d.getFullYear();
+        },
+        getPrintProposal() {
+            if (!this.selectedTicket) return '';
+            var prop = this.getProposal();
+            if (prop && prop.trim() !== '') {
+                return prop;
+            }
+            if (this.ticketDetails && this.ticketDetails.length > 0) {
+                return this.ticketDetails[0].ItemName;
+            }
+            return this.ticketTypeLabel(this.selectedTicket.TicketType);
+        },
+        getPrintReason() {
+            if (!this.selectedTicket) return '';
+            var reason = this.getReasonDetails();
+            if (reason && reason.trim() !== '') {
+                return reason;
+            }
+            return this.selectedTicket.Note || '—';
+        },
+        getPrintTitle() {
+            if (!this.selectedTicket || !this.selectedTicket.TicketType) return 'GIẤY ĐỀ NGHỊ MUA HÀNG';
+            const type = this.selectedTicket.TicketType.toUpperCase();
+            if (type === 'IMPORT') return 'GIẤY ĐỀ NGHỊ NHẬP KHO';
+            if (type === 'EXPORT') return 'GIẤY ĐỀ NGHỊ XUẤT KHO';
+            if (type === 'TRANSFER') return 'GIẤY ĐỀ NGHỊ ĐIỀU CHUYỂN VẬT TƯ';
+            if (type === 'SUPPORT' || type === 'HOTRO') return 'GIẤY ĐỀ NGHỊ HỖ TRỢ KỸ THUẬT';
+            if (type === 'REPAIR') return 'GIẤY ĐỀ NGHỊ SỬA CHỮA THIẾT BỊ';
+            return 'GIẤY ĐỀ NGHỊ MUA HÀNG';
+        },
+        getPrintUnit(dt) {
+            if (!dt) return 'Cái';
+            if (this.isDeviceFormType(this.selectedTicket.TicketType)) {
+                return 'Cái';
+            }
+            var noteText = dt.note || dt.Note || '';
+            if (!noteText) return 'Cái';
+            var parts = noteText.split(' | ');
+            return parts[0] || 'Cái';
+        },
+        getPrintNote(dt) {
+            if (!dt) return '';
+            var noteText = dt.note || dt.Note || '';
+            if (!noteText) return '';
+            var parts = noteText.split(' | ');
+            if (parts.length <= 1) {
+                return noteText;
+            }
+            return parts.slice(1).join(' | ');
+        },
         printTicket() {
             this.$nextTick(() => {
                 window.print();
