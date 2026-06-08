@@ -35,7 +35,7 @@ namespace HMDN.Controllers.API
             try
             {
                 var result = db.Database
-                    .SqlQuery<decimal>(
+                    .SqlQuery<int>(
                         @"EXEC sp_MaintenanceSchedule_Create
                             @InventoryId, @ScheduleName, @MaintenanceType,
                             @LastMaintenanceDate, @NextMaintenanceDate,

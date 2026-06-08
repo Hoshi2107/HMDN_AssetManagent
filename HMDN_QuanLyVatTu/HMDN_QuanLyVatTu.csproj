@@ -260,6 +260,7 @@
     <Content Include="Scripts\app\analytics-module.js" />
     <Content Include="Scripts\app\approvals.js" />
     <Content Include="Scripts\app\category.js" />
+    <Content Include="Scripts\app\checklists.js" />
     <Content Include="Scripts\app\inventory.js" />
     <Content Include="Scripts\app\login.js" />
     <Content Include="Scripts\app\maintenance.js" />
