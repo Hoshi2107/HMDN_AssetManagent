@@ -503,6 +503,7 @@ using HMDN_QuanLyVatTu.Models;
 using HMS.Data;
 using HMS.Models.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Http;
@@ -819,6 +820,78 @@ namespace HMDN.Controllers.API
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPost]
+        [Route("import")]
+        public IHttpActionResult Import(List<ImportInventoryVM> models)
+        {
+            if (models == null || models.Count == 0)
+                return BadRequest("Không có dữ liệu");
+
+            int success = 0;
+
+            foreach (var model in models)
+            {
+                try
+                {
+                    db.Database.ExecuteSqlCommand(
+                        @"EXEC sp_Device_Create
+                    @AssetCode, @ItemId, @SerialNumber, @Quantity,
+                    @DepartmentId, @LocationId,
+                    @ImportDate, @ExpiryDate, @WarrantyExpiry,
+                    @CheckCycleId, @UnitPrice,
+                    @DepreciationRate, @DepreciationYears, @ResidualValue,
+                    @ApprovedQuantity,
+                    @YearManufactured, @YearInUse, @UsageYears,
+                    @AssetCategory, @GroupAssetCode, @AccountingCode, @InsuranceCode,
+                    @CountryManufactured, @Manufacturer, @SupplierName,
+                    @Note, @CreatedBy, @IdTicket, @BaseUrl",
+                        new SqlParameter("@AssetCode", model.AssetCode),
+                        new SqlParameter("@ItemId", (object)model.ItemId ?? DBNull.Value),
+                        new SqlParameter("@SerialNumber", (object)model.SerialNumber ?? DBNull.Value),
+                        new SqlParameter("@Quantity", model.Quantity),
+                        new SqlParameter("@DepartmentId", (object)model.DepartmentId ?? DBNull.Value),
+                        new SqlParameter("@LocationId", (object)model.LocationId ?? DBNull.Value),
+                        new SqlParameter("@ImportDate", (object)model.ImportDate ?? DBNull.Value),
+                        new SqlParameter("@ExpiryDate", DBNull.Value),
+                        new SqlParameter("@WarrantyExpiry", (object)model.WarrantyExpiry ?? DBNull.Value),
+                        new SqlParameter("@CheckCycleId", DBNull.Value),
+                        new SqlParameter("@UnitPrice", model.UnitPrice),
+                        new SqlParameter("@DepreciationRate", (object)model.DepreciationRate ?? DBNull.Value),
+                        new SqlParameter("@DepreciationYears", (object)model.DepreciationYears ?? DBNull.Value),
+                        new SqlParameter("@ResidualValue", DBNull.Value),
+                        new SqlParameter("@ApprovedQuantity", DBNull.Value),
+                        new SqlParameter("@YearManufactured", (object)model.YearManufactured ?? DBNull.Value),
+                        new SqlParameter("@YearInUse", (object)model.YearInUse ?? DBNull.Value),
+                        new SqlParameter("@UsageYears", DBNull.Value),
+                        new SqlParameter("@AssetCategory", (object)model.AssetCategory ?? DBNull.Value),
+                        new SqlParameter("@GroupAssetCode", DBNull.Value),
+                        new SqlParameter("@AccountingCode", DBNull.Value),
+                        new SqlParameter("@InsuranceCode", DBNull.Value),
+                        new SqlParameter("@CountryManufactured", (object)model.CountryManufactured ?? DBNull.Value),
+                        new SqlParameter("@Manufacturer", (object)model.Manufacturer ?? DBNull.Value),
+                        new SqlParameter("@SupplierName", (object)model.SupplierName ?? DBNull.Value),
+                        new SqlParameter("@Note", (object)model.Note ?? DBNull.Value),
+                        new SqlParameter("@CreatedBy", model.CreatedBy),
+                        new SqlParameter("@IdTicket", DBNull.Value),
+                        new SqlParameter("@BaseUrl", Request.RequestUri.GetLeftPart(UriPartial.Authority) + "/")
+                    );
+                    success++;
+                }
+                catch (Exception ex)
+                {
+                    return Ok(new
+                    {
+                        success = success,
+                        failed = models.Count - success,
+                        message = ex.Message,
+                        inner = ex.InnerException?.Message
+                    });
+                }
+            }
+
+            return Ok(new { success, failed = models.Count - success });
         }
 
     }

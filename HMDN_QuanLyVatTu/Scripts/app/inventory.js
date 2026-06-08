@@ -33,6 +33,15 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        // IMPORT
+        showImportModal: false,
+        importStep: 1,
+        importFile: null,
+        importDragOver: false,
+        importParsing: false,
+        importLoading: false,
+        importRows: [],
+        importResult: { success: 0, failed: 0 },
 
         // === REPLACE MODAL STATE ===
         showReplaceModal: false,
@@ -248,6 +257,13 @@ var app = new Vue({
     
     computed: {
 
+        importValidCount() {
+            return this.importRows.filter(r => r._errors.length === 0).length
+        },
+        importErrorCount() {
+            return this.importRows.filter(r => r._errors.length > 0).length
+        },
+
         selectedTicketName() {
 
             const ticket =
@@ -440,6 +456,566 @@ var app = new Vue({
     },
 
     methods: {
+
+        // ══════════════════════════════════
+        // IMPORT EXCEL
+        // ══════════════════════════════════
+
+        openImportModal() {
+            this.showAddOptionModal = false
+            this.importStep = 1
+            this.importFile = null
+            this.importRows = []
+            this.importResult = { success: 0, failed: 0 }
+            this.showImportModal = true
+        },
+
+        closeImportModal() {
+            this.showImportModal = false
+            this.importFile = null
+            this.importRows = []
+            this.importStep = 1
+        },
+
+        onFileSelect(e) {
+            const file = e.target.files[0]
+            if (file) this.importFile = file
+        },
+
+        onFileDrop(e) {
+            this.importDragOver = false
+            const file = e.dataTransfer.files[0]
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                this.importFile = file
+            } else {
+                alert('Chỉ hỗ trợ file .xlsx hoặc .xls')
+            }
+        },
+
+        parseExcel() {
+            if (!this.importFile) return
+            this.importParsing = true
+
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result)
+                    const wb = XLSX.read(data, { type: 'array', cellDates: true })
+                    const ws = wb.Sheets[wb.SheetNames[0]]
+
+                    // Đọc từ row 3 (row 1-2 là header mô tả, row 3 là tên cột)
+                    const raw = XLSX.utils.sheet_to_json(ws, {
+                        header: 1,
+                        range: 2,       // bỏ 2 row đầu (title + mô tả)
+                        defval: ''
+                    })
+
+                    if (raw.length < 2) {
+                        alert('File không có dữ liệu hoặc sai template!')
+                        this.importParsing = false
+                        return
+                    }
+
+                    // Row 0 là header cột
+                    const headers = raw[0]
+                    const dataRows = raw.slice(1).filter(r => r.some(c => c !== ''))
+
+                    this.importRows = dataRows.map(row => {
+                        const obj = {}
+                        headers.forEach((h, i) => { obj[h] = row[i] })
+                        return this.validateImportRow(obj)
+                    })
+
+                    this.importStep = 2
+                } catch (err) {
+                    alert('Lỗi đọc file: ' + err.message)
+                }
+                this.importParsing = false
+            }
+            reader.readAsArrayBuffer(this.importFile)
+        },
+
+        validateImportRow(raw) {
+            const errors = []
+
+            const row = {
+                AssetCode: (raw['Mã tài sản *'] || '').toString().trim(),
+                ItemName: (raw['Tên thiết bị *'] || '').toString().trim(),
+                SerialNumber: (raw['Serial Number'] || '').toString().trim(),
+                Quantity: parseInt(raw['Số lượng']) || 1,
+                DepartmentName: (raw['Khoa'] || '').toString().trim(),
+                LocationName: (raw['Vị trí'] || '').toString().trim(),
+                ImportDate: this.parseExcelDate(raw['Ngày nhập']),
+                WarrantyExpiry: this.parseExcelDate(raw['Hết bảo hành']),
+                UnitPrice: parseFloat((raw['Đơn giá'] || '0').toString().replace(/,/g, '')) || 0,
+                YearManufactured: parseInt(raw['Năm sản xuất']) || null,
+                YearInUse: parseInt(raw['Năm sử dụng']) || null,
+                DepreciationRate: parseFloat(raw['Khấu hao (%)']) || null,
+                DepreciationYears: parseInt(raw['Số năm khấu hao']) || null,
+                AssetCategory: (raw['Loại tài sản'] || '').toString().trim(),
+                Manufacturer: (raw['Nhà sản xuất'] || '').toString().trim(),
+                SupplierName: (raw['Nhà cung cấp'] || '').toString().trim(),
+                CountryManufactured: (raw['Nước sản xuất'] || '').toString().trim(),
+                Note: (raw['Ghi chú'] || '').toString().trim(),
+                _errors: []
+            }
+
+            // Validate bắt buộc
+            if (!row.AssetCode) errors.push('Thiếu mã tài sản')
+            if (!row.ItemName) errors.push('Thiếu tên thiết bị')
+            if (row.Quantity < 1) errors.push('Số lượng không hợp lệ')
+
+            // Validate khoa / vị trí khớp dropdown (warning, không block)
+            if (row.DepartmentName && !this.departments.find(d => d.Name === row.DepartmentName)) {
+                errors.push('Khoa "' + row.DepartmentName + '" không tồn tại')
+            }
+            if (row.LocationName && !this.locationsData.find(l => l.Name === row.LocationName)) {
+                errors.push('Vị trí "' + row.LocationName + '" không tồn tại')
+            }
+
+            row._errors = errors
+            return row
+        },
+
+        parseExcelDate(val) {
+            if (!val) return null
+            // SheetJS trả về Date object khi cellDates: true
+            if (val instanceof Date) {
+                return val.toISOString().split('T')[0]
+            }
+            // String dạng dd/mm/yyyy hoặc yyyy-mm-dd
+            const s = val.toString().trim()
+            if (!s) return null
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10)
+            const parts = s.split('/')
+            if (parts.length === 3) {
+                const [d, m, y] = parts
+                return `${y.padStart(4, '0')}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+            }
+            return s
+        },
+
+        submitImport() {
+            const validRows = this.importRows.filter(r => r._errors.length === 0)
+            if (validRows.length === 0) return
+
+            this.importLoading = true
+
+            // Map sang format API
+            const payload = validRows.map(row => ({
+                AssetCode: row.AssetCode,
+                ItemId: this.resolveItemId(row.ItemName),
+                SerialNumber: row.SerialNumber || null,
+                Quantity: row.Quantity,
+                DepartmentId: this.resolveDeptId(row.DepartmentName),
+                LocationId: this.resolveLocId(row.LocationName),
+                ImportDate: row.ImportDate,
+                WarrantyExpiry: row.WarrantyExpiry,
+                UnitPrice: row.UnitPrice,
+                YearManufactured: row.YearManufactured,
+                YearInUse: row.YearInUse,
+                DepreciationRate: row.DepreciationRate,
+                DepreciationYears: row.DepreciationYears,
+                AssetCategory: row.AssetCategory || null,
+                Manufacturer: row.Manufacturer || null,
+                SupplierName: row.SupplierName || null,
+                CountryManufactured: row.CountryManufactured || null,
+                Note: row.Note || null,
+                CreatedBy: JSON.parse(localStorage.getItem('current_user')).Id
+            }))
+
+            $.ajax({
+                url: '/api/device/import',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: (res) => {
+                    this.importResult = {
+                        success: res.success,
+                        failed: this.importErrorCount
+                    }
+                    this.importStep = 3
+                    this.loadDevices()
+                },
+                error: (xhr) => {
+                    alert('Import thất bại: ' + xhr.responseText)
+                },
+                complete: () => {
+                    this.importLoading = false
+                }
+            })
+        },
+
+        // Helper resolve tên → Id
+        resolveItemId(name) {
+            const found = this.items.find(i => i.Name === name)
+            return found ? found.Id : null
+        },
+        resolveDeptId(name) {
+            if (!name) return null
+            const found = this.departments.find(d => d.Name === name)
+            return found ? found.Id : null
+        },
+        resolveLocId(name) {
+            if (!name) return null
+            const found = this.locationsData.find(l => l.Name === name)
+            return found ? found.Id : null
+        },
+
+        // ══════════════════════════════════
+        // DOWNLOAD TEMPLATE
+        // ══════════════════════════════════
+        downloadTemplate() {
+            window.location.href = '/template/inventory'
+        },
+        //downloadTemplate() {
+        //    const headers = [
+        //        'Mã tài sản', 'Tên thiết bị', 'Serial Number', 'Số lượng',
+        //        'Khoa', 'Vị trí', 'Ngày nhập', 'Hết bảo hành',
+        //        'Đơn giá', 'Năm sản xuất', 'Năm sử dụng',
+        //        'Khấu hao (%)', 'Số năm khấu hao',
+        //        'Loại tài sản', 'Nhà sản xuất', 'Nhà cung cấp',
+        //        'Nước sản xuất', 'Ghi chú'
+        //    ]
+
+        //    // Index các cột cần dropdown (0-based, tính từ header row)
+        //    // Col 1 = Tên thiết bị, Col 4 = Khoa, Col 5 = Vị trí, Col 13 = Loại tài sản
+        //    const COL_ITEM = 1
+        //    const COL_DEPT = 4
+        //    const COL_LOC = 5
+        //    const COL_GROUP = 13
+
+        //    const dept1 = this.departments[0]?.Name || 'Khoa Nội'
+        //    const dept2 = this.departments[1]?.Name || 'Khoa Ngoại'
+        //    const dept3 = this.departments[2]?.Name || 'Khoa ICU'
+        //    const loc1 = this.locationsData[0]?.Name || 'Tầng 1 - P101'
+        //    const loc2 = this.locationsData[1]?.Name || 'Tầng 2 - P201'
+        //    const loc3 = this.locationsData[2]?.Name || 'Tầng 3 - P301'
+        //    const grp1 = this.groupsData[0]?.Name || 'Thiết bị chẩn đoán'
+        //    const grp2 = this.groupsData[1]?.Name || 'Thiết bị điều trị'
+        //    const item1 = this.items[0]?.Name || 'Máy đo huyết áp'
+        //    const item2 = this.items[1]?.Name || 'Máy thở'
+        //    const item3 = this.items[2]?.Name || 'Máy siêu âm'
+        //    const item4 = this.items[3]?.Name || 'Máy theo dõi bệnh nhân'
+        //    const item5 = this.items[4]?.Name || 'Đèn phẫu thuật'
+
+        //    const sampleRows = [
+        //        [
+        //            'TS-2024-001', item1, 'SN-OMR-001', 1,
+        //            dept1, loc1, '2024-01-15', '2027-01-15',
+        //            4500000, 2022, 2024, 10, 10,
+        //            grp1, 'Omron', 'Công ty Thiết Bị Y Tế Miền Nam', 'Nhật Bản', 'Mẫu 1'
+        //        ],
+        //        [
+        //            'TS-2024-002', item2, 'SN-PHL-002', 1,
+        //            dept2, loc2, '2024-03-20', '2029-03-20',
+        //            85000000, 2023, 2024, 10, 10,
+        //            grp2, 'Philips', 'Công ty Dược Phẩm TW', 'Hà Lan', 'Mẫu 2'
+        //        ],
+        //        [
+        //            'TS-2024-003', item3, 'SN-SIE-003', 1,
+        //            dept3, loc3, '2024-05-10', '2029-05-10',
+        //            320000000, 2023, 2024, 10, 10,
+        //            grp1, 'Siemens', 'Công ty Medtronic VN', 'Đức', ''
+        //        ],
+        //    ]
+
+        //    // ── Sheet 1: Import data ──────────────────────────
+        //    const wsData = [
+        //        ['TEMPLATE IMPORT THIẾT BỊ — Không xóa/sửa 3 dòng đầu. Các cột có (*) bắt buộc. Cột màu vàng chọn từ dropdown.'],
+        //        ['(*) Bắt buộc: Mã tài sản, Tên thiết bị  |  Ngày: YYYY-MM-DD  |  Đơn giá: số nguyên (VND)'],
+        //        headers,
+        //        ...sampleRows
+        //    ]
+
+        //    const ws = XLSX.utils.aoa_to_sheet(wsData)
+
+        //    ws['!cols'] = [
+        //        { wch: 14 }, { wch: 26 }, { wch: 16 }, { wch: 10 },
+        //        { wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 13 },
+        //        { wch: 14 }, { wch: 13 }, { wch: 12 }, { wch: 13 },
+        //        { wch: 16 }, { wch: 22 }, { wch: 20 }, { wch: 24 },
+        //        { wch: 14 }, { wch: 28 }
+        //    ]
+
+        //    ws['!merges'] = [
+        //        { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+        //        { s: { r: 1, c: 0 }, e: { r: 1, c: headers.length - 1 } },
+        //    ]
+
+        //    // ── Sheet 2: Danh mục (dropdown source) ──────────
+        //    // Excel data validation chỉ nhận named range hoặc list string ngắn.
+        //    // Cách an toàn nhất: để list trong sheet riêng, reference bằng tên sheet.
+        //    const maxRef = Math.max(
+        //        this.items.length,
+        //        this.departments.length,
+        //        this.locationsData.length,
+        //        this.groupsData.length
+        //    )
+
+        //    const refRows = [
+        //        ['Tên thiết bị', '', 'Khoa', '', 'Vị trí', '', 'Loại tài sản']
+        //    ]
+        //    for (let i = 0; i < maxRef; i++) {
+        //        refRows.push([
+        //            this.items[i]?.Name || '', '',
+        //            this.departments[i]?.Name || '', '',
+        //            this.locationsData[i]?.Name || '', '',
+        //            this.groupsData[i]?.Name || ''
+        //        ])
+        //    }
+
+        //    const wsRef = XLSX.utils.aoa_to_sheet(refRows)
+        //    wsRef['!cols'] = [
+        //        { wch: 30 }, { wch: 3 },
+        //        { wch: 24 }, { wch: 3 },
+        //        { wch: 24 }, { wch: 3 },
+        //        { wch: 24 }
+        //    ]
+
+        //    // ── Build workbook ────────────────────────────────
+        //    const wb = XLSX.utils.book_new()
+        //    XLSX.utils.book_append_sheet(wb, ws, 'Import Thiết Bị')
+        //    XLSX.utils.book_append_sheet(wb, wsRef, 'DanhMuc')
+
+        //    // ── Data Validation (dropdown) ────────────────────
+        //    // SheetJS community hỗ trợ !dataValidations từ v0.18
+        //    // Áp dụng cho row 4 → 203 (200 dòng data, row index 3..202, Excel row 4..203)
+        //    const DATA_START_ROW = 3   // 0-based (row index 4 trong Excel)
+        //    const DATA_END_ROW = 202 // 200 dòng
+
+        //    const itemCount = this.items.length
+        //    const deptCount = this.departments.length
+        //    const locCount = this.locationsData.length
+        //    const groupCount = this.groupsData.length
+
+        //    // Helper: chuyển col index → letter (0=A, 1=B, ...)
+        //    const colLetter = (c) => XLSX.utils.encode_col(c)
+
+        //    // Helper: tạo sqref cho 1 cột, nhiều row
+        //    const sqref = (col, r1, r2) =>
+        //        `${colLetter(col)}${r1 + 1}:${colLetter(col)}${r2 + 1}`
+
+        //    ws['!dataValidations'] = [
+        //        // Tên thiết bị (col B) → DanhMuc!$A$2:$A${itemCount+1}
+        //        {
+        //            type: 'list',
+        //            sqref: sqref(COL_ITEM, DATA_START_ROW, DATA_END_ROW),
+        //            formula1: `DanhMuc!$A$2:$A$${itemCount + 1}`,
+        //            showDropDown: false,   // false = HIỆN dropdown arrow
+        //            showErrorMessage: true,
+        //            errorTitle: 'Giá trị không hợp lệ',
+        //            error: 'Vui lòng chọn tên thiết bị từ danh sách',
+        //            showInputMessage: true,
+        //            promptTitle: 'Tên thiết bị',
+        //            prompt: 'Chọn từ danh sách thiết bị trong hệ thống'
+        //        },
+        //        // Khoa (col E) → DanhMuc!$C$2:$C${deptCount+1}
+        //        {
+        //            type: 'list',
+        //            sqref: sqref(COL_DEPT, DATA_START_ROW, DATA_END_ROW),
+        //            formula1: `DanhMuc!$C$2:$C$${deptCount + 1}`,
+        //            showDropDown: false,
+        //            showErrorMessage: true,
+        //            errorTitle: 'Khoa không tồn tại',
+        //            error: 'Vui lòng chọn khoa từ danh sách',
+        //            showInputMessage: true,
+        //            promptTitle: 'Khoa',
+        //            prompt: 'Chọn từ danh sách khoa trong hệ thống'
+        //        },
+        //        // Vị trí (col F) → DanhMuc!$E$2:$E${locCount+1}
+        //        {
+        //            type: 'list',
+        //            sqref: sqref(COL_LOC, DATA_START_ROW, DATA_END_ROW),
+        //            formula1: `DanhMuc!$E$2:$E$${locCount + 1}`,
+        //            showDropDown: false,
+        //            showErrorMessage: true,
+        //            errorTitle: 'Vị trí không tồn tại',
+        //            error: 'Vui lòng chọn vị trí từ danh sách',
+        //            showInputMessage: true,
+        //            promptTitle: 'Vị trí',
+        //            prompt: 'Chọn từ danh sách vị trí trong hệ thống'
+        //        },
+        //        // Loại tài sản (col N) → DanhMuc!$G$2:$G${groupCount+1}
+        //        {
+        //            type: 'list',
+        //            sqref: sqref(COL_GROUP, DATA_START_ROW, DATA_END_ROW),
+        //            formula1: `DanhMuc!$G$2:$G$${groupCount + 1}`,
+        //            showDropDown: false,
+        //            showErrorMessage: true,
+        //            errorTitle: 'Loại tài sản không hợp lệ',
+        //            error: 'Vui lòng chọn loại tài sản từ danh sách',
+        //            showInputMessage: true,
+        //            promptTitle: 'Loại tài sản',
+        //            prompt: 'Chọn từ danh sách loại tài sản trong hệ thống'
+        //        },
+        //        // Ngày nhập (col G) — date validation
+        //        {
+        //            type: 'date',
+        //            sqref: sqref(6, DATA_START_ROW, DATA_END_ROW),
+        //            operator: 'greaterThan',
+        //            formula1: '1900-01-01',
+        //            showErrorMessage: true,
+        //            errorTitle: 'Ngày không hợp lệ',
+        //            error: 'Nhập ngày theo định dạng YYYY-MM-DD',
+        //            showInputMessage: true,
+        //            promptTitle: 'Ngày nhập',
+        //            prompt: 'Định dạng: YYYY-MM-DD (VD: 2024-01-15)'
+        //        },
+        //        // Số lượng (col D) — số nguyên ≥ 1
+        //        {
+        //            type: 'whole',
+        //            sqref: sqref(3, DATA_START_ROW, DATA_END_ROW),
+        //            operator: 'greaterThanOrEqual',
+        //            formula1: '1',
+        //            showErrorMessage: true,
+        //            errorTitle: 'Số lượng không hợp lệ',
+        //            error: 'Số lượng phải là số nguyên ≥ 1',
+        //        },
+        //        // Đơn giá (col I) — số ≥ 0
+        //        {
+        //            type: 'decimal',
+        //            sqref: sqref(8, DATA_START_ROW, DATA_END_ROW),
+        //            operator: 'greaterThanOrEqual',
+        //            formula1: '0',
+        //            showErrorMessage: true,
+        //            errorTitle: 'Đơn giá không hợp lệ',
+        //            error: 'Đơn giá phải là số ≥ 0',
+        //        }
+        //    ]
+
+        //    XLSX.writeFile(wb, 'Template_Import_ThietBi.xlsx')
+        //},
+
+        // ============================================
+        // EXPORT EXCEL
+        // ============================================
+
+        exportExcel() {
+            // Lấy data theo filter hiện tại, giới hạn pageSize
+            const data = this.filteredDevices.slice(0, this.pageSize)
+
+            if (data.length === 0) {
+                alert('Không có dữ liệu để xuất')
+                return
+            }
+
+            // ── Map sang object có tên cột tiếng Việt ──
+            const rows = data.map((x, i) => ({
+                'STT': i + 1,
+                'Mã ID': x.Id || '',
+                'Mã tài sản': x.AssetCode || '',
+                'Tên thiết bị': x.ItemName || '',
+                'Model': x.Model || '',
+                'Serial': x.SerialNumber || '',
+                'Hãng': x.Brand || '',
+                'Loại tài sản': x.GroupName || '',
+                'Khoa': x.DepartmentName || '',
+                'Vị trí': x.LocationName || '',
+                'Trạng thái': this.getLifeStatusMeta(x.LifeStatus).text,
+                'Đơn giá': x.UnitPrice || 0,
+                'Tổng giá trị': x.TotalPrice || 0,
+                'Khấu hao (%)': x.DepreciationRate || '',
+                'Số năm khấu hao': x.DepreciationYears || '',
+                'Giá trị còn lại': x.ResidualValue || '',
+                'Năm sản xuất': x.YearManufactured || '',
+                'Năm sử dụng': x.YearInUse || '',
+                'Số năm hoạt động': x.UsageYears || '',
+                'Phân loại tài sản': x.AssetCategory || '',
+                'Mã tập đoàn': x.GroupAssetCode || '',
+                'Mã kế toán': x.AccountingCode || '',
+                'Mã bảo hiểm': x.InsuranceCode || '',
+                'Nước sản xuất': x.CountryManufactured || '',
+                'Nhà sản xuất': x.Manufacturer || '',
+                'Nhà cung cấp': x.SupplierName || '',
+                'Ngày nhập': x.ImportDate ? x.ImportDate.substring(0, 10) : '',
+                'Hết bảo hành': x.WarrantyExpiry ? x.WarrantyExpiry.substring(0, 10) : '',
+                'Phiếu': x.TicketCode || '',
+                'Người tạo': x.CreatedByName || '',
+                'Ngày tạo': x.CreatedAt ? x.CreatedAt.substring(0, 10) : '',
+            }))
+
+            // ── Tạo worksheet ──
+            const ws = XLSX.utils.json_to_sheet(rows, { origin: 'A3' })
+
+            // ── Tiêu đề lớn (row 1) ──
+            XLSX.utils.sheet_add_aoa(ws, [
+                ['DANH SÁCH TÀI SẢN THIẾT BỊ Y TẾ'],
+                ['Xuất ngày: ' + new Date().toLocaleDateString('vi-VN') +
+                    '   |   Số bản ghi: ' + data.length +
+                    (this.filterGroup ? '   |   Loại: ' + this.filterGroup : '') +
+                    (this.filterLoca ? '   |   Vị trí: ' + this.filterLoca : '') +
+                    (this.filterStatus ? '   |   Trạng thái: ' + this.statusLabel(this.filterStatus) : '') +
+                    (this.searchQuery ? '   |   Tìm kiếm: "' + this.searchQuery + '"' : '')]
+            ], { origin: 'A1' })
+
+            // ── Độ rộng cột ──
+            ws['!cols'] = [
+                { wch: 5 },  // STT
+                { wch: 8 },  // Mã ID
+                { wch: 16 },  // Mã tài sản
+                { wch: 28 },  // Tên thiết bị
+                { wch: 16 },  // Model
+                { wch: 18 },  // Serial
+                { wch: 14 },  // Hãng
+                { wch: 20 },  // Loại tài sản
+                { wch: 20 },  // Khoa
+                { wch: 16 },  // Vị trí
+                { wch: 16 },  // Trạng thái
+                { wch: 14 },  // Đơn giá
+                { wch: 14 },  // Tổng giá trị
+                { wch: 13 },  // Khấu hao
+                { wch: 15 },  // Số năm KH
+                { wch: 15 },  // Giá trị còn lại
+                { wch: 13 },  // Năm SX
+                { wch: 13 },  // Năm SD
+                { wch: 16 },  // Số năm HĐ
+                { wch: 18 },  // Phân loại
+                { wch: 16 },  // Mã tập đoàn
+                { wch: 14 },  // Mã KT
+                { wch: 14 },  // Mã BH
+                { wch: 16 },  // Nước SX
+                { wch: 20 },  // Nhà SX
+                { wch: 22 },  // Nhà CC
+                { wch: 12 },  // Ngày nhập
+                { wch: 13 },  // Hết BH
+                { wch: 14 },  // Phiếu
+                { wch: 18 },  // Người tạo
+                { wch: 12 },  // Ngày tạo
+            ]
+
+            // ── Merge tiêu đề lớn qua tất cả cột ──
+            const colCount = Object.keys(rows[0]).length
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
+            ]
+
+            // ── Style (SheetJS free chỉ hỗ trợ cơ bản, dùng cellStyles nếu có Pro) ──
+            // Với SheetJS community, set số format cho cột tiền
+            const numFmt = '#,##0'
+            const totalRows = rows.length + 3  // header 2 + col header 1 + data
+            for (let r = 4; r <= totalRows; r++) {
+                const cellL = XLSX.utils.encode_cell({ r: r - 1, c: 11 }) // Đơn giá col L
+                const cellM = XLSX.utils.encode_cell({ r: r - 1, c: 12 }) // Tổng giá trị col M
+                const cellP = XLSX.utils.encode_cell({ r: r - 1, c: 15 }) // Giá trị còn lại
+                if (ws[cellL]) ws[cellL].z = numFmt
+                if (ws[cellM]) ws[cellM].z = numFmt
+                if (ws[cellP]) ws[cellP].z = numFmt
+            }
+
+            // ── Tạo workbook và xuất file ──
+            const wb = XLSX.utils.book_new()
+            XLSX.utils.book_append_sheet(wb, ws, 'Danh sách tài sản')
+
+            const fileName = 'TaiSan_' +
+                new Date().toISOString().substring(0, 10).replace(/-/g, '') +
+                '_' + data.length + 'bk.xlsx'
+
+            XLSX.writeFile(wb, fileName)
+        },
+
+
 
         // ============================================
         // REPLACE DEVICE - Thay thế tài sản

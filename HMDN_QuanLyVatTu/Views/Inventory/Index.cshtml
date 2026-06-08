@@ -23,8 +23,8 @@
             <div class="topbar-actions">
 
                 <!--<button class="btn-secondary"
-                        v-on:click="openQrModal()">
-                    Check QR-->
+                    v-on:click="openQrModal()">
+                Check QR-->
                 @*<div class="icon">📷</div>
 
                     <h4>Quét QR</h4>
@@ -40,7 +40,11 @@
                     Thêm thiết bị
 
                 </button>
-
+                <!-- Thêm vào topbar-actions, cạnh nút Thêm thiết bị -->
+                <button class="btn-secondary"
+                        v-on:click="exportExcel()">
+                    📊 Xuất Excel
+                </button>
             </div>
 
         </header>
@@ -148,29 +152,29 @@
 
                             <!--<td @@click.stop>
 
-        <select class="status-dropdown"
-                :disabled="!hasPermission('Inventory', 'EDIT')"
-                v-model="item.LifeStatus"
-                @@change="changeStatus(item)">
+                            <select class="status-dropdown"
+                                    :disabled="!hasPermission('Inventory', 'EDIT')"
+                                    v-model="item.LifeStatus"
+                                    @@change="changeStatus(item)">
 
-            <option value="active">
-                Đang hoạt động
-            </option>
+                                <option value="active">
+                                    Đang hoạt động
+                                </option>
 
-            <option value="replaced" >
-                Thay thế + ${ item.ReplacedId }
-            </option>-->
+                                <option value="replaced" >
+                                    Thay thế + ${ item.ReplacedId }
+                                </option>-->
                             <!-- suspended KHÔNG CHO CHỌN -->
                             <!--<option v-if="item.LifeStatus == 'suspended'"
-                    value="suspended">
+                                            value="suspended">
 
-                Tạm ngưng
+                                        Tạm ngưng
 
-            </option>
+                                    </option>
 
-        </select>
+                                </select>
 
-    </td>-->
+                            </td>-->
 
                             <td v-on:click.stop>
 
@@ -426,23 +430,22 @@
 
                                 <div class="action-group">
 
-                                    <div class="action-group">
+                                    <!--<div class="action-group">
 
-                                        <button class="btn-primary"
-                                                v-if="hasPermission('Inventory', 'EDIT')"
-                                                v-on:click="openEditModal(selectedDevice.Id)">
-                                            Sửa
-                                        </button>
+                                    <button class="btn-primary"
+                                            v-if="hasPermission('Inventory', 'EDIT')"
+                                            v-on:click="openEditModal(selectedDevice.Id)">
+                                        Sửa
+                                    </button>
 
-                                        <button class="btn-danger"
-                                                v-if="hasPermission('Inventory', 'EDIT')"
-                                                :disabled="selectedDevice.LifeStatus == 'suspended'"
-                                                v-on:click="openErrorModal(selectedDevice)">
-                                            Check có lỗi
-                                        </button>
-
-                                        <!-- Thêm nút này -->
-                                        <button class="btn-secondary"
+                                    <button class="btn-danger"
+                                            v-if="hasPermission('Inventory', 'EDIT')"
+                                            :disabled="selectedDevice.LifeStatus == 'suspended'"
+                                            v-on:click="openErrorModal(selectedDevice)">
+                                        Check có lỗi
+                                    </button>-->
+                                    <!-- Thêm nút này -->
+                                    <!--<button class="btn-secondary"
                                                 v-on:click="showDeviceQr()">
                                             📱 QR Code
                                         </button>
@@ -458,6 +461,41 @@
                                             🔁 Thay thế
                                         </button>
 
+
+                                    </div>-->
+
+                                    <div class="action-group">
+
+                                        <button class="btn-primary"
+                                                v-if="hasPermission('Inventory', 'EDIT')"
+                                                :disabled="selectedDevice.LifeStatus === 'replaced'"
+                                                v-on:click="openEditModal(selectedDevice.Id)">
+                                            Sửa
+                                        </button>
+
+                                        <button class="btn-danger"
+                                                v-if="hasPermission('Inventory', 'EDIT')"
+                                                :disabled="selectedDevice.LifeStatus === 'suspended' || selectedDevice.LifeStatus === 'replaced'"
+                                                v-on:click="openErrorModal(selectedDevice)">
+                                            Check có lỗi
+                                        </button>
+
+                                        <button class="btn-secondary"
+                                                v-on:click="showDeviceQr()">
+                                            📱 QR Code
+                                        </button>
+
+                                        <button class="btn-secondary"
+                                                :disabled="selectedDevice.LifeStatus === 'replaced'"
+                                                @@click="showMaintenanceSchedule()">
+                                            Thêm lịch bảo trì
+                                        </button>
+
+                                        <button class="btn-replace"
+                                                v-if="hasPermission('Inventory', 'EDIT') && (selectedDevice.LifeStatus === 'suspended' || selectedDevice.LifeStatus === 'liquidated')"
+                                                @@click="openReplaceModal()">
+                                            🔁 Thay thế
+                                        </button>
 
                                     </div>
 
@@ -810,14 +848,10 @@
                         <div class="add-option-grid">
 
                             <button class="add-option-card"
-                                    v-on:click="openAddWithExcelModal()">
-
+                                    v-on:click="openImportModal()">
                                 <div class="icon">📁</div>
-
-                                <h4>Thêm bằng excel</h4>
-
-                                <p>Thêm nhanh bằng excel</p>
-
+                                <h4>Import Excel</h4>
+                                <p>Tải template & import hàng loạt</p>
                             </button>
 
                             <button class="add-option-card"
@@ -2160,7 +2194,218 @@
         </div>
     </div>
 
+    <!-- MODAL IMPORT EXCEL -->
+    <div class="modal-overlay"
+         v-if="showImportModal"
+         v-on:click.self="closeImportModal()">
+
+        <div class="device-modal large-modal">
+
+            <div class="modal-header">
+                <h3>📁 Import thiết bị từ Excel</h3>
+                <button class="close-btn" v-on:click="closeImportModal()">×</button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- STEP 1: Upload -->
+                <div v-if="importStep === 1">
+
+                    <div class="import-guide">
+                        <h4>📋 Hướng dẫn</h4>
+                        <ol>
+                            <li>Tải file template Excel bên dưới</li>
+                            <li>Điền thông tin thiết bị vào file (không xóa/sửa header)</li>
+                            <li>Upload file lên và kiểm tra preview</li>
+                            <li>Xác nhận import</li>
+                        </ol>
+                        <button class="btn-secondary"
+                                v-on:click="downloadTemplate()">
+                            ⬇ Tải file Template
+                        </button>
+                    </div>
+
+                    <div class="import-dropzone"
+                         id="importDropzone"
+                         v-on:dragover.prevent="importDragOver = true"
+                         v-on:dragleave="importDragOver = false"
+                         v-on:drop.prevent="onFileDrop($event)"
+                         :class="{ dragover: importDragOver }">
+
+                        <div v-if="!importFile">
+                            <p style="font-size:32px;margin:0">📂</p>
+                            <p style="margin:8px 0 4px;font-weight:600;color:#374151">
+                                Kéo thả file Excel vào đây
+                            </p>
+                            <p style="font-size:12px;color:#94a3b8;margin:0">
+                                hoặc
+                            </p>
+                            <label class="btn-primary"
+                                   style="margin-top:10px;display:inline-block;cursor:pointer">
+                                Chọn file
+                                <input type="file"
+                                       accept=".xlsx,.xls"
+                                       style="display:none"
+                                       v-on:change="onFileSelect($event)">
+                            </label>
+                            <p style="font-size:11px;color:#cbd5e1;margin-top:8px">
+                                Chỉ hỗ trợ .xlsx, .xls
+                            </p>
+                        </div>
+
+                        <div v-else style="text-align:center">
+                            <p style="font-size:32px;margin:0">✅</p>
+                            <p style="font-weight:600;color:#16a34a;margin:8px 0 4px">
+                                ${ importFile.name }
+                            </p>
+                            <p style="font-size:12px;color:#64748b;margin:0">
+                                ${ (importFile.size / 1024).toFixed(1) } KB
+                            </p>
+                            <button class="btn-secondary"
+                                    style="margin-top:12px;font-size:12px"
+                                    v-on:click="importFile = null">
+                                Chọn file khác
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:16px">
+                        <button class="btn-secondary"
+                                v-on:click="closeImportModal()">
+                            Hủy
+                        </button>
+                        <button class="btn-primary"
+                                :disabled="!importFile || importParsing"
+                                v-on:click="parseExcel()">
+                            <span v-if="importParsing">⏳ Đang đọc...</span>
+                            <span v-else>Tiếp theo →</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- STEP 2: Preview & Validate -->
+                <div v-if="importStep === 2">
+
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                        <div>
+                            <h4 style="margin:0">Kiểm tra dữ liệu</h4>
+                            <p style="font-size:13px;color:#64748b;margin:4px 0 0">
+                                Tổng: <strong>${ importRows.length }</strong> dòng &nbsp;|&nbsp;
+                                <span style="color:#16a34a">✅ Hợp lệ: <strong>${ importValidCount }</strong></span> &nbsp;|&nbsp;
+                                <span style="color:#dc2626">❌ Lỗi: <strong>${ importErrorCount }</strong></span>
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn-secondary"
+                                    v-on:click="importStep = 1">
+                                ← Quay lại
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview table -->
+                    <div style="overflow-x:auto;max-height:400px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px">
+                        <table style="width:100%;border-collapse:collapse;font-size:12px">
+                            <thead style="position:sticky;top:0;background:#f8fafc;z-index:1">
+                                <tr>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">#</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Trạng thái</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Mã tài sản *</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Tên thiết bị *</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Serial</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Số lượng</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Khoa</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Vị trí</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Ngày nhập</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Đơn giá</th>
+                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Lỗi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(row, idx) in importRows"
+                                    :key="idx"
+                                    :style="{ background: row._errors.length ? '#fff5f5' : (idx % 2 === 0 ? '#fff' : '#f8fafc') }">
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#94a3b8">
+                                        ${ idx + 1 }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:center">
+                                        <span v-if="row._errors.length === 0" title="Hợp lệ">✅</span>
+                                        <span v-else title="Có lỗi">❌</span>
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-weight:600">
+                                        ${ row.AssetCode || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">
+                                        ${ row.ItemName || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#64748b">
+                                        ${ row.SerialNumber || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:center">
+                                        ${ row.Quantity || 1 }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">
+                                        ${ row.DepartmentName || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">
+                                        ${ row.LocationName || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">
+                                        ${ row.ImportDate || '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;text-align:right">
+                                        ${ row.UnitPrice ? Number(row.UnitPrice).toLocaleString('vi-VN') : '—' }
+                                    </td>
+                                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#dc2626;font-size:11px;max-width:200px">
+                                        ${ row._errors.join(', ') || '' }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="modal-actions" style="margin-top:16px">
+                        <button class="btn-secondary" v-on:click="importStep = 1">
+                            ← Quay lại
+                        </button>
+                        <button class="btn-primary"
+                                :disabled="importValidCount === 0 || importLoading"
+                                v-on:click="submitImport()">
+                            <span v-if="importLoading">⏳ Đang import...</span>
+                            <span v-else>
+                                ✅ Import ${ importValidCount } thiết bị
+                            </span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- STEP 3: Result -->
+                <div v-if="importStep === 3" style="text-align:center;padding:30px 0">
+                    <p style="font-size:48px;margin:0">🎉</p>
+                    <h3 style="color:#16a34a;margin:16px 0 8px">Import thành công!</h3>
+                    <p style="color:#64748b;font-size:14px">
+                        Đã thêm <strong>${ importResult.success }</strong> thiết bị
+                        <span v-if="importResult.failed > 0">
+                            , bỏ qua <strong style="color:#dc2626">${ importResult.failed }</strong> dòng lỗi
+                        </span>
+                    </p>
+                    <div class="modal-actions" style="justify-content:center;margin-top:24px">
+                        <button class="btn-primary" v-on:click="closeImportModal()">
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="~/Scripts/app/inventory.js"></script>
 
 <script src="~/Scripts/app/inventory.js"></script>
