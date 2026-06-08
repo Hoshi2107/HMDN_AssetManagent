@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Danh sách Phê duyệt";
     ViewBag.ActiveNav = "Approvals";
 }
@@ -1474,40 +1474,95 @@
 
     /* Print Media Query Rules */
     @@media print {
-        /* Hide everything on screen */
-        body * {
-            visibility: hidden;
+        /* 1. Loại bỏ hoàn toàn Header và Footer mặc định bằng cách đặt margin trang in là 0 */
+        @@page {
+            size: A4 portrait;
+            margin: 0 !important;
         }
 
-        /* Show print form and its children */
-        #print-form, #print-form * {
-            visibility: visible;
+        /* 2. Reset toàn bộ các thẻ cha để layout in không bị giới hạn chiều cao (tránh khung trắng/blank space ở dưới) */
+        html, body, #app, .app-shell, .page-wrapper, .page-content {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            position: static !important; /* Phá vỡ định vị tương đối/tuyệt đối của layout chính */
         }
 
-        #print-form {
-            display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100% !important;
-            font-family: "Times New Roman", Times, serif;
-            color: #000;
-            background: #fff;
-            padding: 0;
-            margin: 0;
-        }
-
-        /* Prevent standard page elements from taking up space */
-        .app-shell, #app-sidebar, .page-topbar, .page-content, .detail-modal, .modal-overlay, .lightbox-modal {
+        /* 3. Ẩn triệt để các phần giao diện web xung quanh (menu, sidebar, header, các nút, hộp thoại...) */
+        #toast-container,
+        #app-sidebar,
+        .sidebar,
+        .page-topbar,
+        .page-header,
+        .table-card,
+        .detail-modal,
+        .modal-overlay,
+        .lightbox-modal {
             display: none !important;
+            width: 0 !important;
             height: 0 !important;
             overflow: hidden !important;
         }
 
-        @@page {
-            size: A4;
-            margin: 20mm 15mm 20mm 15mm;
+        /* 4. Ẩn tất cả các phần tử khác trên body bằng visibility */
+        body * {
+            visibility: hidden !important;
         }
+
+        /* 5. Hiển thị duy nhất khu vực biểu mẫu in và các con của nó */
+        #print-form, #print-form * {
+            visibility: visible !important;
+        }
+
+        /* 6. Định vị biểu mẫu in tuyệt đối đè lên trang đầu tiên */
+        #print-form {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            background: #fff !important;
+            /* Dùng padding thay cho page margin để căn lề văn bản chuẩn hành chính: Lề trái 20mm, các lề khác 15mm */
+            padding: 15mm 15mm 15mm 20mm !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            z-index: 99999 !important;
+            font-family: 'Times New Roman', Times, serif !important;
+            color: #000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* 7. Định dạng bảng biểu chắc chắn giữ nét viền đen 1px */
+        #print-form table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        #print-form th, #print-form td {
+            border: 1px solid #000 !important;
+            padding: 6px 8px !important;
+            font-size: 12pt !important;
+        }
+        #print-form tr {
+            page-break-inside: avoid !important;
+        }
+    }
+
+    /* 
+     * Loại bỏ hoàn toàn Header và Footer mặc định của trình duyệt
+     * (Tiêu đề, Ngày tháng, URL, Số trang: 6/8/26, localhost..., 1/1)
+     * Bằng cách đặt margin: 0 → trình duyệt không còn chỗ để chèn thông tin hệ thống
+     */
+    @@page {
+        size: A4 portrait;
+        margin: 0;
     }
 
     /* Print Form Content styling */
@@ -2075,7 +2130,7 @@
         </div>
 
         <div class="print-title-section">
-            <h1 class="print-main-title">GIẤY ĐỀ NGHỊ MUA HÀNG</h1>
+            <h1 class="print-main-title">${getPrintTitle()}</h1>
         </div>
 
         <!-- Body Section -->
@@ -2090,11 +2145,11 @@
             </div>
             <div class="print-info-line">
                 <span class="print-info-label">Đề nghị mua hàng:</span>
-                <span style="white-space: pre-wrap;">${getProposal() || '—'}</span>
+                <span style="white-space: pre-wrap;">${getPrintProposal() || '—'}</span>
             </div>
             <div class="print-info-line">
                 <span class="print-info-label">Lý do:</span>
-                <span style="white-space: pre-wrap;">${getReasonDetails() || '—'}</span>
+                <span style="white-space: pre-wrap;">${getPrintReason() || '—'}</span>
             </div>
         </div>
 
@@ -2103,8 +2158,8 @@
             <thead>
                 <tr>
                     <th style="width: 60px;">STT</th>
-                    <th>Tên hàng</th>
-                    <th style="width: 120px;">Đơn vị</th>
+                    <th>Tên hàng / thiết bị</th>
+                    <th style="width: 120px;">Đơn vị tính</th>
                     <th style="width: 100px;">Số lượng</th>
                     <th style="width: 250px;">Ghi chú</th>
                 </tr>
@@ -2119,11 +2174,11 @@
                         </span>
                     </td>
                     <td class="center">
-                        ${isDeviceFormType(selectedTicket.TicketType) ? 'Cái' : getUnitFromNote(dt.note)}
+                        ${getPrintUnit(dt)}
                     </td>
                     <td class="center">${dt.Quantity}</td>
                     <td>
-                        ${isDeviceFormType(selectedTicket.TicketType) ? (dt.Note || '') : getItemNoteFromNote(dt.note)}
+                        ${getPrintNote(dt)}
                     </td>
                 </tr>
                 <tr v-if="ticketDetails.length === 0">
@@ -2137,13 +2192,13 @@
         <!-- Footer Section -->
         <div class="print-footer-section">
             <div class="print-date-line">
-                Đồng Nai, ngày ..... tháng ..... năm 202...
+                Đồng Nai, ngày <u>&nbsp;${getDay(selectedTicket.CreatedAt)}&nbsp;</u> tháng <u>&nbsp;${getMonth(selectedTicket.CreatedAt)}&nbsp;</u> năm ${getYear(selectedTicket.CreatedAt)}
             </div>
             <div class="print-signatures-grid">
                 <div class="print-sig-column">
                     <span class="print-sig-role">Người đề xuất</span>
                     <span class="print-sig-sub">(Ký, ghi rõ họ tên)</span>
-                    <span class="print-sig-name-bottom">${creatorLabel(selectedTicket)}</span>
+                    <span class="print-sig-name-bottom">&nbsp;</span>
                 </div>
                 <div class="print-sig-column">
                     <span class="print-sig-role">Trưởng Khoa/Phòng</span>

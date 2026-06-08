@@ -496,6 +496,32 @@
         color: var(--hm-text-sec);
         font-style: italic;
     }
+
+    /* Column-specific search input styles */
+    .search-col-input {
+        height: 28px !important;
+        padding: 0 8px !important;
+        font-size: 11.5px !important;
+        border-radius: 6px !important;
+        border: 1px solid var(--hm-border) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        font-weight: 500 !important;
+        outline: none !important;
+        transition: var(--hm-tr) !important;
+        background: #ffffff !important;
+    }
+    .search-col-input:focus {
+        border-color: var(--hm-navy) !important;
+        box-shadow: 0 0 0 2px rgba(15,44,89,.08) !important;
+    }
+    .dropdown-search-row th {
+        position: static !important;
+        background: #f8fafc !important;
+        padding: 4px 6px !important;
+        border-bottom: 2px solid var(--hm-border) !important;
+        box-shadow: none !important;
+    }
 </style>
 
 <div id="app" v-cloak>
@@ -589,6 +615,13 @@
                                                         <th>Model</th>
                                                         <th>Serial</th>
                                                         <th>Khoa</th>
+                                                    </tr>
+                                                    <tr class="dropdown-search-row">
+                                                        <th><input type="text" class="search-col-input" v-model="searchCol.code" placeholder="Tìm mã..." @@click.stop /></th>
+                                                        <th><input type="text" class="search-col-input" v-model="searchCol.name" placeholder="Tìm tên..." @@click.stop /></th>
+                                                        <th><input type="text" class="search-col-input" v-model="searchCol.model" placeholder="Tìm model..." @@click.stop /></th>
+                                                        <th><input type="text" class="search-col-input" v-model="searchCol.serial" placeholder="Tìm serial..." @@click.stop /></th>
+                                                        <th><input type="text" class="search-col-input" v-model="searchCol.dept" placeholder="Tìm khoa..." @@click.stop /></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -960,7 +993,14 @@
                 attachedFiles: [],
 
                 // Custom Select Dropdown
-                isDropdownOpen: false
+                isDropdownOpen: false,
+                searchCol: {
+                    code: '',
+                    name: '',
+                    model: '',
+                    serial: '',
+                    dept: ''
+                }
             },
             computed: {
                 isDeviceForm() {
@@ -974,19 +1014,38 @@
                 filteredInventoryAssets() {
                     var vm = this;
                     var q = (vm.searchQuery || '').trim().toLowerCase();
-                    if (!q) return vm.inventoryAssets;
+                    
+                    var colCode = (vm.searchCol.code || '').trim().toLowerCase();
+                    var colName = (vm.searchCol.name || '').trim().toLowerCase();
+                    var colModel = (vm.searchCol.model || '').trim().toLowerCase();
+                    var colSerial = (vm.searchCol.serial || '').trim().toLowerCase();
+                    var colDept = (vm.searchCol.dept || '').trim().toLowerCase();
+
                     return vm.inventoryAssets.filter(function (x) {
-                        var code = (x.AssetCode || '').toLowerCase();
-                        var name = (x.AssetName || '').toLowerCase();
-                        var model = (x.Model || '').toLowerCase();
-                        var serial = (x.SerialNumber || '').toLowerCase();
-                        var dept = (x.DepartmentName || '').toLowerCase();
-                        
-                        return code.indexOf(q) > -1 || 
-                               name.indexOf(q) > -1 || 
-                               model.indexOf(q) > -1 || 
-                               serial.indexOf(q) > -1 || 
-                               dept.indexOf(q) > -1;
+                        // 1. Tìm kiếm tổng thể (Global Search)
+                        if (q) {
+                            var code = (x.AssetCode || '').toLowerCase();
+                            var name = (x.AssetName || '').toLowerCase();
+                            var model = (x.Model || '').toLowerCase();
+                            var serial = (x.SerialNumber || '').toLowerCase();
+                            var dept = (x.DepartmentName || '').toLowerCase();
+                            
+                            var matchGlobal = code.indexOf(q) > -1 || 
+                                              name.indexOf(q) > -1 || 
+                                              model.indexOf(q) > -1 || 
+                                              serial.indexOf(q) > -1 || 
+                                              dept.indexOf(q) > -1;
+                            if (!matchGlobal) return false;
+                        }
+
+                        // 2. Tìm kiếm theo từng cột cụ thể (Column-specific Search)
+                        if (colCode && (x.AssetCode || '').toLowerCase().indexOf(colCode) === -1) return false;
+                        if (colName && (x.AssetName || '').toLowerCase().indexOf(colName) === -1) return false;
+                        if (colModel && (x.Model || '').toLowerCase().indexOf(colModel) === -1) return false;
+                        if (colSerial && (x.SerialNumber || '').toLowerCase().indexOf(colSerial) === -1) return false;
+                        if (colDept && (x.DepartmentName || '').toLowerCase().indexOf(colDept) === -1) return false;
+
+                        return true;
                     });
                 }
             },
