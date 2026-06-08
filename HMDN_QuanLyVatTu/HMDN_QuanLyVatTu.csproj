@@ -154,6 +154,7 @@
     <Compile Include="Controllers\LocationAPIController.cs" />
     <Compile Include="Controllers\LocationController.cs" />
     <Compile Include="Controllers\MaintenanceScheduleController.cs" />
+    <Compile Include="Controllers\TemplateController.cs" />
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
     <Compile Include="Controllers\AlertsController.cs" />
     <Compile Include="Controllers\AlertsAPIController.cs" />
@@ -186,6 +187,7 @@
     <Compile Include="Models\GroupCreateDTO.cs" />
     <Compile Include="Models\GroupUpdateDTO.cs" />
     <Compile Include="Models\GroupVM.cs" />
+    <Compile Include="Models\ImportInventoryVM.cs" />
     <Compile Include="Models\Inventory.cs" />
     <Compile Include="Models\InventoryAttachment.cs" />
     <Compile Include="Models\InventoryDetailVM.cs" />

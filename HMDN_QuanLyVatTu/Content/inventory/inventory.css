@@ -589,3 +589,50 @@ td {
     border-radius: 12px;
     border: 2px dashed #e2e8f0;
 }
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ?? Import Modal ?? */
+.import-guide {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+    .import-guide h4 {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: #0369a1;
+    }
+
+    .import-guide ol {
+        margin: 0 0 14px;
+        padding-left: 20px;
+        font-size: 13px;
+        color: #374151;
+        line-height: 1.8;
+    }
+
+.import-dropzone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.2s;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+    .import-dropzone.dragover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .import-dropzone:hover {
+        border-color: #94a3b8;
+    }
