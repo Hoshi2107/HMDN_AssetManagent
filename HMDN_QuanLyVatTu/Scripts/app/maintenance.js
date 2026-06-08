@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    maintenance.js — Vue 2 Instance cho Nhật ký bệnh án thiết bị
    Tuân thủ: Vue 2.7.16 CDN, jQuery AJAX, delimiters ['${', '}']
    ═══════════════════════════════════════════════════════════ */
@@ -462,6 +462,15 @@ var app = new Vue({
 
         closeLog: function () {
             var vm = this;
+
+            if (!vm.closeForm.ActionTaken || !vm.closeForm.Cost) {
+                if (window.MedEquip && MedEquip.toast) {
+                    MedEquip.toast('Thiếu thông tin', 'Vui lòng nhập Biện pháp đã xử lý và Chi phí.', 'warning');
+                } else {
+                    alert('Vui lòng nhập Biện pháp đã xử lý và Chi phí.');
+                }
+                return;
+            }
 
             $.ajax({
                 url: '/api/maintenance/update-status',

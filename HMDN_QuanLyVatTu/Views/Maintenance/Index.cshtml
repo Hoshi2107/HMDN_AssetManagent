@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Nhật ký sửa chữa";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -265,9 +265,6 @@
                     <div class="profile-header-actions">
                         <button class="btn-outline">
                             <i class="fa-solid fa-file-pdf"></i> PDF/Excel
-                        </button>
-                        <button class="btn-create" v-if="hasPermission('Maintenance', 'CREATE')" v-on:click="openCreateFromHistory()" style="padding:9px 20px">
-                            <i class="fa-solid fa-triangle-exclamation"></i> Thêm phiếu báo hỏng
                         </button>
                     </div>
                 </div>
@@ -602,7 +599,7 @@
                     </h4>
                     <div class="form-grid">
                         <div class="form-group full">
-                            <label>Biện pháp đã xử lý</label>
+                            <label>Biện pháp đã xử lý <span class="required">*</span></label>
                             <textarea v-model="closeForm.ActionTaken"
                                       placeholder="Mô tả biện pháp đã thực hiện..."></textarea>
                         </div>
@@ -617,12 +614,12 @@
                                    placeholder="Ví dụ: Nội bộ, Công ty ABC" />
                         </div>
                         <div class="form-group">
-                            <label>Chi phí (VNĐ)</label>
+                            <label>Chi phí (VNĐ) <span class="required">*</span></label>
                             <input type="text" v-model="closeForm.Cost"
                                    placeholder="Ví dụ: 1.500.000" />
                         </div>
                         <div class="form-group" style="justify-content:flex-end">
-                            <button class="btn-submit" v-on:click="closeLog()">
+                            <button class="btn-submit" v-on:click="closeLog()" :disabled="!closeForm.ActionTaken || !closeForm.Cost">
                                 <i class="fa-solid fa-check-double"></i> Xác nhận đóng ca
                             </button>
                         </div>
