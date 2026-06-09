@@ -397,12 +397,6 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    // Tự động dọn dẹp cảnh báo đã xử lý quá hạn (30 ngày)
-                    PurgeResolvedAlerts(db);
-
-                    // Chạy chẩn đoán (Lazy-Evaluation)
-                    CheckAndRunDiagnostics(db);
-
                     // Lấy tất cả cảnh báo chưa xử lý mới nhất
                     var activeAlerts = db.Alerts
                         .Include(a => a.AlertRule)

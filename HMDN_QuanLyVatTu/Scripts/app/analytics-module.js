@@ -75,6 +75,22 @@ window.addEventListener('DOMContentLoaded', function () {
                 viewMode: 'list',
                 selectedDevice: null,
                 loading: false
+            },
+
+            // Trạng thái cho popup xem danh sách checklist logs
+            checklistModal: {
+                range: 'today',
+                tab: 'completed', // 'completed' | 'pending'
+                logs: [],
+                pendingSchedules: [],
+                filterUser: '',
+                filterDevice: '',
+                filterResult: '',
+                currentPage: 1,
+                pageSize: 6,
+                viewMode: 'list',
+                selectedLog: null,
+                loading: false
             }
         },
         mounted: function () {
@@ -100,6 +116,15 @@ window.addEventListener('DOMContentLoaded', function () {
             },
             'statusModal.filterGroup': function () {
                 this.statusModal.currentPage = 1;
+            },
+            'checklistModal.filterUser': function () {
+                this.checklistModal.currentPage = 1;
+            },
+            'checklistModal.filterDevice': function () {
+                this.checklistModal.currentPage = 1;
+            },
+            'checklistModal.filterResult': function () {
+                this.checklistModal.currentPage = 1;
             }
         },
         computed: {
@@ -177,6 +202,83 @@ window.addEventListener('DOMContentLoaded', function () {
             },
             checklistRangeText: function () {
                 var range = this.checklistRange;
+                if (range === 'week') return 'Tuần này';
+                if (range === 'month') return 'Tháng này';
+                if (range === 'quarter') return 'Quý này';
+                if (range === 'year') return 'Năm nay';
+                return 'Hôm nay';
+            },
+            filteredChecklistLogs: function () {
+                var vm = this;
+                if (vm.checklistModal.tab === 'completed') {
+                    var list = vm.checklistModal.logs || [];
+
+                    if (vm.checklistModal.filterUser) {
+                        list = list.filter(function (item) {
+                            return item.CheckedByName === vm.checklistModal.filterUser;
+                        });
+                    }
+
+                    if (vm.checklistModal.filterDevice) {
+                        list = list.filter(function (item) {
+                            return item.ItemName === vm.checklistModal.filterDevice;
+                        });
+                    }
+
+                    if (vm.checklistModal.filterResult) {
+                        list = list.filter(function (item) {
+                            return item.OverallResult === vm.checklistModal.filterResult;
+                        });
+                    }
+
+                    return list;
+                } else {
+                    var list = vm.checklistModal.pendingSchedules || [];
+
+                    if (vm.checklistModal.filterDevice) {
+                        list = list.filter(function (item) {
+                            return item.ItemName === vm.checklistModal.filterDevice;
+                        });
+                    }
+
+                    return list;
+                }
+            },
+            checklistTotalPages: function () {
+                var len = this.filteredChecklistLogs.length;
+                return Math.ceil(len / this.checklistModal.pageSize);
+            },
+            paginatedChecklistLogs: function () {
+                var start = (this.checklistModal.currentPage - 1) * this.checklistModal.pageSize;
+                var end = start + this.checklistModal.pageSize;
+                return this.filteredChecklistLogs.slice(start, end);
+            },
+            checklistUniqueUsers: function () {
+                var list = this.checklistModal.logs || [];
+                var users = [];
+                for (var i = 0; i < list.length; i++) {
+                    var u = list[i].CheckedByName;
+                    if (u && users.indexOf(u) === -1) {
+                        users.push(u);
+                    }
+                }
+                return users.sort();
+            },
+            checklistUniqueDevices: function () {
+                var list = this.checklistModal.tab === 'completed' 
+                    ? (this.checklistModal.logs || []) 
+                    : (this.checklistModal.pendingSchedules || []);
+                var devices = [];
+                for (var i = 0; i < list.length; i++) {
+                    var d = list[i].ItemName;
+                    if (d && devices.indexOf(d) === -1) {
+                        devices.push(d);
+                    }
+                }
+                return devices.sort();
+            },
+            checklistModalRangeText: function () {
+                var range = this.checklistModal.range;
                 if (range === 'week') return 'Tuần này';
                 if (range === 'month') return 'Tháng này';
                 if (range === 'quarter') return 'Quý này';
@@ -575,7 +677,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 // Bổ sung hiển thị trực quan số lượng (done / pending) ngay trên nhãn chú thích (Legend)
                 var chartLabels = total === 0 ? [emptyLabel] : ['Đã Checklist (' + done + ')', 'Chưa làm (' + pending + ')'];
                 var chartData = total === 0 ? [1] : [done, pending];
-                var chartColors = total === 0 ? ['#e2e8f0'] : ['#3b82f6', '#cbd5e1'];
+                var chartColors = total === 0 ? ['#e2e8f0'] : ['#10b981', '#ef4444'];
 
                 this.todayChecklistChart = new Chart(ctx, {
                     type: 'doughnut',
@@ -607,45 +709,8 @@ window.addEventListener('DOMContentLoaded', function () {
                                 var index = activeElement.index;
                                 var label = vm.todayChecklistChart.data.labels[index];
                                 
-                                var url = '/Checklists/Index?status=pending';
-                                // Hỗ trợ so sánh khớp nhãn động có kèm số lượng
-                                if (label.indexOf('Đã Checklist') !== -1) {
-                                    url = '/Checklists/Index?tab=logs';
-                                }
-
-                                var now = new Date();
-
-                                function formatLocal(d) {
-                                    var year = d.getFullYear();
-                                    var month = ('0' + (d.getMonth() + 1)).slice(-2);
-                                    var day = ('0' + d.getDate()).slice(-2);
-                                    return year + '-' + month + '-' + day;
-                                }
-
-                                if (vm.checklistRange === 'today') {
-                                    var dateStr = formatLocal(now);
-                                    url += '&fromDate=' + dateStr + '&toDate=' + dateStr;
-                                } else if (vm.checklistRange === 'week') {
-                                    var diff = (7 + (now.getDay() - 1)) % 7;
-                                    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
-                                    var end = new Date(now.getFullYear(), now.getMonth(), start.getDate() + 6);
-                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
-                                } else if (vm.checklistRange === 'month') {
-                                    var start = new Date(now.getFullYear(), now.getMonth(), 1);
-                                    var end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
-                                } else if (vm.checklistRange === 'quarter') {
-                                    var qStartMonth = Math.floor(now.getMonth() / 3) * 3;
-                                    var start = new Date(now.getFullYear(), qStartMonth, 1);
-                                    var end = new Date(now.getFullYear(), qStartMonth + 3, 0);
-                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
-                                } else if (vm.checklistRange === 'year') {
-                                    var start = new Date(now.getFullYear(), 0, 1);
-                                    var end = new Date(now.getFullYear(), 12, 0);
-                                    url += '&fromDate=' + formatLocal(start) + '&toDate=' + formatLocal(end);
-                                }
-                                
-                                window.location.href = url;
+                                // Thay vì chuyển hướng, mở modal logs
+                                vm.openChecklistLogsModal(vm.checklistRange);
                             }
                         },
                         onHover: function (evt, elements) {
@@ -683,13 +748,137 @@ window.addEventListener('DOMContentLoaded', function () {
             closeStatusDevicesModal: function () {
                 $('#statusDevicesModal').modal('hide');
             },
-            goToChecklists: function () {
-                window.location.href = '/Checklists/Index';
+            openChecklistLogsModal: function (initialRange, initialTab) {
+                var vm = this;
+                vm.checklistModal.range = initialRange || vm.checklistRange || 'today';
+                vm.checklistModal.tab = initialTab || 'completed';
+                vm.checklistModal.logs = [];
+                vm.checklistModal.pendingSchedules = [];
+                vm.checklistModal.filterUser = '';
+                vm.checklistModal.filterDevice = '';
+                vm.checklistModal.filterResult = '';
+                vm.checklistModal.currentPage = 1;
+                vm.checklistModal.viewMode = 'list';
+                vm.checklistModal.selectedLog = null;
+                vm.checklistModal.loading = true;
+
+                $('#checklistLogsModal').modal('show');
+                vm.fetchChecklistLogs();
+            },
+            setChecklistModalTab: function (tab) {
+                var vm = this;
+                vm.checklistModal.tab = tab;
+                vm.checklistModal.currentPage = 1;
+                vm.checklistModal.filterUser = '';
+                vm.checklistModal.filterDevice = '';
+                vm.checklistModal.filterResult = '';
+                vm.fetchChecklistLogs();
+            },
+            fetchChecklistLogs: function () {
+                var vm = this;
+                vm.checklistModal.loading = true;
+                vm.checklistModal.currentPage = 1;
+
+                var now = new Date();
+
+                function formatLocal(d) {
+                    var year = d.getFullYear();
+                    var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                    var day = ('0' + d.getDate()).slice(-2);
+                    return year + '-' + month + '-' + day;
+                }
+
+                var fromDateStr = '';
+                var toDateStr = '';
+                var range = vm.checklistModal.range;
+
+                if (range === 'today') {
+                    fromDateStr = formatLocal(now);
+                    toDateStr = fromDateStr;
+                } else if (range === 'week') {
+                    var diff = (7 + (now.getDay() - 1)) % 7;
+                    var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+                    var end = new Date(now.getFullYear(), now.getMonth(), start.getDate() + 6);
+                    fromDateStr = formatLocal(start);
+                    toDateStr = formatLocal(end);
+                } else if (range === 'month') {
+                    var start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    var end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    fromDateStr = formatLocal(start);
+                    toDateStr = formatLocal(end);
+                } else if (range === 'quarter') {
+                    var qStartMonth = Math.floor(now.getMonth() / 3) * 3;
+                    var start = new Date(now.getFullYear(), qStartMonth, 1);
+                    var end = new Date(now.getFullYear(), qStartMonth + 3, 0);
+                    fromDateStr = formatLocal(start);
+                    toDateStr = formatLocal(end);
+                } else if (range === 'year') {
+                    var start = new Date(now.getFullYear(), 0, 1);
+                    var end = new Date(now.getFullYear(), 12, 0);
+                    fromDateStr = formatLocal(start);
+                    toDateStr = formatLocal(end);
+                }
+
+                if (vm.checklistModal.tab === 'completed') {
+                    $.getJSON(window.AnalyticsEndpoints.getLogs, { fromDate: fromDateStr, toDate: toDateStr }, function (res) {
+                        vm.checklistModal.logs = res.data || [];
+                        vm.checklistModal.loading = false;
+                    }).fail(function () {
+                        vm.checklistModal.loading = false;
+                    });
+                } else {
+                    $.getJSON('/api/checklists/schedules', { fromDate: fromDateStr, toDate: toDateStr, status: 'pending' }, function (res) {
+                        vm.checklistModal.pendingSchedules = res.data || [];
+                        vm.checklistModal.loading = false;
+                    }).fail(function () {
+                        vm.checklistModal.loading = false;
+                    });
+                }
+            },
+            viewChecklistLogDetails: function (item) {
+                var vm = this;
+                vm.checklistModal.loading = true;
+                vm.checklistModal.selectedLog = null;
+                vm.checklistModal.viewMode = 'details';
+
+                $.getJSON(window.AnalyticsEndpoints.getLogDetails, { logId: item.Id }, function (res) {
+                    if (res.success) {
+                        vm.checklistModal.selectedLog = res.data;
+                    }
+                    vm.checklistModal.loading = false;
+                }).fail(function () {
+                    vm.checklistModal.loading = false;
+                });
+            },
+            nextChecklistPage: function () {
+                if (this.checklistModal.currentPage < this.checklistTotalPages) {
+                    this.checklistModal.currentPage++;
+                }
+            },
+            prevChecklistPage: function () {
+                if (this.checklistModal.currentPage > 1) {
+                    this.checklistModal.currentPage--;
+                }
+            },
+            closeChecklistLogsModal: function () {
+                $('#checklistLogsModal').modal('hide');
             },
             severityLabel: function (severity) {
                 if (severity === 'danger') return 'Khẩn cấp';
                 if (severity === 'warning') return 'Cảnh báo';
                 return 'Thông tin';
+            },
+            cycleLabel: function (cycle) {
+                if (!cycle) return 'N/A';
+                var map = {
+                    'daily': 'Hàng ngày',
+                    'weekly': 'Hàng tuần',
+                    'monthly': 'Hàng tháng',
+                    'quarterly': 'Hàng quý',
+                    'yearly': 'Hàng năm',
+                    'adhoc': 'Đột xuất'
+                };
+                return map[cycle.toLowerCase()] || cycle;
             }
         }
     });

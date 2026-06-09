@@ -74,11 +74,12 @@
 }
 
 .table-analytics th {
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     text-transform: uppercase !important;
-    font-size: 11px !important;
-    letter-spacing: 0.3px;
+    font-size: 11.5px !important;
+    letter-spacing: 0.5px;
     border-bottom: 2px solid #dee2e6 !important;
+    color: #0f172a !important;
 }
 
 .table-analytics td {
@@ -387,22 +388,23 @@
 
 /* Style cho Readonly Modal chi tiết thiết bị */
 .modal-readonly-label {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    color: #64748b;
+    color: #334155 !important;
     text-transform: uppercase;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
 }
 
 .modal-readonly-value {
     font-size: 13.5px;
     font-weight: 600;
-    color: #1e293b;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 6px 10px;
-    border-radius: 6px;
-    min-height: 33px;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border: 1.5px solid #cbd5e1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-height: 36px;
     display: flex;
     align-items: center;
 }

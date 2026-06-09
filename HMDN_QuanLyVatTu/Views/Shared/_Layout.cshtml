@@ -1,4 +1,4 @@
-﻿@{
+@{
     var userModules = Session["UserModules"] as List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO>;
     bool HasModule(string code)
     {
@@ -1288,6 +1288,14 @@
     </div>
 
     <div id="toast-container"></div>
+    <div id="global-page-loader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.6); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+        <div style="width: 48px; height: 48px; border: 4px solid rgba(37, 99, 235, 0.2); border-radius: 50%; border-top-color: #2563eb; animation: spin-loader 0.8s linear infinite;"></div>
+    </div>
+    <style>
+        @@keyframes spin-loader {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 
     @Scripts.Render("~/bundles/bootstrap")
 
@@ -1417,6 +1425,16 @@
             }
         };
 
+        MedEquip.showPageLoader = function () {
+            var loader = document.getElementById('global-page-loader');
+            if (loader) loader.style.display = 'flex';
+        };
+
+        MedEquip.hidePageLoader = function () {
+            var loader = document.getElementById('global-page-loader');
+            if (loader) loader.style.display = 'none';
+        };
+
         // ── Auto-highlight active nav (Đã vá lỗi cú pháp đóng hàm hoàn chỉnh) ────────────────
         (function () {
             var currentPath = window.location.pathname.toLowerCase();
@@ -1439,6 +1457,16 @@
                     }
                 });
             }
+
+            // Bind click event to show loader for sidebar links
+            document.querySelectorAll('#app-sidebar .nav-item a').forEach(function(a) {
+                a.addEventListener('click', function(e) {
+                    var href = a.getAttribute('href');
+                    if (href && href !== '#' && href.indexOf('javascript:') === -1) {
+                        MedEquip.showPageLoader();
+                    }
+                });
+            });
         })();
     </script>
 
@@ -1532,6 +1560,9 @@
                             return 'fa-circle-info';
                         },
                         goToAlert: function (alert) {
+                            if (window.MedEquip && window.MedEquip.showPageLoader) {
+                                window.MedEquip.showPageLoader();
+                            }
                             var redirectUrl = window.getAlertRedirectUrl(alert);
                             window.location.href = redirectUrl;
                         },

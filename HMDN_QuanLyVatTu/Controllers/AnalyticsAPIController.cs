@@ -44,20 +44,6 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
-                    // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
-                    if (!db.ChecklistSchedules.Any())
-                    {
-                        DateTime todayDate = DateTime.Today;
-                        DateTime start = new DateTime(todayDate.Year, todayDate.Month, 1);
-                        DateTime end = start.AddMonths(1).AddDays(-1);
-
-                        db.Database.ExecuteSqlCommand(
-                            "EXEC sp_GenerateChecklistSchedules @FromDate, @ToDate",
-                            new SqlParameter("@FromDate", start),
-                            new SqlParameter("@ToDate", end)
-                        );
-                    }
-
                     DateTime startDate = DateTime.Today;
                     DateTime endDate = DateTime.Today;
 

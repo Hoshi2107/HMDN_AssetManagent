@@ -84,7 +84,7 @@
         </div>
 
         <!-- KPI 6: Tỷ lệ tuân thủ Checklist (Mới bổ sung tiện ích) -->
-        <div class="card p-3 border-0 d-flex flex-row align-items-center justify-content-between bg-kpi-compliance kpi-card-clickable" v-on:click="goToChecklists()">
+        <div class="card p-3 border-0 d-flex flex-row align-items-center justify-content-between bg-kpi-compliance kpi-card-clickable" v-on:click="openChecklistLogsModal(checklistRange)">
             <div>
                 <small class="text-uppercase text-white-muted card-kpi-title">Tuân thủ Checklist ({{ checklistRangeText }})</small>
                 <h2 class="mt-1 mb-0 font-weight-bold text-white">
@@ -115,14 +115,21 @@
         <div class="col-12 col-md-6 col-xl-3 mb-3">
             <div class="card p-3 border-0 shadow-sm bg-white h-100">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h6 class="font-weight-bold text-dark m-0"><i class="fa-solid fa-list-check mr-2 text-success"></i>Tiến độ Checklist</h6>
-                    <select class="form-control form-control-sm border" v-model="checklistRange" v-on:change="fetchTodayChecklistData" style="width: auto; height: 28px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; color: #475569;">
-                        <option value="today">Hôm nay</option>
-                        <option value="week">Tuần này</option>
-                        <option value="month">Tháng này</option>
-                        <option value="quarter">Quý này</option>
-                        <option value="year">Năm nay</option>
-                    </select>
+                    <h6 class="font-weight-bold text-dark m-0 cursor-pointer" v-on:click="openChecklistLogsModal(checklistRange)" style="cursor: pointer;" title="Click để xem danh sách chi tiết">
+                        <i class="fa-solid fa-list-check mr-2 text-success"></i>Tiến độ Checklist
+                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <select class="form-control form-control-sm border" v-model="checklistRange" v-on:change="fetchTodayChecklistData" style="width: auto; height: 28px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; color: #475569;">
+                            <option value="today">Hôm nay</option>
+                            <option value="week">Tuần này</option>
+                            <option value="month">Tháng này</option>
+                            <option value="quarter">Quý này</option>
+                            <option value="year">Năm nay</option>
+                        </select>
+                        <button class="btn btn-xs btn-outline-success border" v-on:click="openChecklistLogsModal(checklistRange)" title="Xem danh sách chi tiết" style="height: 28px; width: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">
+                            <i class="fa-solid fa-up-right-from-square" style="font-size: 11px;"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="position-relative d-flex align-items-center justify-content-center chart-container">
                     <canvas id="todayChecklistChart"></canvas>
@@ -382,6 +389,278 @@
         </div>
     </div>
 
+    <!-- Modal Danh sách Nhật ký Checklist -->
+    <div class="modal fade" id="checklistLogsModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header p-3 d-flex align-items-center justify-content-between text-white bg-kpi-compliance">
+                    <h6 class="modal-title font-weight-bold m-0 text-white">
+                        <i class="fa-solid fa-clipboard-check mr-2"></i>
+                        Danh sách Nhật ký Checklist ({{ checklistModalRangeText }})
+                    </h6>
+                    <button type="button" class="close outline-none border-0 bg-transparent text-white" style="font-size: 20px; line-height: 1;" v-on:click="closeChecklistLogsModal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Tabs toggles -->
+                    <ul class="nav nav-pills mb-3" style="gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                        <li class="nav-item">
+                            <button type="button" class="btn btn-sm font-weight-bold" :class="checklistModal.tab === 'completed' ? 'btn-success text-white' : 'btn-outline-success'" v-on:click="setChecklistModalTab('completed')">
+                                <i class="fa-solid fa-square-check mr-1"></i> Đã Checklist ({{ checklistModal.logs.length }})
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="btn btn-sm font-weight-bold" :class="checklistModal.tab === 'pending' ? 'btn-warning text-dark' : 'btn-outline-warning'" v-on:click="setChecklistModalTab('pending')">
+                                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Chưa làm / Trễ hạn ({{ checklistModal.pendingSchedules.length }})
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- VIEW 1: DANH SÁCH NHẬT KÝ -->
+                    <div v-if="checklistModal.viewMode === 'list'">
+                        <!-- Bộ lọc tiện ích (combobox người check, thiết bị check, ngày tuần tháng quý năm) -->
+                        <div class="filter-panel p-3 mb-3 border rounded">
+                            <div class="row">
+                                <!-- Lọc Thời gian (ngày tuần tháng quý năm) -->
+                                <div class="col-12 col-sm-6 mb-2" :class="checklistModal.tab === 'completed' ? 'col-md-3' : 'col-md-6'">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-solid fa-calendar-days text-primary mr-1" style="font-size: 11px;"></i>
+                                        <span class="filter-label">Khoảng thời gian</span>
+                                    </div>
+                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.range" v-on:change="fetchChecklistLogs">
+                                        <option value="today">Hôm nay</option>
+                                        <option value="week">Tuần này</option>
+                                        <option value="month">Tháng này</option>
+                                        <option value="quarter">Quý này</option>
+                                        <option value="year">Năm nay</option>
+                                    </select>
+                                </div>
+                                <!-- Lọc Người check -->
+                                <div class="col-12 col-sm-6 col-md-3 mb-2" v-if="checklistModal.tab === 'completed'">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-solid fa-user-check text-primary mr-1" style="font-size: 11px;"></i>
+                                        <span class="filter-label">Người kiểm tra</span>
+                                    </div>
+                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterUser">
+                                        <option value="">-- Tất cả --</option>
+                                        <option v-for="user in checklistUniqueUsers" :value="user">{{ user }}</option>
+                                    </select>
+                                </div>
+                                <!-- Lọc Thiết bị check -->
+                                <div class="col-12 col-sm-6 mb-2" :class="checklistModal.tab === 'completed' ? 'col-md-3' : 'col-md-6'">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-solid fa-screwdriver-wrench text-primary mr-1" style="font-size: 11px;"></i>
+                                        <span class="filter-label">Thiết bị</span>
+                                    </div>
+                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterDevice">
+                                        <option value="">-- Tất cả --</option>
+                                        <option v-for="dev in checklistUniqueDevices" :value="dev">{{ dev }}</option>
+                                    </select>
+                                </div>
+                                <!-- Lọc Kết quả -->
+                                <div class="col-12 col-sm-6 col-md-3 mb-2" v-if="checklistModal.tab === 'completed'">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-solid fa-square-poll-vertical text-primary mr-1" style="font-size: 11px;"></i>
+                                        <span class="filter-label">Kết quả</span>
+                                    </div>
+                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterResult">
+                                        <option value="">-- Tất cả --</option>
+                                        <option value="pass">Đạt (Pass)</option>
+                                        <option value="fail">Không đạt (Fail)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-2" v-if="checklistModal.filterUser || checklistModal.filterDevice || checklistModal.filterResult">
+                                <div class="col-12 text-right">
+                                    <button type="button" class="btn btn-xs btn-link text-secondary font-weight-bold p-0" v-on:click="checklistModal.filterUser = ''; checklistModal.filterDevice = ''; checklistModal.filterResult = '';">
+                                        <i class="fa-solid fa-rotate-left mr-1"></i>Xóa bộ lọc
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bảng danh sách nhật ký -->
+                        <div class="table-responsive" style="min-height: 250px;">
+                            <!-- Bảng đã checklist -->
+                            <table v-if="checklistModal.tab === 'completed'" class="table table-hover align-middle border-0 table-analytics">
+                                <thead style="background-color: #f1f5f9; color: #0f172a; font-weight: 700;">
+                                    <tr>
+                                        <th class="border-0">Thời gian</th>
+                                        <th class="border-0">Mã tài sản</th>
+                                        <th class="border-0">Tên thiết bị</th>
+                                        <th class="border-0">Người kiểm tra</th>
+                                        <th class="border-0 text-center">Kết quả</th>
+                                        <th class="border-0 text-center" style="width: 80px;">Chi tiết</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="log in paginatedChecklistLogs" :key="log.Id" v-on:click="viewChecklistLogDetails(log)" title="Click để xem chi tiết kết quả kiểm tra">
+                                        <td>{{ log.CheckedAt }}</td>
+                                        <td class="font-weight-bold text-primary">{{ log.AssetCode }}</td>
+                                        <td class="font-weight-bold text-dark">{{ log.ItemName }}</td>
+                                        <td>{{ log.CheckedByName }}</td>
+                                        <td class="text-center">
+                                            <span v-if="log.OverallResult === 'pass'" class="badge-status-custom badge-status-active" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Đạt</span>
+                                            <span v-else class="badge-status-custom badge-status-suspended" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Không đạt</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-xs btn-outline-primary border-0" v-on:click.stop="viewChecklistLogDetails(log)">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="checklistModal.loading">
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                            <span class="ml-2 text-muted">Đang tải danh sách nhật ký...</span>
+                                        </td>
+                                    </tr>
+                                    <tr v-else-if="filteredChecklistLogs.length === 0">
+                                        <td colspan="6" class="text-center py-5 text-muted font-italic">Không tìm thấy nhật ký kiểm tra phù hợp.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Bảng chưa checklist -->
+                            <table v-if="checklistModal.tab === 'pending'" class="table table-hover align-middle border-0 table-analytics">
+                                <thead style="background-color: #f1f5f9; color: #0f172a; font-weight: 700;">
+                                    <tr>
+                                        <th class="border-0">Ngày lập lịch</th>
+                                        <th class="border-0">Hạn chót</th>
+                                        <th class="border-0">Mã tài sản</th>
+                                        <th class="border-0">Tên thiết bị</th>
+                                        <th class="border-0">Khoa / Phòng</th>
+                                        <th class="border-0 text-center">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="sch in paginatedChecklistLogs" :key="sch.Id">
+                                        <td>{{ sch.ScheduledDate }}</td>
+                                        <td>{{ sch.DueDate }}</td>
+                                        <td class="font-weight-bold text-primary">{{ sch.AssetCode }}</td>
+                                        <td class="font-weight-bold text-dark">{{ sch.ItemName }}</td>
+                                        <td>{{ sch.DepartmentName }}</td>
+                                        <td class="text-center">
+                                             <span v-if="sch.Status === 'overdue'" class="badge-status-custom badge-status-suspended" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Quá hạn</span>
+                                             <span v-else class="badge-status-custom badge-status-maintenance-bv" style="min-width: auto; padding: 2px 6px; font-size: 10px;">Chờ thực hiện</span>
+                                         </td>
+                                    </tr>
+                                    <tr v-if="checklistModal.loading">
+                                        <td colspan="6" class="text-center py-5">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                            <span class="ml-2 text-muted">Đang tải danh sách lịch trình...</span>
+                                        </td>
+                                    </tr>
+                                    <tr v-else-if="filteredChecklistLogs.length === 0">
+                                        <td colspan="6" class="text-center py-5 text-muted font-italic">Không tìm thấy lịch trình kiểm tra nào chưa làm.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Phân trang danh sách popup -->
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-2" style="font-size: 12.5px;" v-if="filteredChecklistLogs.length > 0">
+                            <div class="text-muted font-weight-bold">
+                                Hiển thị từ {{ (checklistModal.currentPage - 1) * checklistModal.pageSize + 1 }} đến {{ Math.min(checklistModal.currentPage * checklistModal.pageSize, filteredChecklistLogs.length) }} trong số {{ filteredChecklistLogs.length }} {{ checklistModal.tab === 'completed' ? 'nhật ký' : 'lịch trình' }}
+                            </div>
+                            <div class="pagination d-flex gap-2">
+                                <button class="btn btn-sm btn-pagination" v-on:click="prevChecklistPage" :disabled="checklistModal.currentPage === 1">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <span class="align-self-center font-weight-bold text-secondary px-2" style="font-size: 12px;">Trang {{ checklistModal.currentPage }} / {{ checklistTotalPages }}</span>
+                                <button class="btn btn-sm btn-pagination" v-on:click="nextChecklistPage" :disabled="checklistModal.currentPage === checklistTotalPages || checklistTotalPages === 0">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW 2: CHI TIẾT NHẬT KÝ -->
+                    <div v-else-if="checklistModal.viewMode === 'details' && checklistModal.selectedLog">
+                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-sm btn-light border font-weight-bold text-secondary" v-on:click="checklistModal.viewMode = 'list'">
+                                <i class="fa-solid fa-arrow-left mr-1"></i> Quay lại danh sách
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary font-weight-bold px-3" v-on:click="closeChecklistLogsModal">
+                                <i class="fa-solid fa-xmark mr-1"></i> Đóng
+                            </button>
+                        </div>
+                        <div class="card border-0 bg-light p-3 mb-3">
+                            <div class="row">
+                                <!-- Dòng 1: Thiết bị & Mã tài sản -->
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-barcode mr-1 text-primary"></i> Mã tài sản</div>
+                                    <div class="modal-readonly-value text-primary font-weight-bold bg-white" v-text="checklistModal.selectedLog.AssetCode"></div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-prescription-bottle-medical mr-1 text-primary"></i> Tên thiết bị y tế</div>
+                                    <div class="modal-readonly-value font-weight-bold text-dark bg-white" v-text="checklistModal.selectedLog.ItemName"></div>
+                                </div>
+
+                                <!-- Dòng 2: Người thực hiện & Thời gian -->
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-user-check mr-1 text-primary"></i> Người thực hiện</div>
+                                    <div class="modal-readonly-value bg-white" v-text="checklistModal.selectedLog.CheckedByName"></div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-clock mr-1 text-primary"></i> Thời gian kiểm tra</div>
+                                    <div class="modal-readonly-value bg-white" v-text="checklistModal.selectedLog.CheckedAt"></div>
+                                </div>
+
+                                <!-- Dòng 3: Tần suất & Kết quả tổng quan -->
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-rotate mr-1 text-primary"></i> Tần suất kiểm tra</div>
+                                    <div class="modal-readonly-value bg-white" v-text="cycleLabel(checklistModal.selectedLog.CycleType)"></div>
+                                </div>
+                                <div class="col-12 col-md-6 mb-2">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-square-poll-vertical mr-1 text-primary"></i> Kết quả tổng quan</div>
+                                    <div class="modal-readonly-value bg-white">
+                                        <span v-if="checklistModal.selectedLog.OverallResult === 'pass'" class="badge-status-custom badge-status-active">ĐẠT (PASS)</span>
+                                        <span v-else class="badge-status-custom badge-status-suspended">KHÔNG ĐẠT (FAIL)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Dòng 4: Ghi chú -->
+                                <div class="col-12">
+                                    <div class="modal-readonly-label"><i class="fa-solid fa-note-sticky mr-1 text-primary"></i> Ghi chú chung</div>
+                                    <div class="modal-readonly-value bg-white" v-text="checklistModal.selectedLog.Note || 'Không có ghi chú'"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danh sách chi tiết tiêu chí -->
+                        <h6 class="font-weight-bold text-dark mb-2"><i class="fa-solid fa-list-ol mr-2 text-info"></i>Chi tiết các tiêu chí kiểm tra</h6>
+                        <div class="table-responsive border rounded-lg bg-white mb-0" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-hover table-striped align-middle mb-0" style="font-size: 13px;">
+                                <thead style="background-color: #f1f5f9; color: #0f172a; font-weight: 700;" class="sticky-top">
+                                    <tr>
+                                        <th class="py-2">Tiêu chí kiểm tra</th>
+                                        <th class="py-2 text-center" style="width: 120px;">Trạng thái</th>
+                                        <th class="py-2">Ghi chú riêng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                     <tr v-for="detail in checklistModal.selectedLog.Items" :key="detail.Id" style="color: #0f172a; font-weight: 500;">
+                                         <td>{{ detail.CheckName }}</td>
+                                         <td class="text-center">
+                                             <span v-if="detail.IsPassed" class="badge-status-custom badge-status-active" style="min-width: auto; padding: 3px 8px; font-size: 11px;"><i class="fa-solid fa-circle-check mr-1"></i>Đạt</span>
+                                             <span v-else class="badge-status-custom badge-status-suspended" style="min-width: auto; padding: 3px 8px; font-size: 11px; animation: none !important;"><i class="fa-solid fa-circle-xmark mr-1"></i>Lỗi</span>
+                                         </td>
+                                         <td style="color: #475569; font-style: italic;">{{ detail.Note || '-' }}</td>
+                                     </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-2 border-0">
+                    <button type="button" class="btn btn-sm btn-secondary font-weight-bold px-3" v-on:click="closeChecklistLogsModal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -392,6 +671,8 @@
         getReport: '/api/analytics/inventory-report',
         getChecklist: '/api/analytics/checklist-today-progress',
         getFrequency: '/api/analytics/maintenance-frequency',
+        getLogs: '/api/checklists/logs',
+        getLogDetails: '/api/checklists/log-details',
         socketServer: ''
     };
 </script>

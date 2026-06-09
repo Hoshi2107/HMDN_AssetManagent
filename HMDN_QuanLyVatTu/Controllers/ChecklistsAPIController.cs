@@ -22,39 +22,6 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                // Self-healing: Ensure Criticality column exists in Inventory table and set defaults
-                db.Database.ExecuteSqlCommand(@"
-                    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Inventory') AND name = 'Criticality')
-                    BEGIN
-                        ALTER TABLE Inventory ADD Criticality NVARCHAR(50) NULL;
-                    END
-                ");
-                
-                db.Database.ExecuteSqlCommand(@"
-                    IF EXISTS (SELECT 1 FROM Inventory WHERE Criticality IS NULL)
-                    BEGIN
-                        UPDATE Inventory SET Criticality = 'Low' WHERE Criticality IS NULL;
-                        
-                        UPDATE inv
-                        SET inv.Criticality = 'Critical'
-                        FROM Inventory inv
-                        JOIN Items it ON inv.ItemId = it.Id
-                        WHERE it.Name LIKE N'%máy thở%' OR it.Name LIKE N'%ventilator%' OR it.Name LIKE N'%mri%' OR it.Name LIKE N'%icu%';
-                        
-                        UPDATE inv
-                        SET inv.Criticality = 'High'
-                        FROM Inventory inv
-                        JOIN Items it ON inv.ItemId = it.Id
-                        WHERE it.Name LIKE N'%máy chủ%' OR it.Name LIKE N'%server%';
-                        
-                        UPDATE inv
-                        SET inv.Criticality = 'Medium'
-                        FROM Inventory inv
-                        JOIN Items it ON inv.ItemId = it.Id
-                        WHERE it.Name LIKE N'%ups%' OR it.Name LIKE N'%lưu điện%';
-                    END
-                ");
-
                 // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
                 if (!db.ChecklistSchedules.Any())
                 {
@@ -243,7 +210,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
                             OverallResult = payload.OverallResult ?? "pass",
-                            ApprovalStatus = (payload.OverallResult == "pass" && (cycleLower == "daily" || cycleLower == "weekly")) ? "Approved" : "Pending",
+                            ApprovalStatus = (payload.OverallResult == "pass") ? "Approved" : "Pending",
                             Note = payload.Note,
                             QrLocation = payload.QrLocation,
                             ImageUrls = payload.ImageUrls
@@ -361,8 +328,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                 }
                 if (!string.IsNullOrEmpty(toDate))
                 {
-                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture);
-                    query = query.Where(l => l.CheckedAt <= end);
+                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture).Date.AddDays(1);
+                    query = query.Where(l => l.CheckedAt < end);
                 }
                 if (!string.IsNullOrEmpty(result))
                 {
@@ -371,6 +338,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (!string.IsNullOrEmpty(approvalStatus))
                 {
                     query = query.Where(l => l.ApprovalStatus == approvalStatus);
+
+                    // Yêu cầu: Không hiển thị "pass" trong màn hình chờ duyệt để đỡ tốn thời gian duyệt
+                    if (approvalStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+                    {
+                        query = query.Where(l => l.OverallResult != "pass" && l.OverallResult != "Pass");
+                    }
                 }
 
                 var logs = query
@@ -825,9 +798,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = sch.CycleType,
                             OverallResult = result,
-                            ApprovalStatus = (result == "pass" && 
-                                (cycleLower == "daily" || cycleLower == "weekly")) 
-                                ? "Approved" : "Pending",
+                            ApprovalStatus = (result == "pass") ? "Approved" : "Pending",
                             Note = payload.Note
                         };
                         allLogs.Add(log);

@@ -147,6 +147,11 @@ new Vue({
     },
 
     computed: {
+        hasFailedItem() {
+            var vm = this;
+            if (!vm.checklistItems || vm.checklistItems.length === 0) return false;
+            return vm.checklistItems.some(function (i) { return i.isPassed === false; });
+        },
         checklistProgress() {
             var vm = this;
             if (!vm.checklistItems || vm.checklistItems.length === 0) return { completed: 0, total: 0, percentage: 0 };
@@ -162,6 +167,14 @@ new Vue({
             var evaluated = vm.checklistItems.filter(i => i.isPassed !== null).length;
             var percentage = evaluated > 0 ? Math.round((passed / evaluated) * 100) : 0;
             return { passed, total: evaluated, percentage };
+        },
+        detailLogProgress() {
+            var vm = this;
+            if (!vm.logDetails || !vm.logDetails.Items || vm.logDetails.Items.length === 0) return { passed: 0, total: 0, percentage: 0 };
+            var passed = vm.logDetails.Items.filter(i => i.IsPassed === true).length;
+            var total = vm.logDetails.Items.length;
+            var percentage = total > 0 ? Math.round((passed / total) * 100) : 0;
+            return { passed, total, percentage };
         },
         filteredSchedules() {
             var vm = this;
@@ -473,7 +486,7 @@ new Vue({
         isQuickPassAvailable(group) {
             if (!group || !group.Schedules) return false;
             var size = group.Schedules.length;
-            if (size < 5) return false;
+            if (size < 1) return false;
             
             var hasSuspended = group.Schedules.some(function (s) { return s.LifeStatus === 'suspended'; });
             var hasOpenRepair = group.Schedules.some(function (s) { return s.HasOpenRepair === true; });
@@ -571,6 +584,84 @@ new Vue({
                 });
         },
 
+        isQuickPassAvailableForSch(sch) {
+            if (!sch) return false;
+            if (sch.LifeStatus === 'suspended') return false;
+            if (sch.HasOpenRepair === true) return false;
+            if (sch.Status === 'NeedsReinspection') return false;
+            if (sch.Criticality === 'High' || sch.Criticality === 'Critical') return false;
+            return true;
+        },
+
+        quickPassSingle(sch) {
+            var vm = this;
+            if (!vm.isQuickPassAvailableForSch(sch)) {
+                vm.toast('Cảnh báo', 'Thiết bị này không đủ điều kiện (High/Critical hoặc đang tạm ngưng) để Đạt Nhanh.', 'warning');
+                return;
+            }
+            if (!confirm("Xác nhận đánh giá ĐẠT cho thiết bị " + sch.ItemName + " (" + sch.AssetCode + ")?")) {
+                return;
+            }
+            
+            vm.$set(sch, '_isQuickPassing', true);
+
+            fetch('/api/checklists/device-checklist?inventoryId=' + sch.InventoryId + '&cycleType=' + (sch.CycleType || ''))
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success && res.data) {
+                        var itemsPayload = res.data.map(function (item) {
+                            return {
+                                DefinitionId: item.Id,
+                                IsPassed: true,
+                                Note: null
+                            };
+                        });
+                        
+                        var payload = {
+                            ScheduleId: sch.Id,
+                            InventoryId: sch.InventoryId,
+                            CheckedBy: vm.currentUser.Id,
+                            CycleType: sch.CycleType,
+                            OverallResult: 'pass',
+                            Note: 'Hệ thống tự động Đạt Nhanh (Duyệt nhanh).',
+                            QrScanned: false,
+                            QrLocation: '',
+                            ImageUrls: '',
+                            Items: itemsPayload
+                        };
+                        
+                        fetch('/api/checklists/save', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(function (r) { return r.json(); })
+                        .then(function (saveRes) {
+                            if (saveRes.success) {
+                                vm.toast('Thành công', 'Đã Đạt Nhanh thành công.', 'success');
+                                vm.loadSchedules();
+                                vm.loadLogs();
+                            } else {
+                                vm.toast('Lỗi', saveRes.message, 'danger');
+                                vm.$set(sch, '_isQuickPassing', false);
+                            }
+                        })
+                        .catch(function (err) {
+                            vm.$set(sch, '_isQuickPassing', false);
+                            console.error(err);
+                            vm.toast('Lỗi kết nối', 'Không thể gửi kết quả lên máy chủ.', 'danger');
+                        });
+                    } else {
+                        vm.$set(sch, '_isQuickPassing', false);
+                        vm.toast('Lỗi', 'Không thể tải cấu trúc biểu mẫu.', 'danger');
+                    }
+                })
+                .catch(function (err) {
+                    vm.$set(sch, '_isQuickPassing', false);
+                    console.error(err);
+                });
+        },
+
         openBatchCheckModal(batchGroup) {
             var vm = this;
             vm.batchCheckGroup = batchGroup;
@@ -586,6 +677,9 @@ new Vue({
             vm.batchCheckItems = [];
             vm.batchCheckNote = '';
             vm.showBatchCheckModal = true;
+            if (vm.performForm) {
+                vm.performForm.submitted = false;
+            }
             vm.lastSubmitLogId = null;
             vm.lastSubmitResult = '';
             
@@ -676,6 +770,10 @@ new Vue({
                     // Save last submit info for ticket creation redirect
                     vm.lastSubmitLogId = res.failedLogId || res.firstLogId;
                     vm.lastSubmitResult = overallResult;
+
+                    if (vm.performForm) {
+                        vm.performForm.submitted = true;
+                    }
 
                     if (overallResult === 'pass') {
                         vm.showBatchCheckModal = false;
@@ -1175,12 +1273,6 @@ new Vue({
         submitChecklist() {
             var vm = this;
 
-            // 0. Kiểm tra xác thực QR Code để chống bypass
-            if (!vm.performForm.qrScanned) {
-                vm.toast('Xác thực bắt buộc', 'Vui lòng quét mã QR thiết bị tại vị trí trước khi nộp kết quả checklist.', 'warning');
-                return;
-            }
-
             // 1. Kiểm tra ràng buộc
             var missing = vm.checklistItems.filter(function (item) {
                 return item.IsRequired && item.isPassed === null;
@@ -1250,7 +1342,7 @@ new Vue({
                         CheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
                         CycleType: payload.CycleType,
                         OverallResult: payload.OverallResult,
-                        ApprovalStatus: (payload.CycleType === 'daily' || payload.CycleType === 'weekly') && payload.OverallResult === 'pass' ? 'Approved' : 'Pending'
+                        ApprovalStatus: payload.OverallResult === 'pass' ? 'Approved' : 'Pending'
                     };
                     vm.logs.unshift(mockLog);
                     localStorage.setItem('checklist_logs_cache', JSON.stringify(vm.logs));
@@ -1317,7 +1409,52 @@ new Vue({
         },
 
         createTicketFromChecklist(logId) {
-            window.location.href = '/CreateTicket?fromChecklist=1&logId=' + logId;
+            window.location.href = '/CreateTicket/Index?fromChecklist=1&logId=' + logId;
+        },
+
+        applyYesterdayResults() {
+            var vm = this;
+            if (!vm.recentInspectionHistory || vm.recentInspectionHistory.length === 0) {
+                vm.toast('Thông báo', 'Không có lịch sử kiểm tra trước đó.', 'info');
+                return;
+            }
+            var lastLog = vm.recentInspectionHistory[0];
+            
+            vm.performLoading = true;
+            fetch('/api/checklists/log-details?logId=' + lastLog.Id)
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success && res.data && res.data.Items) {
+                        var prevItems = res.data.Items;
+                        vm.checklistItems.forEach(function (currentItem) {
+                            var prev = prevItems.find(function (p) {
+                                return p.DefinitionId === currentItem.DefinitionId || p.CheckName === currentItem.CheckName;
+                            });
+                            if (prev) {
+                                currentItem.isPassed = prev.IsPassed;
+                                currentItem.note = prev.Note;
+                            }
+                        });
+                        vm.toast('Thành công', 'Đã sao chép kết quả từ lần kiểm tra trước (' + lastLog.CheckedAt + ').', 'success');
+                    } else {
+                        vm.toast('Lỗi', 'Không thể lấy chi tiết kết quả lần trước.', 'danger');
+                    }
+                    vm.performLoading = false;
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    vm.performLoading = false;
+                    vm.toast('Lỗi', 'Lỗi kết nối máy chủ.', 'danger');
+                });
+        },
+
+        redirectToCreateTicketDirectly() {
+            var vm = this;
+            if (vm.activeSchedule && vm.activeSchedule.AssetCode) {
+                window.location.href = '/CreateTicket/Index?ticketType=REPAIR&assetCode=' + encodeURIComponent(vm.activeSchedule.AssetCode);
+            } else {
+                window.location.href = '/CreateTicket/Index';
+            }
         },
 
         // ── LABELS & HELPERS ──
@@ -1334,7 +1471,7 @@ new Vue({
 
         statusLabel(status) {
             switch (status) {
-                case 'pending': return 'Chờ xử lý';
+                case 'pending': return 'Chờ thực hiện';
                 case 'overdue': return 'Quá hạn';
                 case 'completed': return 'Đã xong';
                 case 'done': return 'Đã xong';
@@ -1406,23 +1543,26 @@ new Vue({
         loadPendingApprovals() {
             var vm = this;
             fetch('/api/checklists/logs?approvalStatus=Pending')
-                .then(function (r) { return r.json(); })
-                .then(function (res) {
-                    if (res.success) {
-                        vm.pendingApprovals = res.data;
-                        vm.selectedLogIds = [];
-                    } else {
-                        vm.toast('Lỗi', res.message, 'danger');
-                    }
-                })
-                .catch(function (err) {
-                    console.error(err);
-                    vm.toast('Lỗi mạng', 'Không thể tải danh sách chờ duyệt.', 'danger');
-                });
+                 .then(function (r) { return r.json(); })
+                 .then(function (res) {
+                     if (res.success) {
+                         vm.pendingApprovals = res.data;
+                         vm.selectedLogIds = [];
+                     } else {
+                         vm.toast('Lỗi', res.message, 'danger');
+                     }
+                 })
+                 .catch(function (err) {
+                     console.error(err);
+                     vm.toast('Lỗi mạng', 'Không thể tải danh sách chờ duyệt.', 'danger');
+                 });
         },
 
         approveSelectedLogs(status) {
             var vm = this;
+            if (status !== 'Approved' && status !== 'Rejected') {
+                status = 'Approved';
+            }
             if (vm.selectedLogIds.length === 0) {
                 vm.toast('Cảnh báo', 'Vui lòng chọn ít nhất một nhật ký.', 'warning');
                 return;
@@ -1458,6 +1598,9 @@ new Vue({
 
         approveSingleLog(logId, status) {
             var vm = this;
+            if (status !== 'Approved' && status !== 'Rejected') {
+                status = 'Approved';
+            }
             if (!confirm(`Bạn có chắc muốn ${status === 'Approved' ? 'Duyệt' : 'Từ chối'} bản ghi này?`)) return;
             vm.isApproving = true;
             fetch('/api/checklists/approve-multiple', {
@@ -1499,18 +1642,7 @@ new Vue({
         },
 
         createRepairTicket(log) {
-            var notes = log.Note || '';
-            if (log.Items && log.Items.length > 0) {
-                var failedItems = log.Items.filter(i => !i.IsPassed).map(i => i.CheckName).join(', ');
-                if (failedItems) {
-                    notes = (notes ? notes + '\n' : '') + 'Các mục hỏng: ' + failedItems;
-                }
-            }
-            var url = '/Tickets/Create?fromChecklist=1' + 
-                      '&logId=' + log.Id + 
-                      '&inventoryId=' + log.InventoryId + 
-                      '&type=REPAIR' + 
-                      '&description=' + encodeURIComponent(notes);
+            var url = '/CreateTicket/Index?fromChecklist=1&logId=' + log.Id;
             window.open(url, '_blank');
         },
 
@@ -1647,10 +1779,9 @@ new Vue({
             var todayStr = now.toISOString().substring(0, 10);
             vm.schedulesFilter.fromDate = todayStr;
             vm.schedulesFilter.toDate = todayStr;
+            vm.loadSchedules();
         }
 
         vm.loadActiveGroups();
-        vm.loadSchedules();
-        vm.loadLogs();
     }
 });

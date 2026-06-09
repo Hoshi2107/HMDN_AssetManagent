@@ -87,6 +87,92 @@
     .cl-kpi-card.kpi-green:hover::after { background: var(--cl-success); }
     .cl-kpi-card.kpi-red:hover::after { background: var(--cl-danger); }
 
+    /* ── DEVICE GROUP CARDS (PREMIUM STYLE) ── */
+    .cl-group-card-container {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px 4px 12px 4px;
+        margin-bottom: 8px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--cl-border) transparent;
+    }
+    .cl-group-card {
+        flex: 0 0 210px;
+        background: #ffffff;
+        border: 1.5px solid var(--cl-border);
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
+    }
+    .cl-group-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--cl-shadow-md);
+        border-color: var(--cl-primary);
+    }
+    .cl-group-card.active {
+        border-color: var(--cl-primary-dark);
+        background-color: var(--cl-primary-light);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+    .cl-group-card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background-color: var(--cl-primary-light);
+        color: var(--cl-primary-dark);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    .cl-group-card.active .cl-group-card-icon {
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+    .cl-group-card-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .cl-group-card-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.35;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+    .cl-group-card-sub {
+        font-size: 10.5px;
+        color: var(--cl-text-muted);
+        line-height: 1.3;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        margin-top: 2px;
+        font-weight: 500;
+    }
+    .cl-group-card-count {
+        font-size: 9.5px;
+        font-weight: 700;
+        color: var(--cl-primary-dark);
+        background: #dbeafe;
+        padding: 1.5px 5px;
+        border-radius: 99px;
+        display: inline-block;
+    }
+    .cl-group-card.active .cl-group-card-count {
+        background: #3b82f6;
+        color: #ffffff;
+    }
+
     .cl-kpi-icon {
         width: 52px;
         height: 52px;
@@ -317,39 +403,39 @@
         border: 1px solid transparent;
     }
     .cl-badge-pending { 
-        background: var(--cl-warning-light); 
-        color: var(--cl-warning-dark);
-        border-color: rgba(245, 158, 11, 0.15);
+        background: #fef3c7 !important; 
+        color: #78350f !important;
+        border-color: #f59e0b !important;
     }
     .cl-badge-overdue { 
-        background: var(--cl-danger-light); 
-        color: var(--cl-danger-dark);
-        border-color: rgba(239, 68, 68, 0.15);
+        background: #fee2e2 !important; 
+        color: #7f1d1d !important;
+        border-color: #ef4444 !important;
     }
     .cl-badge-completed { 
-        background: var(--cl-success-light); 
-        color: var(--cl-success-dark);
-        border-color: rgba(16, 185, 129, 0.15);
+        background: #d1fae5 !important; 
+        color: #044e37 !important;
+        border-color: #10b981 !important;
     }
     .cl-badge-skipped { 
-        background: var(--cl-neutral-light); 
-        color: var(--cl-neutral-dark);
-        border-color: rgba(100, 116, 139, 0.15);
+        background: #f3f4f6 !important; 
+        color: #374151 !important;
+        border-color: #9ca3af !important;
     }
     .cl-badge-pass { 
-        background: var(--cl-success-light); 
-        color: var(--cl-success-dark);
-        border-color: rgba(16, 185, 129, 0.15);
+        background: #d1fae5 !important; 
+        color: #044e37 !important;
+        border-color: #10b981 !important;
     }
     .cl-badge-fail { 
-        background: var(--cl-danger-light); 
-        color: var(--cl-danger-dark);
-        border-color: rgba(239, 68, 68, 0.15);
+        background: #fee2e2 !important; 
+        color: #7f1d1d !important;
+        border-color: #ef4444 !important;
     }
     .cl-badge-partial { 
-        background: var(--cl-warning-light); 
-        color: var(--cl-warning-dark);
-        border-color: rgba(245, 158, 11, 0.15);
+        background: #fef3c7 !important; 
+        color: #78350f !important;
+        border-color: #f59e0b !important;
     }
 
     /* ── MODALS (GLASSMORPHISM & ACCENT SHADOW) ── */
@@ -448,14 +534,14 @@
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        color: var(--cl-text-muted);
+        color: #475569;
         letter-spacing: 0.5px;
     }
     .cl-info-chip-val {
         display: block;
         font-size: 13.5px;
-        font-weight: 600;
-        color: #1e293b;
+        font-weight: 700;
+        color: #0f172a;
         margin-top: 2px;
     }
 
@@ -842,13 +928,13 @@
 
     <!-- TABS NAVIGATION -->
     <div class="cl-tabs-nav">
-        <button class="cl-tab-btn" :class="{active: activeTab==='schedules'}" @@click="activeTab='schedules'">
+        <button class="cl-tab-btn" :class="{active: activeTab==='schedules'}" @@click="switchTab('schedules')">
             <i class="fa-solid fa-clock"></i> Lịch Trình Kiểm Tra
         </button>
-        <button class="cl-tab-btn" :class="{active: activeTab==='logs'}" @@click="activeTab='logs'">
+        <button class="cl-tab-btn" :class="{active: activeTab==='logs'}" @@click="switchTab('logs')">
             <i class="fa-solid fa-book"></i> Nhật Ký Hoàn Thành
         </button>
-        <button class="cl-tab-btn" v-if="isManager()" :class="{active: activeTab==='manager_approvals'}" @@click="activeTab='manager_approvals'">
+        <button class="cl-tab-btn" v-if="isManager()" :class="{active: activeTab==='manager_approvals'}" @@click="switchTab('manager_approvals')">
             <i class="fa-solid fa-user-shield"></i> Giám Sát & Duyệt
         </button>
     </div>
@@ -905,69 +991,54 @@
             </div>
         </div>
 
-        <!-- QR FIRST SCANNER TRIGGERS & SIMULATOR -->
+        <!-- CHOOSE GROUP TITLE -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:12px;">
             <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin:0;">
-                <i class="fa-solid fa-list-check mr-2 text-primary"></i>Chọn nhóm thiết bị hoặc quét QR nhanh để làm việc
+                <i class="fa-solid fa-list-check mr-2 text-primary"></i>Chọn nhóm thiết bị để làm việc
             </h4>
-            <button class="cl-btn cl-btn-success" style="height:36px; padding:0 16px; font-size:12.5px;" v-on:click="qrFirstScannerActive = !qrFirstScannerActive">
-                <i class="fa-solid fa-qrcode mr-1"></i> Quét QR Nhanh (QR First)
-            </button>
-        </div>
-
-        <div v-if="qrFirstScannerActive" class="cl-tech-qr-panel mb-4" style="background:#090d16; border-color:#1e293b; color:#fff; box-shadow:inset 0 0 20px rgba(0,0,0,0.8);">
-            <div class="cl-scanner-status-line">
-                <span class="cl-scanner-blink-label">
-                    <span class="cl-scanner-blink-dot"></span> QUÉT QR ĐỂ TÌM THIẾT BỊ KHẨN CẤP
-                </span>
-                <button type="button" v-on:click="qrFirstScannerActive = false" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">&times;</button>
-            </div>
-            
-            <div class="cl-scanner-viewport" style="height:90px;">
-                <div class="cl-scanner-laser-line"></div>
-                <div class="cl-scanner-laser-overlay"></div>
-                <span class="cl-scanner-text" style="font-size:12px; color:#cbd5e1;">Hướng camera về phía mã QR dán trên thiết bị để mở nhanh biểu mẫu.</span>
-            </div>
-            
-            <div class="cl-scanner-controls">
-                <input type="text" class="cl-scanner-input" placeholder="Nhập hoặc quét mã QR thiết bị tại đây..." v-model="qrFirstScannedInput" v-on:keyup.enter="verifyQrFirst" />
-                <button type="button" class="cl-btn cl-btn-success" style="height:38px; padding:0 16px; font-size:12.5px;" v-on:click="verifyQrFirst">
-                    Tìm kiếm & Mở biểu mẫu
-                </button>
-            </div>
         </div>
 
         <!-- Group Cards horizontal layout -->
-        <div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:10px; margin-bottom:8px;">
+        <div class="cl-group-card-container">
             <div v-for="gCard in batchableGroups" :key="gCard.GroupId + '-' + gCard.CycleType + '-' + gCard.DepartmentName" 
-                 class="cl-kpi-card" 
-                 style="flex:0 0 280px; padding:16px; gap:12px; border-radius:10px; box-shadow:var(--cl-shadow-sm); cursor:pointer; margin:0;"
-                 :style="selectedBatchGroup && selectedBatchGroup.GroupId === gCard.GroupId && selectedBatchGroup.CycleType === gCard.CycleType && selectedBatchGroup.DepartmentName === gCard.DepartmentName ? 'border-color:var(--cl-primary); background:var(--cl-primary-light);' : ''"
-                 v-on:click="selectedBatchGroup = gCard; schedulesFilter.groupId = gCard.GroupId;">
-                <div class="cl-kpi-icon blue" style="width:40px; height:40px; font-size:18px; border-radius:10px;">
-                    <span>${ gCard.GroupIcon || '📦' }</span>
+                 class="cl-group-card" 
+                 :class="{ active: selectedBatchGroup && selectedBatchGroup.GroupId === gCard.GroupId && selectedBatchGroup.CycleType === gCard.CycleType && selectedBatchGroup.DepartmentName === gCard.DepartmentName }"
+                 v-on:click="selectedBatchGroup = gCard; schedulesFilter.groupId = gCard.GroupId;"
+                 :title="gCard.GroupName + ' - ' + gCard.DepartmentName">
+                <div class="cl-group-card-icon">
+                    <i v-if="gCard.GroupIcon && gCard.GroupIcon.indexOf('fa-') === 0" :class="'fa-solid ' + gCard.GroupIcon"></i>
+                    <span v-else>${ gCard.GroupIcon || '📦' }</span>
                 </div>
-                <div style="flex:1; min-width:0;">
-                    <div style="font-size:13px; font-weight:700; color:#0f172a; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${ gCard.GroupName }</div>
-                    <div style="font-size:11px; color:var(--cl-text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">
-                        Khoa: ${ gCard.DepartmentName } | ${ cycleLabel(gCard.CycleType) }
+                <div class="cl-group-card-info">
+                    <div class="cl-group-card-name">${ gCard.GroupName }</div>
+                    <div class="cl-group-card-sub">
+                        <i class="fa-solid fa-hospital mr-1" style="font-size: 9px; opacity: 0.8;"></i>${ gCard.DepartmentName }
                     </div>
-                    <div style="font-size:11.5px; font-weight:600; color:var(--cl-primary-dark); margin-top:4px;">
-                        ${ gCard.Schedules.length } thiết bị chờ kiểm
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 8px;">
+                        <span class="cl-badge cl-badge-pending" style="font-size: 9px; padding: 1px 6px; text-transform: none; font-weight: 600; border-radius: 4px; letter-spacing: normal; display: inline-flex;">
+                            ${ cycleLabel(gCard.CycleType) }
+                        </span>
+                        <span class="cl-group-card-count" style="margin: 0; padding: 2px 6px; font-size: 9.5px;">${ gCard.Schedules.length } Chờ</span>
                     </div>
                 </div>
             </div>
             <!-- All Card to clear group filter -->
-            <div class="cl-kpi-card" 
-                 style="flex:0 0 140px; padding:16px; gap:12px; border-radius:10px; box-shadow:var(--cl-shadow-sm); cursor:pointer; margin:0;"
-                 :style="selectedBatchGroup === null ? 'border-color:var(--cl-primary); background:var(--cl-primary-light);' : ''"
+            <div class="cl-group-card" 
+                 :class="{ active: selectedBatchGroup === null }"
+                 style="flex:0 0 180px;"
                  v-on:click="selectedBatchGroup = null; schedulesFilter.groupId = 0;">
-                <div class="cl-kpi-icon blue" style="width:40px; height:40px; font-size:18px; border-radius:10px;">
+                <div class="cl-group-card-icon">
                     <i class="fa-solid fa-list-check"></i>
                 </div>
-                <div>
-                    <div style="font-size:13px; font-weight:700; color:#0f172a;">Tất cả</div>
-                    <div style="font-size:11px; color:var(--cl-text-muted); margin-top:2px;">Bỏ chọn nhóm</div>
+                <div class="cl-group-card-info">
+                    <div class="cl-group-card-name">Tất cả nhóm</div>
+                    <div class="cl-group-card-sub">Hiển thị toàn bộ</div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 8px;">
+                        <span class="cl-badge cl-badge-skipped" style="font-size: 9px; padding: 1px 6px; text-transform: none; font-weight: 600; border-radius: 4px; letter-spacing: normal; display: inline-flex;">
+                            Mặc định
+                        </span>
+                        <span class="cl-group-card-count" style="margin: 0; padding: 2px 6px; font-size: 9.5px; background: #e2e8f0; color: #475569;">Lịch</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1076,10 +1147,16 @@
                             <span class="cl-badge" :class="'cl-badge-' + sch.Status">${ statusLabel(sch.Status) }</span>
                         </td>
                         <td style="text-align: center;">
-                            <button class="cl-btn cl-btn-success" style="height:32px; padding:0 12px; font-size:12px; border-radius:8px;" v-if="sch.Status === 'pending' || sch.Status === 'overdue'" @@click="openPerformModal(sch)">
-                                <i class="fa-solid fa-play"></i> Thực hiện
-                            </button>
-                            <span v-else style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
+                            <div v-if="sch.Status === 'pending' || sch.Status === 'overdue'" style="display:inline-flex; border-radius:8px; overflow:hidden; border:1px solid var(--cl-success); height: 32px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <button class="cl-btn" style="height:32px; padding:0 12px; font-size:12px; background:var(--cl-success); color:#fff; border:none; border-radius:0; font-weight:600;" @@click="openPerformModal(sch)">
+                                    <i class="fa-solid fa-play"></i> Thực hiện
+                                </button>
+                                <button class="cl-btn" style="height:32px; width:36px; padding:0; display:flex; align-items:center; justify-content:center; background:var(--cl-success-dark); color:#fff; border:none; border-radius:0; border-left:1px solid rgba(255,255,255,0.3); transition: background 0.2s;" v-if="isQuickPassAvailableForSch(sch)" @@click.prevent.stop="quickPassSingle(sch)" title="Duyệt nhanh (Đánh giá Đạt toàn bộ)">
+                                    <span v-if="sch._isQuickPassing"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                                    <span v-else><i class="fa-solid fa-bolt"></i></span>
+                                </button>
+                            </div>
+                            <span v-else-if="sch.Status !== 'pending' && sch.Status !== 'overdue'" style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
                         </td>
                     </tr>
                     <tr v-if="filteredSchedules.length === 0">
@@ -1390,54 +1467,7 @@
 
                 <!-- SUB-TAB CONTENT: CHECKLIST FORM -->
                 <div v-if="activePerformModalTab === 'checklist'" style="display:flex; flex-direction:column; gap:16px;">
-                    <!-- Simulated QR Scan Verification -->
-                <div class="cl-tech-qr-panel">
-                    <div class="cl-tech-qr-header">
-                        <div class="cl-tech-qr-title">
-                            <i class="fa-solid fa-qrcode"></i>
-                            <span>Xác thực quét mã QR Code thiết bị</span>
-                        </div>
-                        <div class="cl-tech-qr-action-group">
-                            <button type="button" class="cl-btn cl-btn-success" style="height:32px; padding:0 12px; font-size:12px; border-radius:8px;" @@click="openQrScanner">
-                                <i class="fa-solid fa-camera"></i> Quét mã QR thiết bị
-                            </button>
-                            <label class="cl-tech-checkbox-label">
-                                <input type="checkbox" v-model="performForm.qrScanned" disabled /> Đã xác thực tại vị trí
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Simulated Scanner UI Area -->
-                    <div v-if="showQrScannerArea" class="cl-scanner-camera-simulation">
-                        <div class="cl-scanner-status-line">
-                            <span class="cl-scanner-blink-label">
-                                <span class="cl-scanner-blink-dot"></span> Active Camera Scanning
-                            </span>
-                            <button type="button" @@click="showQrScannerArea = false" style="background:none; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">&times;</button>
-                        </div>
-                        
-                        <!-- Scanning viewport with laser -->
-                        <div class="cl-scanner-viewport">
-                            <div class="cl-scanner-laser-line"></div>
-                            <div class="cl-scanner-laser-overlay"></div>
-                            <span class="cl-scanner-text">Hướng camera về phía mã QR dán trên thiết bị<br><small style="color:#64748b;">(Giả lập: Nhập mã hoặc chọn lấy mã mẫu ở dưới)</small></span>
-                        </div>
-                        
-                        <div class="cl-scanner-controls">
-                            <input type="text" class="cl-scanner-input" placeholder="Quét hoặc nhập mã QR thiết bị..." v-model="scannedQrInput" @@keyup.enter="verifyQrCode" />
-                            <button type="button" class="cl-btn cl-btn-outline" style="height:38px; padding:0 12px; font-size:12.5px; border-color:#334155; background:#1e293b; color:#cbd5e1;" @@click="autoFillQrCode" title="Lấy mã QR chuẩn để test">
-                                Lấy mã QR mẫu
-                            </button>
-                            <button type="button" class="cl-btn cl-btn-success" style="height:38px; padding:0 14px; font-size:12.5px;" @@click="verifyQrCode">
-                                Xác thực
-                            </button>
-                        </div>
-                        
-                        <div style="font-size:11.5px; color:#64748b;">
-                            Mã QR chuẩn của thiết bị này: <strong style="color:#38bdf8; font-family: monospace;">${ activeSchedule.QrCode || 'QR-' + activeSchedule.AssetCode }</strong>
-                        </div>
-                    </div>
-                </div>
+
 
                 <!-- Checklist Definitions List -->
                 <div v-if="performLoading" style="padding:48px; text-align:center; color:var(--cl-text-muted);">
@@ -1450,11 +1480,31 @@
                 </div>
 
                 <div v-else style="display:flex; flex-direction:column; gap:16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;">
-                        <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0;"><i class="fa-solid fa-circle-list mr-1 text-primary"></i> Hạng mục kiểm tra bắt buộc</h4>
-                        <button type="button" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-success); color: var(--cl-success-dark);" @@click="bulkSetAllPassed()">
-                            <i class="fa-solid fa-check-double"></i> Xác nhận đạt tất cả
-                        </button>
+                    <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin: 0;">
+                            <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0;"><i class="fa-solid fa-list-check mr-1 text-primary"></i> Hạng mục kiểm tra bắt buộc</h4>
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" v-if="recentInspectionHistory.length > 0" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-primary); color: var(--cl-primary-dark);" @@click="applyYesterdayResults()">
+                                    <i class="fa-solid fa-copy"></i> Sao chép từ lần trước
+                                </button>
+                                <button type="button" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-success); color: var(--cl-success-dark);" @@click="bulkSetAllPassed()">
+                                    <i class="fa-solid fa-check-double"></i> Xác nhận đạt tất cả
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Pass rate & Progress -->
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:4px; background:var(--cl-neutral-light); padding:8px 12px; border-radius:6px; border:1px solid var(--cl-border);">
+                            <div style="display:flex; align-items:center; gap:8px; font-size:12.2px; color:var(--cl-text); font-weight:500;">
+                                <span>Tiến độ: <strong>${ checklistProgress.completed }/${ checklistProgress.total }</strong></span>
+                                <span style="color:var(--cl-border)">|</span>
+                                <span style="display:inline-flex; align-items:center; gap:4px;">
+                                    Đạt: <strong style="color:var(--cl-success-dark);">${ checklistPassRate.passed }/${ checklistPassRate.total } (${ checklistPassRate.percentage }%)</strong>
+                                </span>
+                            </div>
+                            <div style="flex:1; max-width:200px; height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;">
+                                <div :style="'width: ' + checklistPassRate.percentage + '%; height:100%; background:var(--cl-success)'"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="cl-exec-grid">
                         <div class="cl-exec-item" v-for="(item, idx) in checklistItems" :key="item.Id">
@@ -1515,6 +1565,9 @@
                 </div>
             </div>
             <div class="cl-modal-footer" v-if="!performForm.submitted">
+                <button type="button" v-if="hasFailedItem" class="cl-btn cl-btn-outline" style="border-color: var(--cl-danger); color: var(--cl-danger-dark); margin-right: auto;" v-on:click="redirectToCreateTicketDirectly()">
+                    <i class="fa-solid fa-wrench"></i> Chuyển sang tạo phiếu báo hỏng
+                </button>
                 <button class="cl-btn cl-btn-outline" v-on:click="showPerformModal=false">Hủy bỏ</button>
                 <button class="cl-btn cl-btn-success" v-on:click="submitChecklist" :disabled="isSubmitting">
                     <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu...</span>
@@ -1737,7 +1790,22 @@
 
                 <!-- Log Details Checklist Items -->
                 <div style="display:flex; flex-direction:column; gap:12px;">
-                    <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;"><i class="fa-solid fa-circle-list mr-1 text-primary"></i> Chi tiết kết quả từng hạng mục</h4>
+                    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0; flex-wrap:wrap; gap:12px;">
+                        <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0;"><i class="fa-solid fa-circle-list mr-1 text-primary"></i> Chi tiết kết quả từng hạng mục</h4>
+                        <!-- Pass rate & Progress -->
+                        <div style="display:flex; align-items:center; gap:16px; background:var(--cl-neutral-light); padding:6px 12px; border-radius:6px; border:1px solid var(--cl-border);">
+                            <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--cl-text); font-weight:500;">
+                                <span>Tiến độ: <strong>${ detailLogProgress.total }/${ detailLogProgress.total }</strong></span>
+                                <span style="color:var(--cl-border)">|</span>
+                                <span style="display:inline-flex; align-items:center; gap:4px;">
+                                    Đạt: <strong style="color:var(--cl-success-dark);">${ detailLogProgress.passed }/${ detailLogProgress.total } (${ detailLogProgress.percentage }%)</strong>
+                                </span>
+                            </div>
+                            <div style="width:120px; height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden;">
+                                <div :style="'width: ' + detailLogProgress.percentage + '%; height:100%; background:var(--cl-success)'"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div style="border:1px solid var(--cl-border); border-radius:10px; overflow:hidden;">
                         <table class="cl-table">
                             <thead>
