@@ -1222,9 +1222,16 @@ var app = new Vue({
 
         openChecklist() {
 
-            alert(
-                'Checklist đang phát triển 🚀'
-            )
+            if (!this.qrDevice) {
+
+                this.showQrActionModal = false
+
+                window.location.href = '/Checklists/Index?inventoryId=' + this.qrDevice.Id
+            }
+            else{
+                alert("Không tìm thấy tài sản")
+            }
+
         },
 
 
