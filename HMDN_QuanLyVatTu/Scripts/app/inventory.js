@@ -97,7 +97,8 @@ var app = new Vue({
             IdTicket: null,
             title: '',
             errorDescription: '',
-            priority: 'normal'
+            priority: 'normal',
+            stillWorking: false 
         },
 
         showHistoryDetail: false,
@@ -1325,7 +1326,8 @@ var app = new Vue({
 
                 errorDescription: '',
 
-                priority: 'normal'
+                priority: 'normal',
+                stillWorking: false 
             }
 
             $('#errorModal').modal('show')
@@ -1368,7 +1370,8 @@ var app = new Vue({
 
                     Priority: this.errorForm.priority,
 
-                    ReportedBy: currentUser.Id
+                    ReportedBy: currentUser.Id,
+                    StillWorking: this.errorForm.stillWorking 
                 }),
 
                 success: () => {

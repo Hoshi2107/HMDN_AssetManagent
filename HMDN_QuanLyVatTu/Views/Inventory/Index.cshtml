@@ -1735,19 +1735,19 @@
                     <div class="form-group">
                         <label>Phiếu báo lỗi</label>
                         @*<select class="form-control"
-                                    v-model="errorForm.IdTicket">
-                                <option value=0>
-                                    Mã phiếu | Ghi chú
-                                </option>
+                    v-model="errorForm.IdTicket">
+                <option value=0>
+                    Mã phiếu | Ghi chú
+                </option>
 
-                                <option v-for="ticket in tickets"
-                                        :key="ticket.Id"
-                                        :value="ticket.Id">
+                <option v-for="ticket in tickets"
+                        :key="ticket.Id"
+                        :value="ticket.Id">
 
-                                    ${ ticket.TicketCode }
+                    ${ ticket.TicketCode }
 
-                                </option>
-                            </select>*@
+                </option>
+            </select>*@
                         <div class="position-relative">
 
                             <input class="form-control"
@@ -1861,7 +1861,20 @@
                         </select>
                     </div>
 
+                    <div class="form-group mt-2">
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="chkStillWorking"
+                                   v-model="errorForm.stillWorking">
+                            <label class="form-check-label" for="chkStillWorking">
+                                ✅ Thiết bị vẫn còn hoạt động tốt (không tạm ngưng)
+                            </label>
+                        </div>
+                    </div>
                 </div>
+
+
 
                 <div class="modal-footer">
                     <button class="btn btn-primary"
@@ -1870,9 +1883,9 @@
                     </button>
 
                     @*<button class="btn btn-secondary"
-                            data-dismiss="modal">
-                        Đóng
-                    </button>*@
+                    data-dismiss="modal">
+                Đóng
+            </button>*@
                 </div>
 
             </div>

@@ -691,13 +691,14 @@ namespace HMDN.Controllers.API
             try
             {
                 db.Database.ExecuteSqlCommand(
-                    "EXEC sp_Device_ReportError @InventoryId, @TicketId, @Title, @ErrorDescription, @Priority, @ReportedBy",
+                    "EXEC sp_Device_ReportError @InventoryId, @TicketId, @Title, @ErrorDescription, @Priority, @ReportedBy,  @StillWorking",
                     new SqlParameter("@InventoryId", model.InventoryId),
                     new SqlParameter("@TicketId", (object)model.TicketId ?? DBNull.Value),
                     new SqlParameter("@Title", model.Title),
                     new SqlParameter("@ErrorDescription", model.ErrorDescription),
                     new SqlParameter("@Priority", model.Priority),
-                    new SqlParameter("@ReportedBy", model.ReportedBy)
+                    new SqlParameter("@ReportedBy", model.ReportedBy),
+                    new SqlParameter("@StillWorking", model.StillWorking)
                 );
 
                 return Ok(new { success = true, message = "Báo lỗi thành công" });

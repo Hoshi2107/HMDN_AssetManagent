@@ -7,6 +7,6 @@
     public string ErrorDescription { get; set; }
 
     public string Priority { get; set; }
-
     public int ReportedBy { get; set; }
+    public bool StillWorking { get; set; }
 }
