@@ -547,6 +547,10 @@
                 </div>
                 <div class="c-body">
                     <div class="f-grid">
+                        <div class="f-group" style="grid-column: 1 / -1;">
+                            <label class="f-label">Tiêu đề: <span style="color: var(--hm-danger);">*</span></label>
+                            <input type="text" class="f-input" v-model="form.title" placeholder="VD: Nâng cấp tài khoản Mail Outlook cho Khoa Ngoại / Sửa chữa máy in Canon LBP2900 - Phòng CNTT..." required />
+                        </div>
                         <div class="f-group">
                             <label class="f-label">Loại yêu cầu</label>
                             <select class="f-input" v-model="form.ticketType" style="cursor:pointer;">
@@ -970,6 +974,8 @@
 
                 // Form data: khởi tạo động từ Razor ViewBag hoặc LocalStorage
                 form: {
+                    title: '',
+                    transactionDate: '',
                     ticketType: 'IMPORT',
                     creator: 'Đang tải...',
                     department: 'Đang tải...',
@@ -1292,6 +1298,10 @@
                     }
 
                     // RÀNG BUỘC BẮT BUỘC
+                    if (!this.form.title || !this.form.title.trim()) {
+                        this.toast('Cảnh báo', 'Vui lòng nhập tiêu đề phiếu!', 'warning');
+                        return;
+                    }
                     if (!this.form.targetDepartmentId) {
                         this.toast('Cảnh báo', 'Vui lòng chọn phòng ban nhận phiếu!', 'warning');
                         return;
@@ -1323,6 +1333,8 @@
                     }
 
                     var payload = {
+                        Title: this.form.title,
+                        TransactionDate: this.form.transactionDate || null,
                         TicketType: this.form.ticketType,
                         AssetType: this.isDeviceForm ? null : this.form.assetType,
                         Note: prNote,

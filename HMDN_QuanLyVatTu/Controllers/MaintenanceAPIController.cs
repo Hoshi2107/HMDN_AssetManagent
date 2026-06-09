@@ -32,8 +32,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                             OpenLogs = g.Count(l => l.Status == "open"),
                             InProgressLogs = g.Count(l => l.Status == "in_progress"),
                             ClosedLogs = g.Count(l => l.Status == "closed"),
+                            TicketLogs = g.Count(l => l.TicketId != null && l.TicketId > 0),
+                            FirstLogDate = g.Min(l => l.CreatedAt),
                             LastLogDate = g.Max(l => l.CreatedAt),
-                            TotalCost = g.Sum(l => l.Cost)
+                            TotalCost = g.Sum(l => l.Cost ?? 0)
                         })
                         .ToDictionary(x => x.InventoryId);
 
@@ -76,6 +78,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                             OpenLogs = stats != null ? stats.OpenLogs : 0,
                             InProgressLogs = stats != null ? stats.InProgressLogs : 0,
                             ClosedLogs = stats != null ? stats.ClosedLogs : 0,
+                            TicketLogs = stats != null ? stats.TicketLogs : 0,
+                            FromTicket = stats != null && stats.TicketLogs > 0,
+                            FirstLogDate = stats != null ? stats.FirstLogDate.ToString("yyyy-MM-dd HH:mm") : null,
                             LastLogDate = stats != null ? stats.LastLogDate.ToString("yyyy-MM-dd HH:mm") : null,
                             TotalMaintenanceCost = stats != null ? stats.TotalCost : 0
                         };

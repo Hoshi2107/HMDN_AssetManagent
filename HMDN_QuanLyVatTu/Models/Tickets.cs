@@ -40,5 +40,8 @@ namespace HMDN_QuanLyVatTu.Models
         public DateTime? TransactionDate { get; set; }
 
         public int? SendTo { get; set; }
+
+        [StringLength(255)]
+        public string Title { get; set; }
     }
 }

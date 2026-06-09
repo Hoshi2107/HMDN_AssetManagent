@@ -108,6 +108,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             t.CreatedBy,
                             CreatedByName = creator != null ? creator.FullName : null,
                             CreatedByUsername = creator != null ? creator.Username : null,
+                            CreatedByPhone = creator != null ? creator.Phone : null,
                             DepartmentName = dept != null ? dept.Name : null,
                             SendToDepartment = sendToDeptName,
                             CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd"),
@@ -115,7 +116,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = t.CheckedAt.HasValue ? t.CheckedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
                             t.ApprovedBy,
                             ApprovedAt = t.ApprovedAt.HasValue ? t.ApprovedAt.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
-                            TransactionDate = t.TransactionDate.HasValue ? t.TransactionDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null
+                            TransactionDate = t.TransactionDate.HasValue ? t.TransactionDate.Value.ToString("yyyy-MM-ddTHH:mm:ss") : null,
+                            Title = t.Title
                         };
                     });
 

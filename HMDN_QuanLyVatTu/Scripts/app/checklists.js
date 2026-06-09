@@ -316,8 +316,7 @@ new Vue({
                 if (gId === 0) return;
                 
                 var cycle = s.CycleType || 'adhoc';
-                var dept = s.DepartmentName || 'Chưa rõ';
-                var key = gId + '-' + cycle + '-' + dept;
+                var key = gId + '-' + cycle;
                 
                 if (!groups[key]) {
                     groups[key] = {
@@ -325,7 +324,7 @@ new Vue({
                         GroupName: s.GroupName || 'Chưa phân nhóm',
                         GroupIcon: s.GroupIcon || '📦',
                         CycleType: s.CycleType,
-                        DepartmentName: dept,
+                        DepartmentName: 'Tất cả phòng ban',
                         Schedules: []
                     };
                 }
