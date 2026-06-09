@@ -123,7 +123,7 @@
                             <th>Model</th>
                             <th>Serial</th>
                             <th>Khoa</th>
-                            <th>Phiếu</th>
+                            <th>Tiêu đề báo lỗi</th>
                             @*<th>Trạng thái tài sản</th>*@
                             <th>Trạng thái</th>
                         </tr>
@@ -146,35 +146,7 @@
 
                             <td>${ item.DepartmentName  || 'Chưa được xếp' }</td>
 
-                            <td>${ item.TicketCode || '—' }</td>
-
-                            @*<td>${ item.ApprovalStatus || '-' }</td>*@
-
-                            <!--<td @@click.stop>
-
-                            <select class="status-dropdown"
-                                    :disabled="!hasPermission('Inventory', 'EDIT')"
-                                    v-model="item.LifeStatus"
-                                    @@change="changeStatus(item)">
-
-                                <option value="active">
-                                    Đang hoạt động
-                                </option>
-
-                                <option value="replaced" >
-                                    Thay thế + ${ item.ReplacedId }
-                                </option>-->
-                            <!-- suspended KHÔNG CHO CHỌN -->
-                            <!--<option v-if="item.LifeStatus == 'suspended'"
-                                            value="suspended">
-
-                                        Tạm ngưng
-
-                                    </option>
-
-                                </select>
-
-                            </td>-->
+                            <td>${ item.ErrorTicketTitle || 'Không có' }</td>
 
                             <td v-on:click.stop>
 
@@ -1806,7 +1778,7 @@
                                         <tr>
                                             <th>Mã phiếu</th>
                                             <th>Trạng thái</th>
-                                            <th>Yêu cầu</th>
+                                            <th>Tiêu đề</th>
                                             <th>Ngày tạo</th>
                                         </tr>
                                     </thead>
@@ -1833,7 +1805,7 @@
 
                                             <td style="color:#64748b;font-size:12px;max-width:200px;
                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                                                ${ ticket.Note || '—' }
+                                                ${ ticket.Title || 'Không có tiêu đề' }
                                             </td>
 
                                             <td style="color:#94a3b8;font-size:12px;white-space:nowrap">

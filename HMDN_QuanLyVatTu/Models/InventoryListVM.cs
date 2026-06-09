@@ -23,5 +23,6 @@ namespace HMS.Models.ViewModels
         public string LocationName { get; set; }
         public string ApprovalStatus { get; set; }
         public string ReplacedByAssetCode { get; set; }
+        public string ErrorTicketTitle { get; set; }
     }
 }
