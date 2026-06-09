@@ -33,6 +33,8 @@ var app = new Vue({
     data: {
         STATUS: STATUS,
 
+        ticketSearch: '',
+
         // IMPORT
         showImportModal: false,
         importStep: 1,
@@ -256,6 +258,16 @@ var app = new Vue({
     },
     
     computed: {
+
+        filteredTickets() {
+            if (!this.ticketSearch.trim()) return this.tickets
+            const q = this.ticketSearch.toLowerCase().trim()
+            return this.tickets.filter(t =>
+                (t.TicketCode || '').toLowerCase().includes(q) ||
+                (t.Status || '').toLowerCase().includes(q) ||
+                (t.Description || '').toLowerCase().includes(q)
+            )
+        },
 
         importValidCount() {
             return this.importRows.filter(r => r._errors.length === 0).length
@@ -1166,6 +1178,8 @@ var app = new Vue({
 
             this.showTicketDropdown =
                 false
+
+            this.ticketSearch = ''
         },
 
         onQrScanned(decodedText) {

@@ -189,6 +189,10 @@
                                         🔁 Thay thế bởi ${ item.ReplacedByAssetCode || '—' }
                                     </option>
 
+                                    @*<option value="broken" v-if="item.LifeStatus === 'broken'">
+                                        🚫 Bị báo lỗi bởi phiếu ${ '—' }
+                                    </option>*@
+
                                     <option v-if="item.LifeStatus === 'suspended'" value="suspended">
                                         Tạm ngưng
                                     </option>
@@ -1779,32 +1783,64 @@
                                    :value="selectedTicketName"
                                    @@click="showTicketDropdown = !showTicketDropdown">
 
-                            <div class="ticket-dropdown"
-                                 v-if="showTicketDropdown">
+                            <div class="ticket-dropdown" v-if="showTicketDropdown">
 
-                                <table class="table table-hover table-sm mb-0">
+                                <!-- Search bar -->
+                                <div style="padding:8px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:#fff;z-index:2">
+                                    <input type="text"
+                                           class="form-control"
+                                           placeholder="🔍 Tìm mã phiếu, trạng thái..."
+                                           v-model="ticketSearch"
+                                           @@click.stop
+                                           style="font-size:12px">
+                                </div>
 
-                                    <thead>
+                                <div v-if="filteredTickets.length === 0"
+                                     style="padding:16px;text-align:center;color:#94a3b8;font-size:13px">
+                                    Không tìm thấy phiếu nào
+                                </div>
+
+                                <table class="table table-hover table-sm mb-0" v-else>
+
+                                    <thead style="position:sticky;top:49px;background:#f8fafc;z-index:1">
                                         <tr>
                                             <th>Mã phiếu</th>
                                             <th>Trạng thái</th>
+                                            <th>Yêu cầu</th>
                                             <th>Ngày tạo</th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
-
-                                        <tr v-for="ticket in tickets"
+                                        <tr v-for="ticket in filteredTickets"
                                             :key="ticket.Id"
                                             @@click="selectTicket(ticket)"
                                             style="cursor:pointer">
 
-                                            <td>${ticket.TicketCode}</td>
-                                            <td>${ticket.Status}</td>
-                                            <td>${formatDate(ticket.CreatedAt)}</td>
+                                            <td style="font-weight:600;color:#1e293b">
+                                                ${ ticket.TicketCode }
+                                            </td>
+
+                                            <td>
+                                                <span style="padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600"
+                                                      :style="{
+                              background: ticket.Status === 'PENDING' ? '#fef9c3' : '#dcfce7',
+                              color: ticket.Status === 'PENDING' ? '#ca8a04' : '#16a34a'
+                          }">
+                                                    ${ ticket.Status }
+                                                </span>
+                                            </td>
+
+                                            <td style="color:#64748b;font-size:12px;max-width:200px;
+                           white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                                ${ ticket.Note || '—' }
+                                            </td>
+
+                                            <td style="color:#94a3b8;font-size:12px;white-space:nowrap">
+                                                ${ formatDate(ticket.CreatedAt) }
+                                            </td>
 
                                         </tr>
-
                                     </tbody>
 
                                 </table>
@@ -1861,10 +1897,10 @@
                         Gửi báo lỗi
                     </button>
 
-                    <button class="btn btn-secondary"
+                    @*<button class="btn btn-secondary"
                             data-dismiss="modal">
                         Đóng
-                    </button>
+                    </button>*@
                 </div>
 
             </div>
