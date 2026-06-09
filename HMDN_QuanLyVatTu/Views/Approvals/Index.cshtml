@@ -1715,7 +1715,7 @@
             <table class="approvals-table">
                 <thead>
                     <tr>
-                        <th v-on:click="sort.key = 'TicketCode'; sort.dir *= -1" style="cursor: pointer;">MÃ YÊU CẦU <i class="fa-solid fa-sort"></i></th>
+                        <th v-on:click="sort.key = 'Title'; sort.dir *= -1" style="cursor: pointer;">TIÊU ĐỀ <i class="fa-solid fa-sort"></i></th>
                         <th v-on:click="sort.key = 'TicketType'; sort.dir *= -1" style="cursor: pointer;">LOẠI YÊU CẦU <i class="fa-solid fa-sort"></i></th>
                         <th v-on:click="sort.key = 'CreatedBy'; sort.dir *= -1" style="cursor: pointer;">NGƯỜI TẠO <i class="fa-solid fa-sort"></i></th>
                         <th>GỬI TỚI PHÒNG BAN</th>
@@ -1726,7 +1726,7 @@
                 </thead>
                 <tbody>
                     <tr v-for="item in paginatedTickets" :key="item.Id">
-                        <td class="req-id">${item.TicketCode}</td>
+                        <td style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #1e2a3a;" :title="item.Title">${item.Title || 'Không có tiêu đề'}</td>
                         <td>${ticketTypeLabel(item.TicketType)}</td>
                         <td>
                             <div class="user-cell">
@@ -2135,6 +2135,10 @@
 
         <!-- Body Section -->
         <div class="print-meta-info">
+            <div class="print-info-line" v-if="selectedTicket.Title">
+                <span class="print-info-label" style="font-weight: bold;">Tiêu đề:</span>
+                <span style="font-weight: bold;">${selectedTicket.Title}</span>
+            </div>
             <div class="print-info-line">
                 <span class="print-info-label">Họ và tên:</span>
                 <span>${creatorLabel(selectedTicket)}</span>
@@ -2144,11 +2148,11 @@
                 <span>${selectedTicket.DepartmentName || '—'}</span>
             </div>
             <div class="print-info-line">
-                <span class="print-info-label">Đề nghị mua hàng:</span>
+                <span class="print-info-label">Đề nghị:</span>
                 <span style="white-space: pre-wrap;">${getPrintProposal() || '—'}</span>
             </div>
             <div class="print-info-line">
-                <span class="print-info-label">Lý do:</span>
+                <span class="print-info-label">Lý do / Mục đích:</span>
                 <span style="white-space: pre-wrap;">${getPrintReason() || '—'}</span>
             </div>
         </div>

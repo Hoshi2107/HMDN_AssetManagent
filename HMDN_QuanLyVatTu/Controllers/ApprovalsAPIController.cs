@@ -145,6 +145,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CreatedBy = t.CreatedBy,
                             CreatedByName = creator != null ? creator.FullName : null,
                             CreatedByUsername = creator != null ? creator.Username : null,
+                            CreatedByPhone = creator != null ? creator.Phone : null,
                             DepartmentName = dept != null ? dept.Name : null,
                             SendToDepartment = sendToDeptName,
                             CreatedAt = t.CreatedAt,
@@ -152,7 +153,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = t.CheckedAt,
                             ApprovedBy = t.ApprovedBy,
                             ApprovedAt = t.ApprovedAt,
-                            TransactionDate = t.TransactionDate
+                            TransactionDate = t.TransactionDate,
+                            Title = t.Title
                         };
                     }).ToList();
 
@@ -676,6 +678,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public int CreatedBy { get; set; }
         public string CreatedByName { get; set; }
         public string CreatedByUsername { get; set; }
+        public string CreatedByPhone { get; set; }
         public string DepartmentName { get; set; }
         public string SendToDepartment { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -684,6 +687,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public int? ApprovedBy { get; set; }
         public DateTime? ApprovedAt { get; set; }
         public DateTime? TransactionDate { get; set; }
+        public string Title { get; set; }
     }
 
     public class TicketDetailVM

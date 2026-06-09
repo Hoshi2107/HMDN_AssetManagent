@@ -130,6 +130,7 @@ namespace HMDN_QuanLyVatTu.Controllers
 
         public class CreateTicketPayload
         {
+            public string Title { get; set; }
             public string TicketType { get; set; }
             public string AssetType { get; set; }
             public string Note { get; set; }
@@ -213,7 +214,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         Note = finalNote,
                         CreatedBy = payload.UserId,
                         CreatedAt = DateTime.Now,
-                        SendTo = payload.TargetDepartmentId
+                        SendTo = payload.TargetDepartmentId,
+                        Title = payload.Title
                     };
 
                     db.Tickets.Add(ticket);

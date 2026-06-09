@@ -78,6 +78,7 @@ var app = new Vue({
                 list = list.filter(x =>
                     (
                         (x.TicketCode || '') +
+                        (x.Title || '') +
                         (x.TicketType || '') +
                         this.ticketTypeLabel(x.TicketType) +
                         (x.CreatedBy || '') +
@@ -813,22 +814,26 @@ var app = new Vue({
         },
         getPrintUnit(dt) {
             if (!dt) return 'Cái';
-            if (this.isDeviceFormType(this.selectedTicket.TicketType)) {
+            if (this.selectedTicket && this.isDeviceFormType(this.selectedTicket.TicketType)) {
                 return 'Cái';
             }
             var noteText = dt.note || dt.Note || '';
             if (!noteText) return 'Cái';
             var parts = noteText.split(' | ');
-            return parts[0] || 'Cái';
+            var unit = (parts[0] || '').trim();
+            return unit !== '' ? unit : 'Cái';
         },
         getPrintNote(dt) {
             if (!dt) return '';
+            // SUPPORT/REPAIR: Note lưu trực tiếp ghi chú thô, không cần parse
+            if (this.selectedTicket && this.isDeviceFormType(this.selectedTicket.TicketType)) {
+                return dt.note || dt.Note || '';
+            }
+            // IMPORT/EXPORT/TRANSFER: Note lưu dạng "ĐVT | Ghi chú thực"
             var noteText = dt.note || dt.Note || '';
             if (!noteText) return '';
             var parts = noteText.split(' | ');
-            if (parts.length <= 1) {
-                return noteText;
-            }
+            if (parts.length <= 1) return noteText;
             return parts.slice(1).join(' | ');
         },
         printTicket() {
