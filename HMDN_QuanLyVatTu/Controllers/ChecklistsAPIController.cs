@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Http;
@@ -63,7 +64,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Distinct()
                     .ToList();
 
-                var schedules = query
+                var resolvedSchedules = query
                     .OrderBy(s => s.ScheduledDate)
                     .ThenBy(s => s.Id)
                     .Select(s => new
@@ -100,10 +101,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.SerialNumber,
                         s.DepartmentName,
                         s.QrCode,
-                        ScheduledDate = s.ScheduledDate.ToString("yyyy-MM-dd"),
+                        s.ScheduledDate,
                         s.CycleType,
                         Status = (s.Status == "pending" && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
-                        DueDate = s.DueDate.ToString("yyyy-MM-dd"),
+                        DueDate = s.DueDate,
                         s.AssignedTo,
                         s.AssigneeName,
                         s.GroupId,
@@ -112,6 +113,40 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.LifeStatus,
                         Criticality = string.IsNullOrEmpty(s.Criticality) ? "Low" : s.Criticality,
                         HasOpenRepair = openRepairInventoryIds.Contains(s.InventoryId)
+                    })
+                    .ToList();
+
+                var latestPendingDict = resolvedSchedules
+                    .Where(s => s.Status == "pending" || s.Status == "overdue")
+                    .GroupBy(s => new { s.InventoryId, s.CycleType })
+                    .ToDictionary(
+                        g => new { g.Key.InventoryId, g.Key.CycleType },
+                        g => g.OrderByDescending(s => s.ScheduledDate).First().Id
+                    );
+
+                var schedules = resolvedSchedules
+                    .Where(s => (s.Status != "pending" && s.Status != "overdue") || latestPendingDict[new { s.InventoryId, s.CycleType }] == s.Id)
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.InventoryId,
+                        s.AssetCode,
+                        s.ItemName,
+                        s.SerialNumber,
+                        s.DepartmentName,
+                        s.QrCode,
+                        ScheduledDate = s.ScheduledDate.ToString("yyyy-MM-dd"),
+                        s.CycleType,
+                        s.Status,
+                        DueDate = s.DueDate.ToString("yyyy-MM-dd"),
+                        s.AssignedTo,
+                        s.AssigneeName,
+                        s.GroupId,
+                        s.GroupName,
+                        s.GroupIcon,
+                        s.LifeStatus,
+                        s.Criticality,
+                        s.HasOpenRepair
                     })
                     .ToList();
 
@@ -170,10 +205,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                     new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
                 ).ToList();
 
-                // Group overrides global
-                if (items.Any(i => i.Scope == "group"))
+                // Global items with no CycleType match always apply.
+                // Global items with a specific CycleType only apply if no group item overrides that cycle.
+                // Group and item scopes always show alongside applicable global items.
+                // Filter: only keep global items if their CycleType is NULL (universal) OR there is no group item for that same cycle
+                var hasGroupItems = items.Any(i => i.Scope == "group" || i.Scope == "item");
+                if (hasGroupItems)
                 {
-                    items.RemoveAll(i => i.Scope == "global");
+                    items.RemoveAll(i => i.Scope == "global" && !string.IsNullOrEmpty(i.CycleType));
                 }
 
                 return Ok(new { success = true, data = items });
@@ -246,6 +285,20 @@ namespace HMDN_QuanLyVatTu.Controllers
                             if (schedule != null)
                             {
                                 schedule.Status = "done";
+                                db.SaveChanges();
+
+                                // Auto-skip older pending/overdue schedules for the same device and cycle
+                                var olderSchedules = db.ChecklistSchedules
+                                    .Where(s => s.InventoryId == schedule.InventoryId 
+                                             && s.CycleType == schedule.CycleType 
+                                             && s.ScheduledDate < schedule.ScheduledDate 
+                                             && (s.Status == "pending" || s.Status == "overdue"))
+                                    .ToList();
+
+                                foreach (var oldSch in olderSchedules)
+                                {
+                                    oldSch.Status = "skipped";
+                                }
                                 db.SaveChanges();
                             }
                         }
@@ -705,10 +758,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .ThenBy(d => d.SortOrder)
                     .ToList();
 
-                // Group overrides global
-                if (list.Any(i => i.Scope == "group"))
+                // Keep universal global items (CycleType IS NULL), remove cycle-specific global if group exists
+                var hasGroupItems = list.Any(i => i.Scope == "group" || i.Scope == "item");
+                if (hasGroupItems)
                 {
-                    list.RemoveAll(i => i.Scope == "global");
+                    list.RemoveAll(i => i.Scope == "global" && !string.IsNullOrEmpty(i.CycleType));
                 }
 
                 return Ok(new { success = true, data = list });
@@ -736,10 +790,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                     var userId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) 
                                  ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
 
-                    // 1. Lọc chỉ lấy schedules CÒN pending/overdue/NeedsReinspection (chống trùng lặp concurrent)
+                    // 1. Lọc chỉ lấy schedules CÒN pending/NeedsReinspection (chống trùng lặp concurrent)
+                    // Note: "overdue" is computed client-side (pending + DueDate < Today), NOT stored in DB
                     var schedules = db.ChecklistSchedules
+                        .Include(s => s.Inventory)
+                        .Include(s => s.Inventory.Item)
+                        .Include(s => s.Inventory.Item.Group)
                         .Where(s => payload.ScheduleIds.Contains(s.Id) 
-                                 && (s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection"))
+                                 && (s.Status == "pending" || s.Status == "NeedsReinspection"))
                         .ToList();
 
                     if (schedules.Count == 0)
@@ -750,21 +808,17 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     // 1b. Validation: Ensure all schedules belong to the same GroupId and CycleType
                     var firstSch = schedules.First();
-                    var firstGroupId = (firstSch.Inventory != null && firstSch.Inventory.Item != null) ? firstSch.Inventory.Item.GroupId : (int?)null;
+                    var firstGroupId = (firstSch.Inventory?.Item != null) ? firstSch.Inventory.Item.GroupId : (int?)null;
                     var firstCycleType = firstSch.CycleType;
-                    var firstDeptId = firstSch.Inventory != null ? firstSch.Inventory.DepartmentId : (int?)null;
 
                     foreach(var sch in schedules)
                     {
-                        var groupId = (sch.Inventory != null && sch.Inventory.Item != null) ? sch.Inventory.Item.GroupId : (int?)null;
+                        var groupId = (sch.Inventory?.Item != null) ? sch.Inventory.Item.GroupId : (int?)null;
                         if (groupId != firstGroupId)
                             return Ok(new { success = false, message = "Không được mix nhiều nhóm tài sản (Asset Groups) trong cùng một lượt check hàng loạt." });
                         if (sch.CycleType != firstCycleType)
                             return Ok(new { success = false, message = "Không được mix nhiều chu kỳ kiểm tra (Cycle Type) trong cùng một lượt check hàng loạt." });
-                        // Optionally validate department if required by business logic. The user stated "Department (if applicable)". We'll enforce strict department matching.
-                        var deptId = sch.Inventory != null ? sch.Inventory.DepartmentId : null;
-                        if (deptId != firstDeptId)
-                            return Ok(new { success = false, message = "Không được mix nhiều phòng ban trong cùng một lượt check hàng loạt." });
+                        // Department validation removed: batch groups by GroupId+CycleType, not department
 
                         if (sch.Inventory != null)
                         {
@@ -808,6 +862,22 @@ namespace HMDN_QuanLyVatTu.Controllers
                     // AddRange cho logs
                     db.ChecklistLogs.AddRange(allLogs);
                     db.SaveChanges();  // Flush để có Log.Id
+
+                    // Auto-skip older pending/overdue schedules for each completed device
+                    foreach (var sch in schedules)
+                    {
+                        var olderSchedules = db.ChecklistSchedules
+                            .Where(s => s.InventoryId == sch.InventoryId 
+                                     && s.CycleType == sch.CycleType 
+                                     && s.ScheduledDate < sch.ScheduledDate 
+                                     && (s.Status == "pending" || s.Status == "overdue"))
+                            .ToList();
+                        foreach (var oldSch in olderSchedules)
+                        {
+                            oldSch.Status = "skipped";
+                        }
+                    }
+                    db.SaveChanges();
 
                     // 3. Tạo log items (nếu có)
                     var allLogItems = new List<ChecklistLogItem>();
