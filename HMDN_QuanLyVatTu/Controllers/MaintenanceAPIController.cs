@@ -410,16 +410,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                         log.EndDate = DateTime.Now;
 
                         // Chuyển lại trạng thái thiết bị thành "active" nếu tất cả ca sửa chữa khác đã đóng
-                        // (Không tự động kích hoạt lại thiết bị nếu đang bị suspended do hỏng checklist)
                         if (inventory != null)
                         {
                             bool hasActiveLogs = db.MaintenanceLogs.Any(l => l.InventoryId == log.InventoryId && l.Id != log.Id && l.Status != "closed");
                             if (!hasActiveLogs)
                             {
-                                if (inventory.LifeStatus != "suspended")
-                                {
-                                    inventory.LifeStatus = "active"; // Đang sử dụng
-                                }
+                                inventory.LifeStatus = "active"; // Đang sử dụng
                             }
                         }
 
@@ -611,6 +607,35 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        // POST api/maintenance/update-device-status
+        // Cập nhật LifeStatus của Inventory (trạng thái hoạt động thiết bị)
+        [HttpPost]
+        [Route("update-device-status")]
+        public IHttpActionResult UpdateDeviceLifeStatus([FromBody] UpdateDeviceStatusDTO dto)
+        {
+            try
+            {
+                if (dto == null || dto.InventoryId <= 0)
+                    return BadRequest("Dữ liệu không hợp lệ.");
+
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var inventory = db.Inventories.Find(dto.InventoryId);
+                    if (inventory == null)
+                        return NotFound();
+
+                    inventory.LifeStatus = dto.LifeStatus;
+                    db.SaveChanges();
+
+                    return Ok(new { success = true, message = "Cập nhật trạng thái thành công." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
         // POST api/maintenance/update-status/{id}
         //[HttpPost]
         //[Route("update-status/{id}")]
@@ -645,5 +670,12 @@ namespace HMDN_QuanLyVatTu.Controllers
         public decimal? Cost { get; set; }
         public string PartReplaced { get; set; }
         public string Vendor { get; set; }
+    }
+
+    // DTO cho cập nhật trạng thái hoạt động của thiết bị (Inventory.LifeStatus)
+    public class UpdateDeviceStatusDTO
+    {
+        public int InventoryId { get; set; }
+        public string LifeStatus { get; set; }
     }
 }

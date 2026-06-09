@@ -244,10 +244,10 @@ var app = new Vue({
         updateDeviceStatus: function (inventoryId, newStatus) {
             var vm = this;
             $.ajax({
-                url: '/api/maintenance/update-status/' + inventoryId,
+                url: '/api/maintenance/update-device-status',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(newStatus),
+                data: JSON.stringify({ InventoryId: inventoryId, LifeStatus: newStatus }),
                 success: function (res) {
                     if (res.success) {
                         // Cập nhật lại trong danh sách
@@ -256,15 +256,24 @@ var app = new Vue({
                         
                         // Cập nhật lại KPI
                         vm.calculateKPI();
+
+                        if (window.MedEquip && MedEquip.toast) {
+                            MedEquip.toast('Thành công', 'Đã cập nhật trạng thái thiết bị.', 'success');
+                        }
                     } else {
                         alert(res.message || 'Lỗi cập nhật trạng thái');
                     }
                 },
                 error: function (xhr) {
                     alert('Lỗi hệ thống khi cập nhật trạng thái.');
+                    // Rollback: reload lại selectedDevice để dropdown trở về đúng
+                    if (vm.showHistoryModal && vm.selectedDevice) {
+                        vm.openHistory(vm.selectedDevice.Id);
+                    }
                 }
             });
         },
+
 
         // ── API Calls ──
 
