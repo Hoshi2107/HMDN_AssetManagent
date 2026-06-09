@@ -289,7 +289,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 db.MaintenanceLogs.Add(mLog);
 
                                 // Cập nhật trạng thái thiết bị thành hỏng
-                                existingInventory.LifeStatus = "broken";
+                                existingInventory.LifeStatus = "suspended";
                             }
                             
                             // Tạo chi tiết yêu cầu để hiện bên phê duyệt (luôn tạo kể cả khi existingInventory == null)

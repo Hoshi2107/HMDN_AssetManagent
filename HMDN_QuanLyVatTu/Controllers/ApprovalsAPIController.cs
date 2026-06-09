@@ -62,8 +62,9 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     IEnumerable<Tickets> filteredData;
 
-                    // PHÂN QUYỀN: Admin (Id == 1 hoặc role admin/manager/approver) xem tất cả, user khác chỉ xem phiếu của mình
-                    bool canApproveAll = false;
+                    // PHÂN QUYỀN: Admin (Id == 1 hoặc role admin) xem tất cả, các user khác chỉ thấy phiếu do mình gửi đi hoặc gửi tới phòng ban của mình
+                    bool isAdmin = false;
+                    int? userDeptId = null;
                     if (userId > 0)
                     {
                         var user = db.Users
@@ -71,25 +72,28 @@ namespace HMDN_QuanLyVatTu.Controllers
                             .FirstOrDefault(u => u.Id == userId);
                         if (user != null)
                         {
+                            userDeptId = user.DepartmentId;
                             var roles = user.UserRoles
                                 .Where(ur => ur.Role != null)
                                 .Select(ur => ur.Role.Code)
                                 .ToList();
-                            canApproveAll = userId == 1 || roles.Any(r =>
-                                string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(r, "manager", StringComparison.OrdinalIgnoreCase) ||
-                                string.Equals(r, "approver", StringComparison.OrdinalIgnoreCase)
+                            isAdmin = userId == 1 || roles.Any(r =>
+                                string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase)
                             );
                         }
                     }
 
-                    if (canApproveAll)
+                    if (isAdmin)
                     {
-                        filteredData = allData; // Admin/Manager/Approver: xem toàn bộ
+                        filteredData = allData; // Admin: xem toàn bộ
                     }
                     else if (userId > 1)
                     {
-                        filteredData = allData.Where(t => t.CreatedBy == userId); // User/KTV: chỉ phiếu của mình
+                        // Gmail-like logic: phiếu tôi gửi (CreatedBy == userId) hoặc phiếu gửi tới phòng ban tôi (SendTo == userDeptId)
+                        filteredData = allData.Where(t => 
+                            t.CreatedBy == userId || 
+                            (userDeptId.HasValue && t.SendTo == userDeptId.Value)
+                        );
                     }
                     else
                     {
@@ -272,6 +276,7 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     // PHÂN QUYỀN: Chỉ cho phép admin, manager hoặc approver phê duyệt/từ chối
                     bool isAuthorized = false;
+                    bool canAccessTicket = false;
                     if (request.UserId > 0)
                     {
                         var user = db.Users
@@ -288,12 +293,32 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 string.Equals(r, "manager", StringComparison.OrdinalIgnoreCase) ||
                                 string.Equals(r, "approver", StringComparison.OrdinalIgnoreCase)
                             );
+
+                            if (isAuthorized)
+                            {
+                                bool isAdmin = request.UserId == 1 || roles.Any(r =>
+                                    string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase)
+                                );
+                                if (isAdmin)
+                                {
+                                    canAccessTicket = true;
+                                }
+                                else
+                                {
+                                    canAccessTicket = ticket.CreatedBy == request.UserId || 
+                                                      (user.DepartmentId.HasValue && ticket.SendTo == user.DepartmentId.Value);
+                                }
+                            }
                         }
                     }
 
                     if (!isAuthorized)
                     {
                         return Ok(new { success = false, message = "Bạn không có quyền thực hiện hành động này." });
+                    }
+                    if (!canAccessTicket)
+                    {
+                        return Ok(new { success = false, message = "Bạn không có quyền phê duyệt/từ chối phiếu thuộc phòng ban khác." });
                     }
 
                     // [ĐÃ LOẠI BỎ] Logic tự động chèn tin nhắn chat từ ticket.Note vào TicketDiscussions khi duyệt để tránh trùng lặp dữ liệu thảo luận.

@@ -1,4 +1,5 @@
 using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
 using HMS.Data;
@@ -23,10 +24,50 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
+                var userIdSession = Session["UserId"] as int?;
+                int userId = userIdSession ?? 0;
+
                 var users = db.Users.ToList().ToDictionary(u => u.Id);
                 var departments = db.Departments.ToList().ToDictionary(d => d.Id);
 
-                var data = db.Tickets
+                // PHÂN QUYỀN DẠNG GMAIL
+                bool isAdmin = false;
+                int? userDeptId = null;
+                if (userId > 0)
+                {
+                    var user = db.Users
+                        .Include(u => u.UserRoles.Select(ur => ur.Role))
+                        .FirstOrDefault(u => u.Id == userId);
+                    if (user != null)
+                    {
+                        userDeptId = user.DepartmentId;
+                        var roles = user.UserRoles
+                            .Where(ur => ur.Role != null)
+                            .Select(ur => ur.Role.Code)
+                            .ToList();
+                        isAdmin = userId == 1 || roles.Any(r =>
+                            string.Equals(r, "admin", StringComparison.OrdinalIgnoreCase)
+                        );
+                    }
+                }
+
+                var query = db.Tickets.AsQueryable();
+                if (!isAdmin)
+                {
+                    if (userId > 1)
+                    {
+                        query = query.Where(t => 
+                            t.CreatedBy == userId || 
+                            (userDeptId.HasValue && t.SendTo == userDeptId.Value)
+                        );
+                    }
+                    else
+                    {
+                        query = query.Where(t => false); // Chưa đăng nhập hoặc khách
+                    }
+                }
+
+                var data = query
                     .OrderByDescending(x => x.CreatedAt)
                     .ToList()
                     .Select(t =>
