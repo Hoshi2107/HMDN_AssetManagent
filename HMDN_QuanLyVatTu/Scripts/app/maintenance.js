@@ -17,7 +17,7 @@ var app = new Vue({
         filterLogStatus: '', // '' = tất cả, 'has_logs' = có lịch sử, 'no_logs' = chưa có
         filterDepartment: '',
         filterLifeStatus: '', // Bộ lọc trạng thái hoạt động
-        showRepairedDevices: false,
+        kpiFilter: 'bao_hong', // bao_hong | pending | in_progress | repaired | from_ticket
 
         // Phân trang
         currentPage: 1,
@@ -28,7 +28,8 @@ var app = new Vue({
             totalDevices: 0,
             devicesWithLogs: 0,
             activeIssues: 0,
-            totalRepairs: 0
+            totalRepairs: 0,
+            fromTicket: 0
         },
 
         // Modal lịch sử thiết bị
@@ -83,16 +84,29 @@ var app = new Vue({
             var vm = this;
             var list = vm.devices.slice();
 
-            // Lọc theo chế độ xem
-            if (vm.showRepairedDevices) {
-                // Chỉ hiển thị thiết bị đã sửa chữa (có log)
+            // Chỉ hiển thị thiết bị báo hỏng (hỏng / tạm ngưng / BV bảo trì)
+            list = list.filter(function (d) {
+                return vm.isBaoHong(d);
+            });
+
+            // Lọc theo KPI card được chọn
+            if (vm.kpiFilter === 'bao_hong') {
+                // Giữ toàn bộ thiết bị báo hỏng
+            } else if (vm.kpiFilter === 'pending') {
                 list = list.filter(function (d) {
-                    return d.TotalLogs > 0;
+                    return vm.isChuaSuaChua(d);
                 });
-            } else {
-                // Mặc định hiển thị thiết bị hỏng, tạm ngưng và đang bảo trì
+            } else if (vm.kpiFilter === 'in_progress') {
                 list = list.filter(function (d) {
-                    return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'maintenance_bv';
+                    return vm.isDangSuaChua(d);
+                });
+            } else if (vm.kpiFilter === 'repaired') {
+                list = list.filter(function (d) {
+                    return vm.isDaSuaChua(d);
+                });
+            } else if (vm.kpiFilter === 'from_ticket') {
+                list = list.filter(function (d) {
+                    return vm.isFromTicket(d);
                 });
             }
 
@@ -127,6 +141,14 @@ var app = new Vue({
                     return d.DepartmentName === vm.filterDepartment;
                 });
             }
+
+            // Sắp xếp: thiết bị sửa chữa sớm nhất lên đầu
+            list.sort(function (a, b) {
+                var aTime = a.FirstLogDate ? new Date(a.FirstLogDate).getTime() : Number.MAX_SAFE_INTEGER;
+                var bTime = b.FirstLogDate ? new Date(b.FirstLogDate).getTime() : Number.MAX_SAFE_INTEGER;
+                if (aTime !== bTime) return aTime - bTime;
+                return a.Id - b.Id;
+            });
 
             return list;
         },
@@ -168,6 +190,8 @@ var app = new Vue({
         searchQuery: function () { this.currentPage = 1; },
         filterLogStatus: function () { this.currentPage = 1; },
         filterDepartment: function () { this.currentPage = 1; },
+        filterLifeStatus: function () { this.currentPage = 1; },
+        kpiFilter: function () { this.currentPage = 1; },
         pageSize: function () { this.currentPage = 1; }
     },
 
@@ -219,25 +243,60 @@ var app = new Vue({
             return Number(value).toLocaleString('vi-VN') + ' ₫';
         },
 
+        isBaoHong: function (d) {
+            return d.LifeStatus === 'broken' ||
+                   d.LifeStatus === 'suspended' ||
+                   d.LifeStatus === 'maintenance_bv';
+        },
+
+        isDangSuaChua: function (d) {
+            // Chỉ ca đã bắt đầu sửa (in_progress), không tính ca "Chờ xử lý" (open)
+            return d.InProgressLogs > 0;
+        },
+
+        isDaSuaChua: function (d) {
+            return d.ClosedLogs > 0 && d.InProgressLogs === 0 && d.OpenLogs === 0;
+        },
+
+        isChuaSuaChua: function (d) {
+            // Báo hỏng nhưng chưa bắt đầu sửa (kể cả có phiếu chờ xử lý)
+            if (!this.isBaoHong(d)) return false;
+            if (this.isDangSuaChua(d)) return false;
+            if (this.isDaSuaChua(d)) return false;
+            return true;
+        },
+
+        isFromTicket: function (d) {
+            return d.FromTicket === true;
+        },
+
+        setKpiFilter: function (filter) {
+            this.kpiFilter = filter;
+            this.currentPage = 1;
+        },
+
         calculateKPI: function () {
             var vm = this;
-            // 1. Tổng sản phẩm hỏng, tạm ngưng & đang bảo trì
-            vm.kpi.totalDevices = vm.devices.filter(function (d) { 
-                return d.LifeStatus === 'broken' || d.LifeStatus === 'suspended' || d.LifeStatus === 'maintenance_bv'; 
+
+            vm.kpi.totalDevices = vm.devices.filter(function (d) {
+                return vm.isChuaSuaChua(d);
             }).length;
-            
-            // 2. Những sản phẩm đang sửa chữa
-            vm.kpi.devicesWithLogs = vm.devices.filter(function (d) { 
-                return (d.OpenLogs > 0 || d.InProgressLogs > 0); 
+
+            vm.kpi.devicesWithLogs = vm.devices.filter(function (d) {
+                return vm.isDangSuaChua(d);
             }).length;
-            
-            // 3. Tổng sản phẩm đã sửa
-            vm.kpi.activeIssues = vm.devices.filter(function(d) {
-                return d.TotalLogs > 0;
+
+            vm.kpi.activeIssues = vm.devices.filter(function (d) {
+                return vm.isDaSuaChua(d);
             }).length;
-            
-            // 4. Tổng chi phí sửa chữa
-            vm.kpi.totalRepairs = vm.devices.reduce(function (sum, d) { return sum + (d.TotalCost || 0); }, 0);
+
+            vm.kpi.fromTicket = vm.devices.filter(function (d) {
+                return vm.isFromTicket(d) && vm.isBaoHong(d);
+            }).length;
+
+            vm.kpi.totalRepairs = vm.devices.reduce(function (sum, d) {
+                return sum + (Number(d.TotalMaintenanceCost) || 0);
+            }, 0);
         },
 
         // ── Thay đổi trạng thái thiết bị ──

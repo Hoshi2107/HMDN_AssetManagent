@@ -9,16 +9,22 @@
 
     <!-- KPI CARDS -->
     <div class="kpi-row">
-        <div class="kpi-card">
+        <div class="kpi-card"
+             :class="{ 'kpi-active': kpiFilter === 'pending' }"
+             v-on:click="setKpiFilter('pending')"
+             title="Lọc thiết bị báo hỏng chưa sửa chữa">
             <div class="kpi-icon blue">
                 <i class="fa-solid fa-boxes-stacked"></i>
             </div>
             <div class="kpi-info">
                 <h4>${ kpi.totalDevices }</h4>
-                <p>Bảo trì, Hỏng, Ngưng</p>
+                <p>Chưa sửa</p>
             </div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card"
+             :class="{ 'kpi-active': kpiFilter === 'in_progress' }"
+             v-on:click="setKpiFilter('in_progress')"
+             title="Hiển thị thiết bị đang sửa chữa">
             <div class="kpi-icon amber">
                 <i class="fa-solid fa-tools"></i>
             </div>
@@ -27,7 +33,10 @@
                 <p>Đang sửa chữa</p>
             </div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card"
+             :class="{ 'kpi-active': kpiFilter === 'repaired' }"
+             v-on:click="setKpiFilter('repaired')"
+             title="Hiển thị thiết bị đã sửa chữa">
             <div class="kpi-icon green">
                 <i class="fa-solid fa-check-circle"></i>
             </div>
@@ -36,7 +45,20 @@
                 <p>Đã sửa chữa</p>
             </div>
         </div>
-        <div class="kpi-card">
+        <div class="kpi-card"
+             :class="{ 'kpi-active': kpiFilter === 'from_ticket' }"
+             v-on:click="setKpiFilter('from_ticket')"
+             title="Hiển thị thiết bị hỏng được thêm từ Tạo phiếu">
+            <div class="kpi-icon teal">
+                <i class="fa-solid fa-file-circle-plus"></i>
+            </div>
+            <div class="kpi-info">
+                <h4>${ kpi.fromTicket }</h4>
+                <p>Từ tạo phiếu</p>
+            </div>
+        </div>
+        <div class="kpi-card kpi-card-static"
+             title="Tổng chi phí sửa chữa toàn hệ thống">
             <div class="kpi-icon purple">
                 <i class="fa-solid fa-money-bill-wave"></i>
             </div>
@@ -51,7 +73,7 @@
     <div class="maint-header">
         <div>
             <h2>Nhật ký bệnh án thiết bị</h2>
-            <p>Hiển thị tất cả thiết bị — Click vào thiết bị để xem lịch sử sửa chữa</p>
+            <p>Hiển thị thiết bị báo hỏng — Sắp xếp theo thời gian sửa chữa sớm nhất — Click để xem lịch sử</p>
         </div>
     </div>
 
@@ -85,16 +107,6 @@
             <option :value="20">20 dòng</option>
             <option :value="50">50 dòng</option>
         </select>
-
-        <button type="button" 
-                class="btn-vendor" 
-                style="padding: 9px 16px; margin: 0; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; white-space: nowrap;"
-                v-on:click="showRepairedDevices = !showRepairedDevices"
-                :style="showRepairedDevices ? 'background: #10b981; color: white; border: 1px solid #10b981;' : 'background: white; color: #475569; border: 1px solid #cbd5e1;'">
-            <i class="fa-solid fa-check-circle" :style="showRepairedDevices ? 'color: white' : 'color: #10b981'"></i> 
-            <span v-if="!showRepairedDevices">Thiết bị đã sửa chữa</span>
-            <span v-else>Quay lại (Mặc định)</span>
-        </button>
     </div>
 
     <!-- TOP SCROLLBAR -->
@@ -125,7 +137,7 @@
                 <tr v-for="device in paginatedDevices"
                     :key="device.Id"
                     v-on:click="openHistory(device.Id)"
-                    :class="{ 'row-has-issue': device.OpenLogs > 0 || device.InProgressLogs > 0 }">
+                    :class="{ 'row-has-issue': device.InProgressLogs > 0, 'row-pending': device.OpenLogs > 0 && device.InProgressLogs === 0 }">
 
                     <td><strong>#${ device.Id }</strong></td>
 
@@ -166,9 +178,11 @@
                     </td>
 
                     <td class="text-center">
-                        <span v-if="device.OpenLogs > 0 || device.InProgressLogs > 0"
-                              class="active-issues">
-                            ${ device.OpenLogs + device.InProgressLogs }
+                        <span v-if="device.InProgressLogs > 0" class="active-issues">
+                            ${ device.InProgressLogs }
+                        </span>
+                        <span v-else-if="device.OpenLogs > 0" class="pending-issues">
+                            ${ device.OpenLogs }
                         </span>
                         <span v-else class="no-issue">—</span>
                     </td>
