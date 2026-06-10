@@ -249,8 +249,11 @@
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
     <Content Include="Content\category\category.css" />
+    <Content Include="Content\images1\banner_bvhm.png" />
     <Content Include="Content\images1\BenhvienLogin.jpg" />
+    <Content Include="Content\images1\hmdni2.jpg" />
     <Content Include="Content\images1\logobv.png" />
+    <Content Include="Content\images1\Logofull_bvhm.png" />
     <Content Include="Content\inventory\inventory.css" />
     <Content Include="Content\maintenance\maintenance.css" />
     <Content Include="Content\location\location.css" />
