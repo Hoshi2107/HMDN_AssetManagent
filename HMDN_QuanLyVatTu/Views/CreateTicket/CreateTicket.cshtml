@@ -347,13 +347,31 @@
 
     /* ── BOTTOM BAR ── */
     .bottom-bar {
-        position: fixed; bottom: 0; left: 0; right: 0; height: 72px;
-        background: #fff; border-top: 1px solid var(--hm-border);
-        display: flex; align-items: center; justify-content: flex-end;
-        gap: 24px; padding: 0 32px; z-index: 999;
+        position: fixed;
+        bottom: 0;
+        left: var(--sidebar-width); /* = 260px */
+        right: 0;
+        height: 72px;
+        background: #fff;
+        border-top: 1px solid var(--hm-border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 24px;
+        padding: 0 32px;
+        z-index: 999;
         box-shadow: 0 -4px 12px rgba(0,0,0,.03);
     }
-    @@media(min-width:769px) { .bottom-bar { left: 230px; } }
+
+    body.sidebar-collapsed .bottom-bar {
+        left: var(--sidebar-collapsed-width);
+    }
+
+    @@media(max-width:768px) {
+        .bottom-bar {
+            left: 0;
+        }
+    }
     .btn-cancel {
         font-size: 13.5px; font-weight: 600; color: var(--hm-text-sec);
         background: none; border: none; cursor: pointer; transition: var(--hm-tr);
