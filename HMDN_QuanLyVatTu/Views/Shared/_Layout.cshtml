@@ -178,7 +178,7 @@
             min-width: var(--sidebar-collapsed-width);
         }
 
-        /* ── BRAND LOGO CẤU HÌNH MỚI TỐI ƯU KÍCH THƯỚC ── */
+        /* ── BRAND LOGO CẤU HÌNH TỐI ƯU KÍCH THƯỚC SÁT LỀ ── */
         #app-sidebar .sidebar-brand {
             display: flex !important;
             align-items: center !important;
@@ -345,7 +345,7 @@
         body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-large {
             display: none !important;
         }
-        /* 2. Giải phóng hiển thị logo vuông nhỏ ra chính giữa thanh menu */
+        /* 2. Ép hiển thị logo icon vuông to rõ ở chính giữa menu thu nhỏ */
         body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-icon {
             display: block !important;
             width: 40px !important;
@@ -528,7 +528,7 @@
             position: absolute; top: 12px; right: 12px; font-size: 16px;
         }
 
-        /* ĐÃ THAY @@ ĐỂ SỬA DỨT ĐIỂM LỖI COMPILATION ERROR (CS0103) */
+        /* SỬ DỤNG @@ KEYFRAMES ĐỂ TRANH LỖI RAZOR */
         @@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
         /* ── RESPONSIVE CHO MOBILE ── */
@@ -559,7 +559,7 @@
         }
     </style>
     <style>
-        /* ── ĐƯỜNG DẪN FONT LOCALHOST ── */
+        /* ── ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHUẨN ĐẾN THƯ MỤC FONT THEO THỰC TẾ TRÊN F12 CỦA BẠN ── */
         @@font-face {
           font-family: 'Lexend';
           font-style: normal;
