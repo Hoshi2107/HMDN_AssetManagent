@@ -59,6 +59,26 @@
         int index = Math.Abs(hash) % gradients.Length;
         return gradients[index];
     }
+
+    // Calculate initials for current user
+    string currentFullName = Session["FullName"]?.ToString() ?? "User";
+    string currentUserInitials = "";
+    if (!string.IsNullOrEmpty(currentFullName))
+    {
+        var parts = currentFullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length > 0)
+        {
+            currentUserInitials = parts[parts.Length - 1].Substring(0, 1).ToUpper();
+            if (parts.Length > 1)
+            {
+                currentUserInitials = parts[0].Substring(0, 1).ToUpper() + currentUserInitials;
+            }
+        }
+    }
+    else
+    {
+        currentUserInitials = "U";
+    }
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -358,8 +378,8 @@
 
         /* Sửa lỗi đẩy lệch tâm icon của tab active khi có border-left */
         body.sidebar-collapsed #app-sidebar .nav-item.active a {
-            background: #006673 !important; 
-            border-left: 4px solid #ffffff; 
+            background: #ffffff !important; 
+            border-left: 4px solid var(--hm-teal); 
             padding-right: 4px !important;  /* Bù trừ 4px để đẩy ngược icon vào chính giữa */
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
@@ -376,19 +396,24 @@
         }
 
         #app-sidebar .nav-item.active a {
-            background: #006673 !important;
-            color: #ffffff !important;
+            background: #ffffff !important;
+            color: var(--hm-navy) !important;
             font-weight: 600;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0,0,0,0.06);
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0,0,0,0.06);
             
-            border-left: 4px solid #ffffff;
+            border-left: 4px solid var(--hm-teal);
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
         }
 
         #app-sidebar .nav-item.active a .nav-icon {
             opacity: 1;
-            color: #ffffff !important;
+            color: var(--hm-navy) !important;
+        }
+
+        /* ── SIDEBAR FOOTER & ONLINE USERS (COLLAPSED STATE) ── */
+        body.sidebar-collapsed #app-sidebar .sidebar-footer {
+            display: none !important;
         }
 
         #app-sidebar .nav-badge {
@@ -530,6 +555,12 @@
 
         /* SỬ DỤNG @@ KEYFRAMES ĐỂ TRANH LỖI RAZOR */
         @@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+        @@keyframes pulse-online {
+            0% { transform: scale(0.95); opacity: 0.5; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); opacity: 0.5; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
 
         /* ── RESPONSIVE CHO MOBILE ── */
         @@media (max-width: 768px) {
@@ -758,6 +789,49 @@
                     </div>
                 }
             </nav>
+
+            <!-- Sidebar Footer: Active users & Current profile -->
+            @if (Session["FullName"] != null)
+            {
+                <div class="sidebar-footer" style="padding: 15px 12px; border-top: 1px solid rgba(255,255,255,0.08); background: #0090a1; display: flex; flex-direction: column; gap: 12px; transition: all var(--transition);">
+                    <!-- Online Stack -->
+                    @if (activeUsersList != null && activeUsersList.Any())
+                    {
+                        <div class="sidebar-online-section" style="display: flex; flex-direction: column; gap: 8px; background: rgba(42, 27, 154, 0.25); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(44, 160, 185, 0.08);">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%; display: inline-block; animation: pulse-online 2s infinite;"></span>
+                                <span class="sidebar-online-label" style="font-size: 10px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px;">@(activeUsersList.Count + 1) trực tuyến</span>
+                            </div>
+                            
+                            <!-- Avatar Stack -->
+                            <div style="display: flex; align-items: center; padding-left: 2px;">
+                                @{
+                                    int idx = 0;
+                                    foreach(var activeUser in activeUsersList)
+                                    {
+                                        string uName = activeUser.FullName ?? activeUser.Username ?? "N/A";
+                                        string uInitials = "";
+                                        var uParts = uName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                        if (uParts.Length > 0)
+                                        {
+                                            uInitials = uParts[uParts.Length - 1].Substring(0, 1).ToUpper();
+                                        }
+                                        string gradient = GetAvatarGradient(uName);
+                                        
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: @gradient; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; border: 1.5px solid #004d57; margin-left: @(idx > 0 ? "-8px" : "0px"); cursor: pointer; transition: transform 0.2s;" 
+                                             title="@uName (@(activeUser.Email ?? activeUser.Username))"
+                                             onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='10';" 
+                                             onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';">
+                                            @uInitials
+                                        </div>
+                                        idx++;
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         </aside>
 
         <div class="page-wrapper">
@@ -814,10 +888,16 @@
 
                     @if (Session["FullName"] != null)
                     {
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px; background: var(--body-bg); border-radius: 20px; font-size: 13px; border: 1px solid var(--border);">
-                            <i class="fa-solid fa-circle-user" style="color: var(--hm-navy); font-size: 18px;"></i>
-                            <span style="font-weight: 600; color: #1e2a3a;">@Session["FullName"]</span>
-                            <a href="@Url.Action("Logout", "Account")" title="Đăng xuất" style="margin-left: 8px; color: var(--accent-red);"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+                        <!-- Current User Profile in Topbar -->
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 6px; background: #f8fafc; border-radius: 20px; font-size: 13px; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: @GetAvatarGradient(currentFullName); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1.5px solid #ffffff; flex-shrink: 0;">
+                                @currentUserInitials
+                            </div>
+                            <span style="font-weight: 600; color: #334155;">@currentFullName</span>
+                            <a href="@Url.Action("Logout", "Account")" title="Đăng xuất" style="margin-left: 4px; color: var(--accent-red); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: background 0.2s;"
+                               onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-arrow-right-from-bracket" style="font-size: 12px;"></i>
+                            </a>
                         </div>
                     }
                 </div>
