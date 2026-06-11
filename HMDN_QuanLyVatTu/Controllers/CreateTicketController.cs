@@ -140,6 +140,8 @@ namespace HMDN_QuanLyVatTu.Controllers
             public string Proposal { get; set; }
             public int? TargetDepartmentId { get; set; }
             public System.Collections.Generic.List<TicketItemDto> Devices { get; set; }
+            public bool Tamngung { get; set; }
+            
         }
 
         [HttpPost]
@@ -290,8 +292,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 };
                                 db.MaintenanceLogs.Add(mLog);
 
-                                // Cập nhật trạng thái thiết bị thành hỏng
-                                existingInventory.LifeStatus = "suspended";
+                                // // Chỉ cập nhật suspended khi người dùng bật toggle Tạm Ngưng
+                                if (payload.Tamngung)
+                                {
+                                    existingInventory.LifeStatus = "suspended";
+                                    existingInventory.SuspendedAt = DateTime.Now;
+
+                                }
                             }
                             
                             // Tạo chi tiết yêu cầu để hiện bên phê duyệt (luôn tạo kể cả khi existingInventory == null)
