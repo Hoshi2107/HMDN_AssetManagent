@@ -627,7 +627,7 @@
                     </div>
                 }
 
-                @if (HasModule("Inventory") || HasModule("Catalog") || HasModule("Locations") || HasModule("QrCodes"))
+                @if (HasModule("Inventory") || HasModule("Catalog") || HasModule("Locations") || HasModule("MaintainList"))
                 {
                     <div class="nav-section" id="sec-assets">
                         <div class="nav-section-header" onclick="toggleNavSection('sec-assets')">
@@ -656,10 +656,10 @@
                                     </a>
                                 </div>
                             }
-                            @if (HasModule("QrCodes")) {
-                                <div class="nav-item @(ViewBag.ActiveNav == "QrCodes" ? "active" : "")">
-                                    <a href="@Url.Action("Index","QrCodes")">
-                                        <i class="fa-solid fa-qrcode nav-icon"></i> <span class="nav-text">QR Code</span>
+                            @if (HasModule("MaintainList")) {
+                                <div class="nav-item @(ViewBag.ActiveNav == "MaintainList" ? "active" : "")">
+                                    <a href="@Url.Action("Index","MaintainList")">
+                                        <i class="fa-solid fa-wrench nav-icon"></i> <span class="nav-text">Danh sách bảo trì</span>
                                     </a>
                                 </div>
                             }

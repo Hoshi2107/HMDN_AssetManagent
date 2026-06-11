@@ -113,7 +113,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                 { "Alerts", new LoginResponseDTO.ModuleDTO { code = "Alerts", name = "Cảnh báo", url = "/Alerts/Index", icon = "fa-bell", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
                 { "Approvals", new LoginResponseDTO.ModuleDTO { code = "Approvals", name = "Phê duyệt", url = "/Approvals/Index", icon = "fa-clipboard-check", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
                 { "Settings", new LoginResponseDTO.ModuleDTO { code = "Settings", name = "Cài đặt", url = "/Settings/Index", icon = "fa-gear", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Support", new LoginResponseDTO.ModuleDTO { code = "Support", name = "Hỗ trợ", url = "/Support/Index", icon = "fa-circle-question", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } }
+                { "Support", new LoginResponseDTO.ModuleDTO { code = "Support", name = "Hỗ trợ", url = "/Support/Index", icon = "fa-circle-question", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
+                { "MaintainList", new LoginResponseDTO.ModuleDTO { code = "MaintainList", name = "Danh sách bảo trì", url = "/MaintainList/Index", icon = "fa-wrench", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } }
             };
 
             // Phân quyền theo vai trò
@@ -143,6 +144,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("Settings");
                     allowedCodes.Add("Support");
                     allowedCodes.Add("CreateTicket");
+                    allowedCodes.Add("MaintainList");
                 }
                 else if (string.Equals(role, "technician", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "ktv", StringComparison.OrdinalIgnoreCase))
                 {
@@ -158,6 +160,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
                     allowedCodes.Add("Approvals");
+                    allowedCodes.Add("MaintainList");
                 }
                 else if (string.Equals(role, "approver", StringComparison.OrdinalIgnoreCase))
                 {
@@ -168,6 +171,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("Approvals");
                     allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
+                    allowedCodes.Add("MaintainList");
                 }
                 else if (string.Equals(role, "viewer", StringComparison.OrdinalIgnoreCase))
                 {
@@ -181,6 +185,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     allowedCodes.Add("Maintenance");
                     allowedCodes.Add("Alerts");
                     allowedCodes.Add("Support");
+                    allowedCodes.Add("MaintainList");
                 }
             }
 
