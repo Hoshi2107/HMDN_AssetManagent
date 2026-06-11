@@ -92,126 +92,140 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        private static readonly List<string> FULL_PERMS = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" };
+        private static readonly List<string> VIEW_ONLY = new List<string> { "VIEW" };
+
         private List<LoginResponseDTO.ModuleDTO> GetModulesForRoles(List<string> roles)
         {
-            var modules = new List<LoginResponseDTO.ModuleDTO>();
-
             // Định nghĩa danh sách các module có thể có trên hệ thống
             var allModules = new Dictionary<string, LoginResponseDTO.ModuleDTO>
             {
-                { "Analytics", new LoginResponseDTO.ModuleDTO { code = "Analytics", name = "Dashboard", url = "/Analytics/Index", icon = "fa-chart-pie", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Inventory", new LoginResponseDTO.ModuleDTO { code = "Inventory", name = "Tổng tài sản", url = "/Inventory/Index", icon = "fa-box-archive", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Catalog", new LoginResponseDTO.ModuleDTO { code = "Catalog", name = "Danh mục", url = "/Category/Category", icon = "fa-layer-group", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Locations", new LoginResponseDTO.ModuleDTO { code = "Locations", name = "Vị trí", url = "/Location/Location", icon = "fa-map-pin", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "QrCodes", new LoginResponseDTO.ModuleDTO { code = "QrCodes", name = "QR Code", url = "/QrCodes/Index", icon = "fa-qrcode", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Lifecycle", new LoginResponseDTO.ModuleDTO { code = "Lifecycle", name = "Trạng thái", url = "/Lifecycle/Index", icon = "fa-rotate", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "VongDoiKhauHao", new LoginResponseDTO.ModuleDTO { code = "VongDoiKhauHao", name = "Vòng đời & Khấu hao", url = "/VongDoiKhauHao/VongDoiKhauHao", icon = "fa-recycle", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Checklists", new LoginResponseDTO.ModuleDTO { code = "Checklists", name = "Checklist", url = "/Checklists/Index", icon = "fa-list-check", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Maintenance", new LoginResponseDTO.ModuleDTO { code = "Maintenance", name = "Sửa chữa", url = "/Maintenance/Index", icon = "fa-screwdriver-wrench", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "TiepNhanBaoHong", new LoginResponseDTO.ModuleDTO { code = "TiepNhanBaoHong", name = "Tiếp nhận báo hỏng", url = "/Maintenance/TiepNhanBaoHong", icon = "fa-triangle-exclamation", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "CreateTicket", new LoginResponseDTO.ModuleDTO { code = "CreateTicket", name = "Tạo phiếu", url = "/CreateTicket/Index", icon = "fa-file-circle-plus", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Alerts", new LoginResponseDTO.ModuleDTO { code = "Alerts", name = "Cảnh báo", url = "/Alerts/Index", icon = "fa-bell", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Approvals", new LoginResponseDTO.ModuleDTO { code = "Approvals", name = "Phê duyệt", url = "/Approvals/Index", icon = "fa-clipboard-check", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Settings", new LoginResponseDTO.ModuleDTO { code = "Settings", name = "Cài đặt", url = "/Settings/Index", icon = "fa-gear", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "Support", new LoginResponseDTO.ModuleDTO { code = "Support", name = "Hỗ trợ", url = "/Support/Index", icon = "fa-circle-question", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } },
-                { "MaintainList", new LoginResponseDTO.ModuleDTO { code = "MaintainList", name = "Danh sách bảo trì", url = "/MaintainList/Index", icon = "fa-wrench", permissions = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" } } }
+                { "Analytics", new LoginResponseDTO.ModuleDTO { code = "Analytics", name = "Dashboard", url = "/Analytics/Index", icon = "fa-chart-pie", permissions = FULL_PERMS } },
+                { "Inventory", new LoginResponseDTO.ModuleDTO { code = "Inventory", name = "Tổng tài sản", url = "/Inventory/Index", icon = "fa-box-archive", permissions = FULL_PERMS } },
+                { "Catalog", new LoginResponseDTO.ModuleDTO { code = "Catalog", name = "Danh mục", url = "/Category/Category", icon = "fa-layer-group", permissions = FULL_PERMS } },
+                { "Locations", new LoginResponseDTO.ModuleDTO { code = "Locations", name = "Vị trí", url = "/Location/Location", icon = "fa-map-pin", permissions = FULL_PERMS } },
+                { "QrCodes", new LoginResponseDTO.ModuleDTO { code = "QrCodes", name = "QR Code", url = "/QrCodes/Index", icon = "fa-qrcode", permissions = FULL_PERMS } },
+                { "Lifecycle", new LoginResponseDTO.ModuleDTO { code = "Lifecycle", name = "Trạng thái", url = "/Lifecycle/Index", icon = "fa-rotate", permissions = FULL_PERMS } },
+                { "VongDoiKhauHao", new LoginResponseDTO.ModuleDTO { code = "VongDoiKhauHao", name = "Vòng đời & Khấu hao", url = "/VongDoiKhauHao/VongDoiKhauHao", icon = "fa-recycle", permissions = FULL_PERMS } },
+                { "Checklists", new LoginResponseDTO.ModuleDTO { code = "Checklists", name = "Checklist", url = "/Checklists/Index", icon = "fa-list-check", permissions = FULL_PERMS } },
+                { "Maintenance", new LoginResponseDTO.ModuleDTO { code = "Maintenance", name = "Sửa chữa", url = "/Maintenance/Index", icon = "fa-screwdriver-wrench", permissions = FULL_PERMS } },
+                { "TiepNhanBaoHong", new LoginResponseDTO.ModuleDTO { code = "TiepNhanBaoHong", name = "Tiếp nhận báo hỏng", url = "/Maintenance/TiepNhanBaoHong", icon = "fa-triangle-exclamation", permissions = FULL_PERMS } },
+                { "CreateTicket", new LoginResponseDTO.ModuleDTO { code = "CreateTicket", name = "Tạo phiếu", url = "/CreateTicket/Index", icon = "fa-file-circle-plus", permissions = FULL_PERMS } },
+                { "Alerts", new LoginResponseDTO.ModuleDTO { code = "Alerts", name = "Cảnh báo", url = "/Alerts/Index", icon = "fa-bell", permissions = FULL_PERMS } },
+                { "Approvals", new LoginResponseDTO.ModuleDTO { code = "Approvals", name = "Phê duyệt", url = "/Approvals/Index", icon = "fa-clipboard-check", permissions = FULL_PERMS } },
+                { "Settings", new LoginResponseDTO.ModuleDTO { code = "Settings", name = "Cài đặt", url = "/Settings/Index", icon = "fa-gear", permissions = FULL_PERMS } },
+                { "Support", new LoginResponseDTO.ModuleDTO { code = "Support", name = "Hỗ trợ", url = "/Support/Index", icon = "fa-circle-question", permissions = FULL_PERMS } },
+                { "MaintainList", new LoginResponseDTO.ModuleDTO { code = "MaintainList", name = "Danh sách bảo trì", url = "/MaintainList/Index", icon = "fa-wrench", permissions = FULL_PERMS } }
             };
 
-            // Phân quyền theo vai trò
+            // Admin → toàn quyền tất cả module
             if (roles.Contains("admin", StringComparer.OrdinalIgnoreCase))
             {
                 return allModules.Values.ToList();
             }
 
-            var allowedCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Bảng phân quyền chi tiết: role → { moduleCode → permissions }
+            // FULL = VIEW + CREATE + EDIT + DELETE
+            // VIEW_ONLY = chỉ xem danh sách, không tạo/sửa/xóa
+            var rolePermissions = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                {
+                    "manager", new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Analytics", FULL_PERMS }, { "Inventory", FULL_PERMS }, { "Catalog", FULL_PERMS },
+                        { "Locations", FULL_PERMS }, { "QrCodes", FULL_PERMS }, { "Lifecycle", FULL_PERMS },
+                        { "VongDoiKhauHao", FULL_PERMS }, { "Checklists", FULL_PERMS }, { "Maintenance", FULL_PERMS },
+                        { "TiepNhanBaoHong", FULL_PERMS }, { "CreateTicket", FULL_PERMS }, { "Alerts", FULL_PERMS },
+                        { "Approvals", FULL_PERMS }, { "Settings", FULL_PERMS }, { "Support", FULL_PERMS },
+                        { "MaintainList", FULL_PERMS }
+                    }
+                },
+                {
+                    "technician", new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Analytics", VIEW_ONLY },
+                        { "Inventory", FULL_PERMS }, { "Catalog", FULL_PERMS }, { "Locations", FULL_PERMS },
+                        { "QrCodes", FULL_PERMS }, { "Lifecycle", FULL_PERMS },
+                        { "VongDoiKhauHao", VIEW_ONLY },
+                        { "Checklists", FULL_PERMS }, { "Maintenance", FULL_PERMS },
+                        { "TiepNhanBaoHong", FULL_PERMS }, { "CreateTicket", FULL_PERMS },
+                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS }, { "Support", FULL_PERMS },
+                        { "MaintainList", FULL_PERMS }
+                    }
+                },
+                {
+                    "approver", new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Analytics", FULL_PERMS }, { "Inventory", VIEW_ONLY },
+                        { "Catalog", VIEW_ONLY }, { "Locations", VIEW_ONLY },
+                        { "QrCodes", VIEW_ONLY }, { "Lifecycle", VIEW_ONLY },
+                        { "VongDoiKhauHao", FULL_PERMS },
+                        { "Checklists", VIEW_ONLY },
+                        { "Maintenance", FULL_PERMS },
+                        { "TiepNhanBaoHong", VIEW_ONLY },
+                        { "CreateTicket", VIEW_ONLY },
+                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS }, { "Support", FULL_PERMS },
+                        { "MaintainList", VIEW_ONLY }
+                    }
+                },
+                {
+                    "viewer", new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "Analytics", VIEW_ONLY }, { "Inventory", VIEW_ONLY }, { "Catalog", VIEW_ONLY },
+                        { "Locations", VIEW_ONLY }, { "QrCodes", VIEW_ONLY }, { "Lifecycle", VIEW_ONLY },
+                        { "VongDoiKhauHao", VIEW_ONLY }, { "Checklists", VIEW_ONLY },
+                        { "Maintenance", VIEW_ONLY },
+                        { "TiepNhanBaoHong", VIEW_ONLY },
+                        { "CreateTicket", VIEW_ONLY },
+                        { "Alerts", VIEW_ONLY }, { "Approvals", VIEW_ONLY }, { "Support", VIEW_ONLY },
+                        { "MaintainList", VIEW_ONLY }
+                    }
+                }
+            };
+
+            // "ktv" là alias của "technician"
+            rolePermissions["ktv"] = rolePermissions["technician"];
+
+            // Merge permissions từ tất cả roles của user (union - lấy quyền cao nhất)
+            var mergedPerms = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var role in roles)
             {
-                if (string.Equals(role, "manager", StringComparison.OrdinalIgnoreCase))
-                {
-                    allowedCodes.Add("Analytics");
-                    allowedCodes.Add("Inventory");
-                    allowedCodes.Add("Catalog");
-                    allowedCodes.Add("Locations");
-                    allowedCodes.Add("QrCodes");
-                    allowedCodes.Add("Lifecycle");
-                    allowedCodes.Add("VongDoiKhauHao");
-                    allowedCodes.Add("Checklists");
-                    allowedCodes.Add("Maintenance");
-                    allowedCodes.Add("TiepNhanBaoHong");
-                    allowedCodes.Add("Alerts");
-                    allowedCodes.Add("Approvals");
-                    allowedCodes.Add("Settings");
-                    allowedCodes.Add("Support");
-                    allowedCodes.Add("CreateTicket");
-                    allowedCodes.Add("MaintainList");
-                }
-                else if (string.Equals(role, "technician", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "ktv", StringComparison.OrdinalIgnoreCase))
-                {
-                    allowedCodes.Add("Inventory");
-                    allowedCodes.Add("Catalog");
-                    allowedCodes.Add("Locations");
-                    allowedCodes.Add("QrCodes");
-                    allowedCodes.Add("Lifecycle");
-                    allowedCodes.Add("Checklists");
-                    allowedCodes.Add("Maintenance");
-                    allowedCodes.Add("TiepNhanBaoHong");
-                    allowedCodes.Add("CreateTicket");
-                    allowedCodes.Add("Alerts");
-                    allowedCodes.Add("Support");
-                    allowedCodes.Add("Approvals");
-                    allowedCodes.Add("MaintainList");
-                }
-                else if (string.Equals(role, "approver", StringComparison.OrdinalIgnoreCase))
-                {
-                    allowedCodes.Add("Analytics");
-                    allowedCodes.Add("Inventory");
-                    allowedCodes.Add("VongDoiKhauHao");
-                    allowedCodes.Add("Maintenance");
-                    allowedCodes.Add("Approvals");
-                    allowedCodes.Add("Alerts");
-                    allowedCodes.Add("Support");
-                    allowedCodes.Add("MaintainList");
-                }
-                else if (string.Equals(role, "viewer", StringComparison.OrdinalIgnoreCase))
-                {
-                    allowedCodes.Add("Analytics");
-                    allowedCodes.Add("Inventory");
-                    allowedCodes.Add("Catalog");
-                    allowedCodes.Add("Locations");
-                    allowedCodes.Add("QrCodes");
-                    allowedCodes.Add("Lifecycle");
-                    allowedCodes.Add("VongDoiKhauHao");
-                    allowedCodes.Add("Maintenance");
-                    allowedCodes.Add("Alerts");
-                    allowedCodes.Add("Support");
-                    allowedCodes.Add("MaintainList");
-                }
-            }
+                if (!rolePermissions.TryGetValue(role, out var modulePerms))
+                    continue;
 
-            foreach (var code in allowedCodes)
-            {
-                if (allModules.TryGetValue(code, out var mod))
+                foreach (var kvp in modulePerms)
                 {
-                    var m = new LoginResponseDTO.ModuleDTO
+                    if (!mergedPerms.ContainsKey(kvp.Key))
                     {
-                        code = mod.code,
-                        name = mod.name,
-                        url = mod.url,
-                        icon = mod.icon,
-                        permissions = roles.Contains("viewer", StringComparer.OrdinalIgnoreCase)
-                            ? new List<string> { "VIEW" }
-                            : new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" }
-                    };
-                    modules.Add(m);
+                        mergedPerms[kvp.Key] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    }
+                    foreach (var perm in kvp.Value)
+                    {
+                        mergedPerms[kvp.Key].Add(perm);
+                    }
                 }
             }
 
-            // Trả về danh sách được sắp xếp theo thứ tự hiển thị chuẩn của allModules
-            return allModules.Keys
-                .Where(k => allowedCodes.Contains(k))
-                .Select(k => modules.First(m => string.Equals(m.code, k, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            // Build danh sách module với permissions đã merge, giữ đúng thứ tự hiển thị
+            var result = new List<LoginResponseDTO.ModuleDTO>();
+            foreach (var moduleCode in allModules.Keys)
+            {
+                if (!mergedPerms.TryGetValue(moduleCode, out var perms))
+                    continue;
+
+                var mod = allModules[moduleCode];
+                result.Add(new LoginResponseDTO.ModuleDTO
+                {
+                    code = mod.code,
+                    name = mod.name,
+                    url = mod.url,
+                    icon = mod.icon,
+                    permissions = perms.ToList()
+                });
+            }
+
+            return result;
         }
     }
 }

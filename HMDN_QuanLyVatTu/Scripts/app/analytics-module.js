@@ -709,8 +709,14 @@ window.addEventListener('DOMContentLoaded', function () {
                                 var index = activeElement.index;
                                 var label = vm.todayChecklistChart.data.labels[index];
                                 
-                                // Thay vì chuyển hướng, mở modal logs
-                                vm.openChecklistLogsModal(vm.checklistRange);
+                                // Phân tích click lát bánh (slice) để mở tab tương ứng
+                                if (label && label.indexOf('Đã Checklist') !== -1) {
+                                    vm.openChecklistLogsModal(vm.checklistRange, 'completed');
+                                } else if (label && label.indexOf('Chưa làm') !== -1) {
+                                    vm.openChecklistLogsModal(vm.checklistRange, 'pending');
+                                } else {
+                                    vm.openChecklistLogsModal(vm.checklistRange);
+                                }
                             }
                         },
                         onHover: function (evt, elements) {
@@ -798,7 +804,8 @@ window.addEventListener('DOMContentLoaded', function () {
                 } else if (range === 'week') {
                     var diff = (7 + (now.getDay() - 1)) % 7;
                     var start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
-                    var end = new Date(now.getFullYear(), now.getMonth(), start.getDate() + 6);
+                    var end = new Date(start.getTime());
+                    end.setDate(start.getDate() + 6);
                     fromDateStr = formatLocal(start);
                     toDateStr = formatLocal(end);
                 } else if (range === 'month') {
@@ -819,21 +826,17 @@ window.addEventListener('DOMContentLoaded', function () {
                     toDateStr = formatLocal(end);
                 }
 
-                if (vm.checklistModal.tab === 'completed') {
-                    $.getJSON(window.AnalyticsEndpoints.getLogs, { fromDate: fromDateStr, toDate: toDateStr }, function (res) {
-                        vm.checklistModal.logs = res.data || [];
-                        vm.checklistModal.loading = false;
-                    }).fail(function () {
-                        vm.checklistModal.loading = false;
-                    });
-                } else {
-                    $.getJSON('/api/checklists/schedules', { fromDate: fromDateStr, toDate: toDateStr, status: 'pending' }, function (res) {
-                        vm.checklistModal.pendingSchedules = res.data || [];
-                        vm.checklistModal.loading = false;
-                    }).fail(function () {
-                        vm.checklistModal.loading = false;
-                    });
-                }
+                // Luôn fetch cả hai để hiển thị đúng số lượng trên tab badge
+                var p1 = $.getJSON(window.AnalyticsEndpoints.getLogs, { fromDate: fromDateStr, toDate: toDateStr });
+                var p2 = $.getJSON('/api/checklists/schedules', { fromDate: fromDateStr, toDate: toDateStr, status: 'pending' });
+
+                $.when(p1, p2).done(function (r1, r2) {
+                    vm.checklistModal.logs = r1[0].data || [];
+                    vm.checklistModal.pendingSchedules = r2[0].data || [];
+                    vm.checklistModal.loading = false;
+                }).fail(function () {
+                    vm.checklistModal.loading = false;
+                });
             },
             viewChecklistLogDetails: function (item) {
                 var vm = this;

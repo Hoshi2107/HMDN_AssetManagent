@@ -46,13 +46,21 @@ namespace HMDN_QuanLyVatTu.Controllers
                 }
                 if (!string.IsNullOrEmpty(toDate))
                 {
-                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture);
-                    query = query.Where(s => s.ScheduledDate <= end);
+                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture).Date.AddDays(1);
+                    query = query.Where(s => s.ScheduledDate < end);
                 }
                 if (!string.IsNullOrEmpty(status))
                 {
-                    query = query.Where(s => s.Status == status);
+                    if (status == "pending")
+                    {
+                        query = query.Where(s => s.Status == "pending" || s.Status == "NeedsReinspection");
+                    }
+                    else
+                    {
+                        query = query.Where(s => s.Status == status);
+                    }
                 }
+
                 if (!string.IsNullOrEmpty(cycleType))
                 {
                     query = query.Where(s => s.CycleType == cycleType);
@@ -103,7 +111,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.QrCode,
                         s.ScheduledDate,
                         s.CycleType,
-                        Status = (s.Status == "pending" && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
+                        Status = ((s.Status == "pending" || s.Status == "NeedsReinspection") && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
+                        OriginalStatus = s.Status,
                         DueDate = s.DueDate,
                         s.AssignedTo,
                         s.AssigneeName,
@@ -117,7 +126,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .ToList();
 
                 var latestPendingDict = resolvedSchedules
-                    .Where(s => s.Status == "pending" || s.Status == "overdue")
+                    .Where(s => s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection")
                     .GroupBy(s => new { s.InventoryId, s.CycleType })
                     .ToDictionary(
                         g => new { g.Key.InventoryId, g.Key.CycleType },
@@ -125,7 +134,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     );
 
                 var schedules = resolvedSchedules
-                    .Where(s => (s.Status != "pending" && s.Status != "overdue") || latestPendingDict[new { s.InventoryId, s.CycleType }] == s.Id)
+                    .Where(s => (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection") || latestPendingDict[new { s.InventoryId, s.CycleType }] == s.Id)
                     .Select(s => new
                     {
                         s.Id,
@@ -138,6 +147,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         ScheduledDate = s.ScheduledDate.ToString("yyyy-MM-dd"),
                         s.CycleType,
                         s.Status,
+                        s.OriginalStatus,
                         DueDate = s.DueDate.ToString("yyyy-MM-dd"),
                         s.AssignedTo,
                         s.AssigneeName,

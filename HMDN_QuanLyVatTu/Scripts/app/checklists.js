@@ -46,11 +46,14 @@ new Vue({
             onlyOverdue: false,
             fromDate: '',
             toDate: '',
-            groupId: 0
+            groupId: 0,
+            strictDate: false,
+            kpiFilter: ''
         },
         logsFilter: {
             query: '',
-            result: ''
+            result: '',
+            kpiFilter: ''
         },
 
         // Pagination
@@ -94,7 +97,8 @@ new Vue({
         activePerformModalTab: 'checklist', // 'checklist' | 'history'
         qrFirstScannerActive: false,
         qrFirstScannedInput: '',
-        selectedBatchGroup: null,
+        selectedGroupId: 0,
+        selectedGroupCycle: '',
 
         // Manager Approval Views
         complianceFilter: {
@@ -201,10 +205,14 @@ new Vue({
                     matchOverdue = s.Status === 'overdue';
                 }
 
-                var matchFrom = !vm.schedulesFilter.fromDate || 
-                                s.Status === 'pending' || 
-                                s.Status === 'overdue' || 
-                                s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                var matchFrom = true;
+                if (vm.schedulesFilter.fromDate) {
+                    if (vm.schedulesFilter.strictDate) {
+                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    } else {
+                        matchFrom = s.Status === 'pending' || s.Status === 'overdue' || s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    }
+                }
                 var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
                 var matchGroup = !vm.schedulesFilter.groupId || s.GroupId === vm.schedulesFilter.groupId;
                 
@@ -216,7 +224,7 @@ new Vue({
             var vm = this;
             var counts = {};
             vm.schedules.forEach(function (s) {
-                if (s.Status === 'pending' || s.Status === 'overdue') {
+                if (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection') {
                     var q = (vm.schedulesFilter.query || '').trim().toLowerCase();
                     var matchQuery = !q || 
                         (s.AssetCode && s.AssetCode.toLowerCase().indexOf(q) > -1) ||
@@ -231,8 +239,14 @@ new Vue({
                         matchOverdue = s.Status === 'overdue';
                     }
 
-                    var matchFrom = !vm.schedulesFilter.fromDate || 
-                                    s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    var matchFrom = true;
+                    if (vm.schedulesFilter.fromDate) {
+                        if (vm.schedulesFilter.strictDate) {
+                            matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                        } else {
+                            matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                        }
+                    }
                     var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
 
                     if (matchQuery && matchCycle && matchOverdue && matchFrom && matchTo) {
@@ -289,7 +303,18 @@ new Vue({
                 
                 var matchResult = !vm.logsFilter.result || l.OverallResult === vm.logsFilter.result;
                 
-                return matchQuery && matchResult;
+                var matchKpi = true;
+                if (vm.logsFilter.kpiFilter === 'today') {
+                    var todayStr = vm.getLocalTodayStr();
+                    matchKpi = (l.CheckedAt || '').substring(0, 10) === todayStr;
+                } else if (vm.logsFilter.kpiFilter === 'week') {
+                    var oneWeekAgo = new Date();
+                    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                    var oneWeekAgoStr = oneWeekAgo.toISOString().substring(0, 10);
+                    matchKpi = (l.CheckedAt || '').substring(0, 10) >= oneWeekAgoStr;
+                }
+
+                return matchQuery && matchResult && matchKpi;
             });
         },
 
@@ -306,8 +331,27 @@ new Vue({
 
         batchableGroups() {
             var vm = this;
+            var q = (vm.schedulesFilter.query || '').trim().toLowerCase();
             var pending = vm.schedules.filter(function (s) {
-                return s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection';
+                var matchStatus = s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection';
+                var matchCycle = !vm.schedulesFilter.cycleType || s.CycleType === vm.schedulesFilter.cycleType;
+                var matchQuery = !q || 
+                    (s.AssetCode && s.AssetCode.toLowerCase().indexOf(q) > -1) ||
+                    (s.ItemName && s.ItemName.toLowerCase().indexOf(q) > -1) ||
+                    (s.SerialNumber && s.SerialNumber.toLowerCase().indexOf(q) > -1) ||
+                    (s.DepartmentName && s.DepartmentName.toLowerCase().indexOf(q) > -1);
+                
+                var matchFrom = true;
+                if (vm.schedulesFilter.fromDate) {
+                    if (vm.schedulesFilter.strictDate) {
+                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    } else {
+                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                    }
+                }
+                var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
+
+                return matchStatus && matchCycle && matchQuery && matchFrom && matchTo;
             });
 
             var groups = {};
@@ -336,6 +380,14 @@ new Vue({
                 result.push(groups[k]);
             });
             return result;
+        },
+
+        selectedBatchGroup() {
+            var vm = this;
+            if (!vm.selectedGroupId) return null;
+            return vm.batchableGroups.find(function (bg) {
+                return bg.GroupId === vm.selectedGroupId && bg.CycleType === vm.selectedGroupCycle;
+            }) || null;
         },
 
         estimatedBatchSavings() {
@@ -442,6 +494,23 @@ new Vue({
     },
 
     methods: {
+        selectGroupCard(gCard) {
+            var vm = this;
+            if (gCard) {
+                vm.selectedGroupId = gCard.GroupId;
+                vm.selectedGroupCycle = gCard.CycleType;
+                vm.schedulesFilter.groupId = gCard.GroupId;
+                vm.schedulesFilter.cycleType = gCard.CycleType;
+            } else {
+                vm.selectedGroupId = 0;
+                vm.selectedGroupCycle = '';
+                vm.schedulesFilter.groupId = 0;
+            }
+            vm.schedulesFilter.strictDate = false;
+            vm.schedulesFilter.fromDate = '';
+            vm.schedulesFilter.toDate = '';
+        },
+
         // ── LOAD DATA ──
         loadActiveGroups() {
             var vm = this;
@@ -489,7 +558,7 @@ new Vue({
             
             var hasSuspended = group.Schedules.some(function (s) { return s.LifeStatus === 'suspended'; });
             var hasOpenRepair = group.Schedules.some(function (s) { return s.HasOpenRepair === true; });
-            var hasNeedsReinspection = group.Schedules.some(function (s) { return s.Status === 'NeedsReinspection'; });
+            var hasNeedsReinspection = group.Schedules.some(function (s) { return s.Status === 'NeedsReinspection' || s.OriginalStatus === 'NeedsReinspection'; });
             var hasRestricted = group.Schedules.some(function (s) { return s.Criticality === 'High' || s.Criticality === 'Critical'; });
             
             return !hasSuspended && !hasOpenRepair && !hasNeedsReinspection && !hasRestricted;
@@ -587,7 +656,7 @@ new Vue({
             if (!sch) return false;
             if (sch.LifeStatus === 'suspended') return false;
             if (sch.HasOpenRepair === true) return false;
-            if (sch.Status === 'NeedsReinspection') return false;
+            if (sch.Status === 'NeedsReinspection' || sch.OriginalStatus === 'NeedsReinspection') return false;
             if (sch.Criticality === 'High' || sch.Criticality === 'Critical') return false;
             return true;
         },
@@ -892,7 +961,7 @@ new Vue({
             var pending = 0;
             var overdue = 0;
             vm.schedules.forEach(function (s) {
-                if (s.Status === 'pending') {
+                if (s.Status === 'pending' || s.Status === 'NeedsReinspection') {
                     pending++;
                 } else if (s.Status === 'overdue') {
                     pending++;
@@ -961,6 +1030,47 @@ new Vue({
             }
         },
 
+        filterByTechnicianKpi(type) {
+            var vm = this;
+            var todayStr = vm.getLocalTodayStr();
+            vm.schedulesFilter.strictDate = false;
+            vm.schedulesFilter.kpiFilter = '';
+            vm.logsFilter.kpiFilter = '';
+
+            if (type === 'totalToday') {
+                vm.activeTab = 'schedules';
+                vm.schedulesFilter.status = '';
+                vm.schedulesFilter.fromDate = todayStr;
+                vm.schedulesFilter.toDate = todayStr;
+                vm.schedulesFilter.strictDate = true;
+                vm.schedulesFilter.query = '';
+                vm.schedulesFilter.cycleType = '';
+            } else if (type === 'completedToday') {
+                vm.activeTab = 'logs';
+                vm.logsFilter.kpiFilter = 'today';
+                vm.logsFilter.result = '';
+                vm.logsFilter.query = '';
+            } else if (type === 'pendingToday') {
+                vm.activeTab = 'schedules';
+                vm.schedulesFilter.status = 'pending';
+                vm.schedulesFilter.fromDate = todayStr;
+                vm.schedulesFilter.toDate = todayStr;
+                vm.schedulesFilter.strictDate = true;
+                vm.schedulesFilter.query = '';
+                vm.schedulesFilter.cycleType = '';
+            } else if (type === 'failedToday') {
+                vm.activeTab = 'logs';
+                vm.logsFilter.kpiFilter = 'today';
+                vm.logsFilter.result = 'fail';
+                vm.logsFilter.query = '';
+            } else if (type === 'checkedThisWeek') {
+                vm.activeTab = 'logs';
+                vm.logsFilter.kpiFilter = 'week';
+                vm.logsFilter.result = '';
+                vm.logsFilter.query = '';
+            }
+        },
+
         resetFilters() {
             this.schedulesFilter = {
                 query: '',
@@ -968,7 +1078,9 @@ new Vue({
                 cycleType: '',
                 onlyOverdue: false,
                 fromDate: '',
-                toDate: ''
+                toDate: '',
+                strictDate: false,
+                kpiFilter: ''
             };
         },
 

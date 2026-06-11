@@ -943,49 +943,45 @@
     <div v-if="activeTab==='schedules'" style="display:flex; flex-direction:column; gap:20px;">
         <!-- Cycle tabs row -->
         <div style="display:flex; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--cl-border); padding-bottom:12px; margin-bottom: 4px;">
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType===''}" @@click="schedulesFilter.cycleType=''" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType===''}" @@click="schedulesFilter.cycleType=''; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Tất cả chu kỳ
             </button>
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='daily'}" @@click="schedulesFilter.cycleType='daily'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='daily'}" @@click="schedulesFilter.cycleType='daily'; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Hàng ngày (Daily)
             </button>
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='weekly'}" @@click="schedulesFilter.cycleType='weekly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='weekly'}" @@click="schedulesFilter.cycleType='weekly'; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Hàng tuần (Weekly)
             </button>
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='monthly'}" @@click="schedulesFilter.cycleType='monthly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='monthly'}" @@click="schedulesFilter.cycleType='monthly'; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Hàng tháng (Monthly)
             </button>
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='quarterly'}" @@click="schedulesFilter.cycleType='quarterly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='quarterly'}" @@click="schedulesFilter.cycleType='quarterly'; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Hàng quý (Quarterly)
             </button>
-            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='yearly'}" @@click="schedulesFilter.cycleType='yearly'" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
+            <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType==='yearly'}" @@click="schedulesFilter.cycleType='yearly'; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Hàng năm (Yearly)
             </button>
         </div>
 
         <!-- Technician KPI Cards Panel -->
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 8px;">
-            <div style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #bfdbfe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+            <div v-on:click="filterByTechnicianKpi('totalToday')" style="background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #bfdbfe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer;" title="Click để lọc Lịch trình cần kiểm hôm nay">
                 <span style="font-size:11px; color:#1e40af; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-clipboard-list mr-1"></i> Hôm Nay Cần Kiểm</span>
                 <span style="font-size:22px; font-weight:800; color:#1e3a8a; margin-top:6px;">${ technicianKpis.totalToday }</span>
             </div>
-            <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1px solid #a7f3d0; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+            <div v-on:click="filterByTechnicianKpi('completedToday')" style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1px solid #a7f3d0; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer;" title="Click để xem các Checklist đã xong hôm nay">
                 <span style="font-size:11px; color:#065f46; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-square-check mr-1"></i> Đã Xong Hôm Nay</span>
                 <span style="font-size:22px; font-weight:800; color:#064e3b; margin-top:6px;">${ technicianKpis.completedToday }</span>
             </div>
-            <div style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+            <div v-on:click="filterByTechnicianKpi('pendingToday')" style="background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border:1px solid #fde68a; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer;" title="Click để lọc Lịch trình chờ kiểm hôm nay">
                 <span style="font-size:11px; color:#92400e; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-hourglass-half mr-1"></i> Chờ Kiểm Hôm Nay</span>
                 <span style="font-size:22px; font-weight:800; color:#78350f; margin-top:6px;">${ technicianKpis.pendingToday }</span>
             </div>
-            <div style="background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border:1px solid #fca5a5; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+            <div v-on:click="filterByTechnicianKpi('failedToday')" style="background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border:1px solid #fca5a5; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer;" title="Click để xem các lỗi hỏng ghi nhận hôm nay">
                 <span style="font-size:11px; color:#991b1b; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Lỗi Hỏng Hôm Nay</span>
                 <span style="font-size:22px; font-weight:800; color:#7f1d1d; margin-top:6px;">${ technicianKpis.failedToday }</span>
             </div>
-            <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border:1px solid #cbd5e1; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
-                <span style="font-size:11px; color:#334155; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-stopwatch mr-1"></i> Thời Gian TB/Thiết Bị</span>
-                <span style="font-size:20px; font-weight:800; color:#0f172a; margin-top:6px;">${ technicianKpis.avgTime } <span style="font-size:12px; font-weight:600; color:#475569;">phút</span></span>
-            </div>
-            <div style="background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border:1px solid #ddd6fe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px;">
+            <div v-on:click="filterByTechnicianKpi('checkedThisWeek')" style="background:linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border:1px solid #ddd6fe; border-radius:var(--cl-radius-md); padding:16px; box-shadow:var(--cl-shadow-sm); display:flex; flex-direction:column; justify-content:space-between; min-height:85px; cursor:pointer;" title="Click để xem các Checklist đã kiểm tuần này">
                 <span style="font-size:11px; color:#5b21b6; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-solid fa-calendar-check mr-1"></i> Đã Kiểm Tuần Này</span>
                 <span style="font-size:22px; font-weight:800; color:#4c1d95; margin-top:6px;">${ technicianKpis.checkedThisWeek }</span>
             </div>
@@ -1002,8 +998,8 @@
         <div class="cl-group-card-container">
             <div v-for="gCard in batchableGroups" :key="gCard.GroupId + '-' + gCard.CycleType + '-' + gCard.DepartmentName" 
                  class="cl-group-card" 
-                 :class="{ active: selectedBatchGroup && selectedBatchGroup.GroupId === gCard.GroupId && selectedBatchGroup.CycleType === gCard.CycleType && selectedBatchGroup.DepartmentName === gCard.DepartmentName }"
-                 v-on:click="selectedBatchGroup = gCard; schedulesFilter.groupId = gCard.GroupId;"
+                 :class="{ active: selectedGroupId === gCard.GroupId && selectedGroupCycle === gCard.CycleType }"
+                 v-on:click="selectGroupCard(gCard)"
                  :title="gCard.GroupName + ' - ' + gCard.DepartmentName">
                 <div class="cl-group-card-icon">
                     <i v-if="gCard.GroupIcon && gCard.GroupIcon.indexOf('fa-') === 0" :class="'fa-solid ' + gCard.GroupIcon"></i>
@@ -1024,9 +1020,9 @@
             </div>
             <!-- All Card to clear group filter -->
             <div class="cl-group-card" 
-                 :class="{ active: selectedBatchGroup === null }"
+                 :class="{ active: !selectedGroupId }"
                  style="flex:0 0 180px;"
-                 v-on:click="selectedBatchGroup = null; schedulesFilter.groupId = 0;">
+                 v-on:click="selectGroupCard(null)">
                 <div class="cl-group-card-icon">
                     <i class="fa-solid fa-list-check"></i>
                 </div>
