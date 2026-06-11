@@ -48,13 +48,13 @@
         <div class="kpi-card"
              :class="{ 'kpi-active': kpiFilter === 'from_ticket' }"
              v-on:click="setKpiFilter('from_ticket')"
-             title="Hiển thị thiết bị hỏng được thêm từ Tạo phiếu">
+             title="Hiển thị thiết bị có phiếu sửa chữa">
             <div class="kpi-icon teal">
-                <i class="fa-solid fa-file-circle-plus"></i>
+                <i class="fa-solid fa-file-medical"></i>
             </div>
             <div class="kpi-info">
                 <h4>${ kpi.fromTicket }</h4>
-                <p>Từ tạo phiếu</p>
+                <p>Phiếu sửa chữa</p>
             </div>
         </div>
         <div class="kpi-card kpi-card-static"
@@ -146,7 +146,14 @@
                     </td>
 
                     <td>
-                        <div class="device-name">${ device.ItemName }</div>
+                        <div class="device-name" style="display:flex; align-items:center; gap:8px">
+                            <span v-if="device.TotalLogs >= 1"
+                                  class="ticket-count-badge"
+                                  :title="device.TotalLogs + ' phiếu sửa chữa'">
+                                ${ device.TotalLogs }
+                            </span>
+                            ${ device.ItemName }
+                        </div>
                     </td>
 
                     <td>

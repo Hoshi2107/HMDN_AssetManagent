@@ -84,30 +84,34 @@ var app = new Vue({
             var vm = this;
             var list = vm.devices.slice();
 
-            // Chỉ hiển thị thiết bị báo hỏng (hỏng / tạm ngưng / BV bảo trì)
-            list = list.filter(function (d) {
-                return vm.isBaoHong(d);
-            });
-
             // Lọc theo KPI card được chọn
-            if (vm.kpiFilter === 'bao_hong') {
-                // Giữ toàn bộ thiết bị báo hỏng
-            } else if (vm.kpiFilter === 'pending') {
-                list = list.filter(function (d) {
-                    return vm.isChuaSuaChua(d);
-                });
-            } else if (vm.kpiFilter === 'in_progress') {
-                list = list.filter(function (d) {
-                    return vm.isDangSuaChua(d);
-                });
-            } else if (vm.kpiFilter === 'repaired') {
+            if (vm.kpiFilter === 'repaired') {
+                // Khi xem "Đã sửa chữa": hiển thị TẤT CẢ thiết bị có ít nhất 1 ca đã đóng
+                // (không bị giới hạn bởi isBaoHong vì thiết bị đã sửa xong thường về trạng thái "active")
                 list = list.filter(function (d) {
                     return vm.isDaSuaChua(d);
                 });
-            } else if (vm.kpiFilter === 'from_ticket') {
+            } else {
+                // Các filter khác: chỉ hiển thị thiết bị đang báo hỏng
                 list = list.filter(function (d) {
-                    return vm.isFromTicket(d);
+                    return vm.isBaoHong(d);
                 });
+
+                if (vm.kpiFilter === 'bao_hong') {
+                    // Giữ toàn bộ thiết bị báo hỏng
+                } else if (vm.kpiFilter === 'pending') {
+                    list = list.filter(function (d) {
+                        return vm.isChuaSuaChua(d);
+                    });
+                } else if (vm.kpiFilter === 'in_progress') {
+                    list = list.filter(function (d) {
+                        return vm.isDangSuaChua(d);
+                    });
+                } else if (vm.kpiFilter === 'from_ticket') {
+                    list = list.filter(function (d) {
+                        return vm.isFromTicket(d);
+                    });
+                }
             }
 
             // 1. Tìm kiếm
@@ -255,15 +259,14 @@ var app = new Vue({
         },
 
         isDaSuaChua: function (d) {
-            return d.ClosedLogs > 0 && d.InProgressLogs === 0 && d.OpenLogs === 0;
+            // Thiết bị đã có ít nhất 1 ca sửa chữa được đóng (closed)
+            return d.ClosedLogs > 0;
         },
 
         isChuaSuaChua: function (d) {
-            // Báo hỏng nhưng chưa bắt đầu sửa (kể cả có phiếu chờ xử lý)
+            // Báo hỏng nhưng chưa có ai bắt đầu sửa (không có phiếu in_progress)
             if (!this.isBaoHong(d)) return false;
-            if (this.isDangSuaChua(d)) return false;
-            if (this.isDaSuaChua(d)) return false;
-            return true;
+            return d.InProgressLogs === 0;
         },
 
         isFromTicket: function (d) {
