@@ -149,6 +149,7 @@
     <Compile Include="Controllers\DeviceController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\InventoryController.cs" />
+    <Compile Include="Controllers\MaintainListAPIController.cs" />
     <Compile Include="Controllers\MaintainListController.cs" />
     <Compile Include="Controllers\MaintenanceController.cs" />
     <Compile Include="Controllers\MaintenanceAPIController.cs" />
@@ -205,6 +206,7 @@
     <Compile Include="Models\LoginResponseDTO.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\LoginVM.cs" />
+    <Compile Include="Models\MaintainScheduleVM.cs" />
     <Compile Include="Models\ModulePermissionDTO.cs" />
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
@@ -256,6 +258,7 @@
     <Content Include="Content\images1\logobv.png" />
     <Content Include="Content\images1\Logofull_bvhm.png" />
     <Content Include="Content\inventory\inventory.css" />
+    <Content Include="Content\maintainlist\maintainlist.css" />
     <Content Include="Content\maintenance\maintenance.css" />
     <Content Include="Content\location\location.css" />
     <Content Include="Content\alerts\alerts.css" />
@@ -269,6 +272,7 @@
     <Content Include="Scripts\app\checklists.js" />
     <Content Include="Scripts\app\inventory.js" />
     <Content Include="Scripts\app\login.js" />
+    <Content Include="Scripts\app\maintainlist.js" />
     <Content Include="Scripts\app\maintenance.js" />
     <Content Include="Scripts\app\location.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
@@ -326,7 +330,7 @@
     <Content Include="Views\Checklists\Index.cshtml" />
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
     <Content Include="Uploads\web.config" />
-    <Content Include="Views\MaintainList\MaintainList.cshtml" />
+    <Content Include="Views\MaintainList\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

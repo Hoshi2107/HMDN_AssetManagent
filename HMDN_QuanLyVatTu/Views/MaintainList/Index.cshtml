@@ -1,0 +1,282 @@
+﻿@{
+    ViewBag.Title = "Lịch bảo trì";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link href="~/Content/maintainlist/maintainlist.css" rel="stylesheet" />
+
+<div id="app">
+    <div class="main-wrap">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-search">
+                <input type="text"
+                       placeholder="Tìm thiết bị, lịch bảo trì..."
+                       v-model="searchQuery"
+                       v-on:input="loadList()">
+            </div>
+            <div class="topbar-actions">
+                <span class="total-badge">
+                    Tổng: ${ filteredList.length } lịch
+                </span>
+            </div>
+        </header>
+
+        <main class="page-content">
+
+            <!-- KPI CARDS -->
+            <div class="kpi-row">
+                <div class="kpi-card kpi-overdue">
+                    <div class="kpi-icon">🔴</div>
+                    <div class="kpi-info">
+                        <div class="kpi-num">${ kpi.overdue }</div>
+                        <div class="kpi-label">Quá hạn</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-critical">
+                    <div class="kpi-icon">🟠</div>
+                    <div class="kpi-info">
+                        <div class="kpi-num">${ kpi.critical }</div>
+                        <div class="kpi-label">Còn ≤ 3 ngày</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-warning">
+                    <div class="kpi-icon">🟡</div>
+                    <div class="kpi-info">
+                        <div class="kpi-num">${ kpi.warning }</div>
+                        <div class="kpi-label">Còn ≤ 7 ngày</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-ok">
+                    <div class="kpi-icon">🟢</div>
+                    <div class="kpi-info">
+                        <div class="kpi-num">${ kpi.ok }</div>
+                        <div class="kpi-label">Bình thường</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTER BAR -->
+            <div class="filter-bar">
+
+                <select v-model="filterStatus" v-on:change="loadList()">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="completed">Đã hoàn thành</option>
+                    <option value="cancelled">Đã hủy</option>
+                </select>
+
+                <select v-model="filterType" v-on:change="loadList()">
+                    <option value="">Tất cả loại</option>
+                    <option value="preventive">Định kỳ</option>
+                    <option value="corrective">Sửa chữa</option>
+                    <option value="calibration">Hiệu chuẩn</option>
+                    <option value="inspection">Kiểm tra</option>
+                </select>
+
+                <select v-model="filterUrgency">
+                    <option value="">Tất cả mức độ</option>
+                    <option value="overdue">Quá hạn</option>
+                    <option value="critical">Khẩn cấp (≤3 ngày)</option>
+                    <option value="warning">Cảnh báo (≤7 ngày)</option>
+                    <option value="ok">Bình thường</option>
+                </select>
+
+                <div class="date-range">
+                    <input type="date"
+                           v-model="fromDate"
+                           v-on:change="loadList()"
+                           placeholder="Từ ngày">
+                    <span>—</span>
+                    <input type="date"
+                           v-model="toDate"
+                           v-on:change="loadList()"
+                           placeholder="Đến ngày">
+                </div>
+
+                <select v-model="pageSize">
+                    <option :value="10">10</option>
+                    <option :value="15">15</option>
+                    <option :value="20">20</option>
+                    <option :value="50">50</option>
+                </select>
+
+                <button class="btn-secondary" v-on:click="resetFilter()">
+                    🔄 Đặt lại
+                </button>
+
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-card">
+
+                <div v-if="loading" class="loading-state">
+                    ⏳ Đang tải dữ liệu...
+                </div>
+
+                <table v-else>
+                    <thead>
+                        <tr>
+                            <th>Mã tài sản</th>
+                            <th>Tên thiết bị</th>
+                            <th>Tên lịch</th>
+                            <th>Loại bảo trì</th>
+                            <th>Khoa</th>
+                            <th>Ngày BT gần nhất</th>
+                            <th>Ngày BT tiếp theo</th>
+                            <th>Lặp lại</th>
+                            <th>Trạng thái</th>
+                            <th>Thời hạn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="paginatedList.length === 0">
+                            <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
+                                Không có dữ liệu
+                            </td>
+                        </tr>
+                        <tr v-for="item in paginatedList"
+                            :key="item.Id"
+                            class="table-row"
+                            :class="urgencyClass(item.DaysUntilDue)"
+                            v-on:click="openDetail(item)">
+
+                            <td>
+                                <span class="asset-code">${ item.AssetCode }</span>
+                            </td>
+                            <td>
+                                <div class="device-name">${ item.ItemName || '—' }</div>
+                                <div class="device-model">${ item.Model || '' }</div>
+                            </td>
+                            <td>${ item.ScheduleName }</td>
+                            <td>
+                                <span class="type-badge" :class="'type-' + item.MaintenanceType">
+                                    ${ typeLabel(item.MaintenanceType) }
+                                </span>
+                            </td>
+                            <td>${ item.DepartmentName || '—' }</td>
+                            <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
+                            <td>${ formatDate(item.NextMaintenanceDate) }</td>
+                            <td>
+                                <span v-if="item.IsRecurring">
+                                    🔄 ${ item.RecurringMonths } tháng
+                                </span>
+                                <span v-else style="color:#94a3b8">1 lần</span>
+                            </td>
+                            <td>
+                                <span class="status-badge" :class="'status-' + item.Status">
+                                    ${ statusLabel(item.Status) }
+                                </span>
+                            </td>
+                            <td>
+                                <span class="urgency-badge"
+                                      :style="{
+                                          background: urgencyMeta(item.DaysUntilDue).bg,
+                                          color: urgencyMeta(item.DaysUntilDue).color
+                                      }">
+                                    ${ urgencyMeta(item.DaysUntilDue).text }
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination">
+                <button v-on:click="prevPage" :disabled="currentPage === 1">Prev</button>
+                <button v-for="page in pages"
+                        :key="page"
+                        v-on:click="currentPage = page"
+                        :class="{ active: currentPage === page }">
+                    ${ page }
+                </button>
+                <button v-on:click="nextPage" :disabled="currentPage === totalPages">Next</button>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL CHI TIẾT -->
+    <div class="modal-overlay"
+         v-if="showDetail"
+         v-on:click.self="showDetail = false">
+        <div class="device-modal">
+            <div class="modal-header">
+                <h3>📅 Chi tiết lịch bảo trì</h3>
+                <button class="close-btn" v-on:click="showDetail = false">×</button>
+            </div>
+            <div class="modal-body" v-if="selected">
+                <div class="detail-grid">
+                    <div>
+                        <label>Tên lịch</label>
+                        <p>${ selected.ScheduleName }</p>
+                    </div>
+                    <div>
+                        <label>Mã tài sản</label>
+                        <p>${ selected.AssetCode }</p>
+                    </div>
+                    <div>
+                        <label>Thiết bị</label>
+                        <p>${ selected.ItemName }</p>
+                    </div>
+                    <div>
+                        <label>Khoa</label>
+                        <p>${ selected.DepartmentName || '—' }</p>
+                    </div>
+                    <div>
+                        <label>Vị trí</label>
+                        <p>${ selected.LocationName || '—' }</p>
+                    </div>
+                    <div>
+                        <label>Loại bảo trì</label>
+                        <p>${ typeLabel(selected.MaintenanceType) }</p>
+                    </div>
+                    <div>
+                        <label>Ngày BT gần nhất</label>
+                        <p>${ formatDate(selected.LastMaintenanceDate) || '—' }</p>
+                    </div>
+                    <div>
+                        <label>Ngày BT tiếp theo</label>
+                        <p>${ formatDate(selected.NextMaintenanceDate) }</p>
+                    </div>
+                    <div>
+                        <label>Nhắc trước</label>
+                        <p>${ selected.ReminderDays } ngày</p>
+                    </div>
+                    <div>
+                        <label>Lặp lại</label>
+                        <p v-if="selected.IsRecurring">Mỗi ${ selected.RecurringMonths } tháng</p>
+                        <p v-else>Không lặp lại</p>
+                    </div>
+                    <div>
+                        <label>Trạng thái</label>
+                        <p>${ statusLabel(selected.Status) }</p>
+                    </div>
+                    <div>
+                        <label>Người tạo</label>
+                        <p>${ selected.CreatedByName || '—' }</p>
+                    </div>
+                    <div>
+                        <label>Ngày tạo</label>
+                        <p>${ formatDate(selected.CreatedAt) }</p>
+                    </div>
+                    <div>
+                        <label>Thời hạn còn lại</label>
+                        <span class="urgency-badge"
+                              :style="{
+                                  background: urgencyMeta(selected.DaysUntilDue).bg,
+                                  color: urgencyMeta(selected.DaysUntilDue).color
+                              }">
+                            ${ urgencyMeta(selected.DaysUntilDue).text }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="~/Scripts/app/maintainlist.js"></script>
