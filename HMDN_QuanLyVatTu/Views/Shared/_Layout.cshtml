@@ -9,6 +9,7 @@
     // Fetch other active users
     List<HMS.Models.Auth.User> activeUsersList = new List<HMS.Models.Auth.User>();
     int currentUserId = Session["UserId"] != null ? (int)Session["UserId"] : 0;
+    bool isCurrentUserAdmin = false;
     try
     {
         using (var db = new HMS.Data.HospitalAssetDbContext())
@@ -18,6 +19,11 @@
                 .OrderByDescending(u => u.LastLoginAt)
                 .Take(5)
                 .ToList();
+
+            if (currentUserId > 0)
+            {
+                isCurrentUserAdmin = db.UserRoles.Any(ur => ur.UserId == currentUserId && ur.Role.Code == "admin");
+            }
         }
     }
     catch (Exception ex)
@@ -750,7 +756,7 @@
                     </div>
                 }
 
-                @if (HasModule("CreateTicket") || HasModule("Alerts") || HasModule("Approvals"))
+                @if (HasModule("CreateTicket") || HasModule("Alerts") || HasModule("Approvals") || isCurrentUserAdmin)
                 {
                     <div class="nav-section" id="sec-operation">
                         <div class="nav-section-header" onclick="toggleNavSection('sec-operation')">
@@ -782,6 +788,13 @@
                                 <div class="nav-item @(ViewBag.ActiveNav == "CreateTicket" ? "active" : "")">
                                     <a href="@Url.Action("Index", "CreateTicket")">
                                         <i class="fa-solid fa-file-circle-plus nav-icon"></i> <span class="nav-text">Tạo phiếu</span>
+                                    </a>
+                                </div>
+                            }
+                            @if (isCurrentUserAdmin) {
+                                <div class="nav-item @(ViewBag.ActiveNav == "CreateUser" ? "active" : "")">
+                                    <a href="@Url.Action("CreateUser", "User")">
+                                        <i class="fa-solid fa-user-plus nav-icon"></i> <span class="nav-text">Tạo tài khoản</span>
                                     </a>
                                 </div>
                             }

@@ -137,6 +137,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\AnalyticsAPIController.cs" />
     <Compile Include="Controllers\AnalyticsController.cs" />
     <Compile Include="Controllers\ApprovalsAPIController.cs" />
@@ -178,6 +179,7 @@
     <Compile Include="Models\ChecklistProgressModel.cs" />
     <Compile Include="Models\CreateInventoryResult.cs" />
     <Compile Include="Models\CreateInventoryVM.cs" />
+    <Compile Include="Models\CreateUserViewModel.cs" />
     <Compile Include="Models\CreateLocationVM.cs" />
     <Compile Include="Models\DepreciationLog.cs" />
     <Compile Include="Models\DashboardGroupSummary.cs" />
@@ -316,6 +318,7 @@
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\User\CreateUser.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Inventory\Index.cshtml" />

@@ -1,0 +1,440 @@
+@{
+    ViewBag.Title = "Tạo tài khoản mới";
+}
+
+<div class="create-user-wrapper">
+    <div class="page-header-title">
+        <h1>Tạo tài khoản mới</h1>
+        <p>Cấp quyền truy cập hệ thống cho nhân viên mới thuộc tập đoàn Hoàn Mỹ.</p>
+    </div>
+
+    <form id="createUserForm" method="post" action="@Url.Action("CreateUser", "User")" class="elegant-form">
+        @Html.AntiForgeryToken()
+
+        <!-- CARD CHÍNH CHỨA FORM -->
+        <div class="form-card">
+            
+            <!-- SECTION 1: THÔNG TIN CÁ NHÂN -->
+            <div class="form-section row">
+                <div class="col-lg-4 col-md-5 section-info-panel">
+                    <div class="section-title">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <h3>Thông tin cá nhân</h3>
+                    </div>
+                    <p class="section-description">Thông tin định danh cơ bản của người dùng trên toàn hệ thống.</p>
+                </div>
+                
+                <div class="col-lg-8 col-md-7 section-fields-panel">
+                    <div class="row g-4">
+                        <div class="col-md-6 field-group">
+                            <label for="FullName" class="form-label-custom">Họ và tên <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-id-card input-prefix-icon"></i>
+                                <input type="text" id="FullName" name="FullName" class="form-control-custom" placeholder="Nguyễn Văn A" required maxlength="100" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Email" class="form-label-custom">Email <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-envelope input-prefix-icon"></i>
+                                <input type="email" id="Email" name="Email" class="form-control-custom" placeholder="example@hoanmy.com" required maxlength="100" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Phone" class="form-label-custom">Số điện thoại <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-phone-flip input-prefix-icon"></i>
+                                <input type="text" id="Phone" name="Phone" class="form-control-custom" placeholder="0901 234 567" required maxlength="20" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Username" class="form-label-custom">Tên đăng nhập <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-user input-prefix-icon"></i>
+                                <input type="text" id="Username" name="Username" class="form-control-custom" placeholder="nv_a_123" required maxlength="50" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Password" class="form-label-custom">Mật khẩu <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-lock input-prefix-icon"></i>
+                                <input type="password" id="Password" name="Password" class="form-control-custom" placeholder="••••••••" required minlength="6" maxlength="100" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="section-divider" />
+
+            <!-- SECTION 2: PHÂN QUYỀN NGƯỜI DÙNG -->
+            <div class="form-section row">
+                <div class="col-lg-4 col-md-5 section-info-panel">
+                    <div class="section-title">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3>Phân quyền người dùng</h3>
+                    </div>
+                    <p class="section-description">Xác định vai trò và phạm vi hoạt động của tài khoản trong tổ chức.</p>
+                </div>
+
+                <div class="col-lg-8 col-md-7 section-fields-panel">
+                    <div class="row g-4">
+                        <div class="col-md-6 field-group">
+                            <label for="RoleName" class="form-label-custom">Vai trò (Role) <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-user-shield input-prefix-icon"></i>
+                                <select id="RoleName" name="RoleName" class="form-select-custom" required>
+                                    <option value="" disabled selected>-- Chọn vai trò --</option>
+                                    @if (ViewBag.Roles != null)
+                                    {
+                                        foreach (var role in ViewBag.Roles)
+                                        {
+                                            var displayName = role.Code == "viewer" ? "Nhân viên phòng ban (User)" : role.Name;
+                                            <option value="@role.Code">@displayName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="DepartmentId" class="form-label-custom">Phòng ban <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-hospital input-prefix-icon"></i>
+                                <select id="DepartmentId" name="DepartmentId" class="form-select-custom" required>
+                                    <option value="" disabled selected>-- Chọn phòng ban --</option>
+                                    @if (ViewBag.Departments != null)
+                                    {
+                                        foreach (var dept in ViewBag.Departments)
+                                        {
+                                            <option value="@dept.Id">@dept.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NÚT ĐIỀU HƯỚNG/SUBMIT -->
+            <div class="form-actions-panel mt-5">
+                <a href="javascript:history.back()" class="btn-cancel-custom">Hủy</a>
+                <button type="submit" id="btnSubmitForm" class="btn-submit-custom">
+                    <span class="btn-text"><i class="fa-solid fa-user-plus me-2"></i> Tạo tài khoản</span>
+                    <span class="btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Đang xử lý...</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- STYLE CHO GIAO DIỆN HMDN TẠO TÀI KHOẢN -->
+<style>
+    .create-user-wrapper {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding-top: 10px;
+        font-family: var(--font-main), sans-serif;
+    }
+
+    .page-header-title {
+        margin-bottom: 28px;
+    }
+
+    .page-header-title h1 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+    }
+
+    .page-header-title p {
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-md);
+        padding: 32px;
+        transition: all 0.3s ease;
+    }
+
+    .form-section {
+        padding: 10px 0;
+    }
+
+    .section-info-panel {
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .section-title .icon-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--hm-light-teal);
+        color: var(--hm-teal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .section-title h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .section-description {
+        font-size: 13.5px;
+        color: #64748b;
+        line-height: 1.5;
+        padding-left: 48px;
+    }
+
+    .section-fields-panel {
+        padding-left: 15px;
+    }
+
+    .section-divider {
+        border: 0;
+        height: 1px;
+        background: var(--border);
+        margin: 32px 0;
+        opacity: 0.8;
+    }
+
+    /* CUSTOM FIELDS & INPUTS */
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label-custom {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .required-star {
+        color: var(--accent-red);
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-prefix-icon {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 15px;
+        pointer-events: none;
+        transition: color 0.2s;
+    }
+
+    .form-control-custom,
+    .form-select-custom {
+        width: 100%;
+        padding: 11px 16px 11px 40px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        background-color: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        outline: none;
+        transition: all 0.2s ease-in-out;
+        font-family: inherit;
+    }
+
+    .form-select-custom {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 14px;
+        cursor: pointer;
+    }
+
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        background-color: #ffffff;
+        border-color: var(--hm-teal);
+        box-shadow: 0 0 0 3px rgba(0, 175, 169, 0.15);
+    }
+
+    .form-control-custom:focus + .input-prefix-icon,
+    .form-select-custom:focus + .input-prefix-icon {
+        color: var(--hm-teal);
+    }
+
+
+    /* ACTIONS PANEL */
+    .form-actions-panel {
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
+    }
+
+    .btn-cancel-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 24px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: #475569;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-cancel-custom:hover {
+        background: #f1f5f9;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+    .btn-submit-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 28px;
+        background-color: var(--hm-navy);
+        border: 1px solid var(--hm-navy);
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+        cursor: pointer;
+        min-width: 150px;
+    }
+
+    .btn-submit-custom:hover:not(:disabled) {
+        background-color: #007685;
+        border-color: #007685;
+        box-shadow: 0 4px 10px rgba(0, 144, 161, 0.25);
+    }
+
+    .btn-submit-custom:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Keyframes & Animations */
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @@media (max-width: 991px) {
+        .form-card {
+            padding: 24px;
+        }
+        .section-fields-panel {
+            padding-left: 0;
+        }
+        .section-description {
+            padding-left: 0;
+            margin-top: 6px;
+        }
+    }
+</style>
+
+<!-- JQUERY SCRIPT FOR DYNAMIC UI & AJAX SUBMISSION -->
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            
+
+            // 2. Xử lý Submit Form bằng AJAX
+            $('#createUserForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $btnSubmit = $('#btnSubmitForm');
+                
+                // Show loading spinner
+                $btnSubmit.prop('disabled', true);
+                $btnSubmit.find('.btn-text').hide();
+                $btnSubmit.find('.btn-spinner').show();
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: $form.attr('method'),
+                    data: $form.serialize(),
+                    success: function (res) {
+                        if (res && res.success) {
+                            // Gọi toast thành công từ window.MedEquip
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thành công", res.message || "Tạo tài khoản thành công!", "info");
+                            } else {
+                                alert(res.message || "Tạo tài khoản thành công!");
+                            }
+                            
+                            // Reset form sau khi tạo thành công
+                            $form[0].reset();
+                        } else {
+                            // Gọi toast lỗi
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thất bại", res.message || "Tạo tài khoản thất bại.", "danger");
+                            } else {
+                                alert(res.message || "Lỗi: " + res.message);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errMsg = "Đã xảy ra lỗi kết nối đến máy chủ.";
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            errMsg = xhr.responseJSON.message;
+                        }
+                        if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                            window.MedEquip.toast("Lỗi hệ thống", errMsg, "danger");
+                        } else {
+                            alert(errMsg);
+                        }
+                    },
+                    complete: function () {
+                        // Reset submit button state
+                        $btnSubmit.prop('disabled', false);
+                        $btnSubmit.find('.btn-spinner').hide();
+                        $btnSubmit.find('.btn-text').show();
+                    }
+                });
+            });
+        });
+    </script>
+}
