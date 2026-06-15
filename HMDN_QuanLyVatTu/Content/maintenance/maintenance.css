@@ -324,6 +324,31 @@
     padding: 0 6px;
 }
 
+/* Badge số phiếu sửa chữa — hiện ở đầu tên thiết bị */
+.ticket-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 800;
+    border-radius: 50%;
+    padding: 0 5px;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.4);
+    flex-shrink: 0;
+    letter-spacing: 0;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.ticket-count-badge:hover {
+    transform: scale(1.15);
+}
+
+
 .no-log {
     color: #cbd5e1;
     font-size: 12px;

@@ -1,0 +1,522 @@
+@model HMDN_QuanLyVatTu.Models.EditUserViewModel
+@{
+    ViewBag.Title = "Chỉnh sửa tài khoản";
+}
+
+<div class="create-user-wrapper">
+    <div class="page-header-title">
+        <h1>Chỉnh sửa tài khoản</h1>
+        <p>Cập nhật thông tin định danh và phân quyền hệ thống cho nhân viên.</p>
+    </div>
+
+    <form id="editUserForm" method="post" action="@Url.Action("EditUser", "User")" class="elegant-form">
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+
+        <!-- CARD CHÍNH CHỨA FORM -->
+        <div class="form-card">
+            
+            <!-- SECTION 1: THÔNG TIN CÁ NHÂN -->
+            <div class="form-section row">
+                <div class="col-lg-4 col-md-5 section-info-panel">
+                    <div class="section-title">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-user-pen"></i>
+                        </div>
+                        <h3>Thông tin cá nhân</h3>
+                    </div>
+                    <p class="section-description">Cập nhật họ tên, liên hệ và mật khẩu mới cho nhân sự.</p>
+                </div>
+                
+                <div class="col-lg-8 col-md-7 section-fields-panel">
+                    <div class="row g-4">
+                        <div class="col-md-6 field-group">
+                            <label for="FullName" class="form-label-custom">Họ và tên <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-id-card input-prefix-icon"></i>
+                                <input type="text" id="FullName" name="FullName" class="form-control-custom" value="@Model.FullName" required maxlength="100" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Email" class="form-label-custom">Email <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-envelope input-prefix-icon"></i>
+                                <input type="email" id="Email" name="Email" class="form-control-custom" value="@Model.Email" required maxlength="100" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Phone" class="form-label-custom">Số điện thoại <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-phone-flip input-prefix-icon"></i>
+                                <input type="text" id="Phone" name="Phone" class="form-control-custom" value="@Model.Phone" required maxlength="20" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label class="form-label-custom">Tên đăng nhập <span class="text-muted">(Không thể sửa)</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-regular fa-user input-prefix-icon"></i>
+                                <input type="text" class="form-control-custom" value="@ViewBag.Username" disabled style="background-color: #e2e8f0; color: #475569; cursor: not-allowed;" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="Password" class="form-label-custom">Mật khẩu mới <span class="text-muted">(Để trống nếu giữ nguyên)</span></label>
+                            <div class="input-icon-wrapper password-input-container">
+                                <i class="fa-solid fa-lock input-prefix-icon"></i>
+                                <input type="password" id="Password" name="Password" class="form-control-custom password-input-field" placeholder="Nhập mật khẩu mới..." minlength="6" maxlength="100" />
+                                <button type="button" class="password-toggle-btn" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="section-divider" />
+
+            <!-- SECTION 2: PHÂN QUYỀN NGƯỜI DÙNG -->
+            <div class="form-section row">
+                <div class="col-lg-4 col-md-5 section-info-panel">
+                    <div class="section-title">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3>Phân quyền người dùng</h3>
+                    </div>
+                    <p class="section-description">Cấu hình vai trò hoạt động và phòng ban trực thuộc của tài khoản nhân sự.</p>
+                </div>
+
+                <div class="col-lg-8 col-md-7 section-fields-panel">
+                    <div class="row g-4">
+                        <div class="col-md-6 field-group">
+                            <label for="RoleName" class="form-label-custom">Vai trò (Role) <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-user-shield input-prefix-icon"></i>
+                                <select id="RoleName" name="RoleName" class="form-select-custom" required>
+                                    <option value="" disabled>-- Chọn vai trò --</option>
+                                    @if (ViewBag.Roles != null)
+                                    {
+                                        foreach (var role in ViewBag.Roles)
+                                        {
+                                            var displayName = role.Code == "viewer" ? "Nhân viên phòng ban (User)" : role.Name;
+                                            <option value="@role.Code" @(Model.RoleName == role.Code ? "selected" : "")>@displayName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 field-group">
+                            <label for="DepartmentId" class="form-label-custom">Phòng ban <span class="required-star">*</span></label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-hospital input-prefix-icon"></i>
+                                <select id="DepartmentId" name="DepartmentId" class="form-select-custom" required>
+                                    <option value="" disabled>-- Chọn phòng ban --</option>
+                                    @if (ViewBag.Departments != null)
+                                    {
+                                        foreach (var dept in ViewBag.Departments)
+                                        {
+                                            <option value="@dept.Id" @(Model.DepartmentId == dept.Id ? "selected" : "")>@dept.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="IsActive" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NÚT ĐIỀU HƯỚNG/SUBMIT -->
+            <div class="form-actions-panel mt-5">
+                <a href="@Url.Action("Index", "User")" class="btn-cancel-custom">Quay lại</a>
+                <button type="submit" id="btnSubmitForm" class="btn-submit-custom">
+                    <span class="btn-text"><i class="fa-solid fa-floppy-disk me-2"></i> Lưu thay đổi</span>
+                    <span class="btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Đang xử lý...</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- STYLE CHO GIAO DIỆN HMDN CẬP NHẬT TÀI KHOẢN -->
+<style>
+    .create-user-wrapper {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-top: 15px;
+        font-family: var(--font-main), sans-serif;
+        animation: formFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @@keyframes formFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header-title {
+        margin-bottom: 30px;
+    }
+
+    .page-header-title h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+        letter-spacing: -0.6px;
+    }
+
+    .page-header-title p {
+        font-size: 14.5px;
+        color: #64748b;
+    }
+
+    .form-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 144, 161, 0.08);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.01), 0 0 0 1px rgba(0, 144, 161, 0.04);
+        padding: 40px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .form-card:hover {
+        box-shadow: 0 20px 40px -15px rgba(0, 144, 161, 0.1);
+    }
+
+    .form-section {
+        padding: 10px 0;
+    }
+
+    .section-info-panel {
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 12px;
+    }
+
+    .section-title .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--hm-light-teal), rgba(0, 175, 169, 0.2));
+        color: var(--hm-teal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(0, 175, 169, 0.12);
+        transition: transform 0.3s ease;
+    }
+
+    .form-section:hover .icon-circle {
+        transform: scale(1.08) rotate(3deg);
+    }
+
+    .section-title h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        letter-spacing: -0.3px;
+    }
+
+    .section-description {
+        font-size: 13.5px;
+        color: #64748b;
+        line-height: 1.5;
+        padding-left: 54px;
+    }
+
+    .section-fields-panel {
+        padding-left: 15px;
+    }
+
+    .section-divider {
+        border: 0;
+        height: 1px;
+        background: linear-gradient(to right, rgba(226, 232, 240, 0), var(--border) 10%, var(--border) 90%, rgba(226, 232, 240, 0));
+        margin: 36px 0;
+        opacity: 0.8;
+    }
+
+    /* CUSTOM FIELDS & INPUTS */
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label-custom {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        letter-spacing: -0.1px;
+    }
+
+    .required-star {
+        color: var(--accent-red);
+        margin-left: 2px;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-prefix-icon {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 15px;
+        pointer-events: none;
+        transition: color 0.25s ease;
+    }
+
+    .form-control-custom,
+    .form-select-custom {
+        width: 100%;
+        padding: 12px 16px 12px 42px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        background-color: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        outline: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: inherit;
+    }
+
+    .form-control-custom::placeholder {
+        color: #cbd5e1;
+    }
+
+    .form-select-custom {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 14px;
+        cursor: pointer;
+    }
+
+    .form-control-custom:focus,
+    .form-select-custom:focus {
+        background-color: #ffffff;
+        border-color: var(--hm-teal);
+        box-shadow: 0 0 0 4px rgba(0, 175, 169, 0.12);
+    }
+
+    .form-control-custom:focus + .input-prefix-icon,
+    .form-select-custom:focus + .input-prefix-icon {
+        color: var(--hm-teal);
+    }
+
+    /* PASSWORD TOGGLE CONFIG */
+    .password-input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 14px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: color 0.2s, transform 0.2s;
+        z-index: 10;
+    }
+
+    .password-toggle-btn:hover {
+        color: var(--hm-teal);
+        transform: scale(1.1);
+    }
+
+    .password-toggle-btn:active {
+        transform: scale(0.9);
+    }
+
+    .password-input-field {
+        padding-right: 44px !important;
+    }
+
+    /* ACTIONS PANEL */
+    .form-actions-panel {
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+        border-top: 1px solid var(--border);
+        padding-top: 28px;
+    }
+
+    .btn-cancel-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 26px;
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .btn-cancel-custom:hover {
+        background: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .btn-submit-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 30px;
+        background: linear-gradient(135deg, var(--hm-navy), var(--hm-teal));
+        border: none;
+        border-radius: 10px;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        min-width: 160px;
+        box-shadow: 0 4px 12px rgba(0, 144, 161, 0.2);
+    }
+
+    .btn-submit-custom:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 144, 161, 0.3);
+        filter: brightness(1.05);
+    }
+
+    .btn-submit-custom:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(0, 144, 161, 0.2);
+    }
+
+    .btn-submit-custom:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Responsive */
+    @@media (max-width: 991px) {
+        .form-card {
+            padding: 30px 24px;
+        }
+        .section-fields-panel {
+            padding-left: 0;
+        }
+        .section-description {
+            padding-left: 0;
+            margin-top: 6px;
+        }
+    }
+</style>
+
+<!-- JQ SCRIPT FOR AJAX UPDATE SUBMISSION -->
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            
+            // Password Show/Hide Toggle
+            $('.password-toggle-btn').on('click', function () {
+                var $btn = $(this);
+                var $input = $btn.siblings('.password-input-field');
+                var type = $input.attr('type') === 'password' ? 'text' : 'password';
+                $input.attr('type', type);
+                
+                var $icon = $btn.find('i');
+                if (type === 'text') {
+                    $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Xử lý Submit Form bằng AJAX
+            $('#editUserForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $btnSubmit = $('#btnSubmitForm');
+                
+                // Show loading spinner
+                $btnSubmit.prop('disabled', true);
+                $btnSubmit.find('.btn-text').hide();
+                $btnSubmit.find('.btn-spinner').show();
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: $form.attr('method'),
+                    data: $form.serialize(),
+                    success: function (res) {
+                        if (res && res.success) {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thành công", res.message || "Cập nhật tài khoản thành công!", "info");
+                            } else {
+                                alert(res.message || "Cập nhật tài khoản thành công!");
+                            }
+                            
+                            // Redirect về danh sách sau 1.5 giây để cập nhật hiển thị
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("Index", "User")';
+                            }, 1500);
+                        } else {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thất bại", res.message || "Cập nhật tài khoản thất bại.", "danger");
+                            } else {
+                                alert(res.message || "Lỗi: " + res.message);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errMsg = "Đã xảy ra lỗi kết nối đến máy chủ.";
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            errMsg = xhr.responseJSON.message;
+                        }
+                        if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                            window.MedEquip.toast("Lỗi hệ thống", errMsg, "danger");
+                        } else {
+                            alert(errMsg);
+                        }
+                    },
+                    complete: function () {
+                        $btnSubmit.prop('disabled', false);
+                        $btnSubmit.find('.btn-spinner').hide();
+                        $btnSubmit.find('.btn-text').show();
+                    }
+                });
+            });
+        });
+    </script>
+}

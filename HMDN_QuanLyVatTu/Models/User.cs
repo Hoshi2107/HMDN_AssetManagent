@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace HMS.Models.Auth
 {
@@ -20,6 +21,20 @@ namespace HMS.Models.Auth
         public int? DepartmentId { get; set; }
 
         public string AvatarUrl { get; set; }
+
+        // Helper property to map detailed permissions stored in AvatarUrl
+        public List<string> DetailedPermissions
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(AvatarUrl)) return new List<string>();
+                return AvatarUrl.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            }
+            set
+            {
+                AvatarUrl = value != null ? string.Join(",", value) : null;
+            }
+        }
 
         public bool IsActive { get; set; }
 

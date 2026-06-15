@@ -68,9 +68,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             inv.SerialNumber,
                             inv.DepartmentName,
                             inv.LocationName,
-                            LifeStatus = (stats != null && stats.OpenLogs > 0) ? "broken" :
-                                         (stats != null && stats.InProgressLogs > 0) ? "suspended" :
-                                         inv.LifeStatus,
+                            LifeStatus = inv.LifeStatus,   // Dùng đúng trạng thái thực tế từ DB
                             ImportDate = inv.ImportDate.ToString("yyyy-MM-dd"),
                             UnitPrice = inv.UnitPrice,
                             // Thống kê sửa chữa
