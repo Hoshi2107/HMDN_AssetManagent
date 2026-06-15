@@ -1,15 +1,17 @@
+@model HMDN_QuanLyVatTu.Models.EditUserViewModel
 @{
-    ViewBag.Title = "Tạo tài khoản mới";
+    ViewBag.Title = "Chỉnh sửa tài khoản";
 }
 
 <div class="create-user-wrapper">
     <div class="page-header-title">
-        <h1>Tạo tài khoản mới</h1>
-        <p>Cấp quyền truy cập hệ thống cho nhân viên mới thuộc tập đoàn Hoàn Mỹ.</p>
+        <h1>Chỉnh sửa tài khoản</h1>
+        <p>Cập nhật thông tin định danh và phân quyền hệ thống cho nhân viên.</p>
     </div>
 
-    <form id="createUserForm" method="post" action="@Url.Action("CreateUser", "User")" class="elegant-form">
+    <form id="editUserForm" method="post" action="@Url.Action("EditUser", "User")" class="elegant-form">
         @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
 
         <!-- CARD CHÍNH CHỨA FORM -->
         <div class="form-card">
@@ -19,11 +21,11 @@
                 <div class="col-lg-4 col-md-5 section-info-panel">
                     <div class="section-title">
                         <div class="icon-circle">
-                            <i class="fa-solid fa-user"></i>
+                            <i class="fa-solid fa-user-pen"></i>
                         </div>
                         <h3>Thông tin cá nhân</h3>
                     </div>
-                    <p class="section-description">Thông tin định danh cơ bản của người dùng trên toàn hệ thống.</p>
+                    <p class="section-description">Cập nhật họ tên, liên hệ và mật khẩu mới cho nhân sự.</p>
                 </div>
                 
                 <div class="col-lg-8 col-md-7 section-fields-panel">
@@ -32,7 +34,7 @@
                             <label for="FullName" class="form-label-custom">Họ và tên <span class="required-star">*</span></label>
                             <div class="input-icon-wrapper">
                                 <i class="fa-regular fa-id-card input-prefix-icon"></i>
-                                <input type="text" id="FullName" name="FullName" class="form-control-custom" placeholder="Nguyễn Văn A" required maxlength="100" />
+                                <input type="text" id="FullName" name="FullName" class="form-control-custom" value="@Model.FullName" required maxlength="100" />
                             </div>
                         </div>
 
@@ -40,7 +42,7 @@
                             <label for="Email" class="form-label-custom">Email <span class="required-star">*</span></label>
                             <div class="input-icon-wrapper">
                                 <i class="fa-regular fa-envelope input-prefix-icon"></i>
-                                <input type="email" id="Email" name="Email" class="form-control-custom" placeholder="example@hoanmy.com" required maxlength="100" />
+                                <input type="email" id="Email" name="Email" class="form-control-custom" value="@Model.Email" required maxlength="100" />
                             </div>
                         </div>
 
@@ -48,23 +50,23 @@
                             <label for="Phone" class="form-label-custom">Số điện thoại <span class="required-star">*</span></label>
                             <div class="input-icon-wrapper">
                                 <i class="fa-solid fa-phone-flip input-prefix-icon"></i>
-                                <input type="text" id="Phone" name="Phone" class="form-control-custom" placeholder="0901 234 567" required maxlength="20" />
+                                <input type="text" id="Phone" name="Phone" class="form-control-custom" value="@Model.Phone" required maxlength="20" />
                             </div>
                         </div>
 
                         <div class="col-md-6 field-group">
-                            <label for="Username" class="form-label-custom">Tên đăng nhập <span class="required-star">*</span></label>
+                            <label class="form-label-custom">Tên đăng nhập <span class="text-muted">(Không thể sửa)</span></label>
                             <div class="input-icon-wrapper">
                                 <i class="fa-regular fa-user input-prefix-icon"></i>
-                                <input type="text" id="Username" name="Username" class="form-control-custom" placeholder="nv_a_123" required maxlength="50" />
+                                <input type="text" class="form-control-custom" value="@ViewBag.Username" disabled style="background-color: #e2e8f0; color: #475569; cursor: not-allowed;" />
                             </div>
                         </div>
 
                         <div class="col-md-6 field-group">
-                            <label for="Password" class="form-label-custom">Mật khẩu <span class="required-star">*</span></label>
+                            <label for="Password" class="form-label-custom">Mật khẩu mới <span class="text-muted">(Để trống nếu giữ nguyên)</span></label>
                             <div class="input-icon-wrapper password-input-container">
                                 <i class="fa-solid fa-lock input-prefix-icon"></i>
-                                <input type="password" id="Password" name="Password" class="form-control-custom password-input-field" placeholder="••••••••" required minlength="6" maxlength="100" />
+                                <input type="password" id="Password" name="Password" class="form-control-custom password-input-field" placeholder="Nhập mật khẩu mới..." minlength="6" maxlength="100" />
                                 <button type="button" class="password-toggle-btn" tabindex="-1">
                                     <i class="fa-regular fa-eye"></i>
                                 </button>
@@ -85,7 +87,7 @@
                         </div>
                         <h3>Phân quyền người dùng</h3>
                     </div>
-                    <p class="section-description">Xác định vai trò và phạm vi hoạt động của tài khoản trong tổ chức.</p>
+                    <p class="section-description">Cấu hình vai trò hoạt động và phòng ban trực thuộc của tài khoản nhân sự.</p>
                 </div>
 
                 <div class="col-lg-8 col-md-7 section-fields-panel">
@@ -95,13 +97,13 @@
                             <div class="input-icon-wrapper">
                                 <i class="fa-solid fa-user-shield input-prefix-icon"></i>
                                 <select id="RoleName" name="RoleName" class="form-select-custom" required>
-                                    <option value="" disabled selected>-- Chọn vai trò --</option>
+                                    <option value="" disabled>-- Chọn vai trò --</option>
                                     @if (ViewBag.Roles != null)
                                     {
                                         foreach (var role in ViewBag.Roles)
                                         {
                                             var displayName = role.Code == "viewer" ? "Nhân viên phòng ban (User)" : role.Name;
-                                            <option value="@role.Code">@displayName</option>
+                                            <option value="@role.Code" @(Model.RoleName == role.Code ? "selected" : "")>@displayName</option>
                                         }
                                     }
                                 </select>
@@ -113,26 +115,28 @@
                             <div class="input-icon-wrapper">
                                 <i class="fa-solid fa-hospital input-prefix-icon"></i>
                                 <select id="DepartmentId" name="DepartmentId" class="form-select-custom" required>
-                                    <option value="" disabled selected>-- Chọn phòng ban --</option>
+                                    <option value="" disabled>-- Chọn phòng ban --</option>
                                     @if (ViewBag.Departments != null)
                                     {
                                         foreach (var dept in ViewBag.Departments)
                                         {
-                                            <option value="@dept.Id">@dept.Name</option>
+                                            <option value="@dept.Id" @(Model.DepartmentId == dept.Id ? "selected" : "")>@dept.Name</option>
                                         }
                                     }
                                 </select>
                             </div>
                         </div>
+
+                        <input type="hidden" id="IsActive" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
                     </div>
                 </div>
             </div>
             
             <!-- NÚT ĐIỀU HƯỚNG/SUBMIT -->
             <div class="form-actions-panel mt-5">
-                <a href="javascript:history.back()" class="btn-cancel-custom">Hủy</a>
+                <a href="@Url.Action("Index", "User")" class="btn-cancel-custom">Quay lại</a>
                 <button type="submit" id="btnSubmitForm" class="btn-submit-custom">
-                    <span class="btn-text"><i class="fa-solid fa-user-plus me-2"></i> Tạo tài khoản</span>
+                    <span class="btn-text"><i class="fa-solid fa-floppy-disk me-2"></i> Lưu thay đổi</span>
                     <span class="btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Đang xử lý...</span>
                 </button>
             </div>
@@ -140,7 +144,7 @@
     </form>
 </div>
 
-<!-- STYLE CHO GIAO DIỆN HMDN TẠO TÀI KHOẢN -->
+<!-- STYLE CHO GIAO DIỆN HMDN CẬP NHẬT TÀI KHOẢN -->
 <style>
     .create-user-wrapper {
         max-width: 1000px;
@@ -439,7 +443,7 @@
     }
 </style>
 
-<!-- JQUERY SCRIPT FOR DYNAMIC UI & AJAX SUBMISSION -->
+<!-- JQ SCRIPT FOR AJAX UPDATE SUBMISSION -->
 @section scripts {
     <script>
         $(document).ready(function () {
@@ -459,8 +463,8 @@
                 }
             });
 
-            // 2. Xử lý Submit Form bằng AJAX
-            $('#createUserForm').on('submit', function (e) {
+            // Xử lý Submit Form bằng AJAX
+            $('#editUserForm').on('submit', function (e) {
                 e.preventDefault();
 
                 var $form = $(this);
@@ -477,22 +481,19 @@
                     data: $form.serialize(),
                     success: function (res) {
                         if (res && res.success) {
-                            // Gọi toast thành công từ window.MedEquip
                             if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
-                                window.MedEquip.toast("Thành công", res.message || "Tạo tài khoản thành công!", "info");
+                                window.MedEquip.toast("Thành công", res.message || "Cập nhật tài khoản thành công!", "info");
                             } else {
-                                alert(res.message || "Tạo tài khoản thành công!");
+                                alert(res.message || "Cập nhật tài khoản thành công!");
                             }
                             
-                            // Reset form sau khi tạo thành công
-                            $form[0].reset();
-                            // Reset password field type to password if toggled
-                            $('.password-input-field').attr('type', 'password');
-                            $('.password-toggle-btn i').removeClass('fa-eye-slash').addClass('fa-eye');
+                            // Redirect về danh sách sau 1.5 giây để cập nhật hiển thị
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("Index", "User")';
+                            }, 1500);
                         } else {
-                            // Gọi toast lỗi
                             if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
-                                window.MedEquip.toast("Thất bại", res.message || "Tạo tài khoản thất bại.", "danger");
+                                window.MedEquip.toast("Thất bại", res.message || "Cập nhật tài khoản thất bại.", "danger");
                             } else {
                                 alert(res.message || "Lỗi: " + res.message);
                             }
@@ -510,7 +511,6 @@
                         }
                     },
                     complete: function () {
-                        // Reset submit button state
                         $btnSubmit.prop('disabled', false);
                         $btnSubmit.find('.btn-spinner').hide();
                         $btnSubmit.find('.btn-text').show();

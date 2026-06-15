@@ -20,9 +20,9 @@
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
     <IISExpressSSLPort>44362</IISExpressSSLPort>
-    <IISExpressAnonymousAuthentication />
-    <IISExpressWindowsAuthentication />
-    <IISExpressUseClassicPipelineMode />
+    <IISExpressAnonymousAuthentication>enabled</IISExpressAnonymousAuthentication>
+    <IISExpressWindowsAuthentication>disabled</IISExpressWindowsAuthentication>
+    <IISExpressUseClassicPipelineMode>false</IISExpressUseClassicPipelineMode>
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -186,6 +186,7 @@
     <Compile Include="Models\DashboardOverviewModel.cs" />
     <Compile Include="Models\Department.cs" />
     <Compile Include="Models\DropdownVM.cs" />
+    <Compile Include="Models\EditUserViewModel.cs" />
     <Compile Include="Models\FilterLookupModel.cs" />
     <Compile Include="Models\Group.cs" />
     <Compile Include="Models\GroupCreateDTO.cs" />
@@ -225,6 +226,7 @@
     <Compile Include="Models\ToggleItemDTO.cs" />
     <Compile Include="Models\UpdateLocation.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Models\UserInfoDTO.cs" />
     <Compile Include="Models\UserRole.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AuthService.cs" />
@@ -259,6 +261,7 @@
     <Content Include="Content\images1\hmdni2.jpg" />
     <Content Include="Content\images1\logobv.png" />
     <Content Include="Content\images1\Logofull_bvhm.png" />
+    <Content Include="Content\images\logobv.jpg" />
     <Content Include="Content\inventory\inventory.css" />
     <Content Include="Content\maintainlist\maintainlist.css" />
     <Content Include="Content\maintenance\maintenance.css" />
@@ -285,6 +288,17 @@
     <Content Include="Scripts\bootstrap.esm.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="Addon\vue\fonts\hfont\hfont-Italic_gdi.woff" />
+    <Content Include="Addon\vue\fonts\hfont\hfont_gdi.woff" />
+    <Content Include="Addon\vue\fonts\Lexend\wlpwgwvFAVdoq2_v-6QU.woff" />
+    <Content Include="Addon\vue\fonts\Lexend\wlpwgwvFAVdoq2_v9aQU4Wc.woff" />
+    <Content Include="Addon\vue\fonts\Lexend\wlpwgwvFAVdoq2_v9KQU4Wc.woff" />
+    <Content Include="Addon\vue\fonts\Superscratchy.ttf" />
+    <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Bold.ttf" />
+    <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Light.ttf" />
+    <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Medium.ttf" />
+    <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Regular.ttf" />
+    <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-SemiBold.ttf" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
@@ -334,6 +348,9 @@
     <Content Include="Uploads\9bb97656-11ea-4aae-b852-e40f0e650533.xlsx" />
     <Content Include="Uploads\web.config" />
     <Content Include="Views\MaintainList\Index.cshtml" />
+    <Content Include="Views\User\Index.cshtml" />
+    <Content Include="Views\User\EditUser.cshtml" />
+    <Content Include="Views\Category\Catalog.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

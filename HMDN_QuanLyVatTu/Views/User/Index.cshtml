@@ -1,0 +1,858 @@
+@model IEnumerable<HMS.Models.Auth.User>
+@{
+    ViewBag.Title = "Danh sách người dùng";
+    
+    // Khai báo helper tính Initials và Gradient cho Avatar
+    string GetInitials(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "U";
+        var parts = fullName.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "U";
+        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
+        return (parts[0].Substring(0, 1) + parts[parts.Length - 1].Substring(0, 1)).ToUpper();
+    }
+
+    string GetGradient(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "linear-gradient(135deg, #00AFA9, #003366)";
+        int hash = name.GetHashCode();
+        string[] gradients = new string[]
+        {
+            "linear-gradient(135deg, #00AFA9, #003366)", 
+            "linear-gradient(135deg, #10b981, #059669)", 
+            "linear-gradient(135deg, #f59e0b, #d97706)", 
+            "linear-gradient(135deg, #ec4899, #8b5cf6)", 
+            "linear-gradient(135deg, #ef4444, #f43f5e)"  
+        };
+        int index = Math.Abs(hash) % gradients.Length;
+        return gradients[index];
+    }
+
+    // Helper phân loại màu sắc cho badge phòng ban động
+    string GetDepartmentBadgeClass(string deptName)
+    {
+        if (string.IsNullOrEmpty(deptName)) return "badge-slate";
+        var name = deptName.ToLower();
+        if (name.Contains("công nghệ thông tin") || name.Contains("cntt")) return "badge-blue";
+        if (name.Contains("vật tư") || name.Contains("thiết bị")) return "badge-emerald";
+        if (name.Contains("hành chính")) return "badge-indigo";
+        if (name.Contains("xét nghiệm")) return "badge-amber";
+        if (name.Contains("dược")) return "badge-teal";
+        if (name.Contains("nội trú") || name.Contains("ngoại khoa") || name.Contains("y tế")) return "badge-violet";
+        if (name.Contains("chẩn đoán") || name.Contains("cdha") || name.Contains("hình ảnh")) return "badge-rose";
+        return "badge-slate";
+    }
+
+    // Tính khoảng hiển thị người dùng (e.g. hiển thị 1-10 trên 154)
+    int totalUsers = ViewBag.TotalUsers;
+    int currentPage = ViewBag.CurrentPage;
+    int pageSize = ViewBag.PageSize;
+    int startRange = totalUsers == 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    int endRange = Math.Min(currentPage * pageSize, totalUsers);
+}
+
+@section topbar_actions {
+    <div class="header-search">
+        <i class="fa-solid fa-magnifying-glass" onclick="applyFilters()" style="cursor: pointer;" title="Tìm kiếm"></i>
+        <input type="text" id="topbarSearchInput" placeholder="Tìm kiếm người dùng..." value="@ViewBag.SearchQuery" onkeypress="handleSearchKeyPress(event)" autocomplete="off" />
+    </div>
+}
+
+<div class="user-list-wrapper">
+    <!-- TIÊU ĐỀ & NÚT THÊM MỚI -->
+    <div class="page-header-container">
+        <div class="page-header-title">
+            <h1>Danh sách người dùng</h1>
+            <p>Quản lý tài khoản, phòng ban và quyền truy cập nhân sự bệnh viện.</p>
+        </div>
+        <a href="@Url.Action("CreateUser", "User")" class="btn-add-user">
+            <i class="fa-solid fa-user-plus"></i> Thêm người dùng mới
+        </a>
+    </div>
+
+    <!-- KHUNG BỘ LỌC -->
+    <div class="filters-card mb-4">
+        <div class="filters-left">
+            <span class="filter-label"><i class="fa-solid fa-filter"></i> BỘ LỌC:</span>
+            
+            <select id="filterDept" class="filter-select-item" onchange="applyFilters()">
+                <option value="0">Tất cả phòng ban</option>
+                @if (ViewBag.Departments != null)
+                {
+                    foreach (var dept in ViewBag.Departments)
+                    {
+                        <option value="@dept.Id" @(ViewBag.SelectedDepartmentId == dept.Id ? "selected" : "")>@dept.Name</option>
+                    }
+                }
+            </select>
+
+
+        </div>
+        <div class="filters-right">
+            <span class="display-count-badge">
+                <i class="fa-solid fa-users-viewfinder"></i> Hiển thị @startRange-@endRange trên <strong>@totalUsers</strong> người dùng
+            </span>
+        </div>
+    </div>
+
+    <!-- BẢNG DANH SÁCH NGƯỜI DÙNG -->
+    <div class="table-card-custom">
+        <div class="table-responsive-custom">
+            <table class="users-table-custom">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>NGƯỜI DÙNG</th>
+                        <th>LIÊN HỆ</th>
+                        <th>PHÒNG BAN</th>
+                        <th style="width: 120px; text-align: center;">THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        int index = 0;
+                        foreach (var user in Model)
+                        {
+                            <tr style="animation-delay: @(index * 0.05)s;">
+                                <td class="id-cell">@user.Id</td>
+                                <td>
+                                    <div class="user-info-cell">
+                                        <div class="user-avatar-circle" style="background: @GetGradient(user.FullName);">
+                                            @GetInitials(user.FullName)
+                                        </div>
+                                        <div class="user-text-wrapper">
+                                            <div class="user-fullname-text">@user.FullName</div>
+                                            <div class="user-username-text">@user.Username</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="contact-info-cell">
+                                        <div class="contact-email-text">@user.Email</div>
+                                        <div class="contact-phone-text">@user.Phone</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @{
+                                        var deptName = user.Department != null ? user.Department.Name : "Chưa phân phòng";
+                                        var badgeClass = GetDepartmentBadgeClass(deptName);
+                                    }
+                                    <span class="department-badge-custom @badgeClass">
+                                        @deptName
+                                    </span>
+                                </td>
+                                <td class="actions-cell">
+                                    <div class="action-buttons-wrapper">
+                                        <a href="@Url.Action("EditUser", "User", new { id = user.Id })" class="action-link-btn edit-btn" title="Chỉnh sửa">
+                                            <i class="fa-solid fa-pencil"></i>
+                                        </a>
+                                        <button type="button" class="action-link-btn delete-btn" onclick="deleteUserConfirm(@user.Id, '@user.FullName')" title="Xóa">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="no-data-cell">
+                                <i class="fa-solid fa-user-slash no-data-icon"></i>
+                                <p>Không tìm thấy người dùng nào phù hợp với bộ lọc.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PHÂN TRANG -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="pagination-footer-custom">
+                <div class="pagination-container-custom">
+                    @if (currentPage > 1)
+                    {
+                        <a href="javascript:goToPage(@(currentPage - 1))" class="page-nav-btn-custom"><i class="fa-solid fa-chevron-left"></i> Trước</a>
+                    }
+                    else
+                    {
+                        <span class="page-nav-btn-custom disabled"><i class="fa-solid fa-chevron-left"></i> Trước</span>
+                    }
+
+                    <div class="page-numbers-list">
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            if (i == currentPage)
+                            {
+                                <span class="page-number-custom active">@i</span>
+                            }
+                            else
+                            {
+                                <a href="javascript:goToPage(@i)" class="page-number-custom">@i</a>
+                            }
+                        }
+                    </div>
+
+                    @if (currentPage < ViewBag.TotalPages)
+                    {
+                        <a href="javascript:goToPage(@(currentPage + 1))" class="page-nav-btn-custom">Tiếp theo <i class="fa-solid fa-chevron-right"></i></a>
+                    }
+                    else
+                    {
+                        <span class="page-nav-btn-custom disabled">Tiếp theo <i class="fa-solid fa-chevron-right"></i></span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- STYLES CHO TRANG DANH SÁCH NGƯỜI DÙNG CHUẨN PREMIUM -->
+<style>
+    .user-list-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        font-family: var(--font-main), sans-serif;
+        animation: listFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @@keyframes listFadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* PREMIUM TOPBAR SEARCH STYLE */
+    .header-search {
+        display: flex;
+        align-items: center;
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 8px 14px;
+        width: 280px;
+        border: 1.5px solid #e2e8f0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-right: auto;
+    }
+
+    .header-search:focus-within {
+        background: #ffffff;
+        border-color: var(--hm-teal);
+        box-shadow: 0 4px 12px rgba(0, 175, 169, 0.08), 0 0 0 3px rgba(0, 175, 169, 0.1);
+        width: 340px;
+    }
+
+    .header-search i {
+        color: #94a3b8;
+        margin-right: 10px;
+        font-size: 15px;
+        transition: color 0.2s, transform 0.2s;
+    }
+
+    .header-search:focus-within i {
+        color: var(--hm-teal);
+    }
+
+    .header-search i:hover {
+        color: var(--hm-teal);
+        transform: scale(1.1);
+    }
+
+    .header-search input {
+        border: none;
+        background: transparent;
+        outline: none;
+        width: 100%;
+        font-family: inherit;
+        font-size: 13.5px;
+        font-weight: 550;
+        color: var(--text-primary);
+    }
+
+    .header-search input::placeholder {
+        color: #cbd5e1;
+        font-weight: 400;
+    }
+
+    .page-header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-header-title h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        letter-spacing: -0.6px;
+    }
+
+    .page-header-title p {
+        font-size: 14.5px;
+        color: #64748b;
+    }
+
+    .btn-add-user {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, var(--hm-navy), var(--hm-teal));
+        color: #ffffff !important;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13.5px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 144, 161, 0.2);
+    }
+
+    .btn-add-user:hover {
+        box-shadow: 0 8px 20px rgba(0, 144, 161, 0.3);
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+    }
+
+    .btn-add-user:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(0, 144, 161, 0.2);
+    }
+
+    /* FILTERS CARD */
+    .filters-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 144, 161, 0.08);
+        border-radius: 16px;
+        padding: 18px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 144, 161, 0.03);
+    }
+
+    .filters-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .filter-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .filter-select-item {
+        padding: 10px 36px 10px 16px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #334155;
+        background-color: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        background-size: 14px;
+        min-width: 190px;
+        transition: all 0.25s ease;
+    }
+
+    .filter-select-item:hover {
+        border-color: #cbd5e1;
+        background-color: #f1f5f9;
+    }
+
+    .filter-select-item:focus {
+        border-color: var(--hm-teal);
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(0, 175, 169, 0.12);
+    }
+
+    .display-count-badge {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--hm-navy);
+        background-color: var(--hm-light-teal);
+        border: 1px solid rgba(0, 144, 161, 0.15);
+        padding: 8px 18px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .display-count-badge:hover {
+        background-color: rgba(0, 175, 169, 0.15);
+        transform: scale(1.02);
+    }
+
+    /* TABLE LAYOUT */
+    .table-card-custom {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 144, 161, 0.08);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 144, 161, 0.03);
+        overflow: hidden;
+        margin-top: 15px;
+    }
+
+    .table-responsive-custom {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .users-table-custom {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .users-table-custom th {
+        background: #fafbfc;
+        padding: 18px 24px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .users-table-custom tbody tr {
+        animation: tableRowFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+        transition: background-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .users-table-custom tbody tr:hover {
+        background-color: #f8fafc;
+        transform: scale(1.002) translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    @@keyframes tableRowFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .users-table-custom td {
+        padding: 16px 24px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 13.5px;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .users-table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .id-cell {
+        font-family: var(--font-mono);
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* USER AVATAR & INFO */
+    .user-info-cell {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .user-avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: #ffffff;
+        font-size: 13.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        transition: transform 0.25s ease;
+    }
+
+    .user-info-cell:hover .user-avatar-circle {
+        transform: scale(1.08) rotate(5deg);
+    }
+
+    .user-fullname-text {
+        font-weight: 650;
+        color: var(--text-primary);
+    }
+
+    .user-username-text {
+        font-size: 12px;
+        color: #64748b;
+        font-family: var(--font-mono);
+        margin-top: 1px;
+    }
+
+    /* CONTACT INFO */
+    .contact-info-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .contact-email-text {
+        font-weight: 500;
+    }
+
+    .contact-phone-text {
+        font-size: 12.5px;
+        color: #64748b;
+    }
+
+    /* DEPARTMENT BADGE COLORS */
+    .department-badge-custom {
+        display: inline-block;
+        padding: 5px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .badge-blue {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .badge-emerald {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .badge-indigo {
+        background-color: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
+    .badge-amber {
+        background-color: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-teal {
+        background-color: #f0fdfa;
+        color: #0f766e;
+        border: 1px solid #99f6e4;
+    }
+
+    .badge-violet {
+        background-color: #faf5ff;
+        color: #5b21b6;
+        border: 1px solid #e9d5ff;
+    }
+
+    .badge-rose {
+        background-color: #fff1f2;
+        color: #9f1239;
+        border: 1px solid #fecdd3;
+    }
+
+    .badge-slate {
+        background-color: #f8fafc;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* STATUS INDICATOR PULSING */
+    .status-indicator-custom {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .status-indicator-custom .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        position: relative;
+    }
+
+    .status-indicator-custom.active {
+        color: #10b981;
+    }
+
+    .status-indicator-custom.active .status-dot {
+        background-color: #10b981;
+    }
+
+    .status-indicator-custom.active .status-dot::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border-radius: 50%;
+        border: 2px solid #10b981;
+        animation: statusPulse 1.8s infinite ease-in-out;
+        opacity: 0;
+    }
+
+    .status-indicator-custom.inactive {
+        color: #94a3b8;
+    }
+
+    .status-indicator-custom.inactive .status-dot {
+        background-color: #94a3b8;
+    }
+
+    @@keyframes statusPulse {
+        0% {
+            transform: scale(0.8);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(2.2);
+            opacity: 0;
+        }
+    }
+
+    /* ACTIONS CELL */
+    .actions-cell {
+        text-align: center;
+    }
+
+    .action-buttons-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .action-link-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        cursor: pointer;
+    }
+
+    .action-link-btn.edit-btn {
+        color: #475569;
+    }
+
+    .action-link-btn.edit-btn:hover {
+        background-color: #eff6ff;
+        color: var(--accent-blue);
+        border-color: #bfdbfe;
+        transform: translateY(-2px) scale(1.08);
+        box-shadow: 0 4px 8px rgba(30, 64, 175, 0.1);
+    }
+
+    .action-link-btn.delete-btn {
+        color: var(--accent-red);
+    }
+
+    .action-link-btn.delete-btn:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+        border-color: #fca5a5;
+        transform: translateY(-2px) scale(1.08);
+        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+    }
+
+    /* NO DATA STATE */
+    .no-data-cell {
+        text-align: center;
+        padding: 48px !important;
+        color: #64748b;
+    }
+
+    .no-data-icon {
+        font-size: 40px;
+        color: #cbd5e1;
+        margin-bottom: 12px;
+    }
+
+    /* PAGINATION FOOTER */
+    .pagination-footer-custom {
+        border-top: 1px solid #edf2f7;
+        padding: 16px 24px;
+        background-color: #fafbfc;
+    }
+
+    .pagination-container-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-nav-btn-custom {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 18px;
+        background-color: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .page-nav-btn-custom:hover:not(.disabled) {
+        background-color: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .page-nav-btn-custom.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-numbers-list {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .page-number-custom {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background-color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        text-decoration: none;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .page-number-custom:hover:not(.active) {
+        background-color: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+
+    .page-number-custom.active {
+        background: linear-gradient(135deg, var(--hm-navy), var(--hm-teal));
+        border: none;
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(0, 144, 161, 0.25);
+    }
+</style>
+
+<!-- SCRIPTS FOR FILTERS, SEARCH AND PAGINATION -->
+@section scripts {
+    <script>
+        // 1. Phản hồi gõ phím tìm kiếm
+        function handleSearchKeyPress(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        }
+
+        // 2. Gom tất cả filter và reload lại trang
+        function applyFilters(pageNumber) {
+            pageNumber = pageNumber || 1;
+            
+            var search = $('#topbarSearchInput').val() || "";
+            var deptId = $('#filterDept').val() || "0";
+            
+            var url = '@Url.Action("Index", "User")' 
+                + '?search=' + encodeURIComponent(search)
+                + '&departmentId=' + deptId
+                + '&page=' + pageNumber;
+                
+            window.location.href = url;
+        }
+
+        // 3. Hàm phân trang nhanh
+        function goToPage(page) {
+            applyFilters(page);
+        }
+
+        // 4. AJAX Xử lý xóa tài khoản
+        function deleteUserConfirm(userId, fullName) {
+            if (confirm("Bạn có chắc chắn muốn xóa tài khoản của '" + fullName + "' không?\nHành động này không thể hoàn tác.")) {
+                $.ajax({
+                    url: '@Url.Action("DeleteUser", "User")',
+                    type: 'POST',
+                    data: { id: userId },
+                    success: function (res) {
+                        if (res && res.success) {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thành công", res.message || "Xóa người dùng thành công!", "info");
+                            } else {
+                                alert(res.message || "Xóa người dùng thành công!");
+                            }
+                            // Reload danh sách sau 1 giây
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Lỗi thực thi", res.message || "Xóa thất bại.", "danger");
+                            } else {
+                                alert(res.message || "Xóa thất bại.");
+                            }
+                        }
+                    },
+                    error: function () {
+                        if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                            window.MedEquip.toast("Lỗi", "Không thể kết nối đến máy chủ để thực hiện xóa.", "danger");
+                        } else {
+                            alert("Không thể kết nối đến máy chủ để thực hiện xóa.");
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+}

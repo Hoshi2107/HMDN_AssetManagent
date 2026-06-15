@@ -792,9 +792,9 @@
                                 </div>
                             }
                             @if (isCurrentUserAdmin) {
-                                <div class="nav-item @(ViewBag.ActiveNav == "CreateUser" ? "active" : "")">
-                                    <a href="@Url.Action("CreateUser", "User")">
-                                        <i class="fa-solid fa-user-plus nav-icon"></i> <span class="nav-text">Tạo tài khoản</span>
+                                <div class="nav-item @(ViewBag.ActiveNav == "UserList" ? "active" : "")">
+                                    <a href="@Url.Action("Index", "User")">
+                                        <i class="fa-solid fa-users nav-icon"></i> <span class="nav-text">Danh sách người dùng</span>
                                     </a>
                                 </div>
                             }
