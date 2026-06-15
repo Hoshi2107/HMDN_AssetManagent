@@ -92,6 +92,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         AssigneeName = s.Assignee != null ? s.Assignee.FullName : "",
                         GroupId = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
                             ? s.Inventory.Item.Group.Id : 0,
+                        GroupCode = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
+                            ? s.Inventory.Item.Group.Code : "",
                         GroupName = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
                             ? s.Inventory.Item.Group.Name : "Chưa phân nhóm",
                         GroupIcon = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
@@ -117,6 +119,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.AssignedTo,
                         s.AssigneeName,
                         s.GroupId,
+                        s.GroupCode,
                         s.GroupName,
                         s.GroupIcon,
                         s.LifeStatus,
@@ -152,6 +155,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.AssignedTo,
                         s.AssigneeName,
                         s.GroupId,
+                        s.GroupCode,
                         s.GroupName,
                         s.GroupIcon,
                         s.LifeStatus,
@@ -737,6 +741,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Select(g => new
                     {
                         g.Id,
+                        g.Code,
                         g.Name,
                         g.Icon
                     })

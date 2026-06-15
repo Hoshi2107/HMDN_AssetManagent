@@ -367,6 +367,7 @@ new Vue({
                         GroupId: gId,
                         GroupName: s.GroupName || 'Chưa phân nhóm',
                         GroupIcon: s.GroupIcon || '📦',
+                        GroupCode: s.GroupCode || '',
                         CycleType: s.CycleType,
                         DepartmentName: 'Tất cả phòng ban',
                         Schedules: []
@@ -553,6 +554,8 @@ new Vue({
 
         isQuickPassAvailable(group) {
             if (!group || !group.Schedules) return false;
+            // Block quick pass for MEDICAL group
+            if (group.GroupCode === 'MEDICAL') return false;
             var size = group.Schedules.length;
             if (size < 1) return false;
             
@@ -567,6 +570,11 @@ new Vue({
         isBatchCheckEligible(group) {
             if (!group || !group.Schedules || group.Schedules.length === 0) return { eligible: false, reason: "Không có thiết bị." };
             
+            // Block batch check for MEDICAL group
+            if (group.GroupCode === 'MEDICAL') {
+                return { eligible: false, reason: "Thiết bị y tế có các hạng mục checklist riêng biệt cho từng loại máy, yêu cầu kiểm tra và đánh giá riêng lẻ từng thiết bị để đảm bảo an toàn." };
+            }
+
             var hasRestricted = group.Schedules.some(function (s) {
                 return s.Criticality === 'High' || s.Criticality === 'Critical';
             });
