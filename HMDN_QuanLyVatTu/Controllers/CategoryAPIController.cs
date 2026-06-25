@@ -246,6 +246,11 @@ BEGIN
     ALTER TABLE dbo.ChecklistDefinitions ADD CONSTRAINT FK_ChecklistDefinitions_Inventory FOREIGN KEY (InventoryId) REFERENCES dbo.Inventory(Id);
 END
 
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.ChecklistDefinitions') AND name = 'IsActive')
+BEGIN
+    ALTER TABLE dbo.ChecklistDefinitions ADD IsActive BIT NOT NULL DEFAULT 1;
+END
+
 IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ChecklistDefinitions_Scope')
 BEGIN
     ALTER TABLE dbo.ChecklistDefinitions DROP CONSTRAINT [CK_ChecklistDefinitions_Scope];
@@ -278,18 +283,44 @@ BEGIN
              OR (cd.Scope = ''item''  AND cd.ItemId  = @ItemId)
              OR (cd.Scope = ''inventory'' AND cd.InventoryId = @InventoryId)
               )
-        ORDER BY cd.Scope, cd.SortOrder;
+        ORDER BY cd.Scope, cd.SortOrder, cd.Id;
     END');
 END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_GetChecklistDefinitionsByGroup]') AND type in (N'P', N'PC'))
+BEGIN
+    EXEC('CREATE PROCEDURE [dbo].[sp_GetChecklistDefinitionsByGroup] @GroupId INT AS BEGIN SELECT 1 END');
+END
+EXEC('ALTER PROCEDURE [dbo].[sp_GetChecklistDefinitionsByGroup]
+    @GroupId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT *
+    FROM ChecklistDefinitions
+    WHERE IsActive = 1 AND (
+          Scope = ''global''
+       OR (GroupId = @GroupId AND Scope IN (''group'', ''item'', ''inventory''))
+    )
+    ORDER BY 
+        CASE Scope 
+            WHEN ''global'' THEN 0 
+            WHEN ''group'' THEN 1 
+            WHEN ''item'' THEN 2 
+            WHEN ''inventory'' THEN 3 
+            ELSE 4 
+        END,
+        SortOrder,
+        Id;
+END');
 ");
                 }
                 catch { }
 
-                var list = db.ChecklistDefinitions
-                    .Where(d => d.Scope == ChecklistScopes.Global || ((d.Scope == ChecklistScopes.Group || d.Scope == ChecklistScopes.Item || d.Scope == ChecklistScopes.Inventory) && d.GroupId == groupId))
-                    .OrderBy(d => d.Scope == ChecklistScopes.Global ? 0 : d.Scope == ChecklistScopes.Group ? 1 : d.Scope == ChecklistScopes.Item ? 2 : 3)
-                    .ThenBy(d => d.SortOrder)
-                    .ToList();
+                var list = db.Database.SqlQuery<ChecklistDefinition>(
+                    "EXEC sp_GetChecklistDefinitionsByGroup @GroupId",
+                    new SqlParameter("@GroupId", groupId)
+                ).ToList();
                 return Ok(list);
             }
             catch (Exception ex)
@@ -442,19 +473,28 @@ END
                 if (def.Scope == "global")
                     return Ok(new { success = false, message = "Không thể xóa hạng mục toàn cục từ đây." });
 
+                // Check dependency validation against all checklist-related tables referencing ChecklistDefinitions
                 bool hasLogs = db.ChecklistLogItems.Any(li => li.DefinitionId == id);
                 if (hasLogs)
                 {
+                    // References exist: block hard deletion, perform soft-delete/deactivation instead
+                    def.IsActive = false;
+                    db.SaveChanges();
                     return Ok(new { 
-                        success = false, 
-                        hasLinkedData = true,
-                        message = "Hạng mục này đã có dữ liệu kiểm tra. Không thể xóa. Bạn có muốn vô hiệu hóa?"
+                        success = true, 
+                        deleteMode = "soft delete",
+                        message = "Hạng mục này đã có dữ liệu kiểm tra liên quan nên hệ thống đã tự động vô hiệu hóa (xóa mềm) để bảo toàn lịch sử dữ liệu."
                     });
                 }
 
+                // No references: hard delete is allowed
                 db.ChecklistDefinitions.Remove(def);
                 db.SaveChanges();
-                return Ok(new { success = true, message = "Đã xóa hạng mục." });
+                return Ok(new { 
+                    success = true, 
+                    deleteMode = "hard delete",
+                    message = "Đã xóa hoàn toàn hạng mục checklist khỏi hệ thống." 
+                });
             }
             catch (Exception ex)
             {

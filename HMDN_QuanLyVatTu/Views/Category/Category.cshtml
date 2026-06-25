@@ -800,6 +800,9 @@
             font-family: inherit;
             transition: border .2s, box-shadow .2s;
             background: white;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
             .fg input:focus, .fg select:focus, .fg textarea:focus {
@@ -934,6 +937,76 @@
         flex: 1;
         min-height: 0;
         overflow: hidden;
+    }
+
+    /* Compact card/badge style for inventory-scoped checklists */
+    .inv-check-badge {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        gap: 8px;
+        margin-bottom: 6px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    
+    .inv-check-badge:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .inv-check-badge .actions-wrapper {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+        opacity: 0.8;
+        transition: opacity 0.15s ease;
+    }
+
+    .inv-check-badge:hover .actions-wrapper {
+        opacity: 1;
+    }
+
+    .inv-check-badge .btn-action {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 2px 4px;
+        font-size: 12px;
+        border-radius: 4px;
+        transition: background 0.15s;
+    }
+
+    .inv-check-badge .btn-action.edit:hover {
+        background: #dbeafe;
+    }
+
+    .inv-check-badge .btn-action.del:hover {
+        background: #fee2e2;
+    }
+
+    .inv-check-expand-btn {
+        background: none;
+        border: none;
+        color: #2563eb;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 2px 0;
+        align-self: flex-start;
+        transition: color 0.15s;
+    }
+
+    .inv-check-expand-btn:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
     }
 </style>
 
@@ -1393,74 +1466,111 @@
                 </div>
 
                 <div v-else
-                     style="max-height:70vh;overflow:auto">
+                     style="padding: 16px 20px;">
+                    <div class="table-card" style="max-height:65vh;overflow:auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã tài sản</th>
+                                    <th>Serial</th>
+                                    <th>SL</th>
+                                    <th>Vị trí</th>
+                                    <th>Ngày nhập</th>
+                                    <th>Bảo hành</th>
+                                    <th>Giá trị</th>
+                                    <th>Trạng thái</th>
+                                    <th>Cấu hình Checklist</th>
+                                </tr>
+                            </thead>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Mã tài sản</th>
-                                <th>Serial</th>
-                                <th>SL</th>
-                                <th>Vị trí</th>
-                                <th>Ngày nhập</th>
-                                <th>Bảo hành</th>
-                                <th>Giá trị</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
+                            <tbody>
 
-                        <tbody>
+                                <tr v-for="inv in detailInventories"
+                                    :key="inv.Id">
 
-                            <tr v-for="inv in detailInventories"
-                                :key="inv.Id">
+                                    <td>
+                                        <span class="td-code">
+                                            ${ inv.AssetCode }
+                                        </span>
+                                    </td>
 
-                                <td>
-                                    <span class="td-code">
-                                        ${ inv.AssetCode }
-                                    </span>
-                                </td>
+                                    <td>
+                                        ${ inv.SerialNumber || '—' }
+                                    </td>
 
-                                <td>
-                                    ${ inv.SerialNumber || '—' }
-                                </td>
+                                    <td>
+                                        ${ inv.Quantity }
+                                    </td>
 
-                                <td>
-                                    ${ inv.Quantity }
-                                </td>
+                                    <td>
+                                        ${ inv.LocationName || '—' }
+                                    </td>
 
-                                <td>
-                                    ${ inv.LocationName || '—' }
-                                </td>
+                                    <td>
+                                        ${ formatDate(inv.ImportDate) }
+                                    </td>
 
-                                <td>
-                                    ${ formatDate(inv.ImportDate) }
-                                </td>
+                                    <td>
+                                        ${ formatDate(inv.WarrantyExpiry) }
+                                    </td>
 
-                                <td>
-                                    ${ formatDate(inv.WarrantyExpiry) }
-                                </td>
+                                    <td>
+                                        ${ formatMoney(inv.TotalPrice) }
+                                    </td>
 
-                                <td>
-                                    ${ formatMoney(inv.TotalPrice) }
-                                </td>
+                                    <td>
 
-                                <td>
+                                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600"
+                                              :style="{background: inv.LifeStatus ? '#dcfce7' : '#fee2e2',
+                                                        color: inv.LifeStatus ? '#16a34a' : '#dc2626'}">
 
-                                    <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600"
-                                          :style="{background: inv.LifeStatus ? '#dcfce7' : '#fee2e2',
-                                                    color: inv.LifeStatus ? '#16a34a' : '#dc2626'}">
+                                            ${ activeGroup.IsActive ? 'Đang hoạt động' : 'Ngưng hoạt động' }
 
-                                        ${ activeGroup.IsActive ? 'Đang hoạt động' : 'Ngưng hoạt động' }
+                                        </span>
 
-                                    </span>
+                                    </td>
 
-                                </td>
+                                    <td style="text-align: left; padding: 10px; min-width: 280px; vertical-align: top;">
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <div v-for="def in (expandedInventories[inv.Id] ? checklistDefinitions.filter(d => d.Scope === 'inventory' && d.InventoryId === inv.Id) : checklistDefinitions.filter(d => d.Scope === 'inventory' && d.InventoryId === inv.Id).slice(0, 3))" 
+                                                 :key="def.Id" 
+                                                 class="inv-check-badge">
+                                                <span style="font-weight: 500; text-align: left; flex: 1; line-height: 1.3;">
+                                                    ${ def.CheckName }
+                                                    <span style="font-size: 10px; opacity: 0.75; font-style: italic; display: block; margin-top: 1px;">
+                                                        (${ def.CycleType === 'daily' ? 'Hàng ngày' : def.CycleType === 'weekly' ? 'Hàng tuần' : def.CycleType === 'monthly' ? 'Hàng tháng' : def.CycleType === 'yearly' ? 'Hàng năm' : 'Mọi chu kỳ' })
+                                                    </span>
+                                                </span>
+                                                <div class="actions-wrapper">
+                                                    <button class="btn-action edit" v-on:click="openEditDefinition(def)" title="Sửa">✏️</button>
+                                                    <button class="btn-action del" v-on:click="openDeleteDefinition(def)" title="Xoá">🗑️</button>
+                                                </div>
+                                            </div>
 
-                            </tr>
+                                            <button v-if="checklistDefinitions.filter(d => d.Scope === 'inventory' && d.InventoryId === inv.Id).length > 3" 
+                                                    class="inv-check-expand-btn" 
+                                                    v-on:click="toggleExpandInventory(inv.Id)">
+                                                ${ expandedInventories[inv.Id] ? 'Thu gọn...' : 'Xem thêm ' + (checklistDefinitions.filter(d => d.Scope === 'inventory' && d.InventoryId === inv.Id).length - 3) + ' mục...' }
+                                            </button>
 
-                        </tbody>
-                    </table>
+                                            <div v-if="checklistDefinitions.filter(d => d.Scope === 'inventory' && d.InventoryId === inv.Id).length === 0" 
+                                                 style="color: #94a3b8; font-size: 12px; padding: 6px 0; display: flex; align-items: center; gap: 6px;">
+                                                📋 Chưa cấu hình checklist riêng
+                                            </div>
 
+                                            <button class="btn-add-item" 
+                                                    style="padding: 4px 8px; font-size: 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; height: 26px; line-height: 1; align-self: flex-start; margin-top: 4px; background: #2563eb; color: white;" 
+                                                    v-on:click="openAddInventoryDefinition(inv)">
+                                                ➕ Add Checklist
+                                            </button>
+                                        </div>
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
@@ -1605,7 +1715,7 @@
                     
                     <div class="fg">
                         <label>Phạm vi áp dụng</label>
-                        <select v-model="definitionForm.Scope" v-on:change="onDefinitionScopeChange">
+                        <select v-model="definitionForm.Scope" v-on:change="onDefinitionScopeChange" :disabled="isLockScope">
                             <option value="group">Cả nhóm</option>
                             <option value="item">Loại thiết bị cụ thể</option>
                             <option value="inventory">Thiết bị riêng biệt (Tài sản)</option>
@@ -1614,7 +1724,7 @@
 
                     <div class="fg" v-if="definitionForm.Scope === 'item' || definitionForm.Scope === 'inventory'">
                         <label>Chọn loại thiết bị <span style="color:red">*</span></label>
-                        <select v-model="definitionForm.ItemId" v-on:change="onDefinitionItemChange">
+                        <select v-model="definitionForm.ItemId" v-on:change="onDefinitionItemChange" :disabled="isLockScope">
                             <option value="">-- Chọn loại thiết bị --</option>
                             <option v-for="it in items" :key="it.Id" :value="it.Id">${ it.Name }</option>
                         </select>
@@ -1622,7 +1732,7 @@
 
                     <div class="fg" v-if="definitionForm.Scope === 'inventory'">
                         <label>Chọn thiết bị cụ thể <span style="color:red">*</span></label>
-                        <select v-model="definitionForm.InventoryId">
+                        <select v-model="definitionForm.InventoryId" :disabled="isLockScope">
                             <option value="">-- Chọn thiết bị cụ thể --</option>
                             <option v-for="inv in definitionFormInventories" :key="inv.Id" :value="inv.Id">${ inv.AssetCode } - ${ inv.LocationName || 'Chưa phân vị trí' } (${ inv.SerialNumber || 'Không S/N' })</option>
                         </select>
@@ -1670,15 +1780,12 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         MODAL: XÁC NHẬN XOÁ HẠNG MỤC CHECKLIST
-    ══════════════════════════════════════ -->
     <div class="modal-overlay" v-if="showDeleteDefModal" v-on:click.self="showDeleteDefModal = false">
         <div class="confirm-modal">
             <div class="confirm-body">
                 <div class="ci">⚠️</div>
-                <h3>Xác nhận xoá hạng mục</h3>
-                <p>Bạn chắc muốn xoá hạng mục <strong>${ deleteDefTarget ? deleteDefTarget.CheckName : '' }</strong>?<br>Hành động này không thể hoàn tác.</p>
+                <h3>Are you sure you want to delete this checklist?</h3>
+                <p>Bạn có chắc chắn muốn xoá hạng mục checklist này?<br>Hành động này không thể hoàn tác.</p>
             </div>
             <div class="confirm-footer">
                 <button class="btn-cancel" v-on:click="showDeleteDefModal = false">Không</button>

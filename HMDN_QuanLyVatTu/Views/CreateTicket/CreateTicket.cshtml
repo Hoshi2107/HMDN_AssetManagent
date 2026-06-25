@@ -1111,7 +1111,7 @@
 <div id="app" v-cloak>
     <!-- HEADER -->
     <div class="pg-head">
-        <button class="back-btn" @@click="goBack" title="Quay lại"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="back-btn" v-on:click="goBack" title="Quay lại"><i class="fa-solid fa-arrow-left"></i></button>
         <div>
             <h1 class="pg-title">Tạo phiếu mới (Yêu cầu)</h1>
             <p style="font-size:12.5px;color:var(--hm-text-sec);margin-top:2px;">Tạo phiếu yêu cầu nghiệp vụ nhập kho, xuất kho hoặc điều chuyển vật tư y tế.</p>
@@ -1269,7 +1269,7 @@
                                 <input type="text" class="f-input" v-model="newDevice.note" placeholder="Vị trí lắp đặt, lý do..." />
                             </div>
                             <div class="f-group">
-                                <button type="button" class="btn-submit" style="height: 44px; padding: 0 20px; border-radius: 10px; margin-top: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;" @@click="addDeviceToList">
+                                <button type="button" class="btn-submit" style="height: 44px; padding: 0 20px; border-radius: 10px; margin-top: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;" v-on:click="addDeviceToList">
                                     <i class="fa-solid fa-plus" style="margin: 0; font-size: 14px;"></i> Thêm
                                 </button>
                             </div>
@@ -1296,7 +1296,7 @@
                                         <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.unit || 'Cái' }</td>
                                         <td style="padding: 14px 16px; color: var(--hm-text-sec);">${ dev.note || '-' }</td>
                                         <td style="padding: 14px 16px; text-align: center;">
-                                            <button type="button" style="background: none; border: none; color: var(--hm-danger); cursor: pointer; font-size: 14.5px; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" @@click="removeDeviceFromList(idx)" title="Xóa">
+                                            <button type="button" style="background: none; border: none; color: var(--hm-danger); cursor: pointer; font-size: 14.5px; padding: 4px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" v-on:click="removeDeviceFromList(idx)" title="Xóa">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </td>
@@ -1387,7 +1387,7 @@
                                 <input type="text" class="f-input" v-model="newPrItem.ghiChu" placeholder="Email, vị trí lắp, lý do..." />
                             </div>
                             <div class="f-group">
-                                <button type="button" class="btn-submit" style="height:44px;padding:0 20px;border-radius:10px;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" @@click="addPrItem">
+                                <button type="button" class="btn-submit" style="height:44px;padding:0 20px;border-radius:10px;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;" v-on:click="addPrItem">
                                     <i class="fa-solid fa-plus" style="font-size:14px;"></i> Thêm
                                 </button>
                             </div>
@@ -1422,7 +1422,7 @@
                                             <input class="pr-inline-input" type="text" v-model="it.ghiChu" placeholder="Ghi chú..." />
                                         </td>
                                         <td style="text-align:center;">
-                                            <button type="button" style="background:none;border:none;color:var(--hm-danger);cursor:pointer;font-size:15px;padding:4px;transition:transform .2s;" @@click="removePrItem(i)" title="Xóa dòng">
+                                            <button type="button" style="background:none;border:none;color:var(--hm-danger);cursor:pointer;font-size:15px;padding:4px;transition:transform .2s;" v-on:click="removePrItem(i)" title="Xóa dòng">
                                                 <i class="fa-regular fa-trash-can"></i>
                                             </button>
                                         </td>
@@ -1492,17 +1492,17 @@
                 </div>
                 <!-- Tabs -->
                 <div class="attach-tabs">
-                    <div :class="['attach-tab', attachTab === 'image' ? 'active' : '']" @@click="attachTab='image'">
+                    <div :class="['attach-tab', attachTab === 'image' ? 'active' : '']" v-on:click="attachTab='image'">
                         <i class="fa-regular fa-image"></i>Ảnh/Video
                     </div>
-                    <div :class="['attach-tab', attachTab === 'file' ? 'active' : '']" @@click="attachTab='file'">
+                    <div :class="['attach-tab', attachTab === 'file' ? 'active' : '']" v-on:click="attachTab='file'">
                         <i class="fa-regular fa-file"></i>File
                     </div>
                 </div>
                 <!-- Drop Zone -->
                 <div class="drop-zone"
                      :class="{ 'drag-over': isDragging }"
-                     @@click="$refs.dropInput.click()"
+                     v-on:click="$refs.dropInput.click()"
                      @@dragover.prevent="isDragging = true"
                      @@dragleave.prevent="isDragging = false"
                      @@drop.prevent="handleDrop">
@@ -1512,6 +1512,7 @@
                     <span class="drop-hint" v-else>Chỉ tải lên Tài liệu (PDF, DOCX, XLSX, TXT, ZIP)</span>
                 </div>
                 <input type="file" ref="dropInput" style="display:none;" @@change="handleDropInput" multiple :accept="attachTab === 'image' ? 'image/*,video/*' : '.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt'" />
+                <!-- File lists filtered by active tab -->
                 <!-- Image list (Grid Preview) -->
                 <div class="preview-grid" v-if="attachTab === 'image' && attachedImages.length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px; margin-top: 15px;">
                     <div class="preview-item" v-for="(f, i) in attachedImages" :key="i" style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -1520,7 +1521,7 @@
                             <video :src="f.url" style="width: 100%; height: 100%; object-fit: cover;"></video>
                             <i class="fa-solid fa-circle-play" style="position: absolute; font-size: 20px; color: rgba(255,255,255,0.8); z-index: 1;"></i>
                         </div>
-                        <button type="button" class="fremove" @@click.stop="removeImage(i)" title="Xóa" style="position: absolute; top: 4px; right: 4px; background: rgba(15, 23, 42, 0.65); border: none; color: #ffffff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; z-index: 2; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#ef4444'" onmouseout="this.style.backgroundColor='rgba(15, 23, 42, 0.65)'">
+                        <button type="button" class="fremove" v-on:click.stop="removeImage(i)" title="Xóa" style="position: absolute; top: 4px; right: 4px; background: rgba(15, 23, 42, 0.65); border: none; color: #ffffff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; z-index: 2; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#ef4444'" onmouseout="this.style.backgroundColor='rgba(15, 23, 42, 0.65)'">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -1531,7 +1532,7 @@
                         <i class="fa-regular fa-file" style="color: var(--hm-navy); font-size: 16px;"></i>
                         <span class="fname">${ f.name }</span>
                         <span class="fsize">${ formatSize(f.size) }</span>
-                        <button class="fremove" @@click="removeFile(i)" title="Xóa"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="fremove" v-on:click="removeFile(i)" title="Xóa"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
             </div>
@@ -1541,8 +1542,8 @@
 
     <!-- BOTTOM BAR -->
     <div class="bottom-bar">
-        <button class="btn-cancel" @@click="goBack">Hủy bỏ</button>
-        <button class="btn-submit" @@click="submitTicket" :disabled="isSubmitting">
+        <button class="btn-cancel" v-on:click="goBack">Hủy bỏ</button>
+        <button class="btn-submit" v-on:click="submitTicket" :disabled="isSubmitting">
             <span v-if="isSubmitting">Đang gửi...</span>
             <span v-else>Gửi yêu cầu</span>
             <i class="fa-solid fa-play" v-if="!isSubmitting"></i>
@@ -1567,6 +1568,13 @@
                 dbItems: [],
                 inventoryAssets: [],
                 searchQuery: '',
+                
+                // Attachments
+                attachTab: 'image',
+                attachedImages: [],
+                attachedFiles: [],
+                isDragging: false,
+
                 newDevice: {
                     itemName: '',
                     serialNumber: '',
@@ -1599,6 +1607,7 @@
 
                 isSubmitting: false,
 
+                // Attachment panel
                 attachTab: 'image',
                 isDragging: false,
                 attachedImages: [],
@@ -1680,8 +1689,11 @@
                     fetch('/CreateTicket/GetActiveDepartments')
                         .then(function (r) { return r.json(); })
                         .then(function (res) {
-                            if (res.error) { console.error(res.error); }
-                            else { vm.listDepartments = res; }
+                            if (res.error) {
+                                console.error(res.error);
+                            } else {
+                                vm.listDepartments = res;
+                            }
                         })
                         .catch(function (err) { console.error('Không thể kết nối lấy danh sách phòng ban:', err); });
                 },
@@ -1969,6 +1981,7 @@
                             }
                         }
                     }
+
                 }
             },
             watch: {
@@ -2022,6 +2035,9 @@
                 this.loadInventoryAssets();
                 document.addEventListener('click', this.handleOutsideClick);
                 this.parseEarlyParams();
+                
+                // Đọc query params của checklist redirect
+                this.checkChecklistRedirect();
             },
             beforeDestroy() {
                 document.removeEventListener('click', this.handleOutsideClick);

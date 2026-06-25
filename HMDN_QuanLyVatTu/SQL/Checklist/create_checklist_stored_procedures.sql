@@ -38,8 +38,38 @@ BEGIN
             (cd.Scope = 'global')
          OR (cd.Scope = 'group' AND cd.GroupId = @GroupId)
          OR (cd.Scope = 'item'  AND cd.ItemId  = @ItemId)
+         OR (cd.Scope = 'inventory' AND cd.InventoryId = @InventoryId)
           )
-    ORDER BY cd.Scope, cd.SortOrder;
+    ORDER BY cd.Scope, cd.SortOrder, cd.Id;
+END;
+GO
+
+-- 2b. CREATE PROCEDURE: sp_GetChecklistDefinitionsByGroup
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_GetChecklistDefinitionsByGroup]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_GetChecklistDefinitionsByGroup];
+GO
+
+CREATE PROCEDURE [dbo].[sp_GetChecklistDefinitionsByGroup]
+    @GroupId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT *
+    FROM ChecklistDefinitions
+    WHERE IsActive = 1 AND (
+          Scope = 'global'
+       OR (GroupId = @GroupId AND Scope IN ('group', 'item', 'inventory'))
+    )
+    ORDER BY 
+        CASE Scope 
+            WHEN 'global' THEN 0 
+            WHEN 'group' THEN 1 
+            WHEN 'item' THEN 2 
+            WHEN 'inventory' THEN 3 
+            ELSE 4 
+        END,
+        SortOrder,
+        Id;
 END;
 GO
 

@@ -71,6 +71,8 @@ var appCatalog = new Vue({
         isSavingDefinition: false,
         showDeleteDefModal: false,
         deleteDefTarget: null,
+        expandedInventories: {},
+        isLockScope: false,
 
         toast: { show: false, msg: '' }
     },
@@ -332,6 +334,27 @@ var appCatalog = new Vue({
             this.detailInventories = [];
             this.detailItem = {};
 
+        },
+
+        openAddInventoryDefinition(inv) {
+            this.isLockScope = true;
+            this.isEditDefinition = false;
+            this.definitionFormInventories = [];
+            this.definitionForm = {
+                Id: 0,
+                GroupId: this.activeGroup.Id,
+                Scope: 'inventory',
+                ItemId: this.detailItem.Id,
+                InventoryId: inv.Id,
+                CycleType: '',
+                CheckName: '',
+                Description: '',
+                IsRequired: true,
+                SortOrder: this.checklistDefinitions.filter(d => d.Scope === 'inventory').length + 1,
+                IsActive: true
+            };
+            this.loadItemInventories(this.detailItem.Id);
+            this.showDefinitionForm = true;
         },
 
         // ── LOAD ──
@@ -724,6 +747,7 @@ var appCatalog = new Vue({
         },
 
         openAddDefinition() {
+            this.isLockScope = false;
             this.isEditDefinition = false;
             this.definitionFormInventories = [];
             this.definitionForm = {
@@ -744,6 +768,7 @@ var appCatalog = new Vue({
 
         openEditDefinition(def) {
             if (def.Scope === 'global') return;
+            this.isLockScope = true;
             this.isEditDefinition = true;
             this.definitionFormInventories = [];
             this.definitionForm = {
@@ -834,20 +859,15 @@ var appCatalog = new Vue({
                 success: (res) => {
                     this.showDeleteDefModal = false;
                     if (res.success) {
-                        this.showToast('🗑️ Đã xóa hạng mục!');
+                        this.showToast(res.message || '🗑️ Đã xử lý thành công!');
                         this.loadChecklistDefinitions(this.activeGroup.Id);
-                    } else if (res.hasLinkedData) {
-                        // Chặn xóa do có dữ liệu log liên kết, hiện confirm vô hiệu hóa
-                        if (confirm(res.message)) {
-                            this.disableDefinition(this.deleteDefTarget.Id);
-                        }
                     } else {
-                        this.showToast('❌ ' + res.message);
+                        this.showToast('❌ ' + (res.message || 'Không thể xóa!'));
                     }
                 },
-                error: () => {
+                error: (xhr) => {
                     this.showDeleteDefModal = false;
-                    this.showToast('❌ Không thể xóa!');
+                    this.showToast('❌ ' + (xhr.responseJSON?.message || 'Không thể xóa!'));
                 }
             });
         },
@@ -912,6 +932,10 @@ var appCatalog = new Vue({
         getInventoryAssetCode(inventoryId) {
             const inv = this.inventories.find(x => x.Id === inventoryId);
             return inv ? inv.AssetCode : ('ID: ' + inventoryId);
+        },
+
+        toggleExpandInventory(invId) {
+            this.$set(this.expandedInventories, invId, !this.expandedInventories[invId]);
         }
     },
 
