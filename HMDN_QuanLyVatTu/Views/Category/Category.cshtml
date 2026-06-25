@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Quản lý Danh mục";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -1162,8 +1162,8 @@
                                     <tr v-for="def in checklistDefinitions" :key="def.Id">
                                         <td>
                                             <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;"
-                                                  :style="{ background: def.Scope === 'global' ? '#f1f5f9' : '#dbeafe', color: def.Scope === 'global' ? '#475569' : '#1d4ed8' }">
-                                                ${ def.Scope === 'global' ? '🔒 Toàn cục' : 'Nhóm' }
+                                                  :style="{ background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe', color: def.Scope === 'global' ? '#475569' : def.Scope === 'item' ? '#d97706' : '#1d4ed8' }">
+                                                ${ def.Scope === 'global' ? '🔒 Toàn cục' : def.Scope === 'item' ? 'Thiết bị: ' + getItemName(def.ItemId) : 'Cả nhóm' }
                                             </span>
                                         </td>
                                         <td>
@@ -1592,6 +1592,22 @@
                         <input type="text" v-model="definitionForm.CheckName" placeholder="VD: Kiểm tra nguồn, Kiểm tra màn hình...">
                     </div>
                     
+                    <div class="fg">
+                        <label>Phạm vi áp dụng</label>
+                        <select v-model="definitionForm.Scope">
+                            <option value="group">Cả nhóm</option>
+                            <option value="item">Loại thiết bị cụ thể</option>
+                        </select>
+                    </div>
+
+                    <div class="fg" v-if="definitionForm.Scope === 'item'">
+                        <label>Chọn loại thiết bị <span style="color:red">*</span></label>
+                        <select v-model="definitionForm.ItemId">
+                            <option value="">-- Chọn loại thiết bị --</option>
+                            <option v-for="it in items" :key="it.Id" :value="it.Id">${ it.Name }</option>
+                        </select>
+                    </div>
+
                     <div class="fg">
                         <label>Chu kỳ áp dụng</label>
                         <select v-model="definitionForm.CycleType">

@@ -1515,7 +1515,7 @@
                                 <button type="button" class="cl-toggle-btn fail" :class="{active: item.isPassed === false}" @@click="setItemPassed(idx, false)">
                                     <i class="fa-solid fa-circle-xmark"></i> Lỗi
                                 </button>
-                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi nếu có..." style="height:36px; width:180px; font-size:12.5px;" v-model="item.note" />
+                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi nếu có..." :style="{ height: '36px', width: '180px', fontSize: '12.5px', borderColor: (item.isPassed === false && (!item.note || !item.note.trim())) ? '#dc2626' : '' }" v-model="item.note" />
                             </div>
                         </div>
                     </div>

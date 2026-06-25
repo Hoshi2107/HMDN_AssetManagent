@@ -281,6 +281,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                         {
                             foreach (var item in payload.Items)
                             {
+                                if (item.IsPassed == false && string.IsNullOrWhiteSpace(item.Note))
+                                {
+                                    transaction.Rollback();
+                                    return Ok(new { success = false, message = "Các hạng mục báo lỗi bắt buộc phải có ghi chú mô tả chi tiết lỗi." });
+                                }
+
                                 var logItem = new ChecklistLogItem
                                 {
                                     LogId = log.Id,

@@ -727,6 +727,8 @@ var appCatalog = new Vue({
             this.definitionForm = {
                 Id: 0,
                 GroupId: this.activeGroup.Id,
+                Scope: 'group',
+                ItemId: '',
                 CycleType: '',
                 CheckName: '',
                 Description: '',
@@ -743,6 +745,8 @@ var appCatalog = new Vue({
             this.definitionForm = {
                 Id: def.Id,
                 GroupId: def.GroupId,
+                Scope: def.Scope || 'group',
+                ItemId: (def.ItemId !== null && def.ItemId !== undefined) ? def.ItemId : '',
                 CycleType: def.CycleType || '',
                 CheckName: def.CheckName,
                 Description: def.Description || '',
@@ -756,6 +760,10 @@ var appCatalog = new Vue({
         saveDefinition() {
             if (!this.definitionForm.CheckName.trim()) {
                 this.showToast('⚠️ Tên hạng mục không được để trống!');
+                return;
+            }
+            if (this.definitionForm.Scope === 'item' && !this.definitionForm.ItemId) {
+                this.showToast('⚠️ Vui lòng chọn loại thiết bị cụ thể!');
                 return;
             }
             this.isSavingDefinition = true;
@@ -840,6 +848,12 @@ var appCatalog = new Vue({
                     this.showToast('❌ Không thể vô hiệu hóa!');
                 }
             });
+        },
+
+        getItemName(itemId) {
+            if (!itemId) return '';
+            const item = this.items.find(x => x.Id === itemId);
+            return item ? item.Name : ('ID: ' + itemId);
         },
     },
 

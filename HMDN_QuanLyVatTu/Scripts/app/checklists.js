@@ -1368,6 +1368,24 @@ new Vue({
         },
 
         bulkSetAllPassed() {
+            var hasFailed = this.checklistItems.some(function (item) { return item.isPassed === false; });
+            if (hasFailed) {
+                if (confirm("⚠️ Phát hiện một số hạng mục đang được đánh dấu là LỖI.\n\nBạn có muốn GIỮ LẠI các hạng mục LỖI này và chỉ tự động điền ĐẠT cho các mục còn lại không?\n(Bấm OK để Giữ lỗi + Điền đạt các mục còn lại. Bấm Cancel để xem tùy chọn Ghi đè TẤT CẢ thành ĐẠT)")) {
+                    var updatedCount = 0;
+                    this.checklistItems.forEach(function (item) {
+                        if (item.isPassed === null) {
+                            item.isPassed = true;
+                            updatedCount++;
+                        }
+                    });
+                    this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho các hạng mục còn lại.', 'success');
+                    return;
+                } else {
+                    if (!confirm("⚠️ Bạn có chắc chắn muốn GHI ĐÈ toàn bộ hạng mục (bao gồm cả các hạng mục đang báo LỖI) thành ĐẠT không?")) {
+                        return;
+                    }
+                }
+            }
             this.checklistItems.forEach(function (item) {
                 item.isPassed = true;
             });
@@ -1399,6 +1417,16 @@ new Vue({
 
             if (missing.length > 0) {
                 vm.toast('Cảnh báo', 'Vui lòng đánh giá đầy đủ các hạng mục bắt buộc (*) trước khi lưu.', 'warning');
+                return;
+            }
+
+            // Kiểm tra ghi chú bắt buộc đối với các mục báo LỖI
+            var missingNotes = vm.checklistItems.filter(function (item) {
+                return item.isPassed === false && (!item.note || !item.note.trim());
+            });
+
+            if (missingNotes.length > 0) {
+                vm.toast('Cảnh báo', 'Vui lòng nhập ghi chú mô tả lỗi cho các hạng mục bị LỖI.', 'warning');
                 return;
             }
 

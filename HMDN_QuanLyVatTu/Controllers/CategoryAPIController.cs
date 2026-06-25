@@ -237,8 +237,8 @@ namespace HMDN.Controllers.API
             try
             {
                 var list = db.ChecklistDefinitions
-                    .Where(d => d.Scope == "global" || (d.Scope == "group" && d.GroupId == groupId))
-                    .OrderBy(d => d.Scope == "global" ? 0 : 1)
+                    .Where(d => d.Scope == ChecklistScopes.Global || ((d.Scope == ChecklistScopes.Group || d.Scope == ChecklistScopes.Item) && d.GroupId == groupId))
+                    .OrderBy(d => d.Scope == ChecklistScopes.Global ? 0 : d.Scope == ChecklistScopes.Group ? 1 : 2)
                     .ThenBy(d => d.SortOrder)
                     .ToList();
                 return Ok(list);
@@ -259,6 +259,55 @@ namespace HMDN.Controllers.API
                 if (dto == null) return BadRequest("Dữ liệu không hợp lệ");
                 if (string.IsNullOrEmpty(dto.CheckName)) return BadRequest("Tên hạng mục không được để trống");
 
+                string scopeVal = string.IsNullOrEmpty(dto.Scope) ? ChecklistScopes.Group : dto.Scope.ToLower();
+                if (scopeVal != ChecklistScopes.Group && scopeVal != ChecklistScopes.Item && scopeVal != ChecklistScopes.Global)
+                {
+                    scopeVal = ChecklistScopes.Group;
+                }
+
+                if (scopeVal == ChecklistScopes.Item)
+                {
+                    if (dto.ItemId == null || dto.ItemId <= 0)
+                    {
+                        return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Loại thiết bị cụ thể là bắt buộc khi chọn phạm vi thiết bị." });
+                    }
+                }
+
+                // Check duplicate check name in the same scope of application
+                string checkNameTrim = dto.CheckName.Trim();
+                bool isDuplicate = false;
+                if (scopeVal == ChecklistScopes.Global)
+                {
+                    isDuplicate = db.ChecklistDefinitions.Any(d => 
+                        d.Id != dto.Id && 
+                        d.IsActive && 
+                        d.Scope == ChecklistScopes.Global && 
+                        d.CheckName.ToLower() == checkNameTrim.ToLower());
+                }
+                else if (scopeVal == ChecklistScopes.Group)
+                {
+                    isDuplicate = db.ChecklistDefinitions.Any(d => 
+                        d.Id != dto.Id && 
+                        d.IsActive && 
+                        d.Scope == ChecklistScopes.Group && 
+                        d.GroupId == dto.GroupId && 
+                        d.CheckName.ToLower() == checkNameTrim.ToLower());
+                }
+                else if (scopeVal == ChecklistScopes.Item)
+                {
+                    isDuplicate = db.ChecklistDefinitions.Any(d => 
+                        d.Id != dto.Id && 
+                        d.IsActive && 
+                        d.Scope == ChecklistScopes.Item && 
+                        d.ItemId == dto.ItemId && 
+                        d.CheckName.ToLower() == checkNameTrim.ToLower());
+                }
+
+                if (isDuplicate)
+                {
+                    return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Tên hạng mục kiểm tra này đã tồn tại trong phạm vi áp dụng." });
+                }
+
                 string cycle = null;
                 if (!string.IsNullOrEmpty(dto.CycleType))
                 {
@@ -273,15 +322,16 @@ namespace HMDN.Controllers.API
                 {
                     var def = new ChecklistDefinition
                     {
-                         Scope = "group",
-                         GroupId = dto.GroupId,
-                         CycleType = cycle,
-                         CheckName = dto.CheckName.Trim(),
-                         Description = dto.Description?.Trim(),
-                         IsRequired = dto.IsRequired,
-                         SortOrder = dto.SortOrder,
-                         IsActive = dto.IsActive,
-                         CreatedAt = DateTime.Now
+                          Scope = scopeVal,
+                          GroupId = dto.GroupId,
+                          ItemId = (scopeVal == ChecklistScopes.Item) ? dto.ItemId : null,
+                          CycleType = cycle,
+                          CheckName = checkNameTrim,
+                          Description = dto.Description?.Trim(),
+                          IsRequired = dto.IsRequired,
+                          SortOrder = dto.SortOrder,
+                          IsActive = dto.IsActive,
+                          CreatedAt = DateTime.Now
                     };
                     db.ChecklistDefinitions.Add(def);
                     db.SaveChanges();
@@ -293,8 +343,10 @@ namespace HMDN.Controllers.API
                     if (def == null) return NotFound();
                     if (def.Scope == "global") return BadRequest("Không thể sửa hạng mục toàn cục từ đây");
 
+                    def.Scope = scopeVal;
+                    def.ItemId = (scopeVal == ChecklistScopes.Item) ? dto.ItemId : null;
                     def.CycleType = cycle;
-                    def.CheckName = dto.CheckName.Trim();
+                    def.CheckName = checkNameTrim;
                     def.Description = dto.Description?.Trim();
                     def.IsRequired = dto.IsRequired;
                     def.SortOrder = dto.SortOrder;
@@ -368,6 +420,8 @@ namespace HMDN.Controllers.API
     {
         public int Id { get; set; }
         public int GroupId { get; set; }
+        public string Scope { get; set; }
+        public int? ItemId { get; set; }
         public string CycleType { get; set; }
         public string CheckName { get; set; }
         public string Description { get; set; }
