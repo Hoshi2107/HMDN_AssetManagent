@@ -236,9 +236,58 @@ namespace HMDN.Controllers.API
         {
             try
             {
+                // Run one-time database migration logic to support inventory-scoped checklists
+                try
+                {
+                    db.Database.ExecuteSqlCommand(@"
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.ChecklistDefinitions') AND name = 'InventoryId')
+BEGIN
+    ALTER TABLE dbo.ChecklistDefinitions ADD InventoryId INT NULL;
+    ALTER TABLE dbo.ChecklistDefinitions ADD CONSTRAINT FK_ChecklistDefinitions_Inventory FOREIGN KEY (InventoryId) REFERENCES dbo.Inventory(Id);
+END
+
+IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ChecklistDefinitions_Scope')
+BEGIN
+    ALTER TABLE dbo.ChecklistDefinitions DROP CONSTRAINT [CK_ChecklistDefinitions_Scope];
+END
+ALTER TABLE dbo.ChecklistDefinitions ADD CONSTRAINT [CK_ChecklistDefinitions_Scope] CHECK ([Scope]='item' OR [Scope]='group' OR [Scope]='global' OR [Scope]='inventory');
+
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_GetChecklistForInventory]') AND type in (N'P', N'PC'))
+BEGIN
+    EXEC('ALTER PROCEDURE [dbo].[sp_GetChecklistForInventory]
+        @InventoryId INT,
+        @CycleType   VARCHAR(20) = NULL
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+        DECLARE @ItemId INT, @GroupId INT;
+        
+        SELECT @ItemId = inv.ItemId, @GroupId = gr.Id
+        FROM Inventory inv
+            JOIN Items  it ON inv.ItemId = it.Id
+            JOIN Groups gr ON it.GroupId = gr.Id
+        WHERE inv.Id = @InventoryId;
+
+        SELECT cd.*
+        FROM ChecklistDefinitions cd
+        WHERE cd.IsActive = 1
+          AND (cd.CycleType IS NULL OR @CycleType IS NULL OR cd.CycleType = @CycleType)
+          AND (
+                (cd.Scope = ''global'')
+             OR (cd.Scope = ''group'' AND cd.GroupId = @GroupId)
+             OR (cd.Scope = ''item''  AND cd.ItemId  = @ItemId)
+             OR (cd.Scope = ''inventory'' AND cd.InventoryId = @InventoryId)
+              )
+        ORDER BY cd.Scope, cd.SortOrder;
+    END');
+END
+");
+                }
+                catch { }
+
                 var list = db.ChecklistDefinitions
-                    .Where(d => d.Scope == ChecklistScopes.Global || ((d.Scope == ChecklistScopes.Group || d.Scope == ChecklistScopes.Item) && d.GroupId == groupId))
-                    .OrderBy(d => d.Scope == ChecklistScopes.Global ? 0 : d.Scope == ChecklistScopes.Group ? 1 : 2)
+                    .Where(d => d.Scope == ChecklistScopes.Global || ((d.Scope == ChecklistScopes.Group || d.Scope == ChecklistScopes.Item || d.Scope == ChecklistScopes.Inventory) && d.GroupId == groupId))
+                    .OrderBy(d => d.Scope == ChecklistScopes.Global ? 0 : d.Scope == ChecklistScopes.Group ? 1 : d.Scope == ChecklistScopes.Item ? 2 : 3)
                     .ThenBy(d => d.SortOrder)
                     .ToList();
                 return Ok(list);
@@ -260,7 +309,7 @@ namespace HMDN.Controllers.API
                 if (string.IsNullOrEmpty(dto.CheckName)) return BadRequest("Tên hạng mục không được để trống");
 
                 string scopeVal = string.IsNullOrEmpty(dto.Scope) ? ChecklistScopes.Group : dto.Scope.ToLower();
-                if (scopeVal != ChecklistScopes.Group && scopeVal != ChecklistScopes.Item && scopeVal != ChecklistScopes.Global)
+                if (scopeVal != ChecklistScopes.Group && scopeVal != ChecklistScopes.Item && scopeVal != ChecklistScopes.Global && scopeVal != ChecklistScopes.Inventory)
                 {
                     scopeVal = ChecklistScopes.Group;
                 }
@@ -270,6 +319,13 @@ namespace HMDN.Controllers.API
                     if (dto.ItemId == null || dto.ItemId <= 0)
                     {
                         return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Loại thiết bị cụ thể là bắt buộc khi chọn phạm vi thiết bị." });
+                    }
+                }
+                else if (scopeVal == ChecklistScopes.Inventory)
+                {
+                    if (dto.InventoryId == null || dto.InventoryId <= 0)
+                    {
+                        return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Thiết bị cụ thể (Tài sản) là bắt buộc khi chọn phạm vi thiết bị riêng." });
                     }
                 }
 
@@ -302,6 +358,15 @@ namespace HMDN.Controllers.API
                         d.ItemId == dto.ItemId && 
                         d.CheckName.ToLower() == checkNameTrim.ToLower());
                 }
+                else if (scopeVal == ChecklistScopes.Inventory)
+                {
+                    isDuplicate = db.ChecklistDefinitions.Any(d => 
+                        d.Id != dto.Id && 
+                        d.IsActive && 
+                        d.Scope == ChecklistScopes.Inventory && 
+                        d.InventoryId == dto.InventoryId && 
+                        d.CheckName.ToLower() == checkNameTrim.ToLower());
+                }
 
                 if (isDuplicate)
                 {
@@ -324,7 +389,8 @@ namespace HMDN.Controllers.API
                     {
                           Scope = scopeVal,
                           GroupId = dto.GroupId,
-                          ItemId = (scopeVal == ChecklistScopes.Item) ? dto.ItemId : null,
+                          ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemId : null,
+                          InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryId : null,
                           CycleType = cycle,
                           CheckName = checkNameTrim,
                           Description = dto.Description?.Trim(),
@@ -344,7 +410,8 @@ namespace HMDN.Controllers.API
                     if (def.Scope == "global") return BadRequest("Không thể sửa hạng mục toàn cục từ đây");
 
                     def.Scope = scopeVal;
-                    def.ItemId = (scopeVal == ChecklistScopes.Item) ? dto.ItemId : null;
+                    def.ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemId : null;
+                    def.InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryId : null;
                     def.CycleType = cycle;
                     def.CheckName = checkNameTrim;
                     def.Description = dto.Description?.Trim();
@@ -422,6 +489,7 @@ namespace HMDN.Controllers.API
         public int GroupId { get; set; }
         public string Scope { get; set; }
         public int? ItemId { get; set; }
+        public int? InventoryId { get; set; }
         public string CycleType { get; set; }
         public string CheckName { get; set; }
         public string Description { get; set; }

@@ -66,7 +66,8 @@ var appCatalog = new Vue({
         checklistDefinitions: [],
         showDefinitionForm: false,
         isEditDefinition: false,
-        definitionForm: { Id: 0, GroupId: 0, CycleType: '', CheckName: '', Description: '', IsRequired: true, SortOrder: 0, IsActive: true },
+        definitionForm: { Id: 0, GroupId: 0, Scope: 'group', ItemId: '', InventoryId: '', CycleType: '', CheckName: '', Description: '', IsRequired: true, SortOrder: 0, IsActive: true },
+        definitionFormInventories: [],
         isSavingDefinition: false,
         showDeleteDefModal: false,
         deleteDefTarget: null,
@@ -724,11 +725,13 @@ var appCatalog = new Vue({
 
         openAddDefinition() {
             this.isEditDefinition = false;
+            this.definitionFormInventories = [];
             this.definitionForm = {
                 Id: 0,
                 GroupId: this.activeGroup.Id,
                 Scope: 'group',
                 ItemId: '',
+                InventoryId: '',
                 CycleType: '',
                 CheckName: '',
                 Description: '',
@@ -742,11 +745,13 @@ var appCatalog = new Vue({
         openEditDefinition(def) {
             if (def.Scope === 'global') return;
             this.isEditDefinition = true;
+            this.definitionFormInventories = [];
             this.definitionForm = {
                 Id: def.Id,
                 GroupId: def.GroupId,
                 Scope: def.Scope || 'group',
                 ItemId: (def.ItemId !== null && def.ItemId !== undefined) ? def.ItemId : '',
+                InventoryId: (def.InventoryId !== null && def.InventoryId !== undefined) ? def.InventoryId : '',
                 CycleType: def.CycleType || '',
                 CheckName: def.CheckName,
                 Description: def.Description || '',
@@ -754,6 +759,9 @@ var appCatalog = new Vue({
                 SortOrder: def.SortOrder,
                 IsActive: def.IsActive
             };
+            if (def.ItemId) {
+                this.loadItemInventories(def.ItemId);
+            }
             this.showDefinitionForm = true;
         },
 
@@ -765,6 +773,16 @@ var appCatalog = new Vue({
             if (this.definitionForm.Scope === 'item' && !this.definitionForm.ItemId) {
                 this.showToast('⚠️ Vui lòng chọn loại thiết bị cụ thể!');
                 return;
+            }
+            if (this.definitionForm.Scope === 'inventory') {
+                if (!this.definitionForm.ItemId) {
+                    this.showToast('⚠️ Vui lòng chọn loại thiết bị trước!');
+                    return;
+                }
+                if (!this.definitionForm.InventoryId) {
+                    this.showToast('⚠️ Vui lòng chọn thiết bị/tài sản cụ thể!');
+                    return;
+                }
             }
             this.isSavingDefinition = true;
             $.ajax({
@@ -855,6 +873,46 @@ var appCatalog = new Vue({
             const item = this.items.find(x => x.Id === itemId);
             return item ? item.Name : ('ID: ' + itemId);
         },
+
+        onDefinitionScopeChange() {
+            this.definitionForm.ItemId = '';
+            this.definitionForm.InventoryId = '';
+            this.definitionFormInventories = [];
+        },
+
+        onDefinitionItemChange() {
+            this.definitionForm.InventoryId = '';
+            this.definitionFormInventories = [];
+            if (this.definitionForm.ItemId) {
+                this.loadItemInventories(this.definitionForm.ItemId);
+            }
+        },
+
+        loadItemInventories(itemId) {
+            if (!itemId) return;
+            $.ajax({
+                url: '/api/category/item-inventories/' + itemId,
+                type: 'GET',
+                success: (res) => {
+                    this.definitionFormInventories = res || [];
+                }
+            });
+        },
+
+        getInventoryLabel(def) {
+            if (def.Scope === 'item') {
+                return 'Mẫu: ' + this.getItemName(def.ItemId);
+            }
+            if (def.Scope === 'inventory') {
+                return 'Mã TS: ' + (def.InventoryId ? this.getInventoryAssetCode(def.InventoryId) : 'Không xác định');
+            }
+            return 'Cả nhóm';
+        },
+
+        getInventoryAssetCode(inventoryId) {
+            const inv = this.inventories.find(x => x.Id === inventoryId);
+            return inv ? inv.AssetCode : ('ID: ' + inventoryId);
+        }
     },
 
     watch: {

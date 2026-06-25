@@ -5,5 +5,6 @@ namespace HMDN_QuanLyVatTu.Models
         public const string Global = "global";
         public const string Group = "group";
         public const string Item = "item";
+        public const string Inventory = "inventory";
     }
 }

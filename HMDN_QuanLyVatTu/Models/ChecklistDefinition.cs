@@ -18,6 +18,8 @@ namespace HMDN_QuanLyVatTu.Models
 
         public int? ItemId { get; set; }
 
+        public int? InventoryId { get; set; }
+
         [StringLength(20)]
         public string CycleType { get; set; } // 'daily', 'weekly', 'monthly', 'yearly', null (any)
 

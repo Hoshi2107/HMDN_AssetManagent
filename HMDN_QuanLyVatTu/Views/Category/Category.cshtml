@@ -927,6 +927,14 @@
         box-shadow: 0 8px 24px rgba(0,0,0,.2);
         pointer-events: none;
     }
+
+    .checklist-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
 </style>
 
 <div id="app-catalog">
@@ -1132,7 +1140,7 @@
                     </div>
                 </div>
 
-                <div v-show="groupSubTab === 'checklist'" style="display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden;">
+                <div v-show="groupSubTab === 'checklist'" class="checklist-panel">
                     <div class="item-panel-toolbar" style="display:flex; justify-content:flex-end; align-items:center;">
                         <button class="btn-add-item" v-if="hasPermission('Catalog', 'CREATE')" v-on:click="openAddDefinition">
                             ⊕ Thêm Hạng Mục Mới
@@ -1162,8 +1170,11 @@
                                     <tr v-for="def in checklistDefinitions" :key="def.Id">
                                         <td>
                                             <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;"
-                                                  :style="{ background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe', color: def.Scope === 'global' ? '#475569' : def.Scope === 'item' ? '#d97706' : '#1d4ed8' }">
-                                                ${ def.Scope === 'global' ? '🔒 Toàn cục' : def.Scope === 'item' ? 'Thiết bị: ' + getItemName(def.ItemId) : 'Cả nhóm' }
+                                                  :style="{ 
+                                                      background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'inventory' ? '#fee2e2' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe', 
+                                                      color: def.Scope === 'global' ? '#475569' : def.Scope === 'inventory' ? '#991b1b' : def.Scope === 'item' ? '#d97706' : '#1d4ed8' 
+                                                  }">
+                                                ${ def.Scope === 'global' ? '🔒 Toàn cục' : getInventoryLabel(def) }
                                             </span>
                                         </td>
                                         <td>
@@ -1594,17 +1605,26 @@
                     
                     <div class="fg">
                         <label>Phạm vi áp dụng</label>
-                        <select v-model="definitionForm.Scope">
+                        <select v-model="definitionForm.Scope" v-on:change="onDefinitionScopeChange">
                             <option value="group">Cả nhóm</option>
                             <option value="item">Loại thiết bị cụ thể</option>
+                            <option value="inventory">Thiết bị riêng biệt (Tài sản)</option>
                         </select>
                     </div>
 
-                    <div class="fg" v-if="definitionForm.Scope === 'item'">
+                    <div class="fg" v-if="definitionForm.Scope === 'item' || definitionForm.Scope === 'inventory'">
                         <label>Chọn loại thiết bị <span style="color:red">*</span></label>
-                        <select v-model="definitionForm.ItemId">
+                        <select v-model="definitionForm.ItemId" v-on:change="onDefinitionItemChange">
                             <option value="">-- Chọn loại thiết bị --</option>
                             <option v-for="it in items" :key="it.Id" :value="it.Id">${ it.Name }</option>
+                        </select>
+                    </div>
+
+                    <div class="fg" v-if="definitionForm.Scope === 'inventory'">
+                        <label>Chọn thiết bị cụ thể <span style="color:red">*</span></label>
+                        <select v-model="definitionForm.InventoryId">
+                            <option value="">-- Chọn thiết bị cụ thể --</option>
+                            <option v-for="inv in definitionFormInventories" :key="inv.Id" :value="inv.Id">${ inv.AssetCode } - ${ inv.LocationName || 'Chưa phân vị trí' } (${ inv.SerialNumber || 'Không S/N' })</option>
                         </select>
                     </div>
 
