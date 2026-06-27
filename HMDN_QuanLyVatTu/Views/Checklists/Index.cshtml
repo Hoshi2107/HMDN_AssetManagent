@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Lập lịch & Thực hiện Checklist";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -1444,7 +1444,7 @@
                 <!-- History Warnings Alert Box -->
                 <div v-if="historyWarnings.length > 0" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.25); border-radius:var(--cl-radius-md); padding:14px; display:flex; flex-direction:column; gap:6px;">
                     <strong style="color:var(--cl-danger-dark); font-size:13px; display:flex; align-items:center; gap:6px; margin:0;">
-                        <i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÃT TÌNH TRẠNG THIẾT BỊ
+                        <i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO TÌNH TRẠNG THIẾT BỊ
                     </strong>
                     <ul style="margin:0; padding-left:20px; color:var(--cl-text); font-size:12.5px;">
                         <li v-for="(warn, wIdx) in historyWarnings" :key="wIdx"><strong>${ warn }</strong></li>

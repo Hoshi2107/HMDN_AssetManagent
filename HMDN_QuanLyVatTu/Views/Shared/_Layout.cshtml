@@ -911,7 +911,7 @@
                                         <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; color:#64748b; font-weight:500;" title="Chặn hiển thị popup thông báo (Trừ thông báo khẩn)">
                                             <input type="checkbox" style="margin-right:6px;" v-model="isDndEnabled"> Tắt Popup
                                         </label>
-                                        <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 12px; font-weight: 600; cursor: pointer;">Äá»c táº¥t cáº£</button>
+                                        <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 12px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
                                     </div>
                                 </div>
                                 <div style="max-height: 300px; overflow-y: auto;">
@@ -1185,7 +1185,7 @@
                         var vm = this;
                         vm.loadData(); vm.checkAlerts();
                         document.addEventListener('click', function () { vm.isOpen = false; });
-                        setInterval(vm.checkAlerts, 15000);
+                        setInterval(vm.checkAlerts, 45000);
                     }
                 });
             });
