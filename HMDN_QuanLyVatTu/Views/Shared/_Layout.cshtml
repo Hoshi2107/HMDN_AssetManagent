@@ -1,4 +1,4 @@
-@{
+﻿@{
     var userModules = Session["UserModules"] as List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO>;
     bool HasModule(string code)
     {
@@ -36,9 +36,9 @@
     {
         var mockStaff = new List<HMS.Models.Auth.User>
         {
-            new HMS.Models.Auth.User { FullName = "Trần Minh Hoàng", Email = "hoang.tm@hospital.com", Username = "hoangtm", IsActive = true },
-            new HMS.Models.Auth.User { FullName = "Lê Thị Mai Anh", Email = "anh.ltm@hospital.com", Username = "maianh", IsActive = true },
-            new HMS.Models.Auth.User { FullName = "Phạm Đức Thắng", Email = "thang.pd@hospital.com", Username = "thangpd", IsActive = true }
+            new HMS.Models.Auth.User { FullName = "Tráº§n Minh HoÃ ng", Email = "hoang.tm@hospital.com", Username = "hoangtm", IsActive = true },
+            new HMS.Models.Auth.User { FullName = "LÃª Thá»‹ Mai Anh", Email = "anh.ltm@hospital.com", Username = "maianh", IsActive = true },
+            new HMS.Models.Auth.User { FullName = "Pháº¡m Äá»©c Tháº¯ng", Email = "thang.pd@hospital.com", Username = "thangpd", IsActive = true }
         };
         
         foreach (var mock in mockStaff)
@@ -74,10 +74,13 @@
         var parts = currentFullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length > 0)
         {
-            currentUserInitials = parts[parts.Length - 1].Substring(0, 1).ToUpper();
-            if (parts.Length > 1)
+            if (parts.Length >= 2)
             {
-                currentUserInitials = parts[0].Substring(0, 1).ToUpper() + currentUserInitials;
+                currentUserInitials = parts[parts.Length - 2].Substring(0, 1).ToUpper() + parts[parts.Length - 1].Substring(0, 1).ToUpper();
+            }
+            else
+            {
+                currentUserInitials = parts[0].Substring(0, 1).ToUpper();
             }
         }
     }
@@ -124,9 +127,9 @@
     </script>
     <style>
         :root {
-            /* Hoàn Mỹ Hospital Official Colors */
-            --hm-navy: #0090a1;      /* Màu xanh đại dương đậm chuẩn Hoàn Mỹ */
-            --hm-teal: #00AFA9;      /* Màu xanh ngọc thương hiệu */
+            /* HoÃ n Má»¹ Hospital Official Colors */
+            --hm-navy: #0090a1;      /* MÃ u xanh Ä‘áº¡i dÆ°Æ¡ng Ä‘áº­m chuáº©n HoÃ n Má»¹ */
+            --hm-teal: #00AFA9;      /* MÃ u xanh ngá»c thÆ°Æ¡ng hiá»‡u */
             --hm-light-teal: rgba(0, 175, 169, 0.1);
             
             --sidebar-bg: var(--hm-navy); 
@@ -147,7 +150,7 @@
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             --radius: 12px;
             
-            /* ── FONT LEXEND LOCAL ── */
+            /* â”€â”€ FONT LEXEND LOCAL â”€â”€ */
             --font-main: 'Lexend';
             --font-mono: 'JetBrains Mono', monospace;
             --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -176,7 +179,7 @@
             list-style: none;
         }
 
-        /* ── APP SHELL ── */
+        /* â”€â”€ APP SHELL â”€â”€ */
         .app-shell {
             display: flex;
             height: 100vh;
@@ -184,7 +187,7 @@
             overflow: hidden;
         }
 
-        /* ── SIDEBAR ── */
+        /* â”€â”€ SIDEBAR â”€â”€ */
         #app-sidebar.sidebar {
             width: var(--sidebar-width);
             min-width: var(--sidebar-width);
@@ -198,13 +201,13 @@
             border-right: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* Khi Sidebar ở trạng thái thu gọn */
+        /* Khi Sidebar á»Ÿ tráº¡ng thÃ¡i thu gá»n */
         body.sidebar-collapsed #app-sidebar.sidebar {
             width: var(--sidebar-collapsed-width);
             min-width: var(--sidebar-collapsed-width);
         }
 
-        /* ── BRAND LOGO CẤU HÌNH TỐI ƯU KÍCH THƯỚC SÁT LỀ ── */
+        /* â”€â”€ BRAND LOGO Cáº¤U HÃŒNH Tá»I Æ¯U KÃCH THÆ¯á»šC SÃT Lá»€ â”€â”€ */
         #app-sidebar .sidebar-brand {
             display: flex !important;
             align-items: center !important;
@@ -224,7 +227,7 @@
             justify-content: center !important;
         }
 
-        /* Khi menu mở rộng: Ép logo chữ Hoàn Mỹ lớn rộng tối đa ra sát lề */
+        /* Khi menu má»Ÿ rá»™ng: Ã‰p logo chá»¯ HoÃ n Má»¹ lá»›n rá»™ng tá»‘i Ä‘a ra sÃ¡t lá» */
         #app-sidebar .sidebar-logo .logo-large {
             display: block !important;
             width: 100% !important;
@@ -233,7 +236,7 @@
             object-fit: contain !important;
         }
 
-        /* Ẩn hoàn toàn logo icon nhỏ khi menu đang mở rộng */
+        /* áº¨n hoÃ n toÃ n logo icon nhá» khi menu Ä‘ang má»Ÿ rá»™ng */
         #app-sidebar .sidebar-logo .logo-icon {
             display: none !important;
         }
@@ -247,7 +250,7 @@
             scrollbar-color: rgba(255,255,255,0.1) transparent;
         }
 
-        /* ── DANH MỤC HEADER (COLLAPSIBLE SECTION) ── */
+        /* â”€â”€ DANH Má»¤C HEADER (COLLAPSIBLE SECTION) â”€â”€ */
         #app-sidebar .nav-section {
             margin-bottom: 8px;
             border-radius: 8px;
@@ -280,13 +283,13 @@
             transition: opacity var(--transition);
         }
 
-        /* Icon mũi tên chỉ trạng thái đóng mở */
+        /* Icon mÅ©i tÃªn chá»‰ tráº¡ng thÃ¡i Ä‘Ã³ng má»Ÿ */
         #app-sidebar .section-chevron {
             font-size: 10px;
             transition: transform var(--transition);
         }
 
-        /* Giao diện đóng danh mục menu */
+        /* Giao diá»‡n Ä‘Ã³ng danh má»¥c menu */
         #app-sidebar .nav-section.collapsed .nav-section-content {
             max-height: 0 !important;
             overflow: hidden;
@@ -304,7 +307,7 @@
             opacity: 1;
         }
 
-        /* Ẩn chữ và mũi tên khi Sidebar thu nhỏ */
+        /* áº¨n chá»¯ vÃ  mÅ©i tÃªn khi Sidebar thu nhá» */
         body.sidebar-collapsed #app-sidebar .nav-section-label,
         body.sidebar-collapsed #app-sidebar .section-chevron {
             opacity: 0;
@@ -317,7 +320,7 @@
             justify-content: center;
         }
 
-        /* ── ITEMS MENU ── */
+        /* â”€â”€ ITEMS MENU â”€â”€ */
         #app-sidebar .nav-item {
             position: relative;
             margin-bottom: 2px;
@@ -354,7 +357,7 @@
             opacity: 1;
         }
 
-        /* ── KHI SIDEBAR Ở TRẠNG THÁI THU NHỎ (SIDEBAR-COLLAPSED) ── */
+        /* â”€â”€ KHI SIDEBAR á»ž TRáº NG THÃI THU NHá»Ž (SIDEBAR-COLLAPSED) â”€â”€ */
         body.sidebar-collapsed #app-sidebar .nav-item a span.nav-text,
         body.sidebar-collapsed #app-sidebar .nav-badge {
             opacity: 0;
@@ -367,11 +370,11 @@
             transition: all var(--transition);
         }
 
-        /* 1. Ẩn hoàn toàn logo chữ lớn Hoàn Mỹ */
+        /* 1. áº¨n hoÃ n toÃ n logo chá»¯ lá»›n HoÃ n Má»¹ */
         body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-large {
             display: none !important;
         }
-        /* 2. Ép hiển thị logo icon vuông to rõ ở chính giữa menu thu nhỏ */
+        /* 2. Ã‰p hiá»ƒn thá»‹ logo icon vuÃ´ng to rÃµ á»Ÿ chÃ­nh giá»¯a menu thu nhá» */
         body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-icon {
             display: block !important;
             width: 40px !important;
@@ -382,11 +385,11 @@
             margin: 0 auto !important;
         }
 
-        /* Sửa lỗi đẩy lệch tâm icon của tab active khi có border-left */
+        /* Sá»­a lá»—i Ä‘áº©y lá»‡ch tÃ¢m icon cá»§a tab active khi cÃ³ border-left */
         body.sidebar-collapsed #app-sidebar .nav-item.active a {
             background: #ffffff !important; 
             border-left: 4px solid var(--hm-teal); 
-            padding-right: 4px !important;  /* Bù trừ 4px để đẩy ngược icon vào chính giữa */
+            padding-right: 4px !important;  /* BÃ¹ trá»« 4px Ä‘á»ƒ Ä‘áº©y ngÆ°á»£c icon vÃ o chÃ­nh giá»¯a */
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
         }
@@ -417,7 +420,7 @@
             color: var(--hm-navy) !important;
         }
 
-        /* ── SIDEBAR FOOTER & ONLINE USERS (COLLAPSED STATE) ── */
+        /* â”€â”€ SIDEBAR FOOTER & ONLINE USERS (COLLAPSED STATE) â”€â”€ */
         body.sidebar-collapsed #app-sidebar .sidebar-footer {
             display: none !important;
         }
@@ -433,7 +436,7 @@
             font-family: var(--font-mono);
         }
 
-        /* ── MAIN CONTENT & TOPBAR ── */
+        /* â”€â”€ MAIN CONTENT & TOPBAR â”€â”€ */
         .page-wrapper {
             flex: 1;
             display: flex;
@@ -495,7 +498,7 @@
             padding: 24px;
         }
 
-        /* ── SHARED HELPERS ── */
+        /* â”€â”€ SHARED HELPERS â”€â”€ */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -504,7 +507,7 @@
             padding: 20px;
         }
 
-        /* ── TOAST MOCKUP STYLE ── */
+        /* â”€â”€ TOAST MOCKUP STYLE â”€â”€ */
         #toast-container {
             position: fixed;
             bottom: 24px;
@@ -559,7 +562,7 @@
             position: absolute; top: 12px; right: 12px; font-size: 16px;
         }
 
-        /* SỬ DỤNG @@ KEYFRAMES ĐỂ TRANH LỖI RAZOR */
+        /* Sá»¬ Dá»¤NG @@ KEYFRAMES Äá»‚ TRANH Lá»–I RAZOR */
         @@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
         @@keyframes pulse-online {
@@ -568,7 +571,7 @@
             100% { transform: scale(0.95); opacity: 0.5; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* ── RESPONSIVE CHO MOBILE ── */
+        /* â”€â”€ RESPONSIVE CHO MOBILE â”€â”€ */
         @@media (max-width: 768px) {
             #app-sidebar.sidebar {
                 position: fixed;
@@ -596,7 +599,7 @@
         }
     </style>
     <style>
-        /* ── ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHUẨN ĐẾN THƯ MỤC FONT THEO THỰC TẾ TRÊN F12 CỦA BẠN ── */
+        /* â”€â”€ ÄÃƒ Cáº¬P NHáº¬T ÄÆ¯á»œNG DáºªN CHUáº¨N Äáº¾N THÆ¯ Má»¤C FONT THEO THá»°C Táº¾ TRÃŠN F12 Cá»¦A Báº N â”€â”€ */
         @@font-face {
           font-family: 'Lexend';
           font-style: normal;
@@ -813,7 +816,7 @@
                         <div class="sidebar-online-section" style="display: flex; flex-direction: column; gap: 8px; background: rgba(42, 27, 154, 0.25); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(44, 160, 185, 0.08);">
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%; display: inline-block; animation: pulse-online 2s infinite;"></span>
-                                <span class="sidebar-online-label" style="font-size: 10px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px;">@(activeUsersList.Count + 1) trực tuyến</span>
+                                 <span class="sidebar-online-label" style="font-size: 10px; font-weight: 700; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px;">@(activeUsersList.Count + 1) trực tuyến</span>
                             </div>
                             
                             <!-- Avatar Stack -->
@@ -831,12 +834,26 @@
                                         }
                                         string gradient = GetAvatarGradient(uName);
                                         
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: @gradient; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; border: 1.5px solid #004d57; margin-left: @(idx > 0 ? "-8px" : "0px"); cursor: pointer; transition: transform 0.2s;" 
-                                             title="@uName (@(activeUser.Email ?? activeUser.Username))"
-                                             onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='10';" 
-                                             onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';">
-                                            @uInitials
-                                        </div>
+                                        string activeUserAvatarPath = Url.Content("~/Uploads/avatar_" + activeUser.Id + ".png");
+                                        string activeUserAvatarPhysical = Server.MapPath("~/Uploads/avatar_" + activeUser.Id + ".png");
+                                        bool activeUserHasAvatar = System.IO.File.Exists(activeUserAvatarPhysical);
+
+                                        if (activeUserHasAvatar)
+                                        {
+                                            <img src="@activeUserAvatarPath?t=@DateTime.Now.Ticks" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1.5px solid #004d57; margin-left: @(idx > 0 ? "-8px" : "0px"); cursor: pointer; transition: transform 0.2s;"
+                                                 title="@uName (@(activeUser.Email ?? activeUser.Username))"
+                                                 onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='10';"
+                                                 onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';" />
+                                        }
+                                        else
+                                        {
+                                            <div style="width: 24px; height: 24px; border-radius: 50%; background: @gradient; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; border: 1.5px solid #004d57; margin-left: @(idx > 0 ? "-8px" : "0px"); cursor: pointer; transition: transform 0.2s;" 
+                                                 title="@uName (@(activeUser.Email ?? activeUser.Username))"
+                                                 onmouseover="this.style.transform='scale(1.15)'; this.style.zIndex='10';" 
+                                                 onmouseout="this.style.transform='scale(1)'; this.style.zIndex='auto';">
+                                                @uInitials
+                                            </div>
+                                        }
                                         idx++;
                                     }
                                 }
@@ -850,7 +867,7 @@
         <div class="page-wrapper">
             <header class="page-topbar">
                 <div class="topbar-left">
-                    <button class="btn-toggle-sidebar" onclick="toggleSidebarLayout()" title="Thu gọn/Mở rộng Menu">
+                    <button class="btn-toggle-sidebar" onclick="toggleSidebarLayout()" title="Thu gá»n/Má»Ÿ rá»™ng Menu">
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <span class="topbar-title">@(ViewBag.PageTitle ?? ViewBag.Title ?? "Dashboard")</span>
@@ -869,17 +886,17 @@
 
                             <div v-if="isOpen" v-on:click.stop style="position: absolute; top: 120%; right: 0; width: 340px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; overflow: hidden;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
-                                    <span style="font-weight: 700; font-size: 14px; color: #1e2a3a;">Thông báo</span>
+                                    <span style="font-weight: 700; font-size: 14px; color: #1e2a3a;">ThÃ´ng bÃ¡o</span>
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; color:#64748b; font-weight:500;" title="Chặn hiển thị popup thông báo (Trừ thông báo khẩn)">
-                                            <input type="checkbox" style="margin-right:6px;" v-model="isDndEnabled"> Tắt Popup
+                                        <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; color:#64748b; font-weight:500;" title="Cháº·n hiá»ƒn thá»‹ popup thÃ´ng bÃ¡o (Trá»« thÃ´ng bÃ¡o kháº©n)">
+                                            <input type="checkbox" style="margin-right:6px;" v-model="isDndEnabled"> Táº¯t Popup
                                         </label>
-                                        <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 12px; font-weight: 600; cursor: pointer;">Đọc tất cả</button>
+                                        <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 12px; font-weight: 600; cursor: pointer;">Äá»c táº¥t cáº£</button>
                                     </div>
                                 </div>
                                 <div style="max-height: 300px; overflow-y: auto;">
                                     <div v-if="alerts.length === 0" style="padding: 30px; text-align: center; color: #94a3b8; font-size: 13px;">
-                                        Không có thông báo mới.
+                                        KhÃ´ng cÃ³ thÃ´ng bÃ¡o má»›i.
                                     </div>
                                     <div v-else v-for="alert in alerts" :key="alert.Id" v-on:click="goToAlert(alert)" style="display: flex; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); cursor: pointer;" :style="isUnread(alert.Id) ? 'background: #f0f9ff;' : 'background: #fff;'">
                                         <div class="toast-mockup-icon-circle" :class="alert.Severity">
@@ -887,13 +904,13 @@
                                         </div>
                                         <div style="flex: 1;">
                                             <div style="font-size: 13px; font-weight: 700; color: #1e2a3a; margin-bottom: 4px;">{{ alert.Title }}</div>
-                                            <div style="font-size: 12px; color: #64748b; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.') }}</div>
+                                            <div style="font-size: 12px; color: #64748b; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ alert.Body || (alert.ItemName + ' - Thiáº¿t bá»‹ gáº·p sá»± cá»‘.') }}</div>
                                             <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">{{ alert.CreatedAtFriendly || alert.CreatedAtStr }}</div>
                                         </div>
                                     </div>
                                 </div>
                                 <div style="padding: 12px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc;">
-                                    <a href="@Url.Action("Index", "Alerts")" style="font-size: 13px; font-weight: 600; color: var(--hm-teal);">Xem tất cả thông báo</a>
+                                    <a href="@Url.Action("Index", "Alerts")" style="font-size: 13px; font-weight: 600; color: var(--hm-teal);">Xem táº¥t cáº£ thÃ´ng bÃ¡o</a>
                                 </div>
                             </div>
                         </div>
@@ -901,13 +918,26 @@
 
                     @if (Session["FullName"] != null)
                     {
+                        string topbarAvatarPath = Url.Content("~/Uploads/avatar_" + currentUserId + ".png");
+                        string topbarAvatarPhysical = Server.MapPath("~/Uploads/avatar_" + currentUserId + ".png");
+                        bool topbarHasAvatar = System.IO.File.Exists(topbarAvatarPhysical);
+
                         <!-- Current User Profile in Topbar -->
                         <div style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 6px; background: #f8fafc; border-radius: 20px; font-size: 13px; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                            <div style="width: 28px; height: 28px; border-radius: 50%; background: @GetAvatarGradient(currentFullName); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1.5px solid #ffffff; flex-shrink: 0;">
-                                @currentUserInitials
-                            </div>
-                            <span style="font-weight: 600; color: #334155;">@currentFullName</span>
-                            <a href="@Url.Action("Logout", "Account")" title="Đăng xuất" style="margin-left: 4px; color: var(--accent-red); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: background 0.2s;"
+                            <a href="@Url.Action("Profile", "User")" title="Xem há»“ sÆ¡ cÃ¡ nhÃ¢n" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                @if (topbarHasAvatar)
+                                {
+                                    <img src="@topbarAvatarPath?t=@DateTime.Now.Ticks" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid #ffffff; flex-shrink: 0;" alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <div style="width: 28px; height: 28px; border-radius: 50%; background: @GetAvatarGradient(currentFullName); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; border: 1.5px solid #ffffff; flex-shrink: 0;">
+                                        @currentUserInitials
+                                    </div>
+                                }
+                                <span style="font-weight: 600; color: #334155;">@currentFullName</span>
+                            </a>
+                            <a href="@Url.Action("Logout", "Account")" title="ÄÄƒng xuáº¥t" style="margin-left: 4px; color: var(--accent-red); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: background 0.2s;"
                                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
                                 <i class="fa-solid fa-arrow-right-from-bracket" style="font-size: 12px;"></i>
                             </a>
@@ -1119,7 +1149,7 @@
                                                 vm.seenAlerts.push(alert.Id); hasNew = true;
                                                 if (!vm.isFirstLoad && window.MedEquip) {
                                                     var type = alert.Severity === 'danger' ? 'danger' : alert.Severity === 'warning' ? 'warning' : 'info';
-                                                    window.MedEquip.toast(alert.Title, alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'), type, alert);
+                                                    window.MedEquip.toast(alert.Title, alert.Body || (alert.ItemName + ' - Thiáº¿t bá»‹ gáº·p sá»± cá»‘.'), type, alert);
                                                 }
                                             }
                                         });

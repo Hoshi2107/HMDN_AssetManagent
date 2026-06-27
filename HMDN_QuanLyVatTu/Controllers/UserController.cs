@@ -369,6 +369,182 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
         }
 
+        // GET: User/Profile
+        [HttpGet]
+        public new ActionResult Profile()
+        {
+            var userIdSession = Session["UserId"] as int?;
+            if (userIdSession == null || userIdSession.Value == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            int userId = userIdSession.Value;
+            var user = db.Users
+                .Include(u => u.UserRoles.Select(ur => ur.Role))
+                .FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return HttpNotFound();
+            }
+
+            var userRole = user.UserRoles.FirstOrDefault();
+            var roleCode = userRole != null && userRole.Role != null ? userRole.Role.Code : "";
+
+            var model = new EditUserViewModel
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Phone = user.Phone,
+                DepartmentId = user.DepartmentId ?? 0,
+                RoleName = roleCode,
+                IsActive = user.IsActive
+            };
+
+            ViewBag.ActiveNav = "Profile";
+            ViewBag.Departments = db.Departments.Where(d => d.IsActive).ToList();
+            ViewBag.Roles = db.Roles.ToList();
+            ViewBag.Username = user.Username;
+
+            return View(model);
+        }
+
+        // POST: User/Profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public new ActionResult Profile(EditUserViewModel model, System.Web.HttpPostedFileBase avatarFile)
+        {
+            var userIdSession = Session["UserId"] as int?;
+            if (userIdSession == null || userIdSession.Value == 0)
+            {
+                return Json(new { success = false, message = "Bạn cần đăng nhập để thực hiện thao tác này." });
+            }
+
+            if (model == null)
+            {
+                return Json(new { success = false, message = "Dữ liệu gửi lên không hợp lệ." });
+            }
+
+            int currentUserId = userIdSession.Value;
+            if (model.Id != currentUserId)
+            {
+                return Json(new { success = false, message = "Bạn chỉ có thể cập nhật hồ sơ của chính mình." });
+            }
+
+            try
+            {
+                var user = db.Users.FirstOrDefault(u => u.Id == currentUserId);
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "Không tìm thấy tài khoản trên hệ thống." });
+                }
+
+                // Kiểm tra trùng lặp email với người dùng khác
+                if (!string.IsNullOrWhiteSpace(model.Email))
+                {
+                    bool emailExists = db.Users.Any(u => u.Id != currentUserId && u.Email.Equals(model.Email, StringComparison.OrdinalIgnoreCase));
+                    if (emailExists)
+                    {
+                        return Json(new { success = false, message = "Địa chỉ email đã được sử dụng bởi một tài khoản khác." });
+                    }
+                }
+
+                // Kiểm tra trùng lặp số điện thoại với người dùng khác
+                if (!string.IsNullOrWhiteSpace(model.Phone))
+                {
+                    string phoneTrim = model.Phone.Trim();
+                    bool phoneExists = db.Users.Any(u => u.Id != currentUserId && u.Phone == phoneTrim);
+                    if (phoneExists)
+                    {
+                        return Json(new { success = false, message = "Số điện thoại đã được sử dụng bởi một tài khoản khác." });
+                    }
+                }
+
+                // Cập nhật thông tin được phép
+                user.FullName = model.FullName.Trim();
+                user.Email = model.Email.Trim();
+                user.Phone = model.Phone.Trim();
+                user.UpdatedAt = DateTime.Now;
+
+                // Cập nhật session FullName
+                Session["FullName"] = user.FullName;
+
+                // Nếu nhập mật khẩu mới thì cập nhật
+                if (!string.IsNullOrWhiteSpace(model.Password))
+                {
+                    if (model.Password.Trim().Length < 6)
+                    {
+                        return Json(new { success = false, message = "Mật khẩu mới phải từ 6 ký tự trở lên." });
+                    }
+                    user.PasswordHash = model.Password.Trim();
+                }
+
+                // Xử lý upload ảnh đại diện
+                if (avatarFile != null && avatarFile.ContentLength > 0)
+                {
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var ext = System.IO.Path.GetExtension(avatarFile.FileName).ToLower();
+                    if (!allowedExtensions.Contains(ext))
+                    {
+                        return Json(new { success = false, message = "Định dạng ảnh đại diện không hợp lệ. Vui lòng chọn ảnh .jpg, .jpeg, .png hoặc .gif" });
+                    }
+
+                    string uploadDir = Server.MapPath("~/Uploads");
+                    if (!System.IO.Directory.Exists(uploadDir))
+                    {
+                        System.IO.Directory.CreateDirectory(uploadDir);
+                    }
+                    string fileName = "avatar_" + currentUserId + ".png";
+                    string path = System.IO.Path.Combine(uploadDir, fileName);
+
+                    if (System.IO.File.Exists(path))
+                    {
+                        System.IO.File.Delete(path);
+                    }
+                    avatarFile.SaveAs(path);
+                }
+
+                db.SaveChanges();
+                return Json(new { success = true, message = "Cập nhật hồ sơ tài khoản thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi cập nhật hồ sơ: " + ex.Message });
+            }
+        }
+
+        // POST: User/RemoveAvatar
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult RemoveAvatar()
+        {
+            var userIdSession = Session["UserId"] as int?;
+            if (userIdSession == null || userIdSession.Value == 0)
+            {
+                return Json(new { success = false, message = "Bạn cần đăng nhập để thực hiện thao tác này." });
+            }
+
+            int currentUserId = userIdSession.Value;
+            try
+            {
+                string uploadDir = Server.MapPath("~/Uploads");
+                string fileName = "avatar_" + currentUserId + ".png";
+                string path = System.IO.Path.Combine(uploadDir, fileName);
+
+                if (System.IO.File.Exists(path))
+                {
+                    System.IO.File.Delete(path);
+                    return Json(new { success = true, message = "Đã gỡ ảnh đại diện thành công!" });
+                }
+                return Json(new { success = false, message = "Không tìm thấy ảnh đại diện để gỡ." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Đã xảy ra lỗi khi gỡ ảnh đại diện: " + ex.Message });
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
