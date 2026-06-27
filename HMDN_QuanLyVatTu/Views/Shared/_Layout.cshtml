@@ -867,7 +867,7 @@
         <div class="page-wrapper">
             <header class="page-topbar">
                 <div class="topbar-left">
-                    <button class="btn-toggle-sidebar" onclick="toggleSidebarLayout()" title="Thu gá»n/Má»Ÿ rá»™ng Menu">
+                    <button class="btn-toggle-sidebar" onclick="toggleSidebarLayout()" title="Thu gọn/Mở rộng Menu">
                         <i class="fa-solid fa-bars"></i>
                     </button>
                     <span class="topbar-title">@(ViewBag.PageTitle ?? ViewBag.Title ?? "Dashboard")</span>
@@ -886,17 +886,17 @@
 
                             <div v-if="isOpen" v-on:click.stop style="position: absolute; top: 120%; right: 0; width: 340px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; overflow: hidden;">
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
-                                    <span style="font-weight: 700; font-size: 14px; color: #1e2a3a;">ThÃ´ng bÃ¡o</span>
+                                    <span style="font-weight: 700; font-size: 14px; color: #1e2a3a;">Thông báo</span>
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; color:#64748b; font-weight:500;" title="Cháº·n hiá»ƒn thá»‹ popup thÃ´ng bÃ¡o (Trá»« thÃ´ng bÃ¡o kháº©n)">
-                                            <input type="checkbox" style="margin-right:6px;" v-model="isDndEnabled"> Táº¯t Popup
+                                        <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; color:#64748b; font-weight:500;" title="Chặn hiển thị popup thông báo (Trừ thông báo khẩn)">
+                                            <input type="checkbox" style="margin-right:6px;" v-model="isDndEnabled"> Tắt Popup
                                         </label>
                                         <button v-on:click="markAllAsRead" style="background: none; border: none; color: var(--accent-blue); font-size: 12px; font-weight: 600; cursor: pointer;">Äá»c táº¥t cáº£</button>
                                     </div>
                                 </div>
                                 <div style="max-height: 300px; overflow-y: auto;">
                                     <div v-if="alerts.length === 0" style="padding: 30px; text-align: center; color: #94a3b8; font-size: 13px;">
-                                        KhÃ´ng cÃ³ thÃ´ng bÃ¡o má»›i.
+                                        Không có thông báo mới.
                                     </div>
                                     <div v-else v-for="alert in alerts" :key="alert.Id" v-on:click="goToAlert(alert)" style="display: flex; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); cursor: pointer;" :style="isUnread(alert.Id) ? 'background: #f0f9ff;' : 'background: #fff;'">
                                         <div class="toast-mockup-icon-circle" :class="alert.Severity">
@@ -904,13 +904,13 @@
                                         </div>
                                         <div style="flex: 1;">
                                             <div style="font-size: 13px; font-weight: 700; color: #1e2a3a; margin-bottom: 4px;">{{ alert.Title }}</div>
-                                            <div style="font-size: 12px; color: #64748b; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ alert.Body || (alert.ItemName + ' - Thiáº¿t bá»‹ gáº·p sá»± cá»‘.') }}</div>
+                                            <div style="font-size: 12px; color: #64748b; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.') }}</div>
                                             <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">{{ alert.CreatedAtFriendly || alert.CreatedAtStr }}</div>
                                         </div>
                                     </div>
                                 </div>
                                 <div style="padding: 12px; text-align: center; border-top: 1px solid var(--border); background: #f8fafc;">
-                                    <a href="@Url.Action("Index", "Alerts")" style="font-size: 13px; font-weight: 600; color: var(--hm-teal);">Xem táº¥t cáº£ thÃ´ng bÃ¡o</a>
+                                    <a href="@Url.Action("Index", "Alerts")" style="font-size: 13px; font-weight: 600; color: var(--hm-teal);">Xem tất cả thông báo</a>
                                 </div>
                             </div>
                         </div>
@@ -924,7 +924,7 @@
 
                         <!-- Current User Profile in Topbar -->
                         <div style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 6px; background: #f8fafc; border-radius: 20px; font-size: 13px; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-                            <a href="@Url.Action("Profile", "User")" title="Xem há»“ sÆ¡ cÃ¡ nhÃ¢n" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <a href="@Url.Action("Profile", "User")" title="Xem hồ sơ cá nhân" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                 @if (topbarHasAvatar)
                                 {
                                     <img src="@topbarAvatarPath?t=@DateTime.Now.Ticks" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid #ffffff; flex-shrink: 0;" alt="Avatar" />
@@ -1149,7 +1149,7 @@
                                                 vm.seenAlerts.push(alert.Id); hasNew = true;
                                                 if (!vm.isFirstLoad && window.MedEquip) {
                                                     var type = alert.Severity === 'danger' ? 'danger' : alert.Severity === 'warning' ? 'warning' : 'info';
-                                                    window.MedEquip.toast(alert.Title, alert.Body || (alert.ItemName + ' - Thiáº¿t bá»‹ gáº·p sá»± cá»‘.'), type, alert);
+                                                    window.MedEquip.toast(alert.Title, alert.Body || (alert.ItemName + ' - Thiết bị gặp sự cố.'), type, alert);
                                                 }
                                             }
                                         });
