@@ -1,4 +1,4 @@
-﻿@{
+@{
     var userModules = Session["UserModules"] as List<HMDN_QuanLyVatTu.Models.ModulePermissionDTO>;
     bool HasModule(string code)
     {
@@ -227,7 +227,7 @@
             justify-content: center !important;
         }
 
-        /* Khi menu má»Ÿ rá»™ng: Ã‰p logo chá»¯ HoÃ n Má»¹ lá»›n rá»™ng tá»‘i Ä‘a ra sÃ¡t lá» */
+        /* Khi menu mở rộng: Ép logo chữ Hoàn Mỹ lớn rộng tối đa ra sát lề */
         #app-sidebar .sidebar-logo .logo-large {
             display: block !important;
             width: 100% !important;
@@ -236,9 +236,29 @@
             object-fit: contain !important;
         }
 
-        /* áº¨n hoÃ n toÃ n logo icon nhá» khi menu Ä‘ang má»Ÿ rá»™ng */
+        /* Ẩn hoàn toàn logo icon nhỏ khi menu đang mở rộng */
         #app-sidebar .sidebar-logo .logo-icon {
             display: none !important;
+        }
+
+        /* Khi menu thu gọn (sidebar-collapsed) */
+        body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-large {
+            display: none !important;
+        }
+
+        body.sidebar-collapsed #app-sidebar .sidebar-logo .logo-icon {
+            display: block !important;
+            width: auto !important;
+            height: 32px !important;
+            max-width: 100% !important;
+            object-fit: contain !important;
+        }
+
+        /* Tự động co giãn tối đa kích thước logo trên thiết bị di động */
+        @@media (max-width: 768px) {
+            #app-sidebar .sidebar-logo .logo-large {
+                max-height: 38px !important;
+            }
         }
 
         #app-sidebar .sidebar-nav {
@@ -644,7 +664,7 @@
             <div class="sidebar-brand">
                 <div class="sidebar-logo">
                     <img src="@Url.Content("~/Content/images1/whitelogo_bvhm.png")" class="logo-large" alt="MedEquip Logo">
-                    <img src="@Url.Content("~/favicon.ico")" class="logo-icon" alt="MedEquip Icon">
+                    <img src="@Url.Content("~/Content/images1/whitelogo_bvhm.png")" class="logo-icon" alt="MedEquip Icon">
                 </div>
             </div>
 
