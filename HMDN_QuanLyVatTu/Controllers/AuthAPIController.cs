@@ -61,7 +61,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Select(ur => ur.Role.Code)
                     .ToList();
 
-                var modules = GetModulesForRoles(roles);
+                var modules = GetModulesForUser(user);
 
                 // Cập nhật thời gian đăng nhập cuối
                 user.LastLoginAt = DateTime.Now;
@@ -95,7 +95,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         private static readonly List<string> FULL_PERMS = new List<string> { "VIEW", "CREATE", "EDIT", "DELETE" };
         private static readonly List<string> VIEW_ONLY = new List<string> { "VIEW" };
 
-        private List<LoginResponseDTO.ModuleDTO> GetModulesForRoles(List<string> roles)
+        private List<LoginResponseDTO.ModuleDTO> GetModulesForUser(HMS.Models.Auth.User user)
         {
             // Định nghĩa danh sách các module có thể có trên hệ thống
             var allModules = new Dictionary<string, LoginResponseDTO.ModuleDTO>
@@ -118,15 +118,69 @@ namespace HMDN_QuanLyVatTu.Controllers
                 { "MaintainList", new LoginResponseDTO.ModuleDTO { code = "MaintainList", name = "Danh sách bảo trì", url = "/MaintainList/Index", icon = "fa-wrench", permissions = FULL_PERMS } }
             };
 
+            var roles = user.UserRoles
+                .Where(ur => ur.Role != null)
+                .Select(ur => ur.Role.Code)
+                .ToList();
+
             // Admin → toàn quyền tất cả module
             if (roles.Contains("admin", StringComparer.OrdinalIgnoreCase))
             {
                 return allModules.Values.ToList();
             }
 
-            // Bảng phân quyền chi tiết: role → { moduleCode → permissions }
-            // FULL = VIEW + CREATE + EDIT + DELETE
-            // VIEW_ONLY = chỉ xem danh sách, không tạo/sửa/xóa
+            // Nếu người dùng có detailed permissions được lưu trong AvatarUrl (dạng "Inventory:VIEW,Inventory:EDIT,Catalog:VIEW")
+            if (!string.IsNullOrEmpty(user.AvatarUrl) && user.AvatarUrl.Contains(":"))
+            {
+                var parts = user.AvatarUrl.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                var customPerms = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var part in parts)
+                {
+                    var subParts = part.Split(':');
+                    if (subParts.Length == 2)
+                    {
+                        var moduleCode = subParts[0].Trim();
+                        var permission = subParts[1].Trim().ToUpper();
+
+                        if (!customPerms.ContainsKey(moduleCode))
+                        {
+                            customPerms[moduleCode] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        }
+                        customPerms[moduleCode].Add(permission);
+
+                        // Nếu có quyền EDIT thì tự động cấp thêm quyền CREATE để có thể thêm mới
+                        if (permission == "EDIT")
+                        {
+                            customPerms[moduleCode].Add("CREATE");
+                        }
+                    }
+                }
+
+                var customResult = new List<LoginResponseDTO.ModuleDTO>();
+                foreach (var moduleCode in allModules.Keys)
+                {
+                    if (!customPerms.TryGetValue(moduleCode, out var perms))
+                        continue;
+
+                    // Phải có ít nhất quyền VIEW để module này hiển thị trong menu
+                    if (!perms.Contains("VIEW"))
+                        continue;
+
+                    var mod = allModules[moduleCode];
+                    customResult.Add(new LoginResponseDTO.ModuleDTO
+                    {
+                        code = mod.code,
+                        name = mod.name,
+                        url = mod.url,
+                        icon = mod.icon,
+                        permissions = perms.ToList()
+                    });
+                }
+                return customResult;
+            }
+
+            // Ngược lại, dùng phân quyền mặc định theo vai trò (Role)
             var rolePermissions = new Dictionary<string, Dictionary<string, List<string>>>(StringComparer.OrdinalIgnoreCase)
             {
                 {

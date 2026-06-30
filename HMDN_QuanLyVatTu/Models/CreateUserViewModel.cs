@@ -27,5 +27,7 @@ namespace HMDN_QuanLyVatTu.Models
         [Required(ErrorMessage = "Mật khẩu không được để trống")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải dài từ 6 ký tự trở lên")]
         public string Password { get; set; }
+
+        public string AvatarUrl { get; set; }
     }
 }

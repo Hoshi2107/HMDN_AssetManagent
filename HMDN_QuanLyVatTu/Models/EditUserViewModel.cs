@@ -29,5 +29,7 @@ namespace HMDN_QuanLyVatTu.Models
 
         [Required(ErrorMessage = "Trạng thái hoạt động không được để trống")]
         public bool IsActive { get; set; }
+
+        public string AvatarUrl { get; set; }
     }
 }

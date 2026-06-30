@@ -165,7 +165,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                     DepartmentId = model.DepartmentId,
                     PasswordHash = model.Password.Trim(), // Sử dụng mật khẩu do người dùng nhập vào
                     IsActive = true,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    AvatarUrl = model.AvatarUrl
                 };
 
                 db.Users.Add(newUser);
@@ -217,7 +218,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                 Phone = user.Phone,
                 DepartmentId = user.DepartmentId ?? 0,
                 RoleName = roleCode,
-                IsActive = user.IsActive
+                IsActive = user.IsActive,
+                AvatarUrl = user.AvatarUrl
             };
 
             ViewBag.ActiveNav = "UserList";
@@ -285,6 +287,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 user.DepartmentId = model.DepartmentId;
                 user.IsActive = model.IsActive;
                 user.UpdatedAt = DateTime.Now;
+                user.AvatarUrl = model.AvatarUrl;
 
                 // Nếu nhập mật khẩu mới thì cập nhật
                 if (!string.IsNullOrWhiteSpace(model.Password))
