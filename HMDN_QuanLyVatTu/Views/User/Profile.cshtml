@@ -1,0 +1,1262 @@
+@model HMDN_QuanLyVatTu.Models.EditUserViewModel
+@{
+    ViewBag.Title = "Hồ sơ tài khoản";
+    int currentUserId = Session["UserId"] != null ? (int)Session["UserId"] : 0;
+    string avatarPath = Url.Content("~/Uploads/avatar_" + currentUserId + ".png");
+    string physicalPath = Server.MapPath("~/Uploads/avatar_" + currentUserId + ".png");
+    bool hasCustomAvatar = System.IO.File.Exists(physicalPath);
+    
+    // Tìm tên vai trò hiển thị
+    string displayRole = "Nhân viên";
+    if (Model.RoleName == "admin") { displayRole = "Quản trị hệ thống"; }
+    else if (Model.RoleName == "editor") { displayRole = "Điều phối viên"; }
+    else if (Model.RoleName == "viewer") { displayRole = "Nhân viên phòng ban (User)"; }
+
+    // Tìm tên phòng ban hiển thị
+    string displayDept = "Chưa phân phòng";
+    if (ViewBag.Departments != null)
+    {
+        foreach (var dept in ViewBag.Departments)
+        {
+            if (dept.Id == Model.DepartmentId)
+            {
+                displayDept = dept.Name;
+                break;
+            }
+        }
+    }
+}
+
+<!-- Cập nhật Cropper.js từ CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<div class="profile-page-wrapper">
+    <div class="row g-4">
+        <!-- CỘT BÊN TRÁI: THÔNG TIN TỔNG QUAN & AVATAR -->
+        <div class="col-lg-4">
+            <div class="profile-sidebar-card">
+                <div class="avatar-upload-container">
+                    <div class="avatar-preview-circle" id="avatarTrigger">
+                        @if (hasCustomAvatar)
+                        {
+                            <img id="avatarPreview" src="@avatarPath?t=@DateTime.Now.Ticks" class="profile-avatar-img" alt="Avatar" />
+                        }
+                        else
+                        {
+                            string currentFullName = Session["FullName"]?.ToString() ?? "User";
+                            string initials = "";
+                            if (!string.IsNullOrEmpty(currentFullName))
+                            {
+                                var parts = currentFullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length > 0)
+                                {
+                                    if (parts.Length >= 2)
+                                    {
+                                        initials = parts[parts.Length - 2].Substring(0, 1).ToUpper() + parts[parts.Length - 1].Substring(0, 1).ToUpper();
+                                    }
+                                    else
+                                    {
+                                        initials = parts[0].Substring(0, 1).ToUpper();
+                                    }
+                                }
+                            }
+                            <div id="avatarInitials" class="profile-avatar-initials-placeholder" style="background: linear-gradient(135deg, #00AFA9, #003366);">
+                                @initials
+                            </div>
+                            <img id="avatarPreview" src="" class="profile-avatar-img" alt="Avatar" style="display:none;" />
+                        }
+                        <div class="avatar-upload-overlay">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Menu cho Avatar -->
+                    <div class="avatar-dropdown-menu" id="avatarDropdown">
+                        <button type="button" class="avatar-dropdown-item" id="btnViewAvatar">
+                            <i class="fa-regular fa-image me-2"></i> Xem ảnh phóng to
+                        </button>
+                        <button type="button" class="avatar-dropdown-item" id="btnTriggerUpload">
+                            <i class="fa-solid fa-cloud-arrow-up me-2"></i> Tải ảnh mới lên
+                        </button>
+                        @if (hasCustomAvatar)
+                        {
+                            <button type="button" class="avatar-dropdown-item text-danger" id="btnRemoveAvatar">
+                                <i class="fa-regular fa-trash-can me-2"></i> Gỡ ảnh hiện tại
+                            </button>
+                        }
+                    </div>
+
+                    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" style="display: none;" />
+                </div>
+
+                <div class="profile-summary text-center mt-3">
+                    <h2 class="profile-name">@Model.FullName</h2>
+                    <p class="profile-username">@@@ViewBag.Username</p>
+                    
+                    <div class="profile-badges-container mt-3">
+                        <span class="badge-custom badge-role"><i class="fa-solid fa-shield-halved me-1"></i> @displayRole</span>
+                        <span class="badge-custom badge-dept"><i class="fa-solid fa-hospital me-1"></i> @displayDept</span>
+                    </div>
+                </div>
+
+                <div class="profile-meta-list mt-4">
+                    <div class="meta-item">
+                        <span class="meta-label">Trạng thái:</span>
+                        <span class="meta-value text-success"><i class="fa-solid fa-circle-check"></i> Đang hoạt động</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Mã tài khoản:</span>
+                        <span class="meta-value font-monospace">#@Model.Id</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT BÊN PHẢI: FORM CHỈNH SỬA THÔNG TIN CÁ NHÂN & MẬT KHẨU -->
+        <div class="col-lg-8">
+            <form id="profileForm" method="post" action="@Url.Action("Profile", "User")" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.Id)
+                
+                <!-- Truyền ngầm các trường admin để validate ModelState không bị lỗi -->
+                <input type="hidden" name="RoleName" value="@Model.RoleName" />
+                <input type="hidden" name="DepartmentId" value="@Model.DepartmentId" />
+                <input type="hidden" name="IsActive" value="@Model.IsActive.ToString().ToLower()" />
+
+                <div class="profile-form-card">
+                    <!-- PHẦN 1: THÔNG TIN CÁ NHÂN -->
+                    <div class="form-section-header">
+                        <h3 class="form-card-title"><i class="fa-solid fa-user-pen text-primary me-2"></i> Thông tin cá nhân</h3>
+                    </div>
+                    
+                    <div class="row g-3 mt-2 align-items-stretch">
+                        <div class="col-md-6">
+                            <label for="FullName" class="form-label-style">Họ và tên <span class="required-mark">*</span></label>
+                            <div class="input-field-wrapper">
+                                <i class="fa-regular fa-user field-icon"></i>
+                                <input type="text" id="FullName" name="FullName" class="form-input-style" value="@Model.FullName" required maxlength="100" />
+                            </div>
+                            <span class="validation-error-msg" id="err-FullName"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="EmailDisplay" class="form-label-style">Địa chỉ Email</label>
+                            <div class="input-field-wrapper">
+                                <i class="fa-regular fa-envelope field-icon"></i>
+                                <input type="email" id="EmailDisplay" class="form-input-style" value="@Model.Email" disabled style="background-color: #f1f5f9; color: #64748b; cursor: not-allowed; border-color: #cbd5e1;" />
+                                <input type="hidden" name="Email" value="@Model.Email" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="Phone" class="form-label-style">Số điện thoại <span class="required-mark">*</span></label>
+                            <div class="input-field-wrapper">
+                                <i class="fa-solid fa-phone field-icon"></i>
+                                <input type="text" id="Phone" name="Phone" class="form-input-style" value="@Model.Phone" required maxlength="20" />
+                            </div>
+                            <span class="validation-error-msg" id="err-Phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="section-divider-light my-4"></div>
+
+                    <!-- PHẦN 2: BẢO MẬT & MẬT KHẨU -->
+                    <div class="form-section-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="form-card-title"><i class="fa-solid fa-key text-warning me-2"></i> Bảo mật & Mật khẩu</h3>
+                            <p class="form-card-subtitle text-muted mb-0">Nếu không có nhu cầu đổi mật khẩu mới, vui lòng để trống ô này.</p>
+                        </div>
+                        <button type="button" class="btn-generate-password" id="btnGenPassword" title="Gợi ý mật khẩu mạnh ngẫu nhiên">
+                            <i class="fa-solid fa-dice me-1"></i> Gợi ý mật khẩu
+                        </button>
+                    </div>
+                    
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label for="Password" class="form-label-style">Mật khẩu mới</label>
+                            <div class="input-field-wrapper password-wrapper">
+                                <i class="fa-solid fa-lock field-icon"></i>
+                                <input type="password" id="Password" name="Password" class="form-input-style password-input" placeholder="Nhập mật khẩu mới..." minlength="6" maxlength="100" />
+                                <button type="button" class="btn-toggle-pwd" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Gợi ý mật khẩu banner (Clean UI) -->
+                            <div class="suggested-pwd-banner" id="suggestedPwdBanner" style="display: none;">
+                                <div class="suggested-pwd-info">
+                                    <span class="suggested-label">Mật khẩu mạnh gợi ý:</span>
+                                    <strong class="suggested-value" id="suggestedPwdValue"></strong>
+                                </div>
+                                <button type="button" class="btn-apply-suggested" id="btnApplyCopyPwd">
+                                    <i class="fa-regular fa-copy me-1"></i> Sao chép & Dùng
+                                </button>
+                            </div>
+
+                            <span class="validation-error-msg" id="err-Password"></span>
+                            
+                            <!-- Password Strength Indicator (Minimalist dots) -->
+                            <div class="pwd-strength-row" id="strengthContainer" style="display: none;">
+                                <span class="pwd-strength-label">Độ mạnh:</span>
+                                <div class="pwd-strength-dots">
+                                    <span class="strength-dot" id="dot1"></span>
+                                    <span class="strength-dot" id="dot2"></span>
+                                    <span class="strength-dot" id="dot3"></span>
+                                </div>
+                                <span class="pwd-strength-text" id="strengthText">Yếu</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-divider-light my-4"></div>
+
+                    <!-- NÚT THAO TÁC (TÍCH HỢP TRONG CARD CHO LIỀN MẠCH) -->
+                    <div class="profile-action-bar-inner">
+                        <a href="@Url.Action("Index", "Analytics")" class="btn-back-style">Quay lại Dashboard</a>
+                        <button type="submit" id="btnSubmitForm" class="btn-save-style">
+                            <span class="btn-label-text"><i class="fa-solid fa-circle-check me-2"></i> Cập nhật hồ sơ</span>
+                            <span class="btn-loading-text" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Đang cập nhật...</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL XEM ẢNH PHÓNG TO (LIGHTBOX) -->
+<div class="profile-modal-overlay" id="lightboxModal">
+    <div class="lightbox-content">
+        <button type="button" class="modal-close-btn" id="btnCloseLightbox">&times;</button>
+        <img src="" class="lightbox-img" id="lightboxImg" alt="Enlarged Avatar" />
+    </div>
+</div>
+
+<!-- MODAL CẮT ẢNH (IMAGE CROPPER) -->
+<div class="profile-modal-overlay" id="cropperModal">
+    <div class="cropper-modal-card">
+        <div class="cropper-modal-header">
+            <h4 class="cropper-modal-title"><i class="fa-solid fa-crop-simple me-2"></i> Cắt ảnh đại diện</h4>
+            <button type="button" class="modal-close-btn" id="btnCloseCropper">&times;</button>
+        </div>
+        <div class="cropper-modal-body">
+            <div class="img-crop-container">
+                <img id="imageToCrop" src="" alt="Source Image" />
+            </div>
+        </div>
+        <div class="cropper-modal-footer">
+            <button type="button" class="btn-crop-cancel" id="btnCancelCropper">Hủy bỏ</button>
+            <button type="button" class="btn-crop-submit" id="btnSaveCropped">Cắt & Lưu</button>
+        </div>
+    </div>
+</div>
+
+<!-- STYLE PROFILE HMDN ĐẸP VÀ CHUYÊN NGHIỆP -->
+<style>
+    .profile-page-wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding-top: 10px;
+        font-family: var(--font-main), sans-serif;
+        animation: pageFadeIn 0.4s ease-out;
+    }
+
+    @@keyframes pageFadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* CARD BÊN TRÁI: AVATAR & TỔNG QUAN */
+    .profile-sidebar-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 144, 161, 0.08);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 144, 161, 0.02);
+        padding: 30px 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        min-height: 520px;
+        justify-content: center;
+    }
+
+    .avatar-upload-container {
+        position: relative;
+    }
+
+    .avatar-preview-circle {
+        position: relative;
+        width: 125px;
+        height: 125px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid #ffffff;
+        box-shadow: 0 4px 15px rgba(0, 144, 161, 0.15);
+        cursor: pointer;
+    }
+
+    .profile-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-avatar-initials-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 42px;
+        font-weight: 700;
+    }
+
+    .avatar-upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.45);
+        color: #ffffff;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+
+    .avatar-preview-circle:hover .avatar-upload-overlay {
+        opacity: 1;
+    }
+
+    /* DROPDOWN MENU CHO AVATAR */
+    .avatar-dropdown-menu {
+        position: absolute;
+        top: 135px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.9);
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 144, 161, 0.12);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 6px;
+        min-width: 180px;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .avatar-dropdown-menu.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) scale(1);
+    }
+
+    .avatar-dropdown-item {
+        width: 100%;
+        background: none;
+        border: none;
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.15s ease;
+    }
+
+    .avatar-dropdown-item:hover {
+        background: rgba(0, 175, 169, 0.06);
+        color: var(--hm-teal);
+    }
+
+    .avatar-dropdown-item.text-danger:hover {
+        background: rgba(239, 68, 68, 0.06);
+        color: #ef4444;
+    }
+
+    .profile-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .profile-username {
+        font-size: 13.5px;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .profile-badges-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .badge-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 16px;
+        font-size: 12.5px;
+        font-weight: 600;
+        border-radius: 30px;
+        width: 85%;
+        text-align: center;
+    }
+
+    .badge-role {
+        background: rgba(0, 144, 161, 0.08);
+        color: var(--hm-navy);
+        border: 1px solid rgba(0, 144, 161, 0.15);
+    }
+
+    .badge-dept {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .profile-meta-list {
+        width: 100%;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 20px;
+    }
+
+    .meta-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 8px 0;
+    }
+
+    .meta-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .meta-value {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* CARD BÊN PHẢI: FORM CÀI ĐẶT */
+    .profile-form-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid rgba(0, 144, 161, 0.08);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 144, 161, 0.02);
+        padding: 30px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 520px;
+    }
+
+    .form-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .form-card-subtitle {
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+    .form-label-style {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .required-mark {
+        color: var(--accent-red);
+    }
+
+    .input-field-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .field-icon {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+    }
+
+    .form-input-style {
+        width: 100%;
+        height: 44px; /* Fix cứng chiều cao các ô để cân xứng hoàn hảo */
+        padding: 11px 16px 11px 40px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-primary);
+        background-color: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        outline: none;
+        box-sizing: border-box;
+        transition: all 0.25s ease;
+    }
+
+    .form-input-style:hover {
+        border-color: #94a3b8;
+    }
+
+    .form-input-style:focus {
+        border-color: var(--hm-teal);
+        box-shadow: 0 0 0 3px rgba(0, 175, 169, 0.12);
+    }
+
+    .form-input-style:focus + .field-icon {
+        color: var(--hm-teal);
+    }
+
+    /* LỖI VALIDATION CHỮ ĐỎ */
+    .validation-error-msg {
+        font-size: 11.5px;
+        color: #ef4444;
+        font-weight: 600;
+        display: block;
+        margin-top: 4px;
+        min-height: 18px;
+    }
+
+    /* ĐƯỜNG CHIA NHẸ NHÀNG */
+    .section-divider-light {
+        height: 1px;
+        background: #f1f5f9;
+        border: none;
+    }
+
+    /* NÚT TẠO MẬT KHẨU MẠNH */
+    .btn-generate-password {
+        background: rgba(0, 144, 161, 0.08);
+        border: 1px solid rgba(0, 144, 161, 0.2);
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--hm-teal);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-generate-password:hover {
+        background: var(--hm-teal);
+        color: #ffffff;
+        box-shadow: 0 4px 10px rgba(0, 175, 169, 0.15);
+    }
+
+    /* HIỂN THỊ MẬT KHẨU */
+    .password-wrapper {
+        width: 100%;
+    }
+
+    .btn-toggle-pwd {
+        position: absolute;
+        right: 14px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0;
+        font-size: 15px;
+        z-index: 10;
+    }
+
+    .btn-toggle-pwd:hover {
+        color: var(--hm-teal);
+    }
+
+    .password-input {
+        padding-right: 42px !important;
+    }
+
+    /* BANNER GỢI Ý MẬT KHẨU */
+    .suggested-pwd-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-top: 8px;
+        animation: slideDown 0.25s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .suggested-pwd-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .suggested-label {
+        font-size: 11px;
+        color: #166534;
+        font-weight: 600;
+    }
+
+    .suggested-value {
+        font-size: 13.5px;
+        color: #15803d;
+        font-family: monospace;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-apply-suggested {
+        background: #16a34a;
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-apply-suggested:hover {
+        background: #15803d;
+        box-shadow: 0 2px 6px rgba(22, 163, 74, 0.2);
+    }
+
+    /* ĐO ĐỘ MẠNH MẬT KHẨU DẠNG CHẤM (MINIMALIST DOTS) */
+    .pwd-strength-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .pwd-strength-label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .pwd-strength-dots {
+        display: flex;
+        gap: 4px;
+    }
+
+    .strength-dot {
+        width: 16px;
+        height: 5px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        transition: background-color 0.25s ease;
+    }
+
+    .pwd-strength-text {
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    /* THANH HÀNH ĐỘNG INNER CARD */
+    .profile-action-bar-inner {
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+        padding-top: 10px;
+    }
+
+    .btn-back-style {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 22px;
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn-back-style:hover {
+        background: #f8fafc;
+        color: var(--text-primary);
+        border-color: #cbd5e1;
+    }
+
+    .btn-save-style {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 26px;
+        background: linear-gradient(135deg, var(--hm-navy), var(--hm-teal));
+        border: none;
+        border-radius: 8px;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 144, 161, 0.15);
+    }
+
+    .btn-save-style:hover:not(:disabled) {
+        box-shadow: 0 6px 16px rgba(0, 144, 161, 0.25);
+        filter: brightness(1.05);
+    }
+
+    .btn-save-style:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* MODAL CHUNG */
+    .profile-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .profile-modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .modal-close-btn {
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #ffffff;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .modal-close-btn:hover {
+        color: #ef4444;
+    }
+
+    /* LIGHTBOX */
+    .lightbox-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+    }
+
+    .lightbox-img {
+        max-width: 500px;
+        max-height: 500px;
+        border-radius: 12px;
+        border: 4px solid #ffffff;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* CROPPER CARD */
+    .cropper-modal-card {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 480px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cropper-modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+    }
+
+    .cropper-modal-header .modal-close-btn {
+        color: #94a3b8;
+        top: 8px;
+        right: 15px;
+    }
+
+    .cropper-modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .cropper-modal-body {
+        padding: 20px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .img-crop-container {
+        width: 100%;
+        max-height: 300px;
+        overflow: hidden;
+    }
+
+    .img-crop-container img {
+        max-width: 100%;
+        display: block;
+    }
+
+    .cropper-modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-crop-cancel {
+        padding: 8px 18px;
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 6px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-crop-cancel:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .btn-crop-submit {
+        padding: 8px 20px;
+        background: var(--hm-teal);
+        border: none;
+        border-radius: 6px;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-crop-submit:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 4px 10px rgba(0, 175, 169, 0.2);
+    }
+
+    /* RESPONSIVE */
+    @@media (max-width: 991px) {
+        .profile-sidebar-card {
+            padding: 24px 16px;
+            min-height: auto;
+        }
+        .profile-form-card {
+            padding: 20px;
+            min-height: auto;
+        }
+    }
+</style>
+
+<!-- SCRIPT UPLOAD & PREVIEW & CROPPER & STRENGTH & GENERATOR -->
+@section scripts {
+    <script>
+        var cropper = null;
+        var croppedBlob = null; // Lưu trữ blob ảnh đã cắt tròn
+
+        // Mở / Đóng Dropdown Avatar
+        $('#avatarTrigger').on('click', function(e) {
+            e.stopPropagation();
+            $('#avatarDropdown').toggleClass('active');
+        });
+
+        $(document).on('click', function() {
+            $('#avatarDropdown').removeClass('active');
+        });
+
+        // Tải ảnh phóng to (Lightbox)
+        $('#btnViewAvatar').on('click', function() {
+            var src = $('#avatarPreview').attr('src');
+            if (src && src.trim() !== "" && $('#avatarPreview').is(':visible')) {
+                $('#lightboxImg').attr('src', src);
+                $('#lightboxModal').addClass('active');
+            } else {
+                // Lấy initials làm ảnh placeholder
+                alert("Bạn hiện chưa có ảnh đại diện tùy chỉnh để phóng to.");
+            }
+        });
+
+        $('#btnCloseLightbox, #lightboxModal').on('click', function(e) {
+            if (e.target.id === 'lightboxModal' || e.target.id === 'btnCloseLightbox') {
+                $('#lightboxModal').removeClass('active');
+            }
+        });
+
+        // Trigger Upload
+        $('#btnTriggerUpload').on('click', function() {
+            $('#avatarFile').click();
+        });
+
+        // Gỡ ảnh đại diện
+        $('#btnRemoveAvatar').on('click', function() {
+            if (confirm("Bạn có chắc chắn muốn gỡ ảnh đại diện hiện tại và quay về mặc định?")) {
+                $.ajax({
+                    url: '@Url.Action("RemoveAvatar", "User")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(res) {
+                        if (res && res.success) {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thành công", res.message, "info");
+                            } else {
+                                alert(res.message);
+                            }
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            alert(res.message);
+                        }
+                    },
+                    error: function() {
+                        alert("Đã xảy ra lỗi kết nối khi gỡ ảnh.");
+                    }
+                });
+            }
+        });
+
+        // Xử lý File tải lên & Khởi tạo Cropper
+        $('#avatarFile').on('change', function(e) {
+            var files = e.target.files;
+            if (files && files.length > 0) {
+                var file = files[0];
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    $('#imageToCrop').attr('src', evt.target.result);
+                    $('#cropperModal').addClass('active');
+                    
+                    // Khởi tạo Cropper.js sau khi ảnh đã hiển thị
+                    setTimeout(function() {
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        var image = document.getElementById('imageToCrop');
+                        cropper = new Cropper(image, {
+                            aspectRatio: 1, // Tỉ lệ 1:1 cho ảnh tròn
+                            viewMode: 1,
+                            dragMode: 'move',
+                            autoCropArea: 1,
+                            restore: false,
+                            guides: false,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: false,
+                            toggleDragModeOnDblclick: false
+                        });
+                    }, 200);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Hủy bỏ Cắt ảnh
+        $('#btnCancelCropper, #btnCloseCropper').on('click', function() {
+            $('#cropperModal').removeClass('active');
+            $('#avatarFile').val('');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        // Hoàn tất cắt ảnh
+        $('#btnSaveCropped').on('click', function() {
+            if (cropper) {
+                var canvas = cropper.getCroppedCanvas({
+                    width: 250,
+                    height: 250
+                });
+                
+                canvas.toBlob(function(blob) {
+                    croppedBlob = blob; // Lưu blob ảnh cắt
+                    
+                    // Hiển thị ảnh preview ngay lập tức trên UI
+                    var previewUrl = URL.createObjectURL(blob);
+                    $('#avatarPreview').attr('src', previewUrl).show();
+                    $('#avatarInitials').hide();
+                    
+                    // Đóng modal
+                    $('#cropperModal').removeClass('active');
+                }, 'image/png');
+            }
+        });
+
+        // TIỆN ÍCH MẬT KHẨU
+        // Ẩn/Hiện mật khẩu
+        $('.btn-toggle-pwd').on('click', function () {
+            var $btn = $(this);
+            var $input = $btn.siblings('.password-input');
+            var type = $input.attr('type') === 'password' ? 'text' : 'password';
+            $input.attr('type', type);
+            
+            var $icon = $btn.find('i');
+            if (type === 'text') {
+                $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            }
+        });
+
+        // Gợi ý mật khẩu mạnh
+        $('#btnGenPassword').on('click', function() {
+            var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@@#$%^&*()_+";
+            var passLength = 14;
+            var newPass = "";
+            for (var i = 0; i < passLength; i++) {
+                var rnum = Math.floor(Math.random() * chars.length);
+                newPass += chars.substring(rnum, rnum + 1);
+            }
+            
+            // Điền vào input và chuyển sang hiển thị văn bản rõ ràng
+            $('#Password').val(newPass).attr('type', 'text').trigger('input');
+            $('.btn-toggle-pwd i').removeClass('fa-eye').addClass('fa-eye-slash');
+            
+            // Hiển thị banner gợi ý đẹp đẽ
+            $('#suggestedPwdValue').text(newPass);
+            $('#btnApplyCopyPwd').html('<i class="fa-regular fa-copy me-1"></i> Sao chép & Dùng').css('background', '#16a34a');
+            $('#suggestedPwdBanner').slideDown(250);
+        });
+
+        // Sao chép và dùng mật khẩu gợi ý
+        $('#btnApplyCopyPwd').on('click', function() {
+            var pass = $('#suggestedPwdValue').text();
+            if (pass) {
+                navigator.clipboard.writeText(pass).then(function() {
+                    $('#btnApplyCopyPwd').html('<i class="fa-solid fa-check me-1"></i> Đã sao chép!').css('background', '#10b981');
+                    
+                    // Ẩn banner sau 2 giây
+                    setTimeout(function() {
+                        $('#suggestedPwdBanner').slideUp(200);
+                    }, 2000);
+                });
+            }
+        });
+
+        // Đánh giá Độ mạnh mật khẩu (Chế độ tối giản Apple-style)
+        $('#Password').on('input', function() {
+            var pass = $(this).val();
+            
+            // Ẩn banner gợi ý nếu người dùng tự sửa đổi mật khẩu thủ công
+            if (pass !== $('#suggestedPwdValue').text()) {
+                $('#suggestedPwdBanner').slideUp(200);
+            }
+
+            if (!pass || pass.trim() === "") {
+                $('#strengthContainer').hide();
+                $('#err-Password').text("");
+                return;
+            }
+
+            $('#strengthContainer').css('display', 'flex');
+            var score = 0;
+
+            if (pass.length >= 6) score++;
+            if (pass.length >= 10) score++;
+            if (/[A-Z]/.test(pass)) score++;
+            if (/[0-9]/.test(pass)) score++;
+            if (/[!@@#$%^&*()_+]/.test(pass)) score++;
+
+            var $dot1 = $('#dot1');
+            var $dot2 = $('#dot2');
+            var $dot3 = $('#dot3');
+            var $text = $('#strengthText');
+
+            // Reset dots
+            $('.strength-dot').css('background-color', '#e2e8f0');
+
+            if (score <= 2) {
+                $dot1.css('background-color', '#ef4444');
+                $text.text("Yếu").css('color', '#ef4444');
+                $('#err-Password').text("Mật khẩu yếu, nên gồm cả số, chữ hoa/ký tự đặc biệt.");
+            } else if (score <= 4) {
+                $dot1.css('background-color', '#eab308');
+                $dot2.css('background-color', '#eab308');
+                $text.text("Trung bình").css('color', '#eab308');
+                $('#err-Password').text("");
+            } else {
+                $dot1.css('background-color', '#10b981');
+                $dot2.css('background-color', '#10b981');
+                $dot3.css('background-color', '#10b981');
+                $text.text("Mạnh").css('color', '#10b981');
+                $('#err-Password').text("");
+            }
+
+            if (pass.length < 6) {
+                $('#err-Password').text("Mật khẩu mới phải từ 6 ký tự trở lên.");
+            }
+        });
+
+        // Validation Real-time cho Họ tên và Số điện thoại
+        $('#FullName').on('input', function() {
+            var name = $(this).val();
+            if (!name || name.trim() === "") {
+                $('#err-FullName').text("Họ và tên không được để trống.");
+            } else {
+                $('#err-FullName').text("");
+            }
+        });
+
+        $('#Phone').on('input', function() {
+            var phone = $(this).val();
+            var phoneRegex = /^\d{10,11}$/;
+            if (!phone || phone.trim() === "") {
+                $('#err-Phone').text("Số điện thoại không được để trống.");
+            } else if (!phoneRegex.test(phone.trim())) {
+                $('#err-Phone').text("Số điện thoại phải là số và có độ dài 10 hoặc 11 chữ số.");
+            } else {
+                $('#err-Phone').text("");
+            }
+        });
+
+        // Submit AJAX kèm Blob ảnh đã cắt
+        $(document).ready(function () {
+            $('#profileForm').on('submit', function (e) {
+                e.preventDefault();
+
+                // Chạy validate trước khi submit
+                var hasError = false;
+                
+                var name = $('#FullName').val();
+                if (!name || name.trim() === "") {
+                    $('#err-FullName').text("Họ và tên không được để trống.");
+                    hasError = true;
+                }
+
+                var phone = $('#Phone').val();
+                var phoneRegex = /^\d{10,11}$/;
+                if (!phone || phone.trim() === "") {
+                    $('#err-Phone').text("Số điện thoại không được để trống.");
+                    hasError = true;
+                } else if (!phoneRegex.test(phone.trim())) {
+                    $('#err-Phone').text("Số điện thoại phải là số và có độ dài 10 hoặc 11 chữ số.");
+                    hasError = true;
+                }
+
+                var pass = $('#Password').val();
+                if (pass && pass.trim() !== "" && pass.length < 6) {
+                    $('#err-Password').text("Mật khẩu mới phải từ 6 ký tự trở lên.");
+                    hasError = true;
+                }
+
+                if (hasError) {
+                    if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                        window.MedEquip.toast("Cảnh báo", "Vui lòng kiểm tra lại các trường thông tin lỗi.", "danger");
+                    } else {
+                        alert("Vui lòng sửa các lỗi dữ liệu trước khi gửi.");
+                    }
+                    return;
+                }
+
+                var form = this;
+                var $btnSubmit = $('#btnSubmitForm');
+                
+                $btnSubmit.prop('disabled', true);
+                $btnSubmit.find('.btn-label-text').hide();
+                $btnSubmit.find('.btn-loading-text').show();
+
+                var formData = new FormData(form);
+                
+                // Nếu có ảnh cắt, nạp blob ảnh đã cắt vào FormData
+                if (croppedBlob != null) {
+                    formData.delete('avatarFile'); // Xóa file thô ban đầu nếu có
+                    formData.append('avatarFile', croppedBlob, 'avatar.png');
+                }
+
+                $.ajax({
+                    url: $(form).attr('action'),
+                    type: $(form).attr('method'),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        if (res && res.success) {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thành công", res.message || "Cập nhật hồ sơ tài khoản thành công!", "info");
+                            } else {
+                                alert(res.message || "Cập nhật hồ sơ tài khoản thành công!");
+                            }
+                            
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                                window.MedEquip.toast("Thất bại", res.message || "Cập nhật thất bại.", "danger");
+                            } else {
+                                alert(res.message || "Lỗi: " + res.message);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errMsg = "Đã xảy ra lỗi kết nối đến máy chủ.";
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            errMsg = xhr.responseJSON.message;
+                        }
+                        if (window.MedEquip && typeof window.MedEquip.toast === 'function') {
+                            window.MedEquip.toast("Lỗi hệ thống", errMsg, "danger");
+                        } else {
+                            alert(errMsg);
+                        }
+                    },
+                    complete: function () {
+                        $btnSubmit.prop('disabled', false);
+                        $btnSubmit.find('.btn-loading-text').hide();
+                        $btnSubmit.find('.btn-label-text').show();
+                    }
+                });
+            });
+        });
+    </script>
+}

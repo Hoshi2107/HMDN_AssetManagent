@@ -904,6 +904,7 @@ new Vue({
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     if (res.success) {
+                        console.log("=== DEBUG SCHEDULES ===", res.data);
                         var todayStr = vm.getLocalTodayStr();
                         res.data.forEach(function (s) {
                             if (s.Status === 'pending' && s.DueDate < todayStr) {
@@ -915,11 +916,12 @@ new Vue({
                         vm.calculateKPIs();
                         vm.checkUrlParams();
                     } else {
+                        console.log("=== DEBUG SCHEDULES FAILED ===", res);
                         useCachedSchedules();
                     }
                 })
                 .catch(function (err) {
-                    console.error(err);
+                    console.error("=== DEBUG FETCH ERROR ===", err);
                     useCachedSchedules();
                 });
         },

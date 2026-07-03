@@ -37,6 +37,14 @@ var appCatalog = new Vue({
         detailItem: {},
         detailInventories: [],
         detailLoading: false,
+        expandedInventoryMap: {},
+        inventoryChecklistCache: {},
+        detailAssetSearch: '',
+        editingChecklistId: null,
+        inlineAddForm: {},
+        loadingChecklist: {},
+        savingChecklist: {},
+        deletingChecklist: {},
 
         currentTab: 'category',
         inventorySearch: '',
@@ -73,6 +81,12 @@ var appCatalog = new Vue({
         deleteDefTarget: null,
         expandedInventories: {},
         isLockScope: false,
+        itemDropdownSearch: '',
+        inventoryDropdownSearch: '',
+        showItemDropdown: false,
+        showInventoryDropdown: false,
+        defListSearch: '',
+        defListScope: 'all',
 
         toast: { show: false, msg: '' }
     },
@@ -101,6 +115,56 @@ var appCatalog = new Vue({
 
             });
 
+        },
+
+        filteredDropdownItems() {
+            var q = (this.itemDropdownSearch || '').trim().toLowerCase();
+            var uniqueItems = [];
+            var seenNames = new Set();
+            (this.items || []).forEach(it => {
+                var name = (it.Name || '').trim();
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    uniqueItems.push(it);
+                }
+            });
+            if (!q) return uniqueItems;
+            return uniqueItems.filter(it => (it.Name || '').toLowerCase().includes(q));
+        },
+
+        filteredDropdownInventories() {
+            var q = (this.inventoryDropdownSearch || '').trim().toLowerCase();
+            if (!q) return this.definitionFormInventories || [];
+            return (this.definitionFormInventories || []).filter(inv => 
+                (inv.AssetCode || '').toLowerCase().includes(q) ||
+                (inv.LocationName || '').toLowerCase().includes(q) ||
+                (inv.SerialNumber || '').toLowerCase().includes(q)
+            );
+        },
+
+        filteredChecklistDefinitions() {
+            var scope = this.defListScope || 'all';
+            var q = (this.defListSearch || '').trim().toLowerCase();
+
+            return (this.checklistDefinitions || []).filter(def => {
+                if (scope !== 'all' && def.Scope !== scope) {
+                    return false;
+                }
+                if (q) {
+                    var matchName = (def.CheckName || '').toLowerCase().includes(q);
+                    var matchDesc = (def.Description || '').toLowerCase().includes(q);
+                    var matchScopeLabel = false;
+                    if (def.Scope === 'item') {
+                        var itemName = this.getItemName(def.ItemId) || '';
+                        matchScopeLabel = itemName.toLowerCase().includes(q);
+                    } else if (def.Scope === 'inventory') {
+                        var assetCode = this.getInventoryAssetCode(def.InventoryId) || '';
+                        matchScopeLabel = assetCode.toLowerCase().includes(q);
+                    }
+                    return matchName || matchDesc || matchScopeLabel;
+                }
+                return true;
+            });
         },
 
         groupItems() {
@@ -199,6 +263,16 @@ var appCatalog = new Vue({
             return this.filteredItems.length === 0
                 ? '0'
                 : start + '-' + end + ' của ' + this.filteredItems.length
+        },
+
+        filteredDetailInventories() {
+            if (!this.detailAssetSearch) return this.detailInventories;
+            const q = this.detailAssetSearch.toLowerCase().trim();
+            return this.detailInventories.filter(x => 
+                (x.AssetCode || '').toLowerCase().includes(q) ||
+                (x.SerialNumber || '').toLowerCase().includes(q) ||
+                (x.LocationName || '').toLowerCase().includes(q)
+            );
         }
     },
 
@@ -291,49 +365,47 @@ var appCatalog = new Vue({
         },
 
         openDetailItem(item) {
-
             this.detailItem = item;
-
             this.showItemDetail = true;
-
             this.detailLoading = true;
-
             this.detailInventories = [];
+            this.expandedInventoryMap = {};
+            this.inventoryChecklistCache = {};
+            this.detailAssetSearch = '';
+            this.editingChecklistId = null;
+            this.inlineAddForm = {};
+            this.loadingChecklist = {};
+            this.savingChecklist = {};
+            this.deletingChecklist = {};
 
             $.ajax({
-
                 url: `/api/category/item-inventories/${item.Id}`,
-
                 type: 'GET',
-
                 success: (res) => {
-
+                    console.log('detailInventories response:', res);
                     this.detailInventories = res || [];
-
                 },
-
                 error: () => {
-
                     this.showToast('Không tải được dữ liệu');
-
                 },
-
                 complete: () => {
-
                     this.detailLoading = false;
-
                 }
-
             });
-
         },
 
         closeItemDetail() {
-
             this.showItemDetail = false;
             this.detailInventories = [];
             this.detailItem = {};
-
+            this.expandedInventoryMap = {};
+            this.inventoryChecklistCache = {};
+            this.detailAssetSearch = '';
+            this.editingChecklistId = null;
+            this.inlineAddForm = {};
+            this.loadingChecklist = {};
+            this.savingChecklist = {};
+            this.deletingChecklist = {};
         },
 
         openAddInventoryDefinition(inv) {
@@ -749,6 +821,10 @@ var appCatalog = new Vue({
         openAddDefinition() {
             this.isLockScope = false;
             this.isEditDefinition = false;
+            this.itemDropdownSearch = '';
+            this.inventoryDropdownSearch = '';
+            this.showItemDropdown = false;
+            this.showInventoryDropdown = false;
             this.definitionFormInventories = [];
             this.definitionForm = {
                 Id: 0,
@@ -770,6 +846,10 @@ var appCatalog = new Vue({
             if (def.Scope === 'global') return;
             this.isLockScope = true;
             this.isEditDefinition = true;
+            this.itemDropdownSearch = '';
+            this.inventoryDropdownSearch = '';
+            this.showItemDropdown = false;
+            this.showInventoryDropdown = false;
             this.definitionFormInventories = [];
             this.definitionForm = {
                 Id: def.Id,
@@ -908,6 +988,17 @@ var appCatalog = new Vue({
             }
         },
 
+        selectDropdownItem(it) {
+            this.definitionForm.ItemId = it.Id;
+            this.onDefinitionItemChange();
+            this.showItemDropdown = false;
+        },
+
+        selectDropdownInventory(inv) {
+            this.definitionForm.InventoryId = inv.Id;
+            this.showInventoryDropdown = false;
+        },
+
         loadItemInventories(itemId) {
             if (!itemId) return;
             $.ajax({
@@ -935,7 +1026,343 @@ var appCatalog = new Vue({
         },
 
         toggleExpandInventory(invId) {
-            this.$set(this.expandedInventories, invId, !this.expandedInventories[invId]);
+            const isExpanded = !this.expandedInventoryMap[invId];
+            this.$set(this.expandedInventoryMap, invId, isExpanded);
+            if (isExpanded) {
+                this.loadInventoryChecklist(invId);
+            }
+        },
+
+        loadInventoryChecklist(invId, forceReload) {
+            forceReload = forceReload || false;
+            var cleanId = parseInt(invId, 10);
+            if (isNaN(cleanId)) {
+                this.showToast('❌ ID thiết bị không hợp lệ');
+                return;
+            }
+            if (!forceReload && this.inventoryChecklistCache[cleanId]) {
+                return;
+            }
+            this.$set(this.loadingChecklist, invId, true);
+            $.ajax({
+                url: '/api/category/checklist-definition/inventory/' + cleanId,
+                type: 'GET',
+                success: (res) => {
+                    this.$set(this.inventoryChecklistCache, cleanId, res || []);
+                    // Also support cache by invId to make UI work correctly if keys mismatch
+                    if (invId !== cleanId) {
+                        this.$set(this.inventoryChecklistCache, invId, res || []);
+                    }
+                },
+                error: () => {
+                    this.showToast('❌ Không tải được checklist của thiết bị');
+                },
+                complete: () => {
+                    this.$set(this.loadingChecklist, invId, false);
+                }
+            });
+        },
+
+        saveInlineChecklist(def) {
+            if (!def.CheckName || !def.CheckName.trim()) {
+                this.showToast('⚠️ Tên checklist không được để trống');
+                return;
+            }
+            if (this.savingChecklist[def.Id]) return;
+            this.$set(this.savingChecklist, def.Id, true);
+
+            var cleanInvId = parseInt(def.InventoryId, 10);
+            const payload = {
+                Id: def.Id,
+                GroupId: def.GroupId,
+                Scope: 'inventory',
+                ItemId: def.ItemId || null,
+                InventoryId: cleanInvId,
+                CycleType: def.CycleType || null,
+                CheckName: def.CheckName.trim(),
+                Description: def.Description || '',
+                IsRequired: !!def.IsRequired,
+                SortOrder: def.SortOrder || 0,
+                IsActive: !!def.IsActive
+            };
+
+            $.ajax({
+                url: '/api/category/checklist-definition/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: (res) => {
+                    this.editingChecklistId = null;
+                    if (res && res.success && res.data) {
+                        // Update both caches
+                        const cache1 = this.inventoryChecklistCache[def.InventoryId] || [];
+                        const idx1 = cache1.findIndex(function(c) { return c.Id === def.Id; });
+                        if (idx1 !== -1) {
+                            this.$set(cache1, idx1, res.data);
+                        }
+                        if (cleanInvId !== def.InventoryId) {
+                            const cache2 = this.inventoryChecklistCache[cleanInvId] || [];
+                            const idx2 = cache2.findIndex(function(c) { return c.Id === def.Id; });
+                            if (idx2 !== -1) {
+                                this.$set(cache2, idx2, res.data);
+                            }
+                        }
+                    }
+                    this.showToast('✅ Đã lưu thay đổi!');
+                },
+                error: (err) => {
+                    this.showToast((err.responseJSON && err.responseJSON.message) || '❌ Lỗi khi lưu thay đổi!');
+                },
+                complete: () => {
+                    this.$set(this.savingChecklist, def.Id, false);
+                }
+            });
+        },
+
+        saveInlineAddChecklist(invId) {
+            var cleanId = parseInt(invId, 10);
+            if (isNaN(cleanId)) {
+                this.showToast('❌ ID thiết bị không hợp lệ');
+                return;
+            }
+            var form = this.inlineAddForm[invId];
+            if (!form || !form.CheckName || !form.CheckName.trim()) {
+                this.showToast('⚠️ Vui lòng nhập tên checklist');
+                return;
+            }
+            if (this.savingChecklist['add_' + invId]) return;
+
+            this.$set(this.savingChecklist, 'add_' + invId, true);
+
+            var groupId = this.detailItem ? (this.detailItem.GroupId || 0) : (this.activeGroup ? this.activeGroup.Id : 0);
+            var itemId = this.detailItem ? (this.detailItem.Id || null) : null;
+            var existingCount = (this.inventoryChecklistCache[cleanId] || []).length;
+
+            var payload = {
+                Id: 0,
+                GroupId: groupId,
+                Scope: 'inventory',
+                ItemId: itemId,
+                InventoryId: cleanId,
+                CycleType: form.CycleType || null,
+                CheckName: form.CheckName.trim(),
+                Description: '',
+                IsRequired: !!form.IsRequired,
+                SortOrder: existingCount + 1,
+                IsActive: true
+            };
+
+            $.ajax({
+                url: '/api/category/checklist-definition/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: (res) => {
+                    if (res && res.success && res.data) {
+                        var existing = this.inventoryChecklistCache[cleanId] || [];
+                        var updated = existing.concat([res.data]);
+                        this.$set(this.inventoryChecklistCache, cleanId, updated);
+                        if (invId !== cleanId) {
+                            var existing2 = this.inventoryChecklistCache[invId] || [];
+                            this.$set(this.inventoryChecklistCache, invId, existing2.concat([res.data]));
+                        }
+                        this.$set(this.inlineAddForm, invId, {
+                            CheckName: '',
+                            CycleType: '',
+                            IsRequired: true,
+                            show: false
+                        });
+                        this.showToast('✅ Thêm checklist thành công!');
+                    } else {
+                        var errMsg = (res && res.message) ? res.message : 'Lỗi khi thêm checklist!';
+                        this.showToast('❌ ' + errMsg);
+                    }
+                },
+                error: (err) => {
+                    var msg = (err.responseJSON && err.responseJSON.message)
+                        ? err.responseJSON.message
+                        : (err.responseText || '❌ Lỗi kết nối!');
+                    this.showToast(msg);
+                },
+                complete: () => {
+                    this.$set(this.savingChecklist, 'add_' + invId, false);
+                }
+            });
+        },
+
+        toggleChecklistActive(def, event) {
+            if (this.savingChecklist[def.Id]) {
+                if (event) event.preventDefault();
+                return;
+            }
+
+            var oldState = def.IsActive;
+            var newState = !oldState;
+            var invId = def.InventoryId;
+
+            def.IsActive = newState;
+            this.$set(this.savingChecklist, def.Id, true);
+
+            $.ajax({
+                url: '/api/category/checklist-definition/toggle/' + def.Id,
+                type: 'PUT',
+                success: (res) => {
+                    if (!res || !res.success) {
+                        def.IsActive = oldState;
+                        this.showToast('❌ Cập nhật trạng thái thất bại!');
+                    } else {
+                        this.showToast(newState ? '✅ Đã kích hoạt!' : '⏸️ Đã tắt!');
+                    }
+                },
+                error: () => {
+                    def.IsActive = oldState;
+                    this.showToast('❌ Cập nhật trạng thái thất bại!');
+                },
+                complete: () => {
+                    this.$set(this.savingChecklist, def.Id, false);
+                }
+            });
+        },
+
+        deleteChecklist(def) {
+            if (this.deletingChecklist[def.Id]) return;
+            if (!confirm('Xóa checklist "' + def.CheckName + '"?\nThao tác này không thể hoàn tác.')) return;
+
+            var invId = def.InventoryId;
+            var cleanId = parseInt(invId, 10);
+            
+            var cache = this.inventoryChecklistCache[invId] || [];
+            var oldIndex = -1;
+            for (var i = 0; i < cache.length; i++) {
+                if (cache[i].Id === def.Id) { oldIndex = i; break; }
+            }
+            if (oldIndex === -1) return;
+
+            var deletedItem = cache[oldIndex];
+            var newCache = cache.filter(function(c) { return c.Id !== def.Id; });
+            this.$set(this.inventoryChecklistCache, invId, newCache);
+            if (invId !== cleanId) {
+                var newCacheClean = (this.inventoryChecklistCache[cleanId] || []).filter(function(c) { return c.Id !== def.Id; });
+                this.$set(this.inventoryChecklistCache, cleanId, newCacheClean);
+            }
+            
+            this.$set(this.deletingChecklist, def.Id, true);
+
+            $.ajax({
+                url: '/api/category/checklist-definition/' + def.Id,
+                type: 'DELETE',
+                success: (res) => {
+                    if (res && res.success) {
+                        this.showToast('🗑️ Đã xóa checklist!');
+                    } else {
+                        var rb = (this.inventoryChecklistCache[invId] || []).slice();
+                        rb.splice(oldIndex, 0, deletedItem);
+                        this.$set(this.inventoryChecklistCache, invId, rb);
+                        if (invId !== cleanId) {
+                            var rbClean = (this.inventoryChecklistCache[cleanId] || []).slice();
+                            rbClean.splice(oldIndex, 0, deletedItem);
+                            this.$set(this.inventoryChecklistCache, cleanId, rbClean);
+                        }
+                        this.showToast('❌ ' + ((res && res.message) || 'Không thể xóa!'));
+                    }
+                },
+                error: (xhr) => {
+                    var rb = (this.inventoryChecklistCache[invId] || []).slice();
+                    rb.splice(oldIndex, 0, deletedItem);
+                    this.$set(this.inventoryChecklistCache, invId, rb);
+                    if (invId !== cleanId) {
+                        var rbClean = (this.inventoryChecklistCache[cleanId] || []).slice();
+                        rbClean.splice(oldIndex, 0, deletedItem);
+                        this.$set(this.inventoryChecklistCache, cleanId, rbClean);
+                    }
+                    this.showToast('❌ ' + ((xhr.responseJSON && xhr.responseJSON.message) || 'Không thể xóa!'));
+                },
+                complete: () => {
+                    this.$set(this.deletingChecklist, def.Id, false);
+                }
+            });
+        },
+
+        addFromDefaultChecklist(inv) {
+            var cleanId = parseInt(inv.Id, 10);
+            $.ajax({
+                url: '/api/category/checklist-definition/copy-default/' + cleanId,
+                type: 'POST',
+                beforeSend: () => {
+                    this.$set(this.loadingChecklist, inv.Id, true);
+                },
+                success: (res) => {
+                    if (res && res.success) {
+                        if (res.count > 0) {
+                            this.showToast('✅ Đã thêm ' + res.count + ' checklist từ mặc định!');
+                            this.loadInventoryChecklist(inv.Id, true);
+                        } else {
+                            this.$set(this.loadingChecklist, inv.Id, false);
+                            this.showToast('ℹ️ Tất cả checklist mặc định đã được thêm trước đó.');
+                        }
+                    } else {
+                        this.$set(this.loadingChecklist, inv.Id, false);
+                        this.showToast('❌ ' + ((res && res.message) || 'Lỗi khi sao chép!'));
+                    }
+                },
+                error: (err) => {
+                    this.$set(this.loadingChecklist, inv.Id, false);
+                    this.showToast((err.responseJSON && err.responseJSON.message) || '❌ Lỗi khi sao chép checklist mặc định!');
+                }
+            });
+        },
+
+        refreshInventoryChecklist(invId) {
+            this.loadInventoryChecklist(invId, true);
+        },
+
+        showInlineAddForm(invId) {
+            this.$set(this.inlineAddForm, invId, {
+                CheckName: '',
+                CycleType: '',
+                IsRequired: true,
+                show: true
+            });
+            this.$nextTick(() => {
+                var ref = this.$refs['addInput_' + invId];
+                var el = Array.isArray(ref) ? ref[0] : ref;
+                if (el) el.focus();
+            });
+        },
+
+        cancelInlineAdd(invId) {
+            this.$set(this.inlineAddForm, invId, {
+                CheckName: '',
+                CycleType: '',
+                IsRequired: true,
+                show: false
+            });
+        },
+
+        startInlineEdit(def) {
+            if (this.savingChecklist[def.Id]) return;
+            def._snapshot = {
+                CheckName: def.CheckName,
+                CycleType: def.CycleType,
+                IsRequired: def.IsRequired
+            };
+            this.editingChecklistId = def.Id;
+            this.$nextTick(function() {
+                var vm = appCatalog;
+                var ref = vm.$refs['editInput_' + def.Id];
+                var el = Array.isArray(ref) ? ref[0] : ref;
+                if (el) { el.focus(); el.select(); }
+            });
+        },
+
+        cancelInlineEdit(def) {
+            if (this.editingChecklistId !== def.Id) return;
+            if (def._snapshot) {
+                def.CheckName = def._snapshot.CheckName;
+                def.CycleType = def._snapshot.CycleType;
+                def.IsRequired = def._snapshot.IsRequired;
+            }
+            this.editingChecklistId = null;
         }
     },
 
@@ -959,5 +1386,14 @@ var appCatalog = new Vue({
     mounted() {
         this.loadGroups()
         this.loadInventories();
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.searchable-select-items-container')) {
+                this.showItemDropdown = false;
+            }
+            if (!e.target.closest('.searchable-select-inventory-container')) {
+                this.showInventoryDropdown = false;
+            }
+        });
     }
 })

@@ -3,6 +3,7 @@ using HMS.Models;
 using HMS.Models.Catalog;
 using HMS.Models.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.SqlClient;
 using System.Linq;
@@ -521,6 +522,112 @@ END');
                 return BadRequest(ex.Message);
             }
         }
+
+        // GET: api/category/checklist-definition/inventory/{inventoryId}
+        [HttpGet]
+        [Route("checklist-definition/inventory/{inventoryId}")]
+        public IHttpActionResult GetInventoryChecklistDefinitions(int inventoryId)
+        {
+            try
+            {
+                var list = db.ChecklistDefinitions
+                    .Where(d => d.Scope == "inventory" && d.InventoryId == inventoryId)
+                    .OrderBy(d => d.SortOrder)
+                    .ThenBy(d => d.Id)
+                    .ToList();
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/category/checklist-definition/copy-default/{inventoryId}
+        [HttpPost]
+        [Route("checklist-definition/copy-default/{inventoryId}")]
+        public IHttpActionResult CopyDefaultChecklists(int inventoryId)
+        {
+            try
+            {
+                var inventoryData = db.Database.SqlQuery<InventoryCopyDefaultInfo>(@"
+                    SELECT inv.Id, inv.ItemId, it.GroupId
+                    FROM Inventory inv
+                    JOIN Items it ON inv.ItemId = it.Id
+                    WHERE inv.Id = @InventoryId",
+                    new SqlParameter("@InventoryId", inventoryId)
+                ).FirstOrDefault();
+
+                if (inventoryData == null) return NotFound();
+
+                int itemId = inventoryData.ItemId;
+                int groupId = inventoryData.GroupId;
+
+                // Get existing inventory-scoped checklist names for this inventory
+                var existingNames = db.ChecklistDefinitions
+                    .Where(d => d.Scope == "inventory" && d.InventoryId == inventoryId)
+                    .Select(d => d.CheckName.ToLower())
+                    .ToList();
+
+                // Get default checklists (group-scoped and item-scoped)
+                var defaultChecklists = db.ChecklistDefinitions
+                    .Where(d => d.IsActive && (
+                        (d.Scope == "group" && d.GroupId == groupId) ||
+                        (d.Scope == "item" && d.ItemId == itemId)
+                    ))
+                    .ToList();
+
+                var addedList = new List<ChecklistDefinition>();
+                int maxSortOrder = db.ChecklistDefinitions
+                    .Where(d => d.Scope == "inventory" && d.InventoryId == inventoryId)
+                    .Select(d => (int?)d.SortOrder)
+                    .Max() ?? 0;
+
+                foreach (var dc in defaultChecklists)
+                {
+                    string checkNameTrim = dc.CheckName.Trim();
+                    if (!existingNames.Contains(checkNameTrim.ToLower()))
+                    {
+                        maxSortOrder++;
+                        var newDef = new ChecklistDefinition
+                        {
+                            Scope = "inventory",
+                            GroupId = groupId,
+                            ItemId = itemId,
+                            InventoryId = inventoryId,
+                            CycleType = dc.CycleType,
+                            CheckName = checkNameTrim,
+                            Description = dc.Description,
+                            IsRequired = dc.IsRequired,
+                            SortOrder = maxSortOrder,
+                            IsActive = true,
+                            CreatedAt = DateTime.Now
+                        };
+                        db.ChecklistDefinitions.Add(newDef);
+                        addedList.Add(newDef);
+                        existingNames.Add(checkNameTrim.ToLower());
+                    }
+                }
+
+                if (addedList.Count > 0)
+                {
+                    db.SaveChanges();
+                }
+
+                return Ok(new { success = true, count = addedList.Count, data = addedList });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+    }
+
+    public class InventoryCopyDefaultInfo
+    {
+        public int Id { get; set; }
+        public int ItemId { get; set; }
+        public int GroupId { get; set; }
     }
 
     public class ChecklistDefinitionSaveDTO
