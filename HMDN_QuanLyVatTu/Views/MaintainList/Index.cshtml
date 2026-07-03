@@ -109,79 +109,160 @@
             </div>
 
             <!-- TABLE -->
-            <div class="table-card">
+            @*<div class="table-card">
+
+            <div v-if="loading" class="loading-state">
+                ⏳ Đang tải dữ liệu...
+            </div>
+
+            <table v-else>
+                <thead>
+                    <tr>
+                        <th>Mã tài sản</th>
+                        <th>Tên thiết bị</th>
+                        <th>Tên lịch</th>
+                        <th>Loại bảo trì</th>
+                        <th>Khoa</th>
+                        <th>Ngày BT gần nhất</th>
+                        <th>Ngày BT tiếp theo</th>
+                        <th>Lặp lại</th>
+                        <th>Trạng thái</th>
+                        <th>Thời hạn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-if="paginatedList.length === 0">
+                        <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
+                            Không có dữ liệu
+                        </td>
+                    </tr>
+                    <tr v-for="item in paginatedList"
+                        :key="item.Id"
+                        class="table-row"
+                        :class="urgencyClass(item.DaysUntilDue)"
+                        v-on:click="openDetail(item)">
+
+                        <td>
+                            <span class="asset-code">${ item.AssetCode }</span>
+                        </td>
+                        <td>
+                            <div class="device-name">${ item.ItemName || '—' }</div>
+                            <div class="device-model">${ item.Model || '' }</div>
+                        </td>
+                        <td>${ item.ScheduleName }</td>
+                        <td>
+                            <span class="type-badge" :class="'type-' + item.MaintenanceType">
+                                ${ typeLabel(item.MaintenanceType) }
+                            </span>
+                        </td>
+                        <td>${ item.DepartmentName || '—' }</td>
+                        <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
+                        <td>${ formatDate(item.NextMaintenanceDate) }</td>
+                        <td>
+                            <span v-if="item.IsRecurring">
+                                🔄 ${ item.RecurringMonths } tháng
+                            </span>
+                            <span v-else style="color:#94a3b8">1 lần</span>
+                        </td>
+                        <td>
+                            <span class="status-badge" :class="'status-' + item.Status">
+                                ${ statusLabel(item.Status) }
+                            </span>
+                        </td>
+                        <td>
+                            <span class="urgency-badge"
+                                  :style="{
+                                      background: urgencyMeta(item.DaysUntilDue).bg,
+                                      color: urgencyMeta(item.DaysUntilDue).color
+                                  }">
+                                ${ urgencyMeta(item.DaysUntilDue).text }
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>*@
+
+            <div class="table-card"
+                 ref="tableCard"
+                 v-on:scroll.capture="onTableScroll">
 
                 <div v-if="loading" class="loading-state">
                     ⏳ Đang tải dữ liệu...
                 </div>
 
-                <table v-else>
-                    <thead>
-                        <tr>
-                            <th>Mã tài sản</th>
-                            <th>Tên thiết bị</th>
-                            <th>Tên lịch</th>
-                            <th>Loại bảo trì</th>
-                            <th>Khoa</th>
-                            <th>Ngày BT gần nhất</th>
-                            <th>Ngày BT tiếp theo</th>
-                            <th>Lặp lại</th>
-                            <th>Trạng thái</th>
-                            <th>Thời hạn</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="paginatedList.length === 0">
-                            <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
-                                Không có dữ liệu
-                            </td>
-                        </tr>
-                        <tr v-for="item in paginatedList"
-                            :key="item.Id"
-                            class="table-row"
-                            :class="urgencyClass(item.DaysUntilDue)"
-                            v-on:click="openDetail(item)">
+                <div v-else class="table-scroll" v-on:scroll="onTableScroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã tài sản</th>
+                                <th>Tên thiết bị</th>
+                                <th>Tên lịch</th>
+                                <th>Loại bảo trì</th>
+                                <th>Khoa</th>
+                                <th>Ngày BT gần nhất</th>
+                                <th>Ngày BT tiếp theo</th>
+                                <th>Lặp lại</th>
+                                <th>Trạng thái</th>
+                                <th>Thời hạn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="paginatedList.length === 0">
+                                <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
+                                    Không có dữ liệu
+                                </td>
+                            </tr>
+                            <tr v-for="item in paginatedList"
+                                :key="item.Id"
+                                class="table-row"
+                                :class="urgencyClass(item.DaysUntilDue)"
+                                v-on:click="openDetail(item)">
 
-                            <td>
-                                <span class="asset-code">${ item.AssetCode }</span>
-                            </td>
-                            <td>
-                                <div class="device-name">${ item.ItemName || '—' }</div>
-                                <div class="device-model">${ item.Model || '' }</div>
-                            </td>
-                            <td>${ item.ScheduleName }</td>
-                            <td>
-                                <span class="type-badge" :class="'type-' + item.MaintenanceType">
-                                    ${ typeLabel(item.MaintenanceType) }
-                                </span>
-                            </td>
-                            <td>${ item.DepartmentName || '—' }</td>
-                            <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
-                            <td>${ formatDate(item.NextMaintenanceDate) }</td>
-                            <td>
-                                <span v-if="item.IsRecurring">
-                                    🔄 ${ item.RecurringMonths } tháng
-                                </span>
-                                <span v-else style="color:#94a3b8">1 lần</span>
-                            </td>
-                            <td>
-                                <span class="status-badge" :class="'status-' + item.Status">
-                                    ${ statusLabel(item.Status) }
-                                </span>
-                            </td>
-                            <td>
-                                <span class="urgency-badge"
-                                      :style="{
-                                          background: urgencyMeta(item.DaysUntilDue).bg,
-                                          color: urgencyMeta(item.DaysUntilDue).color
-                                      }">
-                                    ${ urgencyMeta(item.DaysUntilDue).text }
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                <td>
+                                    <span class="asset-code">${ item.AssetCode }</span>
+                                </td>
+                                <td>
+                                    <div class="device-name">${ item.ItemName || '—' }</div>
+                                    <div class="device-model">${ item.Model || '' }</div>
+                                </td>
+                                <td>${ item.ScheduleName }</td>
+                                <td>
+                                    <span class="type-badge" :class="'type-' + item.MaintenanceType">
+                                        ${ typeLabel(item.MaintenanceType) }
+                                    </span>
+                                </td>
+                                <td>${ item.DepartmentName || '—' }</td>
+                                <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
+                                <td>${ formatDate(item.NextMaintenanceDate) }</td>
+                                <td>
+                                    <span v-if="item.IsRecurring">
+                                        🔄 ${ item.RecurringMonths } tháng
+                                    </span>
+                                    <span v-else style="color:#94a3b8">1 lần</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="'status-' + item.Status">
+                                        ${ statusLabel(item.Status) }
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="urgency-badge"
+                                          :style="{
+                                  background: urgencyMeta(item.DaysUntilDue).bg,
+                                  color: urgencyMeta(item.DaysUntilDue).color
+                              }">
+                                        ${ urgencyMeta(item.DaysUntilDue).text }
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </div>
+
+
 
             <!-- PAGINATION -->
             <div class="pagination">

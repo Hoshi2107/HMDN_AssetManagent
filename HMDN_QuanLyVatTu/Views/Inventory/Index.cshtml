@@ -783,13 +783,23 @@
                     Prev
                 </button>
 
-                <button v-for="page in pages"
-                        :key="page"
-                        v-on:click="changePage(page)"
-                        :class="{ active: currentPage == page }">
+                <template v-for="(page, idx) in pages">
 
-                    ${ page }
-                </button>
+                    <span v-if="page === '...'"
+                          :key="'dots-' + idx"
+                          class="pagination-dots">
+                        ...
+                    </span>
+
+                    <button v-else
+                            :key="page"
+                            v-on:click="changePage(page)"
+                            :class="{ active: currentPage == page }">
+
+                        ${ page }
+                    </button>
+
+                </template>
 
                 <button v-on:click="nextPage"
                         :disabled="currentPage == totalPages">

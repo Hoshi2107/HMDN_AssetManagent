@@ -79,6 +79,30 @@
     },
 
     methods: {
+        onTableScroll(e) {
+            const el = e.target.closest('.table-scroll') || e.target;
+            const card = el.closest('.table-card');
+            if (!card) return;
+
+            const atStart = el.scrollLeft <= 4;
+            const atEnd = el.scrollLeft >= (el.scrollWidth - el.clientWidth - 4);
+
+            card.classList.toggle('scrolled-left', !atStart);
+            card.classList.toggle('scrolled-right', !atEnd);
+        },
+
+        checkTableScrollState() {
+            // Gọi sau khi data load xong / resize, để set lại fade ban đầu
+            this.$nextTick(() => {
+                const el = this.$el.querySelector('.table-scroll');
+                if (!el) return;
+                const card = el.closest('.table-card');
+                const needsScroll = el.scrollWidth > el.clientWidth;
+                card.classList.toggle('scrolled-right', needsScroll);
+                card.classList.toggle('scrolled-left', false);
+            });
+        },
+
         loadList() {
             this.loading = true
             this.currentPage = 1
@@ -93,6 +117,7 @@
             $.get('/api/maintain-list/list?' + params.toString(), (res) => {
                 this.list = res
                 this.loading = false
+                this.checkTableScrollState() 
             }).fail(() => {
                 alert('Không tải được dữ liệu')
                 this.loading = false
@@ -158,6 +183,8 @@
     },
 
     mounted() {
-        this.loadList()
+        this.loadList();
+        window.addEventListener('resize', this.checkTableScrollState);
+
     }
 })

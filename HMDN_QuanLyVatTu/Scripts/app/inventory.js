@@ -431,12 +431,43 @@ var app = new Vue({
 
         pages() {
 
-            return Array.from(
-                { length: this.totalPages },
-                (_, i) => i + 1
-            )
-        },
+            const total = this.totalPages
+            const current = this.currentPage
+            const delta = 1 // số trang hiển thị mỗi bên currentPage
 
+            if (total <= 0) return []
+
+            const range = []
+
+            for (let i = 1; i <= total; i++) {
+                if (
+                    i === 1 ||
+                    i === total ||
+                    (i >= current - delta && i <= current + delta)
+                ) {
+                    range.push(i)
+                }
+            }
+
+            // Chèn dấu "..." vào chỗ bị nhảy số
+            const result = []
+            let last = 0
+
+            range.forEach(i => {
+                if (last) {
+                    if (i - last === 2) {
+                        // chỉ nhảy đúng 1 số thì hiện luôn số đó thay vì "..."
+                        result.push(last + 1)
+                    } else if (i - last > 2) {
+                        result.push('...')
+                    }
+                }
+                result.push(i)
+                last = i
+            })
+
+            return result
+        },
         // Get unique locations for filter dropdown
         locations() {
 
