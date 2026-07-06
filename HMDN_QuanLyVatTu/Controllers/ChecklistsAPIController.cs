@@ -23,18 +23,14 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                // Self-healing: If ChecklistSchedules table is completely empty, auto-generate for the current month
-                if (!db.ChecklistSchedules.Any())
+                // Lazy schedule generation for the current month if not yet generated
+                try
                 {
-                    DateTime today = DateTime.Today;
-                    DateTime start = new DateTime(today.Year, today.Month, 1);
-                    DateTime end = start.AddMonths(1).AddDays(-1);
-
-                    db.Database.ExecuteSqlCommand(
-                        "EXEC sp_GenerateChecklistSchedules @FromDate, @ToDate",
-                        new SqlParameter("@FromDate", start),
-                        new SqlParameter("@ToDate", end)
-                    );
+                    new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().EnsureSchedulesGeneratedForCurrentMonth(db);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError($"[ChecklistAPI] Lazy schedule generation failed: {ex.Message}");
                 }
 
                 var query = db.ChecklistSchedules.AsQueryable();
@@ -128,8 +124,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                     })
                     .ToList();
 
+                // Group pending/overdue/NeedsReinspection schedules that are due today or in the past,
+                // and select the latest scheduled one among them as the active schedule.
+                // We exclude future pending schedules from being chosen as the active schedule for today.
                 var latestPendingDict = resolvedSchedules
-                    .Where(s => s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection")
+                    .Where(s => (s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection") && s.ScheduledDate <= DateTime.Today)
                     .GroupBy(s => new { s.InventoryId, s.CycleType })
                     .ToDictionary(
                         g => new { g.Key.InventoryId, g.Key.CycleType },
@@ -137,7 +136,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                     );
 
                 var schedules = resolvedSchedules
-                    .Where(s => (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection") || latestPendingDict[new { s.InventoryId, s.CycleType }] == s.Id)
+                    .Where(s => 
+                        // Show all completed/failed/etc. schedules
+                        (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection")
+                        // OR show the active pending/overdue schedule for today/past (if it is the chosen one)
+                        || (latestPendingDict.TryGetValue(new { s.InventoryId, s.CycleType }, out int latestId) && latestId == s.Id)
+                    )
                     .Select(s => new
                     {
                         s.Id,
@@ -219,17 +223,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                     new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
                 ).ToList();
 
-                // Global items with no CycleType match always apply.
-                // Global items with a specific CycleType only apply if no group item overrides that cycle.
-                // Group and item scopes always show alongside applicable global items.
-                // Filter: only keep global items if their CycleType is NULL (universal) OR there is no group item for that same cycle
-                var hasGroupItems = items.Any(i => i.Scope == "group" || i.Scope == "item");
-                if (hasGroupItems)
-                {
-                    items.RemoveAll(i => i.Scope == "global" && !string.IsNullOrEmpty(i.CycleType));
-                }
+                // Resolve applicable definitions using scope precedence and override merges
+                var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
+                var resolvedItems = resolver.ResolveApplicableDefinitions(items);
 
-                return Ok(new { success = true, data = items });
+                return Ok(new { success = true, data = resolvedItems });
             }
             catch (Exception ex)
             {

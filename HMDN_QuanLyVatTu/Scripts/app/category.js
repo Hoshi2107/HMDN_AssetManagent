@@ -87,6 +87,9 @@ var appCatalog = new Vue({
         showInventoryDropdown: false,
         defListSearch: '',
         defListScope: 'all',
+        defListFilterItemId: '',
+        showToolbarItemDropdown: false,
+        toolbarItemDropdownSearch: '',
 
         toast: { show: false, msg: '' }
     },
@@ -145,10 +148,25 @@ var appCatalog = new Vue({
         filteredChecklistDefinitions() {
             var scope = this.defListScope || 'all';
             var q = (this.defListSearch || '').trim().toLowerCase();
+            var filterItemId = this.defListFilterItemId;
 
             return (this.checklistDefinitions || []).filter(def => {
                 if (scope !== 'all' && def.Scope !== scope) {
                     return false;
+                }
+                if (filterItemId) {
+                    var isRelevant = false;
+                    if (def.Scope === 'global' || def.Scope === 'group') {
+                        isRelevant = true;
+                    } else if (def.Scope === 'item' && def.ItemId === filterItemId) {
+                        isRelevant = true;
+                    } else if (def.Scope === 'inventory') {
+                        var inv = (this.inventories || []).find(x => x.Id === def.InventoryId);
+                        if (inv && inv.ItemId === filterItemId) {
+                            isRelevant = true;
+                        }
+                    }
+                    if (!isRelevant) return false;
                 }
                 if (q) {
                     var matchName = (def.CheckName || '').toLowerCase().includes(q);
@@ -165,6 +183,23 @@ var appCatalog = new Vue({
                 }
                 return true;
             });
+        },
+
+        filteredToolbarDropdownItems() {
+            var list = this.items || [];
+            var q = (this.toolbarItemDropdownSearch || '').trim().toLowerCase();
+            if (q) {
+                list = list.filter(x => 
+                    (x.Name || '').toLowerCase().includes(q) || 
+                    (x.Code || '').toLowerCase().includes(q)
+                );
+            }
+            return list;
+        },
+
+        groupInventories() {
+            var itemIds = (this.items || []).map(x => x.Id);
+            return (this.inventories || []).filter(inv => itemIds.indexOf(inv.ItemId) > -1);
         },
 
         groupItems() {
@@ -277,6 +312,26 @@ var appCatalog = new Vue({
     },
 
     methods: {
+
+        normalizeNullableIntegers(obj, fields) {
+            fields.forEach(field => {
+                if (obj[field] === '') {
+                    obj[field] = null;
+                }
+            });
+        },
+
+        selectToolbarDropdownItem(item) {
+            this.defListFilterItemId = item.Id || '';
+            this.showToolbarItemDropdown = false;
+            this.toolbarItemDropdownSearch = '';
+        },
+
+        getToolbarItemName(itemId) {
+            if (!itemId) return '-- Chọn loại thiết bị --';
+            var it = (this.items || []).find(x => x.Id === itemId);
+            return it ? (it.Name + ' (' + it.Code + ')') : '-- Chọn loại thiết bị --';
+        },
 
         getLifeStatusMeta(status) {
 
@@ -889,12 +944,15 @@ var appCatalog = new Vue({
                     return;
                 }
             }
+            var postData = Object.assign({}, this.definitionForm);
+            this.normalizeNullableIntegers(postData, ['ItemId', 'InventoryId', 'GroupId']);
+
             this.isSavingDefinition = true;
             $.ajax({
                 url: '/api/category/checklist-definition/save',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(this.definitionForm),
+                data: JSON.stringify(postData),
                 success: (res) => {
                     this.showDefinitionForm = false;
                     this.loadChecklistDefinitions(this.activeGroup.Id);
@@ -1393,6 +1451,9 @@ var appCatalog = new Vue({
             }
             if (!e.target.closest('.searchable-select-inventory-container')) {
                 this.showInventoryDropdown = false;
+            }
+            if (!e.target.closest('.searchable-select-toolbar-items-container')) {
+                this.showToolbarItemDropdown = false;
             }
         });
     }

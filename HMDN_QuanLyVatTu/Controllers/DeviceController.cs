@@ -1,4 +1,4 @@
-﻿//using HMDN_QuanLyVatTu.Models;
+//using HMDN_QuanLyVatTu.Models;
 //using HMS.Data;
 //using HMS.Models.ViewModels;
 //using System;
@@ -615,6 +615,16 @@ namespace HMDN.Controllers.API
                 )
                 .FirstOrDefault();
 
+            // Trigger schedule generation event-driven
+            try
+            {
+                new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().TriggerGeneration(db, DateTime.Today);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"[DeviceAPI] Failed to generate schedules after create: {ex.Message}");
+            }
+
             return Ok(new
             {
                 success = true,
@@ -668,6 +678,16 @@ namespace HMDN.Controllers.API
                 new SqlParameter("@Note", (object)model.Note ?? DBNull.Value),
                 new SqlParameter("@IdTicket", (object)model.IdTicket ?? DBNull.Value)
             );
+            // Trigger schedule generation event-driven
+            try
+            {
+                new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().TriggerGeneration(db, DateTime.Today);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"[DeviceAPI] Failed to generate schedules after update: {ex.Message}");
+            }
+
             return Ok();
         }
 
@@ -889,6 +909,18 @@ namespace HMDN.Controllers.API
                         message = ex.Message,
                         inner = ex.InnerException?.Message
                     });
+                }
+            }
+
+            if (success > 0)
+            {
+                try
+                {
+                    new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().TriggerGeneration(db, DateTime.Today);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError($"[DeviceAPI] Failed to generate schedules after import: {ex.Message}");
                 }
             }
 

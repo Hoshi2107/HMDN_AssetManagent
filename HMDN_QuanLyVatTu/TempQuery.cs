@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Data.Entity;
 using HMDN_QuanLyVatTu.Models;
-using System.IO;
+using HMS.Data;
 
 namespace Temp
 {
@@ -10,22 +10,49 @@ namespace Temp
     {
         static void Main()
         {
-            using (var db = new HospitalAssetDbContext())
+            try
             {
-                var approved = db.Inventories.Where(x => x.ApprovalStatus == ""approved"").ToList();
-                var active = approved.Count(x => x.LifeStatus == ""active"");
-                var suspended = approved.Count(x => x.LifeStatus == ""suspended"");
-                var nullStatus = approved.Count(x => string.IsNullOrEmpty(x.LifeStatus));
-                var other = approved.Where(x => x.LifeStatus != ""active"" && x.LifeStatus != ""suspended"" && !string.IsNullOrEmpty(x.LifeStatus)).Select(x => x.LifeStatus).ToList();
-                
-                var maintenanceLogs = db.Database.SqlQuery<int>(""SELECT COUNT(CASE WHEN Vendor IS NULL OR LTRIM(RTRIM(Vendor)) = '' THEN 1 END) + COUNT(CASE WHEN Vendor IS NOT NULL AND LTRIM(RTRIM(Vendor)) <> '' THEN 1 END) FROM dbo.MaintenanceLogs WHERE Status IN ('open', 'in_progress')"").FirstOrDefault();
-
-                Console.WriteLine($""Total Approved: {approved.Count}"");
-                Console.WriteLine($""Active: {active}"");
-                Console.WriteLine($""Suspended: {suspended}"");
-                Console.WriteLine($""Null/Empty: {nullStatus}"");
-                Console.WriteLine($""Other: {string.Join("", "", other)}"");
-                Console.WriteLine($""Maintenance Logs count: {maintenanceLogs}"");
+                using (var db = new HospitalAssetDbContext())
+                {
+                    var def = new ChecklistDefinition
+                    {
+                        Scope = "item",
+                        GroupId = 3,
+                        ItemId = 285,
+                        InventoryId = null,
+                        DefinitionCode = null,
+                        CycleType = "daily",
+                        CheckName = "Kiểm tra hằng ngày - TEST EF",
+                        Description = "Kiểm tra dây điện",
+                        IsRequired = true,
+                        SortOrder = 2,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    db.ChecklistDefinitions.Add(def);
+                    db.SaveChanges();
+                    Console.WriteLine("Insert successful!");
+                    
+                    // Clean up
+                    db.ChecklistDefinitions.Remove(def);
+                    db.SaveChanges();
+                    Console.WriteLine("Cleanup successful!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: " + ex.ToString());
+                if (ex is System.Data.Entity.Validation.DbEntityValidationException)
+                {
+                    var valEx = (System.Data.Entity.Validation.DbEntityValidationException)ex;
+                    foreach (var err in valEx.EntityValidationErrors)
+                    {
+                        foreach (var validationError in err.ValidationErrors)
+                        {
+                            Console.WriteLine("- Property: " + validationError.PropertyName + ", Error: " + validationError.ErrorMessage);
+                        }
+                    }
+                }
             }
         }
     }

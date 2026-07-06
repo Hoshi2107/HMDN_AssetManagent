@@ -247,6 +247,11 @@ BEGIN
     ALTER TABLE dbo.ChecklistDefinitions ADD CONSTRAINT FK_ChecklistDefinitions_Inventory FOREIGN KEY (InventoryId) REFERENCES dbo.Inventory(Id);
 END
 
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.ChecklistDefinitions') AND name = 'DefinitionCode')
+BEGIN
+    ALTER TABLE dbo.ChecklistDefinitions ADD DefinitionCode NVARCHAR(100) NULL;
+END
+
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.ChecklistDefinitions') AND name = 'IsActive')
 BEGIN
     ALTER TABLE dbo.ChecklistDefinitions ADD IsActive BIT NOT NULL DEFAULT 1;
@@ -348,14 +353,14 @@ END');
 
                 if (scopeVal == ChecklistScopes.Item)
                 {
-                    if (dto.ItemId == null || dto.ItemId <= 0)
+                    if (dto.ItemIdValue == null)
                     {
                         return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Loại thiết bị cụ thể là bắt buộc khi chọn phạm vi thiết bị." });
                     }
                 }
                 else if (scopeVal == ChecklistScopes.Inventory)
                 {
-                    if (dto.InventoryId == null || dto.InventoryId <= 0)
+                    if (dto.InventoryIdValue == null)
                     {
                         return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Thiết bị cụ thể (Tài sản) là bắt buộc khi chọn phạm vi thiết bị riêng." });
                     }
@@ -387,7 +392,7 @@ END');
                         d.Id != dto.Id && 
                         d.IsActive && 
                         d.Scope == ChecklistScopes.Item && 
-                        d.ItemId == dto.ItemId && 
+                        d.ItemId == dto.ItemIdValue && 
                         d.CheckName.ToLower() == checkNameTrim.ToLower());
                 }
                 else if (scopeVal == ChecklistScopes.Inventory)
@@ -396,7 +401,7 @@ END');
                         d.Id != dto.Id && 
                         d.IsActive && 
                         d.Scope == ChecklistScopes.Inventory && 
-                        d.InventoryId == dto.InventoryId && 
+                        d.InventoryId == dto.InventoryIdValue && 
                         d.CheckName.ToLower() == checkNameTrim.ToLower());
                 }
 
@@ -415,14 +420,17 @@ END');
                     }
                 }
 
+                ChecklistDefinition resultDef = null;
+
                 if (dto.Id == 0)
                 {
                     var def = new ChecklistDefinition
                     {
                           Scope = scopeVal,
                           GroupId = dto.GroupId,
-                          ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemId : null,
-                          InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryId : null,
+                          ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemIdValue : null,
+                          InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryIdValue : null,
+                          DefinitionCode = dto.DefinitionCode?.Trim(),
                           CycleType = cycle,
                           CheckName = checkNameTrim,
                           Description = dto.Description?.Trim(),
@@ -433,7 +441,7 @@ END');
                     };
                     db.ChecklistDefinitions.Add(def);
                     db.SaveChanges();
-                    return Ok(new { success = true, message = "Thêm hạng mục thành công", data = def });
+                    resultDef = def;
                 }
                 else
                 {
@@ -442,8 +450,9 @@ END');
                     if (def.Scope == "global") return BadRequest("Không thể sửa hạng mục toàn cục từ đây");
 
                     def.Scope = scopeVal;
-                    def.ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemId : null;
-                    def.InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryId : null;
+                    def.ItemId = (scopeVal == ChecklistScopes.Item || scopeVal == ChecklistScopes.Inventory) ? dto.ItemIdValue : null;
+                    def.InventoryId = (scopeVal == ChecklistScopes.Inventory) ? dto.InventoryIdValue : null;
+                    def.DefinitionCode = dto.DefinitionCode?.Trim();
                     def.CycleType = cycle;
                     def.CheckName = checkNameTrim;
                     def.Description = dto.Description?.Trim();
@@ -452,8 +461,20 @@ END');
                     def.IsActive = dto.IsActive;
 
                     db.SaveChanges();
-                    return Ok(new { success = true, message = "Cập nhật hạng mục thành công", data = def });
+                    resultDef = def;
                 }
+
+                // Trigger schedule generation event-driven
+                try
+                {
+                    new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().TriggerGeneration(db, DateTime.Today);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError($"[CategoryAPI] Failed to generate schedules after save: {ex.Message}");
+                }
+
+                return Ok(new { success = true, message = dto.Id == 0 ? "Thêm hạng mục thành công" : "Cập nhật hạng mục thành công", data = resultDef });
             }
             catch (Exception ex)
             {
@@ -481,6 +502,7 @@ END');
                     // References exist: block hard deletion, perform soft-delete/deactivation instead
                     def.IsActive = false;
                     db.SaveChanges();
+                    TriggerScheduler(db);
                     return Ok(new { 
                         success = true, 
                         deleteMode = "soft delete",
@@ -491,6 +513,7 @@ END');
                 // No references: hard delete is allowed
                 db.ChecklistDefinitions.Remove(def);
                 db.SaveChanges();
+                TriggerScheduler(db);
                 return Ok(new { 
                     success = true, 
                     deleteMode = "hard delete",
@@ -515,6 +538,7 @@ END');
 
                 def.IsActive = !def.IsActive;
                 db.SaveChanges();
+                TriggerScheduler(db);
                 return Ok(new { success = true, message = "Cập nhật trạng thái thành công", isActive = def.IsActive });
             }
             catch (Exception ex)
@@ -612,6 +636,7 @@ END');
                 if (addedList.Count > 0)
                 {
                     db.SaveChanges();
+                    TriggerScheduler(db);
                 }
 
                 return Ok(new { success = true, count = addedList.Count, data = addedList });
@@ -619,6 +644,18 @@ END');
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        private void TriggerScheduler(HMS.Data.HospitalAssetDbContext dbContext)
+        {
+            try
+            {
+                new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().TriggerGeneration(dbContext, DateTime.Today);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceError($"[CategoryAPI] Failed to trigger schedule generation: {ex.Message}");
             }
         }
     }
@@ -635,13 +672,57 @@ END');
         public int Id { get; set; }
         public int GroupId { get; set; }
         public string Scope { get; set; }
-        public int? ItemId { get; set; }
-        public int? InventoryId { get; set; }
+        
+        private int? _itemId;
+        public object ItemId 
+        { 
+            get { return _itemId; }
+            set { _itemId = ConvertToNullableInt(value); }
+        }
+
+        private int? _inventoryId;
+        public object InventoryId 
+        { 
+            get { return _inventoryId; }
+            set { _inventoryId = ConvertToNullableInt(value); }
+        }
+
+        [Newtonsoft.Json.JsonIgnore]
+        public int? ItemIdValue => _itemId;
+
+        [Newtonsoft.Json.JsonIgnore]
+        public int? InventoryIdValue => _inventoryId;
+
+        public string DefinitionCode { get; set; }
         public string CycleType { get; set; }
         public string CheckName { get; set; }
         public string Description { get; set; }
         public bool IsRequired { get; set; }
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
+
+        private int? ConvertToNullableInt(object value)
+        {
+            if (value == null) return null;
+            int? parsed = null;
+            if (value is string str)
+            {
+                if (string.IsNullOrWhiteSpace(str)) return null;
+                if (int.TryParse(str, out int val)) parsed = val;
+            }
+            else
+            {
+                try
+                {
+                    parsed = Convert.ToInt32(value);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            if (parsed <= 0) return null;
+            return parsed;
+        }
     }
 }

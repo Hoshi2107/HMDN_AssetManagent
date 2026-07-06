@@ -44,6 +44,16 @@ namespace HMDN_QuanLyVatTu.Controllers
             {
                 using (var db = new HospitalAssetDbContext())
                 {
+                    // Lazy schedule generation for the current month if not yet generated
+                    try
+                    {
+                        new HMDN_QuanLyVatTu.Services.ChecklistSchedulerService().EnsureSchedulesGeneratedForCurrentMonth(db);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.TraceError($"[AnalyticsAPI] Lazy schedule generation failed: {ex.Message}");
+                    }
+
                     DateTime startDate = DateTime.Today;
                     DateTime endDate = DateTime.Today;
 
