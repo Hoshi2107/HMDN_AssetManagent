@@ -858,6 +858,50 @@
         color: var(--cl-text-muted);
         font-weight: 500;
     }
+
+    /* ── MOBILE OPTIMIZATIONS ── */
+    @@media (max-width: 768px) {
+        .cl-tabs-nav {
+            gap: 16px !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            white-space: nowrap !important;
+            padding-bottom: 4px !important;
+        }
+        .cl-tabs-nav::-webkit-scrollbar {
+            display: none !important;
+        }
+        .cl-tab-btn {
+            flex-shrink: 0 !important;
+            padding: 10px 4px !important;
+            font-size: 13.5px !important;
+        }
+        .cl-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+        }
+        .cl-kpi-card {
+            padding: 12px 14px !important;
+            gap: 10px !important;
+            border-radius: var(--cl-radius-md) !important;
+            flex-direction: row !important;
+            align-items: center !important;
+        }
+        .cl-kpi-icon {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 15px !important;
+            border-radius: var(--cl-radius-sm) !important;
+        }
+        .cl-kpi-val {
+            font-size: 18px !important;
+        }
+        .cl-kpi-label {
+            font-size: 10.5px !important;
+            margin-top: 1px !important;
+            line-height: 1.2 !important;
+        }
+    }
 </style>
 
 <div id="app" class="cl-dashboard" v-cloak>
