@@ -113,8 +113,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                 { "CreateTicket", new LoginResponseDTO.ModuleDTO { code = "CreateTicket", name = "Tạo phiếu", url = "/CreateTicket/Index", icon = "fa-file-circle-plus", permissions = FULL_PERMS } },
                 { "Alerts", new LoginResponseDTO.ModuleDTO { code = "Alerts", name = "Cảnh báo", url = "/Alerts/Index", icon = "fa-bell", permissions = FULL_PERMS } },
                 { "Approvals", new LoginResponseDTO.ModuleDTO { code = "Approvals", name = "Phê duyệt", url = "/Approvals/Index", icon = "fa-clipboard-check", permissions = FULL_PERMS } },
-                { "Settings", new LoginResponseDTO.ModuleDTO { code = "Settings", name = "Cài đặt", url = "/Settings/Index", icon = "fa-gear", permissions = FULL_PERMS } },
-                { "Support", new LoginResponseDTO.ModuleDTO { code = "Support", name = "Hỗ trợ", url = "/Support/Index", icon = "fa-circle-question", permissions = FULL_PERMS } },
                 { "MaintainList", new LoginResponseDTO.ModuleDTO { code = "MaintainList", name = "Danh sách bảo trì", url = "/MaintainList/Index", icon = "fa-wrench", permissions = FULL_PERMS } }
             };
 
@@ -190,8 +188,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         { "Locations", FULL_PERMS }, { "QrCodes", FULL_PERMS }, { "Lifecycle", FULL_PERMS },
                         { "VongDoiKhauHao", FULL_PERMS }, { "Checklists", FULL_PERMS }, { "Maintenance", FULL_PERMS },
                         { "TiepNhanBaoHong", FULL_PERMS }, { "CreateTicket", FULL_PERMS }, { "Alerts", FULL_PERMS },
-                        { "Approvals", FULL_PERMS }, { "Settings", FULL_PERMS }, { "Support", FULL_PERMS },
-                        { "MaintainList", FULL_PERMS }
+                        { "Approvals", FULL_PERMS }, { "MaintainList", FULL_PERMS }
                     }
                 },
                 {
@@ -203,7 +200,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         { "VongDoiKhauHao", VIEW_ONLY },
                         { "Checklists", FULL_PERMS }, { "Maintenance", FULL_PERMS },
                         { "TiepNhanBaoHong", FULL_PERMS }, { "CreateTicket", FULL_PERMS },
-                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS }, { "Support", FULL_PERMS },
+                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS },
                         { "MaintainList", FULL_PERMS }
                     }
                 },
@@ -218,7 +215,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         { "Maintenance", FULL_PERMS },
                         { "TiepNhanBaoHong", VIEW_ONLY },
                         { "CreateTicket", VIEW_ONLY },
-                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS }, { "Support", FULL_PERMS },
+                        { "Alerts", FULL_PERMS }, { "Approvals", FULL_PERMS },
                         { "MaintainList", VIEW_ONLY }
                     }
                 },
@@ -231,7 +228,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         { "Maintenance", VIEW_ONLY },
                         { "TiepNhanBaoHong", VIEW_ONLY },
                         { "CreateTicket", VIEW_ONLY },
-                        { "Alerts", VIEW_ONLY }, { "Approvals", VIEW_ONLY }, { "Support", VIEW_ONLY },
+                        { "Alerts", VIEW_ONLY }, { "Approvals", VIEW_ONLY },
                         { "MaintainList", VIEW_ONLY }
                     }
                 }
