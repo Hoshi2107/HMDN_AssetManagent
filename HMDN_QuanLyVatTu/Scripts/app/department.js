@@ -1,6 +1,6 @@
-﻿var appLoc = new Vue({
+﻿var appDept = new Vue({
 
-    el: '#app-loc',
+    el: '#app-dept',
 
     delimiters: ['${', '}'],
 
@@ -9,9 +9,9 @@
         //Detail Modal
         showDetailModal: false,
 
-        locationDetail: null,
+        departmentDetail: null,
 
-        locationInventories: [],
+        departmentInventories: [],
 
         showStatusModal: false,
 
@@ -19,11 +19,7 @@
 
         searchQuery: '',
 
-        filterBuilding: '',
-
-        filterFloor: '',
-
-        locations: [],
+        departments: [],
 
         sort: {
             key: '',
@@ -40,9 +36,9 @@
 
         form: {
             Id: null,
+            Code: '',
             Name: '',
-            Building: '',
-            Floor: '',
+            Description: ''
         },
 
         toast: {
@@ -54,9 +50,9 @@
 
     computed: {
 
-        filteredLocations() {
+        filteredDepartments() {
 
-            let list = [...this.locations]
+            let list = [...this.departments]
 
             // SEARCH
             if (this.searchQuery) {
@@ -68,29 +64,13 @@
                 list = list.filter(x =>
 
                     (
+                        (x.Code || '') + ' ' +
                         (x.Name || '') + ' ' +
-                        (x.Building || '') + ' ' +
-                        (x.Floor || '') + ' ' +
                         (x.Description || '')
                     )
 
                         .toLowerCase()
                         .includes(q)
-                )
-            }
-
-            // FILTER
-            if (this.filterBuilding) {
-
-                list = list.filter(x =>
-                    x.Building == this.filterBuilding
-                )
-            }
-
-            if (this.filterFloor) {
-
-                list = list.filter(x =>
-                    x.Floor == this.filterFloor
                 )
             }
 
@@ -115,13 +95,13 @@
             return list
         },
 
-        paginatedLocations() {
+        paginatedDepartments() {
 
             const start =
                 (this.currentPage - 1) *
                 this.pageSize
 
-            return this.filteredLocations.slice(
+            return this.filteredDepartments.slice(
                 start,
                 start + this.pageSize
             )
@@ -132,7 +112,7 @@
             return Math.max(
                 1,
                 Math.ceil(
-                    this.filteredLocations.length /
+                    this.filteredDepartments.length /
                     this.pageSize
                 )
             )
@@ -146,36 +126,17 @@
             )
         },
 
-        buildings() {
+        totalAssets() {
 
-            return [...new Set(
-
-                this.locations
-                    .map(x => x.Building)
-                    .filter(x => x)
-
-            )]
+            return this.departments
+                .reduce((sum, x) => sum + (x.AssetCount || 0), 0)
         },
 
-        floors() {
+        activeDepartments() {
 
-            return [...new Set(
-
-                this.locations
-                    .map(x => x.Floor)
-                    .filter(x => x)
-
-            )]
-        },
-
-        uniqueBuildings() {
-
-            return this.buildings.length
-        },
-
-        uniqueFloors() {
-
-            return this.floors.length
+            return this.departments
+                .filter(x => x.IsActive)
+                .length
         }
     },
 
@@ -242,22 +203,19 @@
 
             $.ajax({
 
-                url: '/api/locationapi/inventory?id=' + item.Id,
+                url: '/api/department/inventory?id=' + item.Id,
 
                 type: 'GET',
 
                 success: (res) => {
 
-                    this.locationDetail = {
+                    this.departmentDetail = {
 
-                        Code: res[0].LocationCode,
-                        Name: res[0].LocationName,
-                        Floor: res[0].Floor,
-                        Building: res[0].Building,
-                        DepartmentName: res[0].DepartmentName
+                        Code: res[0].DepartmentCode,
+                        Name: res[0].DepartmentName
                     }
 
-                    this.locationInventories =
+                    this.departmentInventories =
                         res.filter(x => x.InventoryId)
 
                     this.showDetailModal = true
@@ -266,7 +224,7 @@
                 error: () => {
 
                     this.showToast(
-                        'Không tải được chi tiết vị trí',
+                        'Không tải được chi tiết khoa phòng',
                         'error'
                     )
                 }
@@ -277,18 +235,10 @@
 
             this.isEdit = false
 
-            //this.form = {
-            //    Id: null,
-            //    Name: '',
-            //    Building: '',
-            //    Floor: '',
-            //    Description: ''
-            //}
             this.form = {
                 Id: null,
+                Code: '',
                 Name: '',
-                Building: '',
-                Floor: '',
                 Description: ''
             }
 
@@ -313,7 +263,7 @@
             $.ajax({
 
                 url:
-                    '/api/locationapi/togglestatus?id='
+                    '/api/department/togglestatus?id='
                     + this.statusTarget.Id,
 
                 type: 'POST',
@@ -342,50 +292,23 @@
             })
         },
 
-        toggleStatus(item) {
-
-            const msg = item.IsActive
-                ? 'Ngưng sử dụng vị trí này?'
-                : 'Kích hoạt lại vị trí này?'
-
-            if (!confirm(msg))
-                return
-
-            $.ajax({
-
-                url:
-                    '/api/locationapi/togglestatus?id='
-                    + item.Id,
-
-                type: 'POST',
-
-                success: () => {
-
-                    item.IsActive =
-                        !item.IsActive
-
-                    this.showToast(
-                        'Cập nhật trạng thái thành công'
-                    )
-                },
-
-                error: () => {
-
-                    this.showToast(
-                        'Cập nhật thất bại',
-                        'error'
-                    )
-                }
-            })
-        },
-
         // SAVE
-        saveLocation() {
+        saveDepartment() {
+
+            if (!this.form.Code.trim()) {
+
+                this.showToast(
+                    'Vui lòng nhập mã khoa phòng!',
+                    'error'
+                )
+
+                return
+            }
 
             if (!this.form.Name.trim()) {
 
                 this.showToast(
-                    'Vui lòng nhập tên vị trí!',
+                    'Vui lòng nhập tên khoa phòng!',
                     'error'
                 )
 
@@ -393,11 +316,8 @@
             }
 
             const url = this.isEdit
-                ? '/api/location/update'
-                : '/api/location/create'
-            //const url = this.isEdit
-            //    ? '/api/locationapi/update'
-            //    : '/api/locationapi/create'
+                ? '/api/department/update'
+                : '/api/department/create'
 
             const type = this.isEdit
                 ? 'PUT'
@@ -417,20 +337,20 @@
 
                     this.showModal = false
 
-                    this.loadLocations()
+                    this.loadDepartments()
 
                     this.showToast(
 
                         this.isEdit
-                            ? 'Đã cập nhật vị trí!'
-                            : 'Đã thêm vị trí!'
+                            ? 'Đã cập nhật khoa phòng!'
+                            : 'Đã thêm khoa phòng!'
                     )
                 },
 
-                error: () => {
+                error: (xhr) => {
 
                     this.showToast(
-                        'Có lỗi xảy ra!',
+                        xhr.responseText || 'Có lỗi xảy ra!',
                         'error'
                     )
                 }
@@ -454,18 +374,17 @@
         },
 
         // LOAD
-        loadLocations() {
+        loadDepartments() {
 
             $.ajax({
 
-                url: '/api/location/list',
-                //url: '/api/locationapi/list',
+                url: '/api/department/list',
 
                 type: 'GET',
 
                 success: (res) => {
 
-                    this.locations = res
+                    this.departments = res
                 },
 
                 error: () => {
@@ -484,21 +403,11 @@
         searchQuery() {
 
             this.currentPage = 1
-        },
-
-        filterBuilding() {
-
-            this.currentPage = 1
-        },
-
-        filterFloor() {
-
-            this.currentPage = 1
         }
     },
 
     mounted() {
 
-        this.loadLocations()
+        this.loadDepartments()
     }
 })

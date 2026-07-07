@@ -766,8 +766,8 @@
                                 </div>
                             }
                             @if (HasModule("Locations")) {
-                                <div class="nav-item @(ViewBag.ActiveNav == "Locations" ? "active" : "")">
-                                    <a href="@Url.Action("Location","Location")">
+                                <div class="nav-item @(ViewBag.ActiveNav == "Department" ? "active" : "")">
+                                    <a href="@Url.Action("Department","Department")">
                                         <i class="fa-solid fa-map-pin nav-icon"></i> <span class="nav-text">Vị trí</span>
                                     </a>
                                 </div>

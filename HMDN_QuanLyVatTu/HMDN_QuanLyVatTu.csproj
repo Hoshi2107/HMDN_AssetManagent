@@ -20,9 +20,12 @@
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
     <IISExpressSSLPort>44362</IISExpressSSLPort>
-    <IISExpressAnonymousAuthentication>enabled</IISExpressAnonymousAuthentication>
-    <IISExpressWindowsAuthentication>disabled</IISExpressWindowsAuthentication>
-    <IISExpressUseClassicPipelineMode>false</IISExpressUseClassicPipelineMode>
+    <IISExpressAnonymousAuthentication>
+    </IISExpressAnonymousAuthentication>
+    <IISExpressWindowsAuthentication>
+    </IISExpressWindowsAuthentication>
+    <IISExpressUseClassicPipelineMode>
+    </IISExpressUseClassicPipelineMode>
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -137,6 +140,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\DepartmentAPIController.cs" />
     <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\AnalyticsAPIController.cs" />
     <Compile Include="Controllers\AnalyticsController.cs" />
@@ -155,7 +159,7 @@
     <Compile Include="Controllers\MaintenanceController.cs" />
     <Compile Include="Controllers\MaintenanceAPIController.cs" />
     <Compile Include="Controllers\LocationAPIController.cs" />
-    <Compile Include="Controllers\LocationController.cs" />
+    <Compile Include="Controllers\DepartmentController.cs" />
     <Compile Include="Controllers\MaintenanceScheduleController.cs" />
     <Compile Include="Controllers\TemplateController.cs" />
     <Compile Include="Controllers\VongDoiKhauHaoController.cs" />
@@ -287,7 +291,7 @@
     <Content Include="Scripts\app\login.js" />
     <Content Include="Scripts\app\maintainlist.js" />
     <Content Include="Scripts\app\maintenance.js" />
-    <Content Include="Scripts\app\location.js" />
+    <Content Include="Scripts\app\department.js" />
     <Content Include="Scripts\app\VongDoiKhauHao.js" />
     <Content Include="Scripts\app\alerts.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
@@ -348,7 +352,7 @@
     <Content Include="Views\Analytics\Index.cshtml" />
     <Content Include="Views\Approvals\Index.cshtml" />
     <Content Include="Views\Category\Category.cshtml" />
-    <Content Include="Views\Location\Location.cshtml" />
+    <Content Include="Views\Department\Department.cshtml" />
     <Content Include="Views\Maintenance\Index.cshtml" />
     <Content Include="Views\CreateTicket\CreateTicket.cshtml" />
     <Content Include="Views\Alerts\Index.cshtml" />

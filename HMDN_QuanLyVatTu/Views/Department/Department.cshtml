@@ -1,12 +1,11 @@
 ﻿@{
-    ViewBag.Title = "Location";
+    ViewBag.Title = "Department";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <link href="~/Content/location/location.css" rel="stylesheet" />
 
-
-<div id="app-loc">
+<div id="app-dept">
 
     <div class="main-wrap">
 
@@ -16,7 +15,7 @@
                 <div class="topbar-search">
                     <span class="search-icon">⌕</span>
                     <input type="text"
-                           placeholder="Tìm vị trí..."
+                           placeholder="Tìm khoa phòng..."
                            v-model="searchQuery">
                 </div>
             </div>
@@ -28,50 +27,36 @@
 
             <div class="page-header">
                 <div>
-                    <h2>Quản lý vị trí</h2>
-                    <p>Danh sách phòng / tầng / tòa nhà trong bệnh viện</p>
+                    <h2>Quản lý khoa phòng</h2>
                 </div>
                 <button class="btn-primary" v-on:click="openAdd">
-                    ＋ Thêm vị trí
+                    ＋ Thêm khoa phòng
                 </button>
             </div>
 
             <!-- STATS -->
             <div class="stats-strip">
                 <div class="stat-card">
-                    <div class="stat-icon blue">📍</div>
+                    <div class="stat-icon blue">🏥</div>
                     <div>
-                        <div class="stat-num">${ locations.length }</div>
-                        <div class="stat-label">Tổng các phòng</div>
+                        <div class="stat-num">${ departments.length }</div>
+                        <div class="stat-label">Tổng khoa phòng</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon green">🏢</div>
+                    <div class="stat-icon green">✅</div>
                     <div>
-                        <div class="stat-num">${ uniqueBuildings }</div>
-                        <div class="stat-label">Tòa nhà</div>
+                        <div class="stat-num">${ activeDepartments }</div>
+                        <div class="stat-label">Đang hoạt động</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon orange">🏥</div>
+                    <div class="stat-icon orange">📦</div>
                     <div>
-                        <div class="stat-num">${ uniqueFloors }</div>
-                        <div class="stat-label">Tầng</div>
+                        <div class="stat-num">${ totalAssets }</div>
+                        <div class="stat-label">Tổng tài sản</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- FILTER -->
-            <div class="filter-bar">
-                <select v-model="filterBuilding">
-                    <option value="">Tất cả tòa nhà</option>
-                    <option v-for="b in buildings" :key="b" :value="b">${ b }</option>
-                </select>
-
-                <select v-model="filterFloor">
-                    <option value="">Tất cả tầng</option>
-                    <option v-for="f in floors" :key="f" :value="f">${ f }</option>
-                </select>
             </div>
 
             <!-- TABLE -->
@@ -82,68 +67,56 @@
                             <th class="sortable" v-on:click="sortBy('Id')">
                                 ID ${ sortIcon('Id') }
                             </th>
+                            <th class="sortable" v-on:click="sortBy('Code')">
+                                Mã ${ sortIcon('Code') }
+                            </th>
                             <th class="sortable" v-on:click="sortBy('Name')">
-                                Tên vị trí ${ sortIcon('Name') }
+                                Tên khoa phòng ${ sortIcon('Name') }
                             </th>
-                            <th class="sortable" v-on:click="sortBy('Building')">
-                                Tòa nhà ${ sortIcon('Building') }
-                            </th>
-                            <th class="sortable" v-on:click="sortBy('Floor')">
-                                Tầng ${ sortIcon('Floor') }
-                            </th>
+                            <th>Số tài sản</th>
                             <th>Trạng Thái</th>
-                            @*<th>Ghi chú</th>*@
                             <th>Thao tác</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        <tr v-if="paginatedLocations.length === 0">
+                        <tr v-if="paginatedDepartments.length === 0">
                             <td colspan="6">
                                 <div class="empty-state">
                                     <div class="empty-icon">📭</div>
-                                    <p>Không tìm thấy vị trí nào</p>
+                                    <p>Không tìm thấy khoa phòng nào</p>
                                 </div>
                             </td>
                         </tr>
 
-                        @*<tr v-for="item in paginatedLocations"
-                            :key="item.Id"
-                            class="table-row">*@
-                        <tr v-for="item in paginatedLocations"
+                        <tr v-for="item in paginatedDepartments"
                             :key="item.Id"
                             class="table-row"
                             v-on:click="openDetail(item)">
 
                             <td><span class="mono">#${ item.Id }</span></td>
-                            <td><strong>${ item.Name }</strong></td>
                             <td>
-                                <span class="badge badge-floor">${ item.Building || '—' }</span>
+                                <span class="badge badge-floor">${ item.Code }</span>
                             </td>
-                            <td>${ item.Floor || '—' }</td>
+                            <td><strong>${ item.Name }</strong></td>
+                            <td>${ item.AssetCount }</td>
                             <td>
                                 <span :class="item.IsActive ? 'st-active' : 'st-inactive'">
-                                    ${ item.IsActive ? 'Đang hoạt động ' : 'Ngưng hoạt động' }
+                                    ${ item.IsActive ? 'Đang hoạt động' : 'Ngưng hoạt động' }
                                 </span>
                             </td>
-                            @*<td style="color:#94a3b8;font-size:13px">
-                                    ${ item.Description || '—' }
-                                </td>*@
                             <td>
                                 <div class="action-btns" v-on:click.stop>
 
                                     <button class="btn-icon"
                                             v-on:click="openEdit(item)"
                                             title="Sửa">
-
                                         ✏️
                                     </button>
 
                                     <button class="btn-icon lock"
-                                            @*v-on:click="toggleStatus(item)"*@
                                             v-on:click="openToggleStatus(item)"
                                             :title="item.IsActive ? 'Ngưng sử dụng' : 'Kích hoạt'">
-
                                         ${ item.IsActive ? '🔒' : '🔓' }
                                     </button>
 
@@ -178,7 +151,7 @@
 
             <div class="modal-header">
                 <div>
-                    <h3>${ isEdit ? 'Chỉnh sửa vị trí' : 'Thêm vị trí mới' }</h3>
+                    <h3>${ isEdit ? 'Chỉnh sửa khoa phòng' : 'Thêm khoa phòng mới' }</h3>
                     <div class="modal-subtitle" v-if="isEdit">#${ form.Id }</div>
                 </div>
                 <button class="close-btn" v-on:click="showModal = false">×</button>
@@ -187,40 +160,33 @@
             <div class="modal-body">
                 <div class="form-grid">
 
-                    <div class="form-group full">
-                        <label>Tên vị trí *</label>
+                    <div class="form-group">
+                        <label>Mã khoa phòng *</label>
                         <input type="text"
-                               placeholder="VD: Phòng X-Quang 1"
+                               placeholder="VD: KHOA-01"
+                               v-model="form.Code">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tên khoa phòng *</label>
+                        <input type="text"
+                               placeholder="VD: Khoa Nội tổng quát"
                                v-model="form.Name">
                     </div>
 
-                    <div class="form-group">
-                        <label>Tòa nhà</label>
-                        <input type="text"
-                               placeholder="VD: Nhà A"
-                               v-model="form.Building">
+                    <div class="form-group full">
+                        <label>Ghi chú</label>
+                        <textarea placeholder="Mô tả thêm nếu cần..."
+                                  v-model="form.Description"></textarea>
                     </div>
-
-                    <div class="form-group">
-                        <label>Tầng</label>
-                        <input type="text"
-                               placeholder="VD: Tầng 2"
-                               v-model="form.Floor">
-                    </div>
-
-                    @*<div class="form-group full">
-                            <label>Ghi chú</label>
-                            <textarea placeholder="Mô tả thêm nếu cần..."
-                                      v-model="form.Description"></textarea>
-                        </div>*@
 
                 </div>
             </div>
 
             <div class="modal-footer">
                 <button class="btn-cancel" v-on:click="showModal = false">Huỷ</button>
-                <button class="btn-save" v-on:click="saveLocation">
-                    ${ isEdit ? '💾 Lưu thay đổi' : '＋ Thêm vị trí' }
+                <button class="btn-save" v-on:click="saveDepartment">
+                    ${ isEdit ? '💾 Lưu thay đổi' : '＋ Thêm khoa phòng' }
                 </button>
             </div>
 
@@ -237,38 +203,29 @@
             <div class="confirm-body">
 
                 <div class="confirm-icon">
-
                     ${ statusTarget?.IsActive ? '🔒' : '🔓' }
-
                 </div>
 
                 <h3>
                     ${ statusTarget?.IsActive
-                    ? 'Ngưng sử dụng vị trí'
-                    : 'Kích hoạt vị trí'
+                    ? 'Ngưng sử dụng khoa phòng'
+                    : 'Kích hoạt khoa phòng'
                     }
                 </h3>
 
                 <p>
-
                     Bạn có chắc muốn
-
                     <strong>
                         ${ statusTarget?.IsActive
                         ? 'ngưng sử dụng'
                         : 'kích hoạt lại'
                         }
                     </strong>
-
-                    vị trí
-
+                    khoa phòng
                     <strong>
                         ${ statusTarget?.Name }
-                        ${ statusTarget?.Floor }
                     </strong>
-
                     không?
-
                 </p>
 
             </div>
@@ -277,18 +234,15 @@
 
                 <button class="btn-cancel"
                         v-on:click="showStatusModal = false">
-
                     Huỷ
                 </button>
 
                 <button class="btn-danger"
                         v-on:click="confirmToggleStatus">
-
                     ${ statusTarget?.IsActive
                     ? '🔒 Ngưng sử dụng'
                     : '🔓 Kích hoạt'
                     }
-
                 </button>
 
             </div>
@@ -307,58 +261,24 @@
             <div class="modal-header">
 
                 <div>
-
-                    <h3>
-                        ${ locationDetail?.Name }
-                    </h3>
-
-                    <div class="modal-subtitle">
-
-                        ${ locationDetail?.Code }
-
-                    </div>
-
+                    <h3>${ departmentDetail?.Name }</h3>
+                    <div class="modal-subtitle">${ departmentDetail?.Code }</div>
                 </div>
 
                 <button class="close-btn"
                         v-on:click="showDetailModal = false">
-
                     ×
-
                 </button>
 
             </div>
 
             <div class="modal-body">
 
-                <!-- INFO -->
-                <div class="detail-grid">
-
-                    <div>
-                        <label>Tầng</label>
-                        <p>${ locationDetail?.Floor || '—' }</p>
-                    </div>
-
-                    <div>
-                        <label>Tòa nhà</label>
-                        <p>${ locationDetail?.Building || '—' }</p>
-                    </div>
-
-                    <div>
-                        <label>Khoa phòng</label>
-                        <p>${ locationDetail?.DepartmentName || '—' }</p>
-                    </div>
-
-                </div>
-
-                <hr>
-
-                <h4>Tài sản thuộc ${ locationDetail?.DepartmentName }</h4>
+                <h4>Tài sản thuộc ${ departmentDetail?.Name }</h4>
 
                 <table class="asset-table">
 
                     <thead>
-
                         <tr>
                             <th>Asset Code</th>
                             <th>Tài sản</th>
@@ -368,65 +288,24 @@
                             <th>SL</th>
                             <th>Trạng thái</th>
                         </tr>
-
                     </thead>
 
                     <tbody>
 
-                        <tr v-if="locationInventories.length == 0">
-
-                            <td colspan="7">
-
-                                Không có tài sản
-
-                            </td>
-
+                        <tr v-if="departmentInventories.length == 0">
+                            <td colspan="7">Không có tài sản</td>
                         </tr>
 
-                        <tr v-for="inv in locationInventories"
+                        <tr v-for="inv in departmentInventories"
                             :key="inv.InventoryId">
 
-                            <td>
-                                ${ inv.AssetCode }
-                            </td>
-
-                            <td>
-
-                                <strong>
-                                    ${ inv.ItemName }
-                                </strong>
-
-                            </td>
-
-                            <td>
-
-                                ${ inv.GroupName }
-
-                            </td>
-
-                            <td>
-
-                                ${ inv.Brand || '—' }
-
-                            </td>
-
-                            <td>
-
-                                ${ inv.Model || '—' }
-
-                            </td>
-
-                            <td>
-
-                                ${ inv.Quantity }
-
-                            </td>
-
-                            <td>
-
-                                ${ inv.LifeStatus }
-
-                            </td>
+                            <td>${ inv.AssetCode }</td>
+                            <td><strong>${ inv.ItemName }</strong></td>
+                            <td>${ inv.GroupName }</td>
+                            <td>${ inv.Brand || '—' }</td>
+                            <td>${ inv.Model || '—' }</td>
+                            <td>${ inv.Quantity }</td>
+                            <td>${ inv.LifeStatus }</td>
 
                         </tr>
 
@@ -446,4 +325,4 @@
     </div>
 
 </div>
-<script src="~/Scripts/app/location.js" ></script>
+<script src="~/Scripts/app/department.js"></script>

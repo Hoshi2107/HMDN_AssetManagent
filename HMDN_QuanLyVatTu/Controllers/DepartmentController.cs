@@ -3,10 +3,10 @@ using System.Web.Mvc;
 namespace HMDN_QuanLyVatTu.Controllers
 {
     [CustomAuthorize("Locations")]
-    public class LocationController : Controller
+    public class DepartmentController : Controller
     {
         // GET: Location
-        public ActionResult Location()
+        public ActionResult Department()
         {
             return View();
         }
