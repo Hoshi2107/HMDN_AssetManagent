@@ -15,8 +15,11 @@ namespace HMDN_QuanLyVatTu.Models
 
         public int? ScheduleId { get; set; }
 
-        [Required]
-        public int InventoryId { get; set; }
+        public int? InventoryId { get; set; }
+
+        public int? LocationId { get; set; }
+
+        public int? TemplateVersionId { get; set; }
 
         [Required]
         public int CheckedBy { get; set; }
@@ -51,6 +54,14 @@ namespace HMDN_QuanLyVatTu.Models
         [JsonIgnore]
         public virtual Inventory Inventory { get; set; }
 
+        [ForeignKey("LocationId")]
+        [JsonIgnore]
+        public virtual Location Location { get; set; }
+
+        [ForeignKey("TemplateVersionId")]
+        [JsonIgnore]
+        public virtual ChecklistTemplateVersion TemplateVersion { get; set; }
+
         [ForeignKey("CheckedBy")]
         [JsonIgnore]
         public virtual User CheckedByUser { get; set; }
@@ -66,3 +77,4 @@ namespace HMDN_QuanLyVatTu.Models
         }
     }
 }
+

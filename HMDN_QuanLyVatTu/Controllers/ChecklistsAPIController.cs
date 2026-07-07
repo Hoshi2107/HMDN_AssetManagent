@@ -75,11 +75,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                     {
                         s.Id,
                         s.InventoryId,
-                        AssetCode = s.Inventory != null ? s.Inventory.AssetCode : "",
-                        ItemName = (s.Inventory != null && s.Inventory.Item != null) ? s.Inventory.Item.Name : "N/A",
+                        s.LocationId,
+                        LocationName = s.Location != null ? s.Location.Name : "",
+                        LocationCode = s.Location != null ? s.Location.Code : "",
+                        AssetCode = s.Inventory != null ? s.Inventory.AssetCode : (s.Location != null ? s.Location.Code : ""),
+                        ItemName = (s.Inventory != null && s.Inventory.Item != null) ? s.Inventory.Item.Name : (s.Location != null ? s.Location.Name : "N/A"),
                         SerialNumber = s.Inventory != null ? s.Inventory.SerialNumber : "",
                         DepartmentName = (s.Inventory != null && s.Inventory.Department != null) ? s.Inventory.Department.Name : "",
-                        QrCode = s.Inventory != null ? s.Inventory.QrCode : "",
+                        QrCode = s.Inventory != null ? s.Inventory.QrCode : (s.Location != null ? s.Location.Code : ""),
                         ScheduledDate = s.ScheduledDate,
                         s.CycleType,
                         s.Status,
@@ -91,9 +94,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                         GroupCode = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
                             ? s.Inventory.Item.Group.Code : "",
                         GroupName = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Name : "Chưa phân nhóm",
+                            ? s.Inventory.Item.Group.Name : "Khu vực / Phòng máy",
                         GroupIcon = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Icon : "📦",
+                            ? s.Inventory.Item.Group.Icon : "🏢",
                         LifeStatus = s.Inventory != null ? s.Inventory.LifeStatus : "active",
                         Criticality = s.Inventory != null ? s.Inventory.Criticality : "Low"
                     })
@@ -102,6 +105,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                     {
                         s.Id,
                         s.InventoryId,
+                        s.LocationId,
+                        s.LocationName,
+                        s.LocationCode,
                         s.AssetCode,
                         s.ItemName,
                         s.SerialNumber,
@@ -120,32 +126,30 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.GroupIcon,
                         s.LifeStatus,
                         Criticality = string.IsNullOrEmpty(s.Criticality) ? "Low" : s.Criticality,
-                        HasOpenRepair = openRepairInventoryIds.Contains(s.InventoryId)
+                        HasOpenRepair = s.InventoryId.HasValue ? openRepairInventoryIds.Contains(s.InventoryId.Value) : false
                     })
                     .ToList();
 
-                // Group pending/overdue/NeedsReinspection schedules that are due today or in the past,
-                // and select the latest scheduled one among them as the active schedule.
-                // We exclude future pending schedules from being chosen as the active schedule for today.
                 var latestPendingDict = resolvedSchedules
                     .Where(s => (s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection") && s.ScheduledDate <= DateTime.Today)
-                    .GroupBy(s => new { s.InventoryId, s.CycleType })
+                    .GroupBy(s => new { s.InventoryId, s.LocationId, s.CycleType })
                     .ToDictionary(
-                        g => new { g.Key.InventoryId, g.Key.CycleType },
+                        g => new { g.Key.InventoryId, g.Key.LocationId, g.Key.CycleType },
                         g => g.OrderByDescending(s => s.ScheduledDate).First().Id
                     );
 
                 var schedules = resolvedSchedules
                     .Where(s => 
-                        // Show all completed/failed/etc. schedules
                         (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection")
-                        // OR show the active pending/overdue schedule for today/past (if it is the chosen one)
-                        || (latestPendingDict.TryGetValue(new { s.InventoryId, s.CycleType }, out int latestId) && latestId == s.Id)
+                        || (latestPendingDict.TryGetValue(new { s.InventoryId, s.LocationId, s.CycleType }, out int latestId) && latestId == s.Id)
                     )
                     .Select(s => new
                     {
                         s.Id,
                         s.InventoryId,
+                        s.LocationId,
+                        s.LocationName,
+                        s.LocationCode,
                         s.AssetCode,
                         s.ItemName,
                         s.SerialNumber,
@@ -169,6 +173,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .ToList();
 
                 return Ok(new { success = true, data = schedules });
+
             }
             catch (Exception ex)
             {
@@ -223,11 +228,158 @@ namespace HMDN_QuanLyVatTu.Controllers
                     new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
                 ).ToList();
 
-                // Resolve applicable definitions using scope precedence and override merges
                 var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
                 var resolvedItems = resolver.ResolveApplicableDefinitions(items);
 
                 return Ok(new { success = true, data = resolvedItems });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // GET: api/checklists/template
+        [HttpGet]
+        [Route("template")]
+        [Route("~/api/checklist/template")]
+        public IHttpActionResult GetChecklistTemplate(int scope, int targetId, string cycleType = null)
+        {
+            try
+            {
+                int? resolvedTemplateVersionId = null;
+
+                // 1. Resolve template version using mapping
+                var mapping = db.ChecklistTemplateMappings
+                    .Where(m => m.Scope == scope && m.TargetId == targetId && m.IsActive)
+                    .Where(m => string.IsNullOrEmpty(cycleType) || m.CycleType == cycleType)
+                    .OrderByDescending(m => m.Id)
+                    .FirstOrDefault();
+
+                if (mapping != null)
+                {
+                    resolvedTemplateVersionId = mapping.TemplateVersionId;
+                }
+                else if (scope == 3) // Scope.Asset
+                {
+                    var inventory = db.Inventories.Find(targetId);
+                    if (inventory != null)
+                    {
+                        var groupId = inventory.Item?.GroupId;
+                        if (groupId.HasValue)
+                        {
+                            var catMapping = db.ChecklistTemplateMappings
+                                .Where(m => m.Scope == 2 && m.TargetId == groupId.Value && m.IsActive)
+                                .Where(m => string.IsNullOrEmpty(cycleType) || m.CycleType == cycleType)
+                                .OrderByDescending(m => m.Id)
+                                .FirstOrDefault();
+                            if (catMapping != null)
+                            {
+                                resolvedTemplateVersionId = catMapping.TemplateVersionId;
+                            }
+                        }
+
+                        if (resolvedTemplateVersionId == null)
+                        {
+                            var globalMapping = db.ChecklistTemplateMappings
+                                .Where(m => m.Scope == 1 && m.IsActive)
+                                .Where(m => string.IsNullOrEmpty(cycleType) || m.CycleType == cycleType)
+                                .OrderByDescending(m => m.Id)
+                                .FirstOrDefault();
+                            if (globalMapping != null)
+                            {
+                                resolvedTemplateVersionId = globalMapping.TemplateVersionId;
+                            }
+                        }
+                    }
+                }
+
+                if (resolvedTemplateVersionId.HasValue)
+                {
+                    var version = db.ChecklistTemplateVersions
+                        .Include(v => v.Template)
+                        .Include(v => v.Definitions)
+                        .FirstOrDefault(v => v.Id == resolvedTemplateVersionId.Value);
+
+                    if (version != null)
+                    {
+                        var items = version.Definitions
+                            .Where(d => d.IsActive)
+                            .OrderBy(d => d.SortOrder)
+                            .ThenBy(d => d.Id)
+                            .Select(d => new
+                            {
+                                d.Id,
+                                d.CheckName,
+                                d.Description,
+                                d.ValueType,
+                                d.Unit,
+                                d.ValidationRules,
+                                d.Severity,
+                                d.IsRequired,
+                                d.SortOrder,
+                                Options = db.ChecklistDefinitionOptions
+                                    .Where(o => o.ChecklistDefinitionId == d.Id && o.IsActive)
+                                    .OrderBy(o => o.SortOrder)
+                                    .Select(o => new
+                                    {
+                                        o.Value,
+                                        o.DisplayText,
+                                        o.Color,
+                                        o.IsDefault
+                                    }).ToList()
+                            }).ToList();
+
+                        return Ok(new
+                        {
+                            success = true,
+                            templateId = version.TemplateId,
+                            templateVersionId = version.Id,
+                            templateName = version.Template.Name,
+                            versionNumber = version.Version,
+                            data = items
+                        });
+                    }
+                }
+
+                // 2. Backward Compatibility Fallback
+                if (scope == 3)
+                {
+                    var legacyDefs = db.Database.SqlQuery<ChecklistDefinition>(
+                        "EXEC sp_GetChecklistForInventory @InventoryId, @CycleType",
+                        new SqlParameter("@InventoryId", targetId),
+                        new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
+                    ).ToList();
+
+                    var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
+                    var resolvedItems = resolver.ResolveApplicableDefinitions(legacyDefs);
+
+                    var items = resolvedItems.Select(d => new
+                    {
+                        d.Id,
+                        d.CheckName,
+                        d.Description,
+                        ValueType = d.ValueType ?? "checkbox",
+                        Unit = d.Unit,
+                        ValidationRules = d.ValidationRules,
+                        Severity = d.Severity ?? "Information",
+                        d.IsRequired,
+                        d.SortOrder,
+                        Options = new List<object>()
+                    }).ToList();
+
+                    return Ok(new
+                    {
+                        success = true,
+                        templateId = (int?)null,
+                        templateVersionId = (int?)null,
+                        templateName = "Legacy Asset Checklist",
+                        versionNumber = 1,
+                        data = items
+                    });
+                }
+
+                return Ok(new { success = false, message = "Không tìm thấy biểu mẫu checklist phù hợp cho phạm vi này." });
             }
             catch (Exception ex)
             {
@@ -243,9 +395,9 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                if (payload == null || payload.InventoryId <= 0)
+                if (payload == null || (payload.InventoryId == null && payload.LocationId == null))
                 {
-                    return Ok(new { success = false, message = "Dữ liệu gửi lên không hợp lệ." });
+                    return Ok(new { success = false, message = "Dữ liệu gửi lên không hợp lệ (cần chọn thiết bị hoặc phòng/khu vực)." });
                 }
 
                 using (var transaction = db.Database.BeginTransaction())
@@ -256,7 +408,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                         var log = new ChecklistLog
                         {
                             ScheduleId = payload.ScheduleId > 0 ? payload.ScheduleId : (int?)null,
-                            InventoryId = payload.InventoryId,
+                            InventoryId = payload.InventoryId > 0 ? payload.InventoryId : (int?)null,
+                            LocationId = payload.LocationId > 0 ? payload.LocationId : (int?)null,
+                            TemplateVersionId = payload.TemplateVersionId > 0 ? payload.TemplateVersionId : (int?)null,
                             CheckedBy = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1),
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
@@ -290,6 +444,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                                     LogId = log.Id,
                                     DefinitionId = item.DefinitionId,
                                     IsPassed = item.IsPassed,
+                                    NumericValue = item.NumericValue,
+                                    StringValue = item.StringValue,
                                     Note = item.Note
                                 };
                                 db.ChecklistLogItems.Add(logItem);
@@ -302,27 +458,44 @@ namespace HMDN_QuanLyVatTu.Controllers
                             var schedule = db.ChecklistSchedules.Find(payload.ScheduleId);
                             if (schedule != null)
                             {
-                                schedule.Status = "done";
+                                schedule.Status = "completed";
                                 db.SaveChanges();
 
-                                // Auto-skip older pending/overdue schedules for the same device and cycle
-                                var olderSchedules = db.ChecklistSchedules
-                                    .Where(s => s.InventoryId == schedule.InventoryId 
-                                             && s.CycleType == schedule.CycleType 
-                                             && s.ScheduledDate < schedule.ScheduledDate 
-                                             && (s.Status == "pending" || s.Status == "overdue"))
-                                    .ToList();
-
-                                foreach (var oldSch in olderSchedules)
+                                if (schedule.InventoryId.HasValue)
                                 {
-                                    oldSch.Status = "skipped";
+                                    var olderSchedules = db.ChecklistSchedules
+                                        .Where(s => s.InventoryId == schedule.InventoryId 
+                                                 && s.CycleType == schedule.CycleType 
+                                                 && s.ScheduledDate < schedule.ScheduledDate 
+                                                 && (s.Status == "pending" || s.Status == "overdue"))
+                                        .ToList();
+
+                                    foreach (var oldSch in olderSchedules)
+                                    {
+                                        oldSch.Status = "skipped";
+                                    }
+                                    db.SaveChanges();
                                 }
-                                db.SaveChanges();
+                                else if (schedule.LocationId.HasValue)
+                                {
+                                    var olderSchedules = db.ChecklistSchedules
+                                        .Where(s => s.LocationId == schedule.LocationId 
+                                                 && s.CycleType == schedule.CycleType 
+                                                 && s.ScheduledDate < schedule.ScheduledDate 
+                                                 && (s.Status == "pending" || s.Status == "overdue"))
+                                        .ToList();
+
+                                    foreach (var oldSch in olderSchedules)
+                                    {
+                                        oldSch.Status = "skipped";
+                                    }
+                                    db.SaveChanges();
+                                }
                             }
                         }
 
-                        var checkedByUserId = (System.Web.HttpContext.Current?.Session?["UserId"] as int?) ?? (payload.CheckedBy > 0 ? payload.CheckedBy : 1);
-                        if (payload.OverallResult == "fail")
+                        var checkedByUserId = log.CheckedBy;
+                        if (payload.OverallResult == "fail" && payload.InventoryId > 0)
                         {
                             var inventory = db.Inventories.Find(payload.InventoryId);
                             if (inventory != null)
@@ -333,12 +506,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 db.SaveChanges();
                             }
                         }
-                        else if (payload.OverallResult == "pass")
+                        else if (payload.OverallResult == "pass" && payload.InventoryId > 0)
                         {
                             var inventory = db.Inventories.Find(payload.InventoryId);
                             if (inventory != null && inventory.LifeStatus == "suspended")
                             {
-                                // Reactivation requires both completed repair ticket AND successful re-inspection
                                 bool hasCompletedRepair = db.MaintenanceLogs.Any(ml => ml.InventoryId == payload.InventoryId && (ml.Status == "closed" || ml.Status == "completed"));
                                 bool hasOpenRepair = db.MaintenanceLogs.Any(ml => ml.InventoryId == payload.InventoryId && (ml.Status == "open" || ml.Status == "in_progress"));
                                 
@@ -368,14 +540,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (ex.InnerException != null)
                 {
                     errMsg += " | Inner: " + ex.InnerException.Message;
-                    if (ex.InnerException.InnerException != null)
-                    {
-                        errMsg += " | InnerInner: " + ex.InnerException.InnerException.Message;
-                    }
                 }
                 return Ok(new { success = false, message = "Lỗi khi lưu checklist: " + errMsg });
             }
         }
+
 
         // GET: api/checklists/logs
         [HttpGet]
@@ -978,8 +1147,10 @@ namespace HMDN_QuanLyVatTu.Controllers
 
     public class ChecklistLogPayload
     {
-        public int ScheduleId { get; set; }
-        public int InventoryId { get; set; }
+        public int? ScheduleId { get; set; }
+        public int? InventoryId { get; set; }
+        public int? LocationId { get; set; }
+        public int? TemplateVersionId { get; set; }
         public int CheckedBy { get; set; }
         public string CycleType { get; set; }
         public string OverallResult { get; set; }
@@ -994,6 +1165,8 @@ namespace HMDN_QuanLyVatTu.Controllers
     {
         public int DefinitionId { get; set; }
         public bool IsPassed { get; set; }
+        public decimal? NumericValue { get; set; }
+        public string StringValue { get; set; }
         public string Note { get; set; }
     }
 }

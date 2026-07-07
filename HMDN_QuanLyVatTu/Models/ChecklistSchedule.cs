@@ -13,8 +13,11 @@ namespace HMDN_QuanLyVatTu.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public int InventoryId { get; set; }
+        public int? InventoryId { get; set; }
+
+        public int? LocationId { get; set; }
+
+        public int? TemplateVersionId { get; set; }
 
         [Required]
         [Column(TypeName = "date")]
@@ -40,6 +43,14 @@ namespace HMDN_QuanLyVatTu.Models
         [JsonIgnore]
         public virtual Inventory Inventory { get; set; }
 
+        [ForeignKey("LocationId")]
+        [JsonIgnore]
+        public virtual Location Location { get; set; }
+
+        [ForeignKey("TemplateVersionId")]
+        [JsonIgnore]
+        public virtual ChecklistTemplateVersion TemplateVersion { get; set; }
+
         [ForeignKey("AssignedTo")]
         [JsonIgnore]
         public virtual User Assignee { get; set; }
@@ -51,3 +62,4 @@ namespace HMDN_QuanLyVatTu.Models
         }
     }
 }
+

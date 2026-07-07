@@ -1283,7 +1283,9 @@ new Vue({
             var vm = this;
             vm.activePerformModalTab = 'checklist';
             vm.recentInspectionHistory = [];
-            vm.loadRecentHistory(schedule.InventoryId);
+            if (schedule.InventoryId) {
+                vm.loadRecentHistory(schedule.InventoryId);
+            }
 
             vm.activeSchedule = schedule;
             vm.performForm = {
@@ -1297,7 +1299,10 @@ new Vue({
             vm.lastSubmitLogId = null;
             vm.lastSubmitResult = '';
 
-            var key = schedule.InventoryId + '_' + schedule.CycleType;
+            var isAsset = !!schedule.InventoryId;
+            var scope = isAsset ? 3 : 4;
+            var targetId = isAsset ? schedule.InventoryId : schedule.LocationId;
+            var key = (isAsset ? 'asset_' + targetId : 'loc_' + targetId) + '_' + schedule.CycleType;
 
             function useCachedDefs() {
                 var defsCache = {};
@@ -1313,7 +1318,13 @@ new Vue({
                             CheckName: item.CheckName,
                             Description: item.Description,
                             IsRequired: item.IsRequired,
+                            ValueType: item.ValueType || 'checkbox',
+                            Unit: item.Unit || '',
+                            ValidationRules: item.ValidationRules ? JSON.parse(item.ValidationRules) : null,
+                            Options: item.Options || [],
                             isPassed: null,
+                            numericValue: null,
+                            stringValue: item.ValueType === 'select' ? (item.Options.find(o => o.IsDefault)?.Value || '') : '',
                             note: ''
                         };
                     });
@@ -1331,11 +1342,13 @@ new Vue({
                 return;
             }
 
-            fetch('/api/checklists/device-checklist?inventoryId=' + schedule.InventoryId + '&cycleType=' + schedule.CycleType)
+            fetch('/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + schedule.CycleType)
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     vm.performLoading = false;
                     if (res.success) {
+                        vm.activeScheduleTemplateVersionId = res.templateVersionId;
+
                         // Store to cache
                         var defsCache = {};
                         try {
@@ -1346,12 +1359,26 @@ new Vue({
                         localStorage.setItem('checklist_defs_cache', JSON.stringify(defsCache));
 
                         vm.checklistItems = res.data.map(function (item) {
+                            var parsedRules = null;
+                            if (item.ValidationRules) {
+                                try {
+                                    parsedRules = typeof item.ValidationRules === 'string' ? JSON.parse(item.ValidationRules) : item.ValidationRules;
+                                } catch(e) {
+                                    console.error(e);
+                                }
+                            }
                             return {
                                 DefinitionId: item.Id,
                                 CheckName: item.CheckName,
                                 Description: item.Description,
                                 IsRequired: item.IsRequired,
-                                isPassed: null, // Bắt buộc chọn Đạt/Lỗi
+                                ValueType: item.ValueType || 'checkbox',
+                                Unit: item.Unit || '',
+                                ValidationRules: parsedRules,
+                                Options: item.Options || [],
+                                isPassed: null,
+                                numericValue: null,
+                                stringValue: item.ValueType === 'select' ? (item.Options.find(o => o.IsDefault)?.Value || '') : '',
                                 note: ''
                             };
                         });
@@ -1365,6 +1392,7 @@ new Vue({
                 });
         },
 
+
         setItemPassed(index, val) {
             this.checklistItems[index].isPassed = val;
         },
@@ -1375,9 +1403,11 @@ new Vue({
                 if (confirm("⚠️ Phát hiện một số hạng mục đang được đánh dấu là LỖI.\n\nBạn có muốn GIỮ LẠI các hạng mục LỖI này và chỉ tự động điền ĐẠT cho các mục còn lại không?\n(Bấm OK để Giữ lỗi + Điền đạt các mục còn lại. Bấm Cancel để xem tùy chọn Ghi đè TẤT CẢ thành ĐẠT)")) {
                     var updatedCount = 0;
                     this.checklistItems.forEach(function (item) {
-                        if (item.isPassed === null) {
+                        if (item.ValueType === 'checkbox' && item.isPassed === null) {
                             item.isPassed = true;
                             updatedCount++;
+                        } else if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
+                            item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
                         }
                     });
                     this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho các hạng mục còn lại.', 'success');
@@ -1389,16 +1419,30 @@ new Vue({
                 }
             }
             this.checklistItems.forEach(function (item) {
-                item.isPassed = true;
+                if (item.ValueType === 'checkbox') {
+                    item.isPassed = true;
+                } else if (item.ValueType === 'number') {
+                    item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
+                } else if (item.ValueType === 'select') {
+                    var def = item.Options.find(function(o) { return o.IsDefault; });
+                    item.stringValue = def ? def.Value : (item.Options[0] ? item.Options[0].Value : '');
+                }
             });
-            this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho toàn bộ ' + this.checklistItems.length + ' hạng mục.', 'success');
+            this.toast('Thành công', 'Đã đặt kết quả ĐẠT/Mặc định cho toàn bộ ' + this.checklistItems.length + ' hạng mục.', 'success');
         },
 
         markRemainingPassed() {
             var updatedCount = 0;
             this.checklistItems.forEach(function (item) {
-                if (item.isPassed === null) {
+                if (item.ValueType === 'checkbox' && item.isPassed === null) {
                     item.isPassed = true;
+                    updatedCount++;
+                } else if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
+                    item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
+                    updatedCount++;
+                } else if (item.ValueType === 'select' && (item.stringValue === null || item.stringValue === '')) {
+                    var def = item.Options.find(function(o) { return o.IsDefault; });
+                    item.stringValue = def ? def.Value : (item.Options[0] ? item.Options[0].Value : '');
                     updatedCount++;
                 }
             });
@@ -1412,50 +1456,111 @@ new Vue({
         submitChecklist() {
             var vm = this;
 
-            // 1. Kiểm tra ràng buộc
-            var missing = vm.checklistItems.filter(function (item) {
-                return item.IsRequired && item.isPassed === null;
+            // 1. Dynamic validation
+            var missing = [];
+            var missingNotes = [];
+            var hasValidationErrors = false;
+
+            vm.checklistItems.forEach(function (item) {
+                var valueProvided = false;
+                if (item.ValueType === 'checkbox') {
+                    valueProvided = item.isPassed !== null;
+                } else if (item.ValueType === 'number') {
+                    valueProvided = item.numericValue !== null && item.numericValue !== '';
+                } else if (item.ValueType === 'select') {
+                    valueProvided = item.stringValue !== null && item.stringValue !== '';
+                } else {
+                    valueProvided = item.stringValue !== null && item.stringValue.trim() !== '';
+                }
+
+                if (item.IsRequired && !valueProvided) {
+                    missing.push(item);
+                }
+
+                // Check numeric min/max limits
+                if (item.ValueType === 'number' && valueProvided) {
+                    var val = parseFloat(item.numericValue);
+                    if (isNaN(val)) {
+                        vm.toast('Cảnh báo', item.CheckName + ' bắt buộc phải là một số hợp lệ.', 'warning');
+                        hasValidationErrors = true;
+                    } else if (item.ValidationRules) {
+                        var rules = item.ValidationRules;
+                        if (rules.min !== undefined && rules.min !== null && val < rules.min) {
+                            vm.toast('Cảnh báo', rules.customMessage || (item.CheckName + ' không được thấp hơn ' + rules.min + ' ' + item.Unit), 'warning');
+                            hasValidationErrors = true;
+                        }
+                        if (rules.max !== undefined && rules.max !== null && val > rules.max) {
+                            vm.toast('Cảnh báo', rules.customMessage || (item.CheckName + ' không được vượt quá ' + rules.max + ' ' + item.Unit), 'warning');
+                            hasValidationErrors = true;
+                        }
+                    }
+                }
+
+                // Boolean fails require notes
+                if (item.ValueType === 'checkbox' && item.isPassed === false && (!item.note || !item.note.trim())) {
+                    missingNotes.push(item);
+                }
+                
+                // Dropdown failure check (if user selects options containing "Lỗi" or "fault")
+                if (item.ValueType === 'select' && valueProvided) {
+                    var isFaultOption = item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi';
+                    if (isFaultOption && (!item.note || !item.note.trim())) {
+                        missingNotes.push(item);
+                    }
+                }
             });
+
+            if (hasValidationErrors) return;
 
             if (missing.length > 0) {
-                vm.toast('Cảnh báo', 'Vui lòng đánh giá đầy đủ các hạng mục bắt buộc (*) trước khi lưu.', 'warning');
+                vm.toast('Cảnh báo', 'Vui lòng điền đầy đủ các hạng mục bắt buộc (*) trước khi lưu.', 'warning');
                 return;
             }
-
-            // Kiểm tra ghi chú bắt buộc đối với các mục báo LỖI
-            var missingNotes = vm.checklistItems.filter(function (item) {
-                return item.isPassed === false && (!item.note || !item.note.trim());
-            });
 
             if (missingNotes.length > 0) {
-                vm.toast('Cảnh báo', 'Vui lòng nhập ghi chú mô tả lỗi cho các hạng mục bị LỖI.', 'warning');
+                vm.toast('Cảnh báo', 'Vui lòng nhập ghi chú mô tả lỗi cho các hạng mục phát hiện lỗi/sự cố.', 'warning');
                 return;
             }
 
-            // 2. Tính toán kết quả chung (Nghiêm ngặt: Có 1 mục hỏng -> FAIL, còn lại PASS)
-            var hasFailed = vm.checklistItems.some(function (i) { return i.isPassed === false; });
+            // 2. Determine Overall Result (fail if any checkbox is false or select is 'fault')
+            var hasFailed = vm.checklistItems.some(function (item) {
+                if (item.ValueType === 'checkbox' && item.isPassed === false) return true;
+                if (item.ValueType === 'select' && (item.stringValue === 'fault' || item.stringValue === 'lỗi')) return true;
+                return false;
+            });
             var overall = hasFailed ? 'fail' : 'pass';
 
             vm.isSubmitting = true;
 
             var payload = {
                 ScheduleId: vm.activeSchedule.Id,
-                InventoryId: vm.activeSchedule.InventoryId,
+                InventoryId: vm.activeSchedule.InventoryId || null,
+                LocationId: vm.activeSchedule.LocationId || null,
+                TemplateVersionId: vm.activeScheduleTemplateVersionId || null,
                 CheckedBy: vm.currentUser.Id,
                 CycleType: vm.activeSchedule.CycleType,
                 OverallResult: overall,
                 Note: vm.performForm.note,
                 QrScanned: vm.performForm.qrScanned,
-                QrLocation: vm.activeSchedule.DepartmentName,
+                QrLocation: vm.activeSchedule.LocationName || vm.activeSchedule.DepartmentName || '',
                 ImageUrls: '',
-                Items: vm.checklistItems.filter(function (i) { return i.isPassed !== null; }).map(function (i) {
+                Items: vm.checklistItems.map(function (i) {
+                    var passVal = true;
+                    if (i.ValueType === 'checkbox') {
+                        passVal = i.isPassed !== false;
+                    } else if (i.ValueType === 'select') {
+                        passVal = i.stringValue !== 'fault' && i.stringValue !== 'lỗi';
+                    }
                     return {
                         DefinitionId: i.DefinitionId,
-                        IsPassed: i.isPassed,
+                        IsPassed: passVal,
+                        NumericValue: i.numericValue !== '' ? i.numericValue : null,
+                        StringValue: i.stringValue || null,
                         Note: i.note
                     };
                 })
             };
+
 
             function queueOffline(payload) {
                 var queue = [];

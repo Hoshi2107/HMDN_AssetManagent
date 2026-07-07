@@ -40,7 +40,11 @@ namespace HMS.Data
         public DbSet<Alert> Alerts { get; set; }
 
         public DbSet<CheckCycle> CheckCycles { get; set; }
+        public DbSet<ChecklistTemplate> ChecklistTemplates { get; set; }
+        public DbSet<ChecklistTemplateVersion> ChecklistTemplateVersions { get; set; }
+        public DbSet<ChecklistTemplateMapping> ChecklistTemplateMappings { get; set; }
         public DbSet<ChecklistDefinition> ChecklistDefinitions { get; set; }
+        public DbSet<ChecklistDefinitionOption> ChecklistDefinitionOptions { get; set; }
         public DbSet<ChecklistSchedule> ChecklistSchedules { get; set; }
         public DbSet<ChecklistLog> ChecklistLogs { get; set; }
         public DbSet<ChecklistLogItem> ChecklistLogItems { get; set; }
@@ -101,8 +105,20 @@ namespace HMS.Data
             modelBuilder.Entity<CheckCycle>()
                 .ToTable("CheckCycles");
 
+            modelBuilder.Entity<ChecklistTemplate>()
+                .ToTable("ChecklistTemplates");
+
+            modelBuilder.Entity<ChecklistTemplateVersion>()
+                .ToTable("ChecklistTemplateVersions");
+
+            modelBuilder.Entity<ChecklistTemplateMapping>()
+                .ToTable("ChecklistTemplateMappings");
+
             modelBuilder.Entity<ChecklistDefinition>()
                 .ToTable("ChecklistDefinitions");
+
+            modelBuilder.Entity<ChecklistDefinitionOption>()
+                .ToTable("ChecklistDefinitionOptions");
 
             modelBuilder.Entity<ChecklistSchedule>()
                 .ToTable("ChecklistSchedules");
@@ -113,6 +129,7 @@ namespace HMS.Data
             modelBuilder.Entity<ChecklistLogItem>()
                 .ToTable("ChecklistLogItems");
         }
+
 
     }
 }

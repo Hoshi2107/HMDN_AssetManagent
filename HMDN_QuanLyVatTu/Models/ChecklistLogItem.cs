@@ -23,6 +23,10 @@ namespace HMDN_QuanLyVatTu.Models
         [StringLength(500)]
         public string Note { get; set; }
 
+        public decimal? NumericValue { get; set; }
+
+        public string StringValue { get; set; }
+
         [ForeignKey("LogId")]
         [JsonIgnore]
         public virtual ChecklistLog Log { get; set; }
@@ -32,3 +36,4 @@ namespace HMDN_QuanLyVatTu.Models
         public virtual ChecklistDefinition Definition { get; set; }
     }
 }
+

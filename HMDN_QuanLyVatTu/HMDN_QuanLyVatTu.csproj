@@ -167,6 +167,10 @@
     <Compile Include="Models\Alert.cs" />
     <Compile Include="Models\CheckCycle.cs" />
     <Compile Include="Models\ChecklistDefinition.cs" />
+    <Compile Include="Models\ChecklistDefinitionOption.cs" />
+    <Compile Include="Models\ChecklistTemplate.cs" />
+    <Compile Include="Models\ChecklistTemplateMapping.cs" />
+    <Compile Include="Models\ChecklistTemplateVersion.cs" />
     <Compile Include="Models\ChecklistScopes.cs" />
     <Compile Include="Models\ChecklistScope.cs" />
     <Compile Include="Models\ChecklistSchedule.cs" />

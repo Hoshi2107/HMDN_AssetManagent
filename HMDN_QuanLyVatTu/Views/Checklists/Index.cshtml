@@ -356,7 +356,8 @@
         border: 1px solid var(--cl-border);
         border-radius: var(--cl-radius-lg);
         box-shadow: var(--cl-shadow-sm);
-        overflow: hidden;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     .cl-table {
         width: 100%;
@@ -1503,19 +1504,45 @@
                         </div>
                     </div>
                     <div class="cl-exec-grid">
-                        <div class="cl-exec-item" v-for="(item, idx) in checklistItems" :key="item.Id">
+                        <div class="cl-exec-item" v-for="(item, idx) in checklistItems" :key="item.DefinitionId || idx">
                             <div>
                                 <div class="cl-exec-name">${ item.CheckName } <span style="color:var(--cl-danger)" v-if="item.IsRequired">*</span></div>
                                 <div class="cl-exec-desc" v-if="item.Description">${ item.Description }</div>
                             </div>
-                            <div class="cl-exec-actions">
-                                <button type="button" class="cl-toggle-btn pass" :class="{active: item.isPassed === true}" @@click="setItemPassed(idx, true)">
-                                    <i class="fa-solid fa-circle-check"></i> Đạt
-                                </button>
-                                <button type="button" class="cl-toggle-btn fail" :class="{active: item.isPassed === false}" @@click="setItemPassed(idx, false)">
-                                    <i class="fa-solid fa-circle-xmark"></i> Lỗi
-                                </button>
-                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi nếu có..." :style="{ height: '36px', width: '180px', fontSize: '12.5px', borderColor: (item.isPassed === false && (!item.note || !item.note.trim())) ? '#dc2626' : '' }" v-model="item.note" />
+                            <div class="cl-exec-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <!-- Checkbox / Boolean Value Type -->
+                                <template v-if="item.ValueType === 'checkbox'">
+                                    <button type="button" class="cl-toggle-btn pass" :class="{active: item.isPassed === true}" @@click="setItemPassed(idx, true)">
+                                        <i class="fa-solid fa-circle-check"></i> Đạt
+                                    </button>
+                                    <button type="button" class="cl-toggle-btn fail" :class="{active: item.isPassed === false}" @@click="setItemPassed(idx, false)">
+                                        <i class="fa-solid fa-circle-xmark"></i> Lỗi
+                                    </button>
+                                </template>
+
+                                <!-- Number Input Value Type -->
+                                <template v-else-if="item.ValueType === 'number'">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <input type="number" step="any" class="cl-input" :placeholder="'Nhập số... ' + (item.ValidationRules ? '(' + (item.ValidationRules.min !== undefined ? 'Min: ' + item.ValidationRules.min : '') + (item.ValidationRules.max !== undefined ? ', Max: ' + item.ValidationRules.max : '') + ')' : '')" style="height: 36px; width: 140px; font-size: 13px; padding: 6px 10px;" v-model="item.numericValue" />
+                                        <span v-if="item.Unit" class="text-muted font-weight-bold" style="font-size: 12px; white-space: nowrap;">${ item.Unit }</span>
+                                    </div>
+                                </template>
+
+                                <!-- Select Dropdown Value Type -->
+                                <template v-else-if="item.ValueType === 'select'">
+                                    <select class="cl-select" style="height: 36px; width: 180px; font-size: 13px; padding: 4px 10px;" v-model="item.stringValue">
+                                        <option value="">-- Chọn --</option>
+                                        <option v-for="opt in item.Options" :key="opt.Id" :value="opt.Value">${ opt.Label }</option>
+                                    </select>
+                                </template>
+
+                                <!-- Text Input Value Type -->
+                                <template v-else-if="item.ValueType === 'text'">
+                                    <input type="text" class="cl-input" placeholder="Nhập ghi nhận..." style="height: 36px; width: 180px; font-size: 13px; padding: 6px 10px;" v-model="item.stringValue" />
+                                </template>
+
+                                <!-- Text Note input for fault remarks or extra description -->
+                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi/chi tiết..." :style="{ height: '36px', width: '180px', fontSize: '12.5px', borderColor: ((item.isPassed === false || (item.ValueType === 'select' && (item.stringValue === 'fault' || item.stringValue === 'lỗi'))) && (!item.note || !item.note.trim())) ? '#dc2626' : '' }" v-model="item.note" />
                             </div>
                         </div>
                     </div>
