@@ -60,7 +60,9 @@
 
 /* Quản lý khu vực đồ thị Chart.js */
 .chart-container {
-    height: 220px;
+    position: relative !important;
+    width: 100% !important;
+    height: 220px !important;
 }
 
 /* Khoảng cách các phần tử thanh bộ lọc */
@@ -175,6 +177,10 @@
     .table-analytics td {
         white-space: nowrap;
     }
+
+    .chart-container {
+        height: 180px !important;
+    }
 }
 
 
@@ -202,7 +208,25 @@
 
 @media (max-width: 576px) {
     .kpi-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+    #analytics-module-hub .card {
+        padding: 12px 14px !important;
+    }
+    .card-kpi-title {
+        font-size: 10px !important;
+    }
+    .kpi-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14px !important;
+    }
+    #analytics-module-hub h2 {
+        font-size: 18px !important;
+    }
+    #analytics-module-hub h3 {
+        font-size: 14px !important;
     }
 }
 

@@ -506,6 +506,19 @@
             background: #f1f5f9;
         }
 
+        .notification-dropdown {
+            position: absolute;
+            top: 120%;
+            right: 0;
+            width: 340px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
         .topbar-title {
             font-size: 17px;
             font-weight: 700;
@@ -657,6 +670,18 @@
             }
             .btn-close-sidebar:hover {
                 opacity: 1;
+            }
+
+            .notification-dropdown {
+                position: fixed !important;
+                top: 60px !important;
+                left: 10px !important;
+                right: 10px !important;
+                width: calc(100vw - 20px) !important;
+                max-width: none !important;
+                border-radius: 8px !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+                z-index: 1010 !important;
             }
             body.sidebar-open #app-sidebar .nav-section-label,
             body.sidebar-open #app-sidebar .section-chevron,
@@ -960,7 +985,7 @@
                                 <span v-if="unreadCount > 0" style="position: absolute; top: -5px; right: -5px; background: var(--accent-red); color: white; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;">{{ unreadCount }}</span>
                             </button>
 
-                            <div v-if="isOpen" v-on:click.stop style="position: absolute; top: 120%; right: 0; width: 340px; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; overflow: hidden;">
+                            <div v-if="isOpen" v-on:click.stop class="notification-dropdown">
                                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid var(--border); background: #f8fafc;">
                                     <span style="font-weight: 700; font-size: 14px; color: #1e2a3a;">Thông báo</span>
                                     <div style="display: flex; align-items: center; gap: 12px;">
