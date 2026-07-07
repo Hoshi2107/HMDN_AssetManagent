@@ -781,6 +781,80 @@ input:checked + .switch-slider:before {
     .notification-methods {
         grid-template-columns: 1fr;
     }
+
+    /* Configuration Panel Overrides on Mobile */
+    .config-tabs-nav {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        padding-bottom: 8px !important;
+    }
+    .config-tabs-nav::-webkit-scrollbar {
+        display: none !important;
+    }
+    .config-tab-btn {
+        flex-shrink: 0 !important;
+    }
+    .config-card {
+        padding: 16px !important;
+    }
+    .config-table th,
+    .config-table td {
+        white-space: nowrap !important;
+    }
+    .override-row-item {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding: 12px !important;
+    }
+    .override-row-item select {
+        width: 100% !important;
+        flex-grow: 1 !important;
+    }
+    .override-row-item input {
+        width: 60px !important;
+    }
+    .override-row-item button {
+        margin-left: auto !important;
+    }
+    .stock-threshold-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 12px !important;
+    }
+    .stock-limit-input {
+        justify-content: space-between !important;
+        width: 100% !important;
+        margin-top: 4px !important;
+        border-top: 1px dashed #e2e8f0 !important;
+        padding-top: 8px !important;
+    }
+    /* Header layout changes */
+    div[v-if="activeView === 'config'"] > .d-flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .config-actions-bar {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    .config-actions-bar .topbar-btn {
+        flex: 1 1 calc(50% - 4px) !important;
+        width: 100% !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+    .config-actions-bar button[v-on\:click="forceScan"],
+    .config-actions-bar button[@@click="forceScan"] {
+        flex: 1 1 100% !important;
+    }
 }
 
 /* Card Quick Dismiss Checkmark Button */

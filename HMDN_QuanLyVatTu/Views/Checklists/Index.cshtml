@@ -901,6 +901,188 @@
             margin-top: 1px !important;
             line-height: 1.2 !important;
         }
+
+        /* Fullscreen Modal on Mobile */
+        .cl-modal-overlay {
+            padding: 0 !important;
+        }
+        .cl-modal-card {
+            max-width: 100% !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+        }
+        .cl-modal-header {
+            padding: 12px 16px !important;
+        }
+        .cl-modal-body {
+            padding: 14px 16px !important;
+            overflow-y: auto !important;
+        }
+        .cl-modal-footer {
+            padding: 12px 16px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+        }
+        .cl-modal-footer .cl-btn {
+            flex: 1 !important;
+            width: 100% !important;
+            justify-content: center !important;
+            height: 40px !important;
+        }
+
+        /* Device Info Grid */
+        .cl-device-info-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            padding: 12px !important;
+        }
+
+        /* Checklist Form Items */
+        .cl-exec-actions {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+        .cl-exec-actions input[placeholder*="Ghi chú"],
+        .cl-exec-actions input[placeholder*="Ghi nhận"] {
+            grid-column: span 2 !important;
+            width: 100% !important;
+        }
+        .cl-exec-actions > div {
+            grid-column: span 2 !important;
+            width: 100% !important;
+            display: flex !important;
+        }
+        .cl-exec-actions > div input {
+            flex: 1 !important;
+            width: 100% !important;
+        }
+        .cl-exec-actions select.cl-select,
+        .cl-exec-actions input.cl-input:not([placeholder*="Ghi chú"]):not([placeholder*="Ghi nhận"]) {
+            grid-column: span 2 !important;
+            width: 100% !important;
+        }
+
+        /* Cycle filter tabs row */
+        .cl-cycle-tabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            white-space: nowrap !important;
+            padding-bottom: 8px !important;
+        }
+        .cl-cycle-tabs::-webkit-scrollbar {
+            display: none !important;
+        }
+        .cl-cycle-tabs button {
+            flex-shrink: 0 !important;
+        }
+
+        /* Filter bar layout */
+        .cl-filter-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+            padding: 12px !important;
+        }
+        .cl-filter-bar .cl-input-group {
+            width: 100% !important;
+        }
+        .cl-filter-bar .cl-input-group input,
+        .cl-filter-bar .cl-input-group select {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        .cl-filter-bar > div:last-child {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+            margin-top: 4px !important;
+        }
+        .cl-filter-bar > div:last-child button {
+            flex: 1 !important;
+            width: 100% !important;
+            justify-content: center !important;
+        }
+
+        /* Batch Check Modal split layout responsiveness */
+        .cl-modal-body[style*="flex-direction:row"],
+        .cl-modal-body[style*="flex-direction: row"] {
+            flex-direction: column !important;
+            gap: 16px !important;
+            height: auto !important;
+            max-height: calc(100vh - 120px) !important;
+            overflow-y: auto !important;
+        }
+        .cl-modal-body[style*="flex-direction:row"] > div:first-child,
+        .cl-modal-body[style*="flex-direction: row"] > div:first-child {
+            border-right: none !important;
+            padding-right: 0 !important;
+            flex: none !important;
+        }
+        .cl-modal-body[style*="flex-direction:row"] > div:last-child,
+        .cl-modal-body[style*="flex-direction: row"] > div:last-child {
+            padding-left: 0 !important;
+            flex: none !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+
+        /* Prevent table text wrapping and enable horizontal scroll */
+        .cl-table th,
+        .cl-table td {
+            white-space: nowrap !important;
+        }
+
+        /* Minimize outer card paddings */
+        div[style*="padding:24px"],
+        div[style*="padding: 24px"] {
+            padding: 12px 14px !important;
+        }
+
+        /* Compliance Rates Tab */
+        .cl-compliance-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+        }
+        .cl-compliance-filters {
+            width: 100% !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        .cl-compliance-filters input {
+            flex: 1 !important;
+            width: calc(50% - 4px) !important;
+            min-width: 0 !important;
+        }
+        .cl-compliance-filters button {
+            width: 100% !important;
+            flex: none !important;
+            justify-content: center !important;
+        }
+
+        /* Approval Header */
+        .cl-approval-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        .cl-approval-header > div {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+        }
+        .cl-approval-header > div button {
+            flex: 1 !important;
+            width: 100% !important;
+            justify-content: center !important;
+        }
     }
 </style>
 
@@ -987,7 +1169,7 @@
     <!-- ===== TAB CONTENT: SCHEDULES ===== -->
     <div v-if="activeTab==='schedules'" style="display:flex; flex-direction:column; gap:20px;">
         <!-- Cycle tabs row -->
-        <div style="display:flex; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--cl-border); padding-bottom:12px; margin-bottom: 4px;">
+        <div class="cl-cycle-tabs" style="display:flex; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--cl-border); padding-bottom:12px; margin-bottom: 4px;">
             <button class="cl-tab-btn" :class="{active: schedulesFilter.cycleType===''}" @@click="schedulesFilter.cycleType=''; schedulesFilter.strictDate = false; schedulesFilter.fromDate = ''; schedulesFilter.toDate = '';" style="padding:8px 16px; font-size:13px; border-radius:8px; border:1px solid var(--cl-border); margin:0;">
                 Tất cả chu kỳ
             </button>
@@ -1315,11 +1497,11 @@
     <div v-if="activeTab==='manager_approvals'" style="display:flex; flex-direction:column; gap:28px;">
         <!-- 1. Department Compliance Rates -->
         <div style="background:var(--cl-card-bg); border:1px solid var(--cl-border); border-radius:var(--cl-radius-lg); padding:24px; box-shadow:var(--cl-shadow-sm);">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; border-bottom:1px solid var(--cl-border); padding-bottom:12px;">
+            <div class="cl-compliance-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; border-bottom:1px solid var(--cl-border); padding-bottom:12px; flex-wrap:wrap; gap:16px;">
                 <h4 style="font-size:15px; font-weight:700; color:var(--cl-text); margin:0;">
                     <i class="fa-solid fa-chart-bar mr-2 text-primary"></i>Tỷ lệ tuân thủ Checklist theo khoa phòng ban
                 </h4>
-                <div style="display:flex; gap:10px;">
+                <div class="cl-compliance-filters" style="display:flex; gap:10px;">
                     <input type="date" class="cl-input" v-model="complianceFilter.fromDate" style="height:36px; padding:0 10px; font-size:12.5px;" />
                     <input type="date" class="cl-input" v-model="complianceFilter.toDate" style="height:36px; padding:0 10px; font-size:12.5px;" />
                     <button class="cl-btn cl-btn-primary" style="height:36px; padding:0 12px; font-size:12.5px;" @@click="loadDepartmentProgress">
@@ -1332,13 +1514,13 @@
                 <div v-for="dept in departmentCompliance" :key="dept.DepartmentId" style="border:1px solid var(--cl-border); border-radius:var(--cl-radius-md); padding:16px; background:var(--cl-neutral-light);">
                     <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
                         <strong style="font-size:13.5px; color:#0f172a;">${ dept.DepartmentName }</strong>
-                        <span class="cl-badge" :class="dept.ComplianceRate >= 80 ? 'cl-badge-completed' : (dept.ComplianceRate >= 50 ? 'cl-badge-pending' : 'cl-badge-fail')" style="font-size:11px; padding:2px 8px;">
-                            ${ dept.ComplianceRate }%
+                        <span class="cl-badge" :class="dept.CompletionRate >= 80 ? 'cl-badge-completed' : (dept.CompletionRate >= 50 ? 'cl-badge-pending' : 'cl-badge-fail')" style="font-size:11px; padding:2px 8px;">
+                            ${ dept.CompletionRate }%
                         </span>
                     </div>
                     <!-- Progress Bar -->
                     <div style="height:8px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin-bottom:8px;">
-                        <div :style="'width: ' + dept.ComplianceRate + '%; height:100%; background:' + (dept.ComplianceRate >= 80 ? 'var(--cl-success)' : (dept.ComplianceRate >= 50 ? 'var(--cl-warning)' : 'var(--cl-danger)'))"></div>
+                        <div :style="'width: ' + dept.CompletionRate + '%; height:100%; background:' + (dept.CompletionRate >= 80 ? 'var(--cl-success)' : (dept.CompletionRate >= 50 ? 'var(--cl-warning)' : 'var(--cl-danger)'))"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--cl-text-muted);">
                         <span>Hoàn thành: <strong>${ dept.DoneCount }</strong></span>
@@ -1350,7 +1532,7 @@
 
         <!-- 2. Checklist Awaiting Approval List -->
         <div style="display:flex; flex-direction:column; gap:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div class="cl-approval-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <h4 style="font-size:15px; font-weight:700; color:var(--cl-text); margin:0;">
                     <i class="fa-solid fa-list-check mr-2 text-warning"></i>Danh sách checklists chờ duyệt (${ pendingApprovals.length } nhật ký)
                 </h4>
@@ -1873,7 +2055,7 @@
                             </div>
                         </div>
                     </div>
-                    <div style="border:1px solid var(--cl-border); border-radius:10px; overflow:hidden;">
+                    <div class="cl-card-table" style="border:1px solid var(--cl-border); border-radius:10px; overflow:hidden;">
                         <table class="cl-table">
                             <thead>
                                 <tr style="background:#f8fafc;">

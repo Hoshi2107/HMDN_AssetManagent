@@ -693,6 +693,24 @@
             .page-wrapper {
                 width: 100vw !important;
             }
+
+            .topbar-user-name {
+                display: none !important;
+            }
+            .topbar-user-container {
+                padding: 4px !important;
+                gap: 6px !important;
+            }
+            .topbar-title {
+                font-size: 14px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 130px !important;
+            }
+            .page-content {
+                padding: 12px !important;
+            }
         }
     </style>
     <style>
@@ -1024,7 +1042,7 @@
                         bool topbarHasAvatar = System.IO.File.Exists(topbarAvatarPhysical);
 
                         <!-- Current User Profile in Topbar -->
-                        <div style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 6px; background: #f8fafc; border-radius: 20px; font-size: 13px; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div class="topbar-user-container" style="display: flex; align-items: center; gap: 10px; padding: 4px 12px 4px 6px; background: #f8fafc; border-radius: 20px; font-size: 13px; border: 1px solid #e2e8f0; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                             <a href="@Url.Action("Profile", "User")" title="Xem hồ sơ cá nhân" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                                 @if (topbarHasAvatar)
                                 {
@@ -1036,7 +1054,7 @@
                                         @currentUserInitials
                                     </div>
                                 }
-                                <span style="font-weight: 600; color: #334155;">@currentFullName</span>
+                                <span class="topbar-user-name" style="font-weight: 600; color: #334155;">@currentFullName</span>
                             </a>
                             <a href="@Url.Action("Logout", "Account")" title="ÄÄƒng xuáº¥t" style="margin-left: 4px; color: var(--accent-red); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; transition: background 0.2s;"
                                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
