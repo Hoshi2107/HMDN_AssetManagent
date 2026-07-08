@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Web.Mvc;
@@ -141,7 +142,7 @@ namespace HMDN_QuanLyVatTu.Controllers
 
             bool hasTicketDetails = db.TicketDetails.Any(x => x.TicketId == ticketId);
 
-            if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR" || !hasTicketDetails)
+            if (!hasTicketDetails)
             {
                 var details = db.Inventories
                     .Where(x => x.IdTicket == ticketId)
@@ -155,28 +156,87 @@ namespace HMDN_QuanLyVatTu.Controllers
                         x.ApprovalStatus,
                         x.ApprovalNote,
                         x.ApprovedQuantity,
-                        Note = x.Note
+                        Note = x.Note,
+                        x.AssetCode
                     })
                     .ToList();
                 return Json(details, JsonRequestBehavior.AllowGet);
             }
             else
             {
-                var details = db.TicketDetails
+                var ticketDetailsList = db.TicketDetails
                     .Where(x => x.TicketId == ticketId)
-                    .Select(x => new
+                    .ToList();
+
+                var assetCodes = new List<string>();
+                foreach (var td in ticketDetailsList)
+                {
+                    string assetCode = td.ItemName;
+                    if (td.ItemName != null && td.ItemName.Contains(" (SN: "))
+                    {
+                        int idx = td.ItemName.IndexOf(" (SN: ");
+                        assetCode = td.ItemName.Substring(0, idx).Trim();
+                    }
+                    if (!string.IsNullOrEmpty(assetCode))
+                    {
+                        assetCodes.Add(assetCode);
+                    }
+                }
+
+                var inventories = db.Inventories
+                    .Include(i => i.Item)
+                    .Where(i => assetCodes.Contains(i.AssetCode))
+                    .ToList()
+                    .GroupBy(i => i.AssetCode)
+                    .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+
+                var details = ticketDetailsList.Select(x =>
+                {
+                    string assetCode = x.ItemName;
+                    string serialNumber = "";
+                    if (x.ItemName != null && x.ItemName.Contains(" (SN: "))
+                    {
+                        int idx = x.ItemName.IndexOf(" (SN: ");
+                        assetCode = x.ItemName.Substring(0, idx).Trim();
+                        serialNumber = x.ItemName.Substring(idx + 6).Replace(")", "").Trim();
+                    }
+
+                    string displayName = x.ItemName;
+                    string finalSerial = serialNumber;
+                    string finalAssetCode = "";
+
+                    if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR")
+                    {
+                        finalAssetCode = assetCode;
+                        if (!string.IsNullOrEmpty(assetCode) && inventories.TryGetValue(assetCode, out var inv))
+                        {
+                            displayName = inv.Item != null ? inv.Item.Name : "N/A";
+                            if (string.IsNullOrEmpty(finalSerial))
+                            {
+                                finalSerial = inv.SerialNumber ?? "";
+                            }
+                        }
+                        else
+                        {
+                            displayName = assetCode;
+                        }
+                    }
+
+                    return new
                     {
                         x.Id,
-                        ItemName = x.ItemName,
-                        SerialNumber = "",
+                        ItemName = displayName,
+                        SerialNumber = finalSerial,
                         x.Quantity,
                         LifeStatus = "active",
                         x.ApprovalStatus,
                         x.ApprovalNote,
                         x.ApprovedQuantity,
-                        Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note)
-                    })
-                    .ToList();
+                        Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note),
+                        AssetCode = finalAssetCode
+                    };
+                }).ToList();
+
                 return Json(details, JsonRequestBehavior.AllowGet);
             }
         }

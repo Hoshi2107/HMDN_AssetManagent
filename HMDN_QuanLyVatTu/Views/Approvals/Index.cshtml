@@ -1982,6 +1982,7 @@
                                 <tr v-if="isDeviceFormType(selectedTicket.TicketType)">
                                     <th style="width: 50px;">STT</th>
                                     <th style="width: 80px; text-align: center;">Duyệt</th>
+                                    <th style="width: 150px;">Mã tài sản</th>
                                     <th>Tên thiết bị</th>
                                     <th style="width: 150px;">Serial</th>
                                     <th style="width: 100px; text-align: center;">SL Yêu cầu</th>
@@ -2006,6 +2007,7 @@
                                         <td style="text-align: center;">
                                             <input type="checkbox" v-model="dt.isApproved" :disabled="selectedTicket.Status !== 'PENDING' || !canApprove()" style="width: 16px; height: 16px; cursor: pointer; vertical-align: middle;" />
                                         </td>
+                                        <td style="font-weight: 600; color: #1e2a3a;">${dt.AssetCode || '—'}</td>
                                         <td style="font-weight: 500;">${dt.ItemName}</td>
                                         <td>${dt.SerialNumber || 'N/A'}</td>
                                         <td style="text-align: center; font-weight: 600;">${dt.Quantity}</td>
@@ -2036,7 +2038,7 @@
                                     </tr>
                                 </template>
                                 <tr v-if="ticketDetails.length === 0">
-                                    <td :colspan="isDeviceFormType(selectedTicket.TicketType) ? 7 : 8" style="text-align: center; padding: 24px; color: #64748b;">
+                                    <td colspan="8" style="text-align: center; padding: 24px; color: #64748b;">
                                         ${isDeviceFormType(selectedTicket.TicketType) ? 'Không có thiết bị đính kèm trong Inventory' : 'Không có hàng hóa nào'}
                                     </td>
                                 </tr>
@@ -2173,6 +2175,9 @@
                     <td class="center">${index + 1}</td>
                     <td>
                         ${dt.ItemName}
+                        <span v-if="dt.AssetCode" style="font-size: 10pt; display: block; font-style: italic;">
+                            Mã tài sản: ${dt.AssetCode}
+                        </span>
                         <span v-if="dt.SerialNumber" style="font-size: 10pt; display: block; font-style: italic;">
                             Serial: ${dt.SerialNumber}
                         </span>

@@ -198,7 +198,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 x.ApprovalStatus,
                                 x.ApprovalNote,
                                 x.ApprovedQuantity,
-                                x.Note
+                                x.Note,
+                                x.AssetCode
                             })
                             .ToList()
                             .Select(x => new TicketDetailVM
@@ -211,40 +212,87 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 ApprovalStatus = x.ApprovalStatus,
                                 ApprovalNote = x.ApprovalNote,
                                 ApprovedQuantity = x.ApprovedQuantity,
-                                Note = x.Note
+                                Note = x.Note,
+                                AssetCode = x.AssetCode
                             })
                             .ToList();
                         return Ok(data);
                     }
                     else
                     {
-                        var data = db.TicketDetails
+                        var ticketDetailsList = db.TicketDetails
                             .Where(x => x.TicketId == ticketId)
-                            .Select(x => new
+                            .ToList();
+
+                        var assetCodes = new List<string>();
+                        foreach (var td in ticketDetailsList)
+                        {
+                            string assetCode = td.ItemName;
+                            if (td.ItemName != null && td.ItemName.Contains(" (SN: "))
                             {
-                                x.Id,
-                                x.ItemName,
-                                x.Unit,
-                                x.Quantity,
-                                x.Note,
-                                x.ApprovalStatus,
-                                x.ApprovedQuantity,
-                                x.ApprovalNote
-                            })
+                                int idx = td.ItemName.IndexOf(" (SN: ");
+                                assetCode = td.ItemName.Substring(0, idx).Trim();
+                            }
+                            if (!string.IsNullOrEmpty(assetCode))
+                            {
+                                assetCodes.Add(assetCode);
+                            }
+                        }
+
+                        var inventories = db.Inventories
+                            .Include(i => i.Item)
+                            .Where(i => assetCodes.Contains(i.AssetCode))
                             .ToList()
-                            .Select(x => new TicketDetailVM
+                            .GroupBy(i => i.AssetCode)
+                            .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+
+                        var data = ticketDetailsList.Select(x =>
+                        {
+                            string assetCode = x.ItemName;
+                            string serialNumber = "";
+                            if (x.ItemName != null && x.ItemName.Contains(" (SN: "))
+                            {
+                                int idx = x.ItemName.IndexOf(" (SN: ");
+                                assetCode = x.ItemName.Substring(0, idx).Trim();
+                                serialNumber = x.ItemName.Substring(idx + 6).Replace(")", "").Trim();
+                            }
+
+                            string displayName = x.ItemName;
+                            string finalSerial = serialNumber;
+                            string finalAssetCode = "";
+
+                            if (ticket.TicketType == "SUPPORT" || ticket.TicketType == "REPAIR")
+                            {
+                                finalAssetCode = assetCode;
+                                if (!string.IsNullOrEmpty(assetCode) && inventories.TryGetValue(assetCode, out var inv))
+                                {
+                                    displayName = inv.Item != null ? inv.Item.Name : "N/A";
+                                    if (string.IsNullOrEmpty(finalSerial))
+                                    {
+                                        finalSerial = inv.SerialNumber ?? "";
+                                    }
+                                }
+                                else
+                                {
+                                    displayName = assetCode;
+                                }
+                            }
+
+                            return new TicketDetailVM
                             {
                                 Id = x.Id,
-                                ItemName = x.ItemName,
-                                SerialNumber = "",
+                                ItemName = displayName,
+                                SerialNumber = finalSerial,
                                 Quantity = x.Quantity,
                                 LifeStatus = "active",
                                 ApprovalStatus = x.ApprovalStatus,
                                 ApprovalNote = x.ApprovalNote,
                                 ApprovedQuantity = x.ApprovedQuantity,
-                                Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note)
-                            })
-                            .ToList();
+                                Note = x.Unit + (string.IsNullOrEmpty(x.Note) ? "" : " | " + x.Note),
+                                AssetCode = finalAssetCode
+                            };
+                        }).ToList();
+
                         return Ok(data);
                     }
                 }
@@ -701,6 +749,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public string ApprovalNote { get; set; }
         public int? ApprovedQuantity { get; set; }
         public string Note { get; set; }
+        public string AssetCode { get; set; }
     }
 
     public class UpdateStatusRequest
