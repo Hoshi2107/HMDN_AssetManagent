@@ -1,5 +1,7 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using HMS.Models.Catalog;
+using HMDN_QuanLyVatTu.Models;
 
 namespace HMS.Models.Inventory
 {
@@ -78,5 +80,8 @@ namespace HMS.Models.Inventory
         public virtual Location Location { get; set; }
 
         public virtual Department Department { get; set; }
+
+        [ForeignKey("CheckCycleId")]
+        public virtual CheckCycle CheckCycle { get; set; }
     }
 }

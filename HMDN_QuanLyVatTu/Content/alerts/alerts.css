@@ -4,6 +4,14 @@
    vibrant shadows, micro-animations, and clean typography.
    ═══════════════════════════════════════════════════════════ */
 
+:root {
+    --accent-blue: #0056b3;
+    --accent-red: #e53e3e;
+    --accent-amber: #f6ad55;
+    --accent-green: #38a169;
+    --accent-cyan: #06b6d4;
+}
+
 .alerts-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -256,18 +264,21 @@
 }
 
 .alert-card.alert-danger .alert-severity-badge {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #991b1b;
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
 }
 
 .alert-card.alert-warning .alert-severity-badge {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #92400e;
+    background: #fffbeb !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.2) !important;
 }
 
 .alert-card.alert-info .alert-severity-badge {
-    background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
-    color: #083344;
+    background: #ecfeff !important;
+    color: #06b6d4 !important;
+    border: 1px solid rgba(6, 182, 212, 0.2) !important;
 }
 
 .alert-body-text {

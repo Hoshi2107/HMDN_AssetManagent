@@ -826,7 +826,7 @@
                     </div>
                 }
 
-                @if (HasModule("Lifecycle") || HasModule("VongDoiKhauHao"))
+                @if (HasModule("VongDoiKhauHao"))
                 {
                     <div class="nav-section" id="sec-lifecycle">
                         <div class="nav-section-header" onclick="toggleNavSection('sec-lifecycle')">
@@ -834,13 +834,6 @@
                             <i class="fa-solid fa-chevron-down section-chevron"></i>
                         </div>
                         <div class="nav-section-content">
-                            @if (HasModule("Lifecycle")) {
-                                <div class="nav-item @(ViewBag.ActiveNav == "Lifecycle" ? "active" : "")">
-                                    <a href="@Url.Action("Index","Lifecycle")">
-                                        <i class="fa-solid fa-rotate nav-icon"></i> <span class="nav-text">Trạng thái</span>
-                                    </a>
-                                </div>
-                            }
                             @if (HasModule("VongDoiKhauHao")) {
                                 <div class="nav-item @(ViewBag.ActiveNav == "VongDoiKhauHao" ? "active" : "")">
                                     <a href="@Url.Action("VongDoiKhauHao", "VongDoiKhauHao")">

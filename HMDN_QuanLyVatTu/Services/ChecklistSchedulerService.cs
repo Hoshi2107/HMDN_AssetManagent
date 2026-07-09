@@ -17,12 +17,18 @@ namespace HMDN_QuanLyVatTu.Services
             DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
             // Self-healing: Check if there are any active approved devices with check cycles
-            // that do not have any schedules generated in the current month
-            bool hasMissingSchedules = db.Inventories.Any(inv =>
-                inv.LifeStatus == "active" &&
-                inv.ApprovalStatus == "approved" &&
-                inv.CheckCycleId != null &&
-                (
+            // that do not have any schedules generated in the current month for their specific cycle type
+            var hasMissingSchedulesQuery =
+                from inv in db.Inventories
+                where inv.LifeStatus == "active" && inv.ApprovalStatus == "approved" && inv.CheckCycleId != null
+                let expectedCycleType = inv.CheckCycle.CycleType
+                let hasCurrentMonthSchedules = db.ChecklistSchedules.Any(s =>
+                    s.InventoryId == inv.Id &&
+                    s.CycleType == expectedCycleType &&
+                    s.ScheduledDate >= firstDayOfMonth &&
+                    s.ScheduledDate <= lastDayOfMonth
+                )
+                let hasTemplateOrDefinition =
                     db.ChecklistTemplateMappings.Any(m => m.IsActive &&
                         (
                             (m.Scope == 3 && m.TargetId == inv.Id) ||
@@ -38,13 +44,10 @@ namespace HMDN_QuanLyVatTu.Services
                             (cd.Scope == "inventory" && cd.InventoryId == inv.Id)
                         )
                     )
-                ) &&
-                !db.ChecklistSchedules.Any(s =>
-                    s.InventoryId == inv.Id &&
-                    s.ScheduledDate >= firstDayOfMonth &&
-                    s.ScheduledDate <= lastDayOfMonth
-                )
-            );
+                where hasTemplateOrDefinition && !hasCurrentMonthSchedules
+                select inv;
+
+            bool hasMissingSchedules = hasMissingSchedulesQuery.Any();
 
             if (hasMissingSchedules)
             {

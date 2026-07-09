@@ -72,25 +72,43 @@
 
 /* Định dạng cấu trúc bảng dữ liệu tổng hợp */
 .table-analytics {
-    font-size: 13px !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    margin-top: 8px !important;
 }
 
 .table-analytics th {
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 11.5px !important;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #dee2e6 !important;
-    color: #0f172a !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    border-top: 1px solid #e2e8f0 !important;
 }
 
 .table-analytics td {
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    color: #334155 !important;
+    font-size: 13px !important;
+    transition: background-color 0.2s ease !important;
     vertical-align: middle !important;
-    padding: 12px 8px !important;
+}
+
+.table-analytics tbody tr {
+    cursor: pointer !important;
+}
+
+.table-analytics tbody tr:hover td {
+    background-color: #f8fafc !important;
 }
 
 /* =========================================================================
-   HỆ THỐNG MÀU BADGE TRẠNG THÁI CHUẨN - KHÔNG DÙNG STYLE INLINE DƯ THỪA
+   HỆ THỐNG MÀU BADGE TRẠNG THÁI CHUẨN - PREMIUM DOT STYLE
    ========================================================================= */
 .badge-group-custom {
     display: inline-block !important;
@@ -106,50 +124,75 @@
 
 /* Định dạng khung nền chung cho toàn bộ Badge trạng thái trong bảng */
 .badge-status-custom {
-    display: inline-block !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
     padding: 4px 10px !important;
     font-size: 11.5px !important;
-    font-weight: 700 !important;
-    border-radius: 6px !important;
+    font-weight: 600 !important;
+    border-radius: 99px !important;
     text-align: center !important;
     white-space: nowrap !important;
-    min-width: 95px;
+    min-width: unset !important;
+    border: 1px solid transparent !important;
+}
+
+.badge-status-custom::before {
+    content: "" !important;
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
 }
 
 /* 1. Trạng thái hoạt động tốt: Nền xanh pastel, chữ xanh rừng cực đậm */
 .badge-status-active {
-    background-color: #d1fae5 !important;
-    color: #044e37 !important;
-    border: 1px solid #10b981 !important;
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border-color: #a7f3d0 !important;
+}
+.badge-status-active::before {
+    background-color: #10b981 !important;
 }
 
-/* 2. Trạng thái báo hỏng: Nền đỏ nhạt, chữ đỏ sẫm khẩn cấp kèm hiệu ứng radar */
+/* 2. Trạng thái báo hỏng: Nền đỏ nhạt, chữ đỏ sẫm khẩn cấp */
 .badge-status-suspended {
-    background-color: #fee2e2 !important;
-    color: #7f1d1d !important;
-    border: 1px solid #ef4444 !important;
-    animation: pulse-red-glow 2s infinite !important;
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #fecaca !important;
+}
+.badge-status-suspended::before {
+    background-color: #ef4444 !important;
 }
 
-/* 3. MỚI: Trạng thái Bệnh viện tự bảo trì (Màu vàng hổ phách sẫm tương phản cao) */
+/* 3. MỚI: Trạng thái Bệnh viện tự bảo trì (Màu vàng hổ phách sẫm) */
 .badge-status-maintenance-bv {
-    background-color: #fef3c7 !important;
-    color: #78350f !important;
-    border: 1px solid #f59e0b !important;
+    background-color: #fffbeb !important;
+    color: #92400e !important;
+    border-color: #fde68a !important;
+}
+.badge-status-maintenance-bv::before {
+    background-color: #f59e0b !important;
 }
 
-/* 4. MỚI: Trạng thái Hãng đối tác bảo trì (Màu xanh ngọc Teal sẫm tương phản cao) */
+/* 4. MỚI: Trạng thái Hãng đối tác bảo trì (Màu xanh ngọc) */
 .badge-status-maintenance-hang {
-    background-color: #e0f2fe !important;
+    background-color: #f0f9ff !important;
     color: #0369a1 !important;
-    border: 1px solid #0ea5e9 !important;
+    border-color: #bae6fd !important;
+}
+.badge-status-maintenance-hang::before {
+    background-color: #0ea5e9 !important;
 }
 
 /* 5. Trạng thái trung lập khác */
 .badge-status-neutral {
-    background-color: #f3f4f6 !important;
-    color: #374151 !important;
-    border: 1px solid #9ca3af !important;
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
+}
+.badge-status-neutral::before {
+    background-color: #64748b !important;
 }
 
 /* Hiệu ứng xung mạch đập báo động lỗi cho thiết bị hỏng */

@@ -98,7 +98,7 @@ window.addEventListener('DOMContentLoaded', function () {
             this.fetchDropdownLookups();
             this.fetchKpiOverview();
             this.fetchCostData();
-            this.fetchInventoryReport(); // Tải dữ liệu báo cáo danh sách ngay lập tức
+            this.fetchInventoryReport();
             this.initRealtimeSync();
             this.fetchMonthlyMaintenanceData();
             this.fetchTodayChecklistData();

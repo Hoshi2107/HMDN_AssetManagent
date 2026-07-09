@@ -143,8 +143,14 @@ new Vue({
         'schedulesFilter.query': function () { this.schedulesPage = 1; },
         'schedulesFilter.status': function () { this.schedulesPage = 1; this.schedulesFilter.onlyOverdue = false; },
         'schedulesFilter.cycleType': function () { this.schedulesPage = 1; },
-        'schedulesFilter.fromDate': function () { this.schedulesPage = 1; },
-        'schedulesFilter.toDate': function () { this.schedulesPage = 1; },
+        'schedulesFilter.fromDate': function (val) { 
+            this.schedulesPage = 1; 
+            this.schedulesFilter.strictDate = !!(val || this.schedulesFilter.toDate);
+        },
+        'schedulesFilter.toDate': function (val) { 
+            this.schedulesPage = 1; 
+            this.schedulesFilter.strictDate = !!(this.schedulesFilter.fromDate || val);
+        },
         'schedulesFilter.groupId': function () { this.schedulesPage = 1; },
         'logsFilter.query': function () { this.logsPage = 1; },
         'logsFilter.result': function () { this.logsPage = 1; }
@@ -193,7 +199,9 @@ new Vue({
                 var matchStatus = true;
                 if (vm.schedulesFilter.status) {
                     if (vm.schedulesFilter.status === 'pending') {
-                        matchStatus = s.Status === 'pending' || s.Status === 'overdue';
+                        matchStatus = s.Status === 'pending';
+                    } else if (vm.schedulesFilter.status === 'completed') {
+                        matchStatus = s.Status === 'completed' || s.Status === 'done';
                     } else {
                         matchStatus = s.Status === vm.schedulesFilter.status;
                     }
@@ -1579,7 +1587,7 @@ new Vue({
                 // Cập nhật schedules cache
                 var schIdx = vm.schedules.findIndex(function(s) { return s.Id === payload.ScheduleId; });
                 if (schIdx !== -1) {
-                    vm.schedules[schIdx].Status = 'completed';
+                    vm.schedules[schIdx].Status = 'done';
                     localStorage.setItem('checklist_schedules_cache', JSON.stringify(vm.schedules));
                 }
 
@@ -1730,6 +1738,7 @@ new Vue({
                 case 'completed': return 'Đã xong';
                 case 'done': return 'Đã xong';
                 case 'skipped': return 'Bỏ qua';
+                case 'NeedsReinspection': return 'Cần kiểm tra lại';
                 default: return status;
             }
         },

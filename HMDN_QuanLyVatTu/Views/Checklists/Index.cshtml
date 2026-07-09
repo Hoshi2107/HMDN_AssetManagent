@@ -82,6 +82,30 @@
         box-shadow: var(--cl-shadow-md);
         border-color: rgba(59, 130, 246, 0.2);
     }
+    .cl-kpi-card.active {
+        border-color: var(--cl-primary) !important;
+        background-color: var(--cl-primary-light) !important;
+        box-shadow: var(--cl-shadow-md) !important;
+    }
+    .cl-kpi-card.kpi-blue.active::after { background: var(--cl-primary); }
+    
+    .cl-kpi-card.kpi-amber.active {
+        border-color: var(--cl-warning) !important;
+        background-color: var(--cl-warning-light) !important;
+    }
+    .cl-kpi-card.kpi-amber.active::after { background: var(--cl-warning); }
+
+    .cl-kpi-card.kpi-green.active {
+        border-color: var(--cl-success) !important;
+        background-color: var(--cl-success-light) !important;
+    }
+    .cl-kpi-card.kpi-green.active::after { background: var(--cl-success); }
+
+    .cl-kpi-card.kpi-blue::after { background: transparent; }
+    .cl-kpi-card.kpi-amber::after { background: transparent; }
+    .cl-kpi-card.kpi-green::after { background: transparent; }
+    .cl-kpi-card.kpi-red::after { background: transparent; }
+
     .cl-kpi-card.kpi-blue:hover::after { background: var(--cl-primary); }
     .cl-kpi-card.kpi-amber:hover::after { background: var(--cl-warning); }
     .cl-kpi-card.kpi-green:hover::after { background: var(--cl-success); }
@@ -394,49 +418,78 @@
     .cl-badge {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 4px 12px;
+        padding: 4px 10px;
         border-radius: 9999px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: 11.5px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
         border: 1px solid transparent;
+        line-height: 1;
+        gap: 6px;
     }
-    .cl-badge-pending { 
+    .cl-badge::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .cl-badge-pending, .cl-badge-NeedsReinspection { 
         background: #fef3c7 !important; 
         color: #78350f !important;
         border-color: #f59e0b !important;
+    }
+    .cl-badge-pending::before, .cl-badge-NeedsReinspection::before {
+        background-color: #d97706;
     }
     .cl-badge-overdue { 
         background: #fee2e2 !important; 
         color: #7f1d1d !important;
         border-color: #ef4444 !important;
     }
-    .cl-badge-completed { 
+    .cl-badge-overdue::before {
+        background-color: #dc2626;
+    }
+    .cl-badge-completed, .cl-badge-done { 
         background: #d1fae5 !important; 
         color: #044e37 !important;
         border-color: #10b981 !important;
+    }
+    .cl-badge-completed::before, .cl-badge-done::before {
+        background-color: #059669;
     }
     .cl-badge-skipped { 
         background: #f3f4f6 !important; 
         color: #374151 !important;
         border-color: #9ca3af !important;
     }
+    .cl-badge-skipped::before {
+        background-color: #4b5563;
+    }
     .cl-badge-pass { 
         background: #d1fae5 !important; 
         color: #044e37 !important;
         border-color: #10b981 !important;
+    }
+    .cl-badge-pass::before {
+        background-color: #059669;
     }
     .cl-badge-fail { 
         background: #fee2e2 !important; 
         color: #7f1d1d !important;
         border-color: #ef4444 !important;
     }
+    .cl-badge-fail::before {
+        background-color: #dc2626;
+    }
     .cl-badge-partial { 
         background: #fef3c7 !important; 
         color: #78350f !important;
         border-color: #f59e0b !important;
+    }
+    .cl-badge-partial::before {
+        background-color: #d97706;
     }
 
     /* ── MODALS (GLASSMORPHISM & ACCENT SHADOW) ── */
@@ -1083,6 +1136,45 @@
             width: 100% !important;
             justify-content: center !important;
         }
+        /* ── PREMIUM ALERTS & BANNERS ── */
+        .cl-alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            line-height: 1.5;
+            border: 1px solid transparent;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+        .cl-alert-danger {
+            background-color: #fef2f2;
+            border-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #7f1d1d;
+        }
+        .cl-alert-danger strong {
+            color: #991b1b;
+        }
+        .cl-alert-primary {
+            background-color: #f0f9ff;
+            border-color: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            color: #0369a1;
+        }
+        .cl-alert-primary strong {
+            color: #075985;
+        }
+        .cl-alert-warning {
+            background-color: #fffbeb;
+            border-color: #fef3c7;
+            border-left: 4px solid #d97706;
+            color: #78350f;
+        }
+        .cl-alert-warning strong {
+            color: #92400e;
+        }
     }
 </style>
 
@@ -1115,7 +1207,7 @@
 
     <!-- KPI SUMMARY CARDS -->
     <div class="cl-kpi-grid">
-        <div class="cl-kpi-card kpi-blue" @@click="filterByKpi('pending')">
+        <div class="cl-kpi-card kpi-blue" :class="{active: schedulesFilter.status === 'pending'}" @@click="filterByKpi('pending')">
             <div class="cl-kpi-icon blue">
                 <i class="fa-solid fa-calendar-days"></i>
             </div>
@@ -1124,7 +1216,7 @@
                 <div class="cl-kpi-label">Lịch kiểm tra chờ xử lý</div>
             </div>
         </div>
-        <div class="cl-kpi-card kpi-amber" @@click="filterByKpi('overdue')">
+        <div class="cl-kpi-card kpi-amber" :class="{active: schedulesFilter.status === 'overdue'}" @@click="filterByKpi('overdue')">
             <div class="cl-kpi-icon amber">
                 <i class="fa-solid fa-clock-rotate-left"></i>
             </div>
@@ -1133,7 +1225,7 @@
                 <div class="cl-kpi-label">Schedules quá hạn</div>
             </div>
         </div>
-        <div class="cl-kpi-card kpi-green" @@click="filterByKpi('completed')">
+        <div class="cl-kpi-card kpi-green" :class="{active: schedulesFilter.status === 'completed'}" @@click="filterByKpi('completed')">
             <div class="cl-kpi-icon green">
                 <i class="fa-solid fa-square-check"></i>
             </div>
@@ -1296,9 +1388,11 @@
             </div>
             
             <!-- Warning indicator directly in banner if restricted -->
-            <div v-if="!isBatchCheckEligible(selectedBatchGroup).eligible" style="background:var(--cl-danger-light); border:1px dashed var(--cl-danger); border-radius:8px; padding:10px; font-size:12px; color:var(--cl-danger-dark); display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size:14px;"></i>
-                <span><strong>Hạn chế:</strong> ${ isBatchCheckEligible(selectedBatchGroup).reason }</span>
+            <div v-if="!isBatchCheckEligible(selectedBatchGroup).eligible" class="cl-alert cl-alert-danger">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 15px; margin-top: 2px;"></i>
+                <div>
+                    <strong>Không cho phép kiểm hàng loạt:</strong> ${ isBatchCheckEligible(selectedBatchGroup).reason }
+                </div>
             </div>
         </div>
 
@@ -1314,6 +1408,7 @@
                     <option value="pending">Chờ thực hiện</option>
                     <option value="overdue">Quá hạn</option>
                     <option value="completed">Đã hoàn thành</option>
+                    <option value="skipped">Bỏ qua</option>
                 </select>
             </div>
             <div class="cl-input-group">
@@ -1379,7 +1474,9 @@
                                     <span v-else><i class="fa-solid fa-bolt"></i></span>
                                 </button>
                             </div>
-                            <span v-else-if="sch.Status !== 'pending' && sch.Status !== 'overdue'" style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
+                            <span v-else-if="sch.Status === 'completed' || sch.Status === 'done'" style="color:var(--cl-success); font-size:12.5px; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
+                            <span v-else-if="sch.Status === 'skipped'" style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-minus mr-1"></i> Đã bỏ qua</span>
+                            <span v-else style="color:var(--cl-text-muted); font-size:12.5px; font-weight:600;">${ statusLabel(sch.Status) }</span>
                         </td>
                     </tr>
                     <tr v-if="filteredSchedules.length === 0">
@@ -1669,11 +1766,11 @@
                 </div>
 
                 <!-- History Warnings Alert Box -->
-                <div v-if="historyWarnings.length > 0" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.25); border-radius:var(--cl-radius-md); padding:14px; display:flex; flex-direction:column; gap:6px;">
-                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:flex; align-items:center; gap:6px; margin:0;">
+                <div v-if="historyWarnings.length > 0" class="cl-alert cl-alert-danger" style="display:flex; flex-direction:column; gap:6px;">
+                    <strong style="font-size:13.5px; display:flex; align-items:center; gap:6px; margin:0;">
                         <i class="fa-solid fa-triangle-exclamation"></i> CẢNH BÁO TÌNH TRẠNG THIẾT BỊ
                     </strong>
-                    <ul style="margin:0; padding-left:20px; color:var(--cl-text); font-size:12.5px;">
+                    <ul style="margin:0; padding-left:20px; font-size:12.5px;">
                         <li v-for="(warn, wIdx) in historyWarnings" :key="wIdx"><strong>${ warn }</strong></li>
                     </ul>
                 </div>
@@ -1837,12 +1934,12 @@
                 </div>
                 
                 <!-- Repair Ticket creation suggestion -->
-                <div v-if="lastSubmitResult === 'fail' && lastSubmitLogId" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.2); border-radius:var(--cl-radius-md); padding:16px; width:100%; max-width:440px; text-align:left; margin-bottom:8px;">
-                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:block;">Phát hiện lỗi/hỏng trong quá trình kiểm tra</strong>
-                    <span style="font-size:12.5px; color:var(--cl-text-muted); display:block; margin-top:4px;">
+                <div v-if="lastSubmitResult === 'fail' && lastSubmitLogId" class="cl-alert cl-alert-danger" style="flex-direction:column; align-items:stretch; width:100%; max-width:440px; text-align:left; margin-bottom:8px;">
+                    <strong>Phát hiện lỗi/hỏng trong quá trình kiểm tra</strong>
+                    <span style="font-size:12.5px; display:block; margin-top:4px; opacity:0.9;">
                         Thiết bị không đạt chuẩn. Hệ thống khuyên bạn nên tạo Ticket sửa chữa để khắc phục sự cố.
                     </span>
-                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger);" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: activeSchedule.InventoryId, Note: performForm.note })">
+                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger); background:#fff;" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: activeSchedule.InventoryId, Note: performForm.note })">
                         <i class="fa-solid fa-wrench mr-1"></i> Tạo Ticket Sửa Chữa Ngay
                     </button>
                 </div>
@@ -1968,12 +2065,12 @@
                 </div>
                 
                 <!-- If there was a failure in batch check, suggest redirecting to repair ticket creation -->
-                <div v-if="lastSubmitResult !== 'pass' && lastSubmitLogId" style="background:var(--cl-danger-light); border:1px solid rgba(239,68,68,0.2); border-radius:var(--cl-radius-md); padding:16px; width:100%; max-width:480px; text-align:left;">
-                    <strong style="color:var(--cl-danger-dark); font-size:13px; display:block;">Phát hiện lỗi/hỏng trong đợt kiểm tra</strong>
-                    <span style="font-size:12.5px; color:var(--cl-text-muted); display:block; margin-top:4px;">
+                <div v-if="lastSubmitResult !== 'pass' && lastSubmitLogId" class="cl-alert cl-alert-danger" style="flex-direction:column; align-items:stretch; width:100%; max-width:480px; text-align:left;">
+                    <strong>Phát hiện lỗi/hỏng trong đợt kiểm tra</strong>
+                    <span style="font-size:12.5px; display:block; margin-top:4px; opacity:0.9;">
                         Một hoặc nhiều thiết bị không đạt chuẩn. Hệ thống khuyên bạn nên tạo Ticket sửa chữa để khắc phục sự cố.
                     </span>
-                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger);" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: batchCheckGroup.Schedules[0].InventoryId, Note: batchCheckNote })">
+                    <button class="cl-btn cl-btn-neutral" style="margin-top:12px; height:32px; padding:0 12px; font-size:12px; color:var(--cl-danger); border-color:var(--cl-danger); background:#fff;" v-on:click="createRepairTicket({ Id: lastSubmitLogId, InventoryId: batchCheckGroup.Schedules[0].InventoryId, Note: batchCheckNote })">
                         <i class="fa-solid fa-wrench mr-1"></i> Tạo Ticket Sửa Chữa Ngay
                     </button>
                 </div>

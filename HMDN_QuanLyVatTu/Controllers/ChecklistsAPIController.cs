@@ -81,7 +81,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                         AssetCode = s.Inventory != null ? s.Inventory.AssetCode : (s.Location != null ? s.Location.Code : ""),
                         ItemName = (s.Inventory != null && s.Inventory.Item != null) ? s.Inventory.Item.Name : (s.Location != null ? s.Location.Name : "N/A"),
                         SerialNumber = s.Inventory != null ? s.Inventory.SerialNumber : "",
-                        DepartmentName = (s.Inventory != null && s.Inventory.Department != null) ? s.Inventory.Department.Name : "",
+                        DepartmentName = (s.Inventory != null && s.Inventory.Department != null) 
+                            ? s.Inventory.Department.Name 
+                            : (s.Location != null && s.Location.DepartmentId != null 
+                                ? db.Departments.Where(d => d.Id == s.Location.DepartmentId).Select(d => d.Name).FirstOrDefault() ?? "" 
+                                : ""),
                         QrCode = s.Inventory != null ? s.Inventory.QrCode : (s.Location != null ? s.Location.Code : ""),
                         ScheduledDate = s.ScheduledDate,
                         s.CycleType,
@@ -141,6 +145,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 var schedules = resolvedSchedules
                     .Where(s => 
                         (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection")
+                        || s.ScheduledDate > DateTime.Today
                         || (latestPendingDict.TryGetValue(new { s.InventoryId, s.LocationId, s.CycleType }, out int latestId) && latestId == s.Id)
                     )
                     .Select(s => new
@@ -458,7 +463,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             var schedule = db.ChecklistSchedules.Find(payload.ScheduleId);
                             if (schedule != null)
                             {
-                                schedule.Status = "completed";
+                                schedule.Status = "done";
                                 db.SaveChanges();
 
                                 if (schedule.InventoryId.HasValue)
@@ -537,9 +542,11 @@ namespace HMDN_QuanLyVatTu.Controllers
             catch (Exception ex)
             {
                 var errMsg = ex.Message;
-                if (ex.InnerException != null)
+                var curr = ex.InnerException;
+                while (curr != null)
                 {
-                    errMsg += " | Inner: " + ex.InnerException.Message;
+                    errMsg += " | Inner: " + curr.Message;
+                    curr = curr.InnerException;
                 }
                 return Ok(new { success = false, message = "Lỗi khi lưu checklist: " + errMsg });
             }
@@ -593,10 +600,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                         l.Id,
                         l.ScheduleId,
                         l.InventoryId,
-                        AssetCode = l.Inventory != null ? l.Inventory.AssetCode : "",
-                        ItemName = (l.Inventory != null && l.Inventory.Item != null) ? l.Inventory.Item.Name : "N/A",
+                        AssetCode = l.Inventory != null ? l.Inventory.AssetCode : (l.Location != null ? l.Location.Code : ""),
+                        ItemName = (l.Inventory != null && l.Inventory.Item != null) ? l.Inventory.Item.Name : (l.Location != null ? l.Location.Name : "N/A"),
                         SerialNumber = l.Inventory != null ? l.Inventory.SerialNumber : "",
-                        DepartmentName = (l.Inventory != null && l.Inventory.Department != null) ? l.Inventory.Department.Name : "",
+                        DepartmentName = (l.Inventory != null && l.Inventory.Department != null) 
+                            ? l.Inventory.Department.Name 
+                            : (l.Location != null && l.Location.DepartmentId != null 
+                                ? db.Departments.Where(d => d.Id == l.Location.DepartmentId).Select(d => d.Name).FirstOrDefault() ?? "" 
+                                : ""),
                         CheckedAt = l.CheckedAt,
                         CheckedByName = l.CheckedByUser != null ? l.CheckedByUser.FullName : "Admin",
                         l.CycleType,
@@ -669,10 +680,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                 var logDto = new
                 {
                     log.Id,
-                    AssetCode = log.Inventory != null ? log.Inventory.AssetCode : "",
-                    ItemName = (log.Inventory != null && log.Inventory.Item != null) ? log.Inventory.Item.Name : "N/A",
+                    AssetCode = log.Inventory != null ? log.Inventory.AssetCode : (log.Location != null ? log.Location.Code : ""),
+                    ItemName = (log.Inventory != null && log.Inventory.Item != null) ? log.Inventory.Item.Name : (log.Location != null ? log.Location.Name : "N/A"),
                     SerialNumber = log.Inventory != null ? log.Inventory.SerialNumber : "",
-                    DepartmentName = (log.Inventory != null && log.Inventory.Department != null) ? log.Inventory.Department.Name : "",
+                    DepartmentName = (log.Inventory != null && log.Inventory.Department != null) 
+                        ? log.Inventory.Department.Name 
+                        : (log.Location != null && log.Location.DepartmentId != null 
+                            ? db.Departments.Where(d => d.Id == log.Location.DepartmentId).Select(d => d.Name).FirstOrDefault() ?? "" 
+                            : ""),
                     CheckedAt = log.CheckedAt.ToString("yyyy-MM-dd HH:mm"),
                     CheckedByName = log.CheckedByUser != null ? log.CheckedByUser.FullName : "Admin",
                     log.CycleType,
@@ -722,7 +737,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 // Group stats from logs
                 var doneStats = db.ChecklistLogs
                     .Where(l => l.CheckedAt >= startRange && l.CheckedAt < endRange)
-                    .GroupBy(l => l.Inventory.DepartmentId)
+                    .GroupBy(l => l.Inventory != null ? l.Inventory.DepartmentId : (l.Location != null ? l.Location.DepartmentId : null))
                     .Select(g => new { 
                         DepartmentId = g.Key, 
                         DoneCount = g.Count(),
@@ -734,14 +749,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                 // Count pending schedules
                 var pendingCounts = db.ChecklistSchedules
                     .Where(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && s.Status == "pending")
-                    .GroupBy(s => s.Inventory.DepartmentId)
+                    .GroupBy(s => s.Inventory != null ? s.Inventory.DepartmentId : (s.Location != null ? s.Location.DepartmentId : null))
                     .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
                     .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
 
                 // Count overdue schedules
                 var overdueCounts = db.ChecklistSchedules
                     .Where(s => s.ScheduledDate < startRange && s.Status == "pending")
-                    .GroupBy(s => s.Inventory.DepartmentId)
+                    .GroupBy(s => s.Inventory != null ? s.Inventory.DepartmentId : (s.Location != null ? s.Location.DepartmentId : null))
                     .Select(g => new { DepartmentId = g.Key, Count = g.Count() })
                     .ToDictionary(g => g.DepartmentId ?? 0, g => g.Count);
 
