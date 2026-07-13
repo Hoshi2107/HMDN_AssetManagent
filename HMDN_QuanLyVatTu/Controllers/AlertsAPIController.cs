@@ -326,9 +326,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                     }
 
                     var today = DateTime.Today;
+                    string targetStatus = status == "skipped" ? "done" : status;
                     db.Database.ExecuteSqlCommand(
                         "UPDATE ChecklistSchedules SET Status = @status WHERE InventoryId = @invId AND Status = 'pending' AND DueDate < @today",
-                        new System.Data.SqlClient.SqlParameter("@status", status),
+                        new System.Data.SqlClient.SqlParameter("@status", targetStatus),
                         new System.Data.SqlClient.SqlParameter("@invId", alert.InventoryId),
                         new System.Data.SqlClient.SqlParameter("@today", today)
                     );
@@ -338,7 +339,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     alert.ResolvedBy = HttpContext.Current?.Session?["UserId"] as int? ?? 1;
 
                     db.SaveChanges();
-                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = $"Đã cập nhật trạng thái checklist thành '{status}' và đóng cảnh báo." }, Configuration.Formatters.JsonFormatter);
+                    return Content(System.Net.HttpStatusCode.OK, new { success = true, message = $"Đã cập nhật trạng thái checklist thành '{targetStatus}' và đóng cảnh báo." }, Configuration.Formatters.JsonFormatter);
                 }
             }
             catch (Exception ex)

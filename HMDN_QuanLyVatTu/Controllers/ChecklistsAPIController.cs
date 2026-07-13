@@ -405,6 +405,15 @@ namespace HMDN_QuanLyVatTu.Controllers
                     return Ok(new { success = false, message = "Dữ liệu gửi lên không hợp lệ (cần chọn thiết bị hoặc phòng/khu vực)." });
                 }
 
+                if (payload.ScheduleId > 0)
+                {
+                    var sch = db.ChecklistSchedules.Find(payload.ScheduleId);
+                    if (sch != null && sch.ScheduledDate > DateTime.Today)
+                    {
+                        return BadRequest("Future checklist schedules cannot be completed.");
+                    }
+                }
+
                 using (var transaction = db.Database.BeginTransaction())
                 {
                     try
@@ -464,40 +473,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                             if (schedule != null)
                             {
                                 schedule.Status = "done";
-                                if (schedule.InventoryId.HasValue)
-                                {
-                                    var today = DateTime.Today;
-                                    var olderSchedules = db.ChecklistSchedules
-                                        .Where(s => s.InventoryId == schedule.InventoryId 
-                                                 && s.CycleType == schedule.CycleType 
-                                                 && s.ScheduledDate < schedule.ScheduledDate 
-                                                 && s.ScheduledDate < today
-                                                 && (s.Status == "pending" || s.Status == "overdue"))
-                                        .ToList();
-
-                                    foreach (var oldSch in olderSchedules)
-                                    {
-                                        oldSch.Status = "skipped";
-                                    }
-                                    db.SaveChanges();
-                                }
-                                else if (schedule.LocationId.HasValue)
-                                {
-                                    var today = DateTime.Today;
-                                    var olderSchedules = db.ChecklistSchedules
-                                        .Where(s => s.LocationId == schedule.LocationId 
-                                                 && s.CycleType == schedule.CycleType 
-                                                 && s.ScheduledDate < schedule.ScheduledDate 
-                                                 && s.ScheduledDate < today
-                                                 && (s.Status == "pending" || s.Status == "overdue"))
-                                        .ToList();
-
-                                    foreach (var oldSch in olderSchedules)
-                                    {
-                                        oldSch.Status = "skipped";
-                                    }
-                                    db.SaveChanges();
-                                }
                                 db.SaveChanges();
                             }
                         }
@@ -1012,6 +987,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                             message = "Tất cả lịch trình đã được check bởi người khác hoặc không hợp lệ." });
                     }
 
+                    if (schedules.Any(s => s.ScheduledDate > DateTime.Today))
+                    {
+                        return BadRequest("Future checklist schedules cannot be completed.");
+                    }
+
                     // 1b. Validation: Ensure all schedules belong to the same GroupId and CycleType
                     var firstSch = schedules.First();
                     var firstGroupId = (firstSch.Inventory?.Item != null) ? firstSch.Inventory.Item.GroupId : (int?)null;
@@ -1068,24 +1048,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                     // AddRange cho logs
                     db.ChecklistLogs.AddRange(allLogs);
                     db.SaveChanges();  // Flush để có Log.Id
-
-                    var today = DateTime.Today;
-                    // Auto-skip older pending/overdue schedules for each completed device
-                    foreach (var sch in schedules)
-                    {
-                        var olderSchedules = db.ChecklistSchedules
-                            .Where(s => s.InventoryId == sch.InventoryId 
-                                     && s.CycleType == sch.CycleType 
-                                     && s.ScheduledDate < sch.ScheduledDate 
-                                     && s.ScheduledDate < today
-                                     && (s.Status == "pending" || s.Status == "overdue"))
-                            .ToList();
-                        foreach (var oldSch in olderSchedules)
-                        {
-                            oldSch.Status = "skipped";
-                        }
-                    }
-                    db.SaveChanges();
 
                     // 3. Tạo log items (nếu có)
                     var allLogItems = new List<ChecklistLogItem>();

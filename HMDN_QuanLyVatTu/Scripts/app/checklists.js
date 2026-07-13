@@ -421,7 +421,11 @@ new Vue({
 
             // Filters pending items scheduled for today
             var pendingToday = vm.schedules.filter(function(s) {
-                return s.ScheduledDate === todayStr && s.Status !== 'done' && s.Status !== 'completed';
+                return s.ScheduledDate === todayStr && 
+                       s.Status !== 'done' && 
+                       s.Status !== 'completed' && 
+                       s.Status !== 'skipped' && 
+                       s.Status !== 'cancelled';
             }).length;
 
             var totalToday = completedToday + pendingToday;

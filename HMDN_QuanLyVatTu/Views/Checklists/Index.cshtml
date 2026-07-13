@@ -1408,7 +1408,6 @@
                     <option value="pending">Chờ thực hiện</option>
                     <option value="overdue">Quá hạn</option>
                     <option value="completed">Đã hoàn thành</option>
-                    <option value="skipped">Bỏ qua</option>
                 </select>
             </div>
             <div class="cl-input-group">
@@ -1455,7 +1454,10 @@
                 <tbody>
                     <tr v-for="sch in paginatedSchedules" :key="sch.Id">
                         <td><strong class="text-primary">${ sch.AssetCode }</strong></td>
-                        <td class="font-weight-bold">${ sch.ItemName }</td>
+                        <td class="font-weight-bold">
+                            ${ sch.ItemName }
+                            <span v-if="sch.LifeStatus === 'suspended'" class="badge badge-warning ml-1" style="font-size: 11px; background-color: #ffc107; color: #212529; border-radius: 4px; padding: 2px 6px;">Đang sửa chữa</span>
+                        </td>
                         <td><small class="text-muted font-weight-bold">${ sch.SerialNumber || '—' }</small></td>
                         <td>${ sch.DepartmentName || '—' }</td>
                         <td>${ sch.ScheduledDate }</td>
