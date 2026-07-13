@@ -3,6 +3,21 @@ var appCatalog = new Vue({
     delimiters: ['${', '}'],
 
     data: {
+        // ── LOCATION (Khoa phòng) ──
+        locDepartments: [],
+        locActiveDept: null,
+        locSearch: '',
+        locAssetSearch: '',
+        locInventories: [],
+        locCurrentPage: 1,
+        locPageSize: 10,
+
+        showLocForm: false,
+        isEditLoc: false,
+        locForm: { Id: null, Code: '', Name: '', Description: '' },
+
+        showLocStatusModal: false,
+        locStatusTarget: null,
 
         showItemForm: false,
         isEditItem: false,
@@ -95,6 +110,43 @@ var appCatalog = new Vue({
     },
 
     computed: {
+
+        filteredLocDepartments() {
+            if (!this.locSearch) return this.locDepartments
+            const q = this.locSearch.toLowerCase()
+            return this.locDepartments.filter(d =>
+                ((d.Name || '') + ' ' + (d.Code || '')).toLowerCase().includes(q)
+            )
+        },
+
+        filteredLocInventories() {
+            const s = (this.locAssetSearch || '').toLowerCase()
+            return this.locInventories.filter(x =>
+                (x.AssetCode || '').toLowerCase().includes(s) ||
+                (x.ItemName || '').toLowerCase().includes(s) ||
+                (x.GroupName || '').toLowerCase().includes(s)
+            )
+        },
+
+        locTotalPages() {
+            return Math.max(1, Math.ceil(this.filteredLocInventories.length / this.locPageSize))
+        },
+
+        locPaginatedInventories() {
+            const start = (this.locCurrentPage - 1) * this.locPageSize
+            return this.filteredLocInventories.slice(start, start + this.locPageSize)
+        },
+
+        locPages() {
+            return Array.from({ length: this.locTotalPages }, (_, i) => i + 1)
+        },
+
+        locPaginationInfo() {
+            if (this.filteredLocInventories.length === 0) return '0'
+            const start = (this.locCurrentPage - 1) * this.locPageSize + 1
+            const end = Math.min(this.locCurrentPage * this.locPageSize, this.filteredLocInventories.length)
+            return `${start}-${end} / ${this.filteredLocInventories.length}`
+        },
 
         filteredGroups() {
             if (!this.globalSearch) return this.groups
@@ -264,13 +316,33 @@ var appCatalog = new Vue({
 
         inventoryPages() {
 
-            let arr = []
+            const total = this.inventoryTotalPages
+            const current = this.inventoryCurrentPage
+            const delta = 1 // số trang hiện quanh trang hiện tại
 
-            for (let i = 1; i <= this.inventoryTotalPages; i++) {
-                arr.push(i)
+            const range = []
+            const rangeWithDots = []
+            let l
+
+            for (let i = 1; i <= total; i++) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                    range.push(i)
+                }
             }
 
-            return arr
+            range.forEach((i) => {
+                if (l) {
+                    if (i - l === 2) {
+                        rangeWithDots.push(l + 1)
+                    } else if (i - l !== 1) {
+                        rangeWithDots.push('...')
+                    }
+                }
+                rangeWithDots.push(i)
+                l = i
+            })
+
+            return rangeWithDots
         },
 
         inventoryPaginationInfo() {
@@ -312,6 +384,107 @@ var appCatalog = new Vue({
     },
 
     methods: {
+
+        // ── LOCATION (Khoa phòng) ──
+        loadLocDepartments() {
+            $.ajax({
+                url: '/api/department/list',
+                type: 'GET',
+                success: (res) => { this.locDepartments = res },
+                error: () => { this.showToast('❌ Load khoa phòng thất bại') }
+            })
+        },
+
+        selectLocDept(d) {
+            this.locActiveDept = d
+            this.locAssetSearch = ''
+            this.locCurrentPage = 1
+            this.loadLocInventories(d.Id)
+        },
+
+        loadLocInventories(deptId) {
+            $.ajax({
+                url: '/api/department/inventory?id=' + deptId,
+                type: 'GET',
+                success: (res) => {
+                    this.locInventories = (res || []).filter(x => x.InventoryId)
+                },
+                error: () => {
+                    // Không có tài sản -> API trả 404, coi như rỗng
+                    this.locInventories = []
+                }
+            })
+        },
+
+        openAddLoc() {
+            this.isEditLoc = false
+            this.locForm = { Id: null, Code: '', Name: '', Description: '' }
+            this.showLocForm = true
+        },
+
+        openEditLoc(d) {
+            this.isEditLoc = true
+            this.locForm = { Id: d.Id, Code: d.Code, Name: d.Name, Description: d.Description }
+            this.showLocForm = true
+        },
+
+        saveLoc() {
+            if (!this.locForm.Code.trim() || !this.locForm.Name.trim()) {
+                this.showToast('⚠️ Vui lòng nhập mã và tên khoa phòng!')
+                return
+            }
+
+            const url = this.isEditLoc ? '/api/department/update' : '/api/department/create'
+            const type = this.isEditLoc ? 'PUT' : 'POST'
+
+            $.ajax({
+                url, type,
+                contentType: 'application/json',
+                data: JSON.stringify(this.locForm),
+                success: (res) => {
+                    this.showLocForm = false
+                    this.loadLocDepartments()
+                    this.showToast(res.message || (this.isEditLoc ? '✅ Đã cập nhật!' : '✅ Đã thêm khoa phòng!'))
+                },
+                error: (xhr) => {
+                    this.showToast(xhr.responseText || '❌ Có lỗi xảy ra!')
+                }
+            })
+        },
+
+        openToggleLocStatus(d) {
+            this.locStatusTarget = d
+            this.showLocStatusModal = true
+        },
+
+        confirmToggleLocStatus() {
+            if (!this.locStatusTarget) return
+
+            $.ajax({
+                url: '/api/department/togglestatus?id=' + this.locStatusTarget.Id,
+                type: 'POST',
+                success: () => {
+                    this.locStatusTarget.IsActive = !this.locStatusTarget.IsActive
+                    if (this.locActiveDept && this.locActiveDept.Id === this.locStatusTarget.Id) {
+                        this.locActiveDept.IsActive = this.locStatusTarget.IsActive
+                    }
+                    this.showToast('✅ Cập nhật trạng thái thành công')
+                    this.showLocStatusModal = false
+                    this.locStatusTarget = null
+                },
+                error: () => {
+                    this.showToast('❌ Cập nhật thất bại')
+                }
+            })
+        },
+
+        // ── LOCATION PAGINATION ──
+        locChangePage(p) {
+            if (p < 1 || p > this.locTotalPages) return
+            this.locCurrentPage = p
+        },
+        locNextPage() { if (this.locCurrentPage < this.locTotalPages) this.locCurrentPage++ },
+        locPrevPage() { if (this.locCurrentPage > 1) this.locCurrentPage-- },
 
         normalizeNullableIntegers(obj, fields) {
             fields.forEach(field => {
@@ -1424,6 +1597,22 @@ var appCatalog = new Vue({
         }
     },
 
+    // watch: {
+
+    //     inventorySearch() {
+    //         this.inventoryCurrentPage = 1
+    //     },
+    //     itemSearch() { this.currentPage = 1 },
+    //     itemFilterStatus() { this.currentPage = 1 },
+    //         currentTab(val) {
+
+    //         if (val === 'inventory') {
+
+    //             this.loadInventories()
+    //         }
+    //     }
+
+    // },
     watch: {
 
         inventorySearch() {
@@ -1431,11 +1620,16 @@ var appCatalog = new Vue({
         },
         itemSearch() { this.currentPage = 1 },
         itemFilterStatus() { this.currentPage = 1 },
-            currentTab(val) {
+        locAssetSearch() { this.locCurrentPage = 1 },
+
+        currentTab(val) {
 
             if (val === 'inventory') {
-
                 this.loadInventories()
+            }
+
+            if (val === 'location' && this.locDepartments.length === 0) {
+                this.loadLocDepartments()
             }
         }
 

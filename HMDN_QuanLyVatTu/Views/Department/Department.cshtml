@@ -296,7 +296,9 @@
                             <td colspan="7">Không có tài sản</td>
                         </tr>
 
-                        <tr v-for="inv in departmentInventories"
+                        @*<tr v-for="inv in departmentInventories"
+                :key="inv.InventoryId">*@
+                        <tr v-for="inv in paginatedInventories"
                             :key="inv.InventoryId">
 
                             <td>${ inv.AssetCode }</td>
@@ -312,6 +314,19 @@
                     </tbody>
 
                 </table>
+
+                <div class="pagination"
+                     v-if="departmentInventories.length > invPageSize">
+
+                    <button v-on:click="invPrevPage" :disabled="invPage == 1">← Prev</button>
+                    <button v-for="page in invPages"
+                            :key="page"
+                            v-on:click="invChangePage(page)"
+                            :class="{ active: invPage == page }">
+                        ${ page }
+                    </button>
+                    <button v-on:click="invNextPage" :disabled="invPage == invTotalPages">Next →</button>
+                </div>
 
             </div>
 

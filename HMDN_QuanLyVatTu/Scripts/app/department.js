@@ -26,6 +26,10 @@
             dir: 1
         },
 
+        // PAGINATION cho inventory trong detail modal
+        invPage: 1,
+        invPageSize: 10,
+
         currentPage: 1,
 
         pageSize: 10,
@@ -49,6 +53,37 @@
     },
 
     computed: {
+
+        paginatedInventories() {
+
+            const start =
+                (this.invPage - 1) *
+                this.invPageSize
+
+            return this.departmentInventories.slice(
+                start,
+                start + this.invPageSize
+            )
+        },
+
+        invTotalPages() {
+
+            return Math.max(
+                1,
+                Math.ceil(
+                    this.departmentInventories.length /
+                    this.invPageSize
+                )
+            )
+        },
+
+        invPages() {
+
+            return Array.from(
+                { length: this.invTotalPages },
+                (_, i) => i + 1
+            )
+        },
 
         filteredDepartments() {
 
@@ -395,7 +430,67 @@
                     )
                 }
             })
-        }
+        },
+
+        invChangePage(page) {
+
+            if (page < 1 || page > this.invTotalPages)
+                return
+
+            this.invPage = page
+        },
+
+        invNextPage() {
+
+            if (this.invPage < this.invTotalPages) {
+
+                this.invPage++
+            }
+        },
+
+        invPrevPage() {
+
+            if (this.invPage > 1) {
+
+                this.invPage--
+            }
+        },
+
+        // SỬA lại openDetail() để reset invPage về 1 mỗi lần mở
+        openDetail(item) {
+
+            $.ajax({
+
+                url: '/api/department/inventory?id=' + item.Id,
+
+                type: 'GET',
+
+                success: (res) => {
+
+                    this.departmentDetail = {
+
+                        Code: res[0].DepartmentCode,
+                        Name: res[0].DepartmentName
+                    }
+
+                    this.departmentInventories =
+                        res.filter(x => x.InventoryId)
+
+                    this.invPage = 1 // ← thêm dòng này
+
+                    this.showDetailModal = true
+                },
+
+                error: () => {
+
+                    this.showToast(
+                        'Không tải được chi tiết khoa phòng',
+                        'error'
+                    )
+                }
+            })
+        },
+
     },
 
     watch: {
