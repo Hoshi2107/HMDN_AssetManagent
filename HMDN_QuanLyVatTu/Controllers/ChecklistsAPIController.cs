@@ -464,14 +464,14 @@ namespace HMDN_QuanLyVatTu.Controllers
                             if (schedule != null)
                             {
                                 schedule.Status = "done";
-                                db.SaveChanges();
-
                                 if (schedule.InventoryId.HasValue)
                                 {
+                                    var today = DateTime.Today;
                                     var olderSchedules = db.ChecklistSchedules
                                         .Where(s => s.InventoryId == schedule.InventoryId 
                                                  && s.CycleType == schedule.CycleType 
                                                  && s.ScheduledDate < schedule.ScheduledDate 
+                                                 && s.ScheduledDate < today
                                                  && (s.Status == "pending" || s.Status == "overdue"))
                                         .ToList();
 
@@ -483,10 +483,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                                 }
                                 else if (schedule.LocationId.HasValue)
                                 {
+                                    var today = DateTime.Today;
                                     var olderSchedules = db.ChecklistSchedules
                                         .Where(s => s.LocationId == schedule.LocationId 
                                                  && s.CycleType == schedule.CycleType 
                                                  && s.ScheduledDate < schedule.ScheduledDate 
+                                                 && s.ScheduledDate < today
                                                  && (s.Status == "pending" || s.Status == "overdue"))
                                         .ToList();
 
@@ -496,6 +498,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                                     }
                                     db.SaveChanges();
                                 }
+                                db.SaveChanges();
                             }
                         }
 
@@ -1066,6 +1069,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                     db.ChecklistLogs.AddRange(allLogs);
                     db.SaveChanges();  // Flush để có Log.Id
 
+                    var today = DateTime.Today;
                     // Auto-skip older pending/overdue schedules for each completed device
                     foreach (var sch in schedules)
                     {
@@ -1073,6 +1077,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             .Where(s => s.InventoryId == sch.InventoryId 
                                      && s.CycleType == sch.CycleType 
                                      && s.ScheduledDate < sch.ScheduledDate 
+                                     && s.ScheduledDate < today
                                      && (s.Status == "pending" || s.Status == "overdue"))
                             .ToList();
                         foreach (var oldSch in olderSchedules)
