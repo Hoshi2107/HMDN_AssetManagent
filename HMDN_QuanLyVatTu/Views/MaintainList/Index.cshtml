@@ -17,10 +17,16 @@
                        v-on:input="loadList()">
             </div>
             <div class="topbar-actions">
+                <span class="total-badge">Tổng: ${ filteredList.length } lịch</span>
+                <button class="btn btn-primary" v-on:click="showAddRenewal = true">
+                    ➕ Thêm lịch gia hạn
+                </button>
+            </div>
+            @*<div class="topbar-actions">
                 <span class="total-badge">
                     Tổng: ${ filteredList.length } lịch
                 </span>
-            </div>
+            </div>*@
         </header>
 
         <main class="page-content">
@@ -67,12 +73,20 @@
                     <option value="cancelled">Đã hủy</option>
                 </select>
 
+                @*<select v-model="filterType" v-on:change="loadList()">
+                        <option value="">Tất cả loại</option>
+                        <option value="preventive">Định kỳ</option>
+                        <option value="corrective">Sửa chữa</option>
+                        <option value="calibration">Hiệu chuẩn</option>
+                        <option value="inspection">Kiểm tra</option>
+                    </select>*@
                 <select v-model="filterType" v-on:change="loadList()">
                     <option value="">Tất cả loại</option>
                     <option value="preventive">Định kỳ</option>
                     <option value="corrective">Sửa chữa</option>
                     <option value="calibration">Hiệu chuẩn</option>
                     <option value="inspection">Kiểm tra</option>
+                    <option value="renewal">Gia hạn</option>
                 </select>
 
                 <select v-model="filterUrgency">
@@ -111,77 +125,77 @@
             <!-- TABLE -->
             @*<div class="table-card">
 
-            <div v-if="loading" class="loading-state">
-                ⏳ Đang tải dữ liệu...
-            </div>
+                    <div v-if="loading" class="loading-state">
+                        ⏳ Đang tải dữ liệu...
+                    </div>
 
-            <table v-else>
-                <thead>
-                    <tr>
-                        <th>Mã tài sản</th>
-                        <th>Tên thiết bị</th>
-                        <th>Tên lịch</th>
-                        <th>Loại bảo trì</th>
-                        <th>Khoa</th>
-                        <th>Ngày BT gần nhất</th>
-                        <th>Ngày BT tiếp theo</th>
-                        <th>Lặp lại</th>
-                        <th>Trạng thái</th>
-                        <th>Thời hạn</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-if="paginatedList.length === 0">
-                        <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
-                            Không có dữ liệu
-                        </td>
-                    </tr>
-                    <tr v-for="item in paginatedList"
-                        :key="item.Id"
-                        class="table-row"
-                        :class="urgencyClass(item.DaysUntilDue)"
-                        v-on:click="openDetail(item)">
+                    <table v-else>
+                        <thead>
+                            <tr>
+                                <th>Mã tài sản</th>
+                                <th>Tên thiết bị</th>
+                                <th>Tên lịch</th>
+                                <th>Loại bảo trì</th>
+                                <th>Khoa</th>
+                                <th>Ngày BT gần nhất</th>
+                                <th>Ngày BT tiếp theo</th>
+                                <th>Lặp lại</th>
+                                <th>Trạng thái</th>
+                                <th>Thời hạn</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="paginatedList.length === 0">
+                                <td colspan="10" style="text-align:center;padding:40px;color:#94a3b8">
+                                    Không có dữ liệu
+                                </td>
+                            </tr>
+                            <tr v-for="item in paginatedList"
+                                :key="item.Id"
+                                class="table-row"
+                                :class="urgencyClass(item.DaysUntilDue)"
+                                v-on:click="openDetail(item)">
 
-                        <td>
-                            <span class="asset-code">${ item.AssetCode }</span>
-                        </td>
-                        <td>
-                            <div class="device-name">${ item.ItemName || '—' }</div>
-                            <div class="device-model">${ item.Model || '' }</div>
-                        </td>
-                        <td>${ item.ScheduleName }</td>
-                        <td>
-                            <span class="type-badge" :class="'type-' + item.MaintenanceType">
-                                ${ typeLabel(item.MaintenanceType) }
-                            </span>
-                        </td>
-                        <td>${ item.DepartmentName || '—' }</td>
-                        <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
-                        <td>${ formatDate(item.NextMaintenanceDate) }</td>
-                        <td>
-                            <span v-if="item.IsRecurring">
-                                🔄 ${ item.RecurringMonths } tháng
-                            </span>
-                            <span v-else style="color:#94a3b8">1 lần</span>
-                        </td>
-                        <td>
-                            <span class="status-badge" :class="'status-' + item.Status">
-                                ${ statusLabel(item.Status) }
-                            </span>
-                        </td>
-                        <td>
-                            <span class="urgency-badge"
-                                  :style="{
-                                      background: urgencyMeta(item.DaysUntilDue).bg,
-                                      color: urgencyMeta(item.DaysUntilDue).color
-                                  }">
-                                ${ urgencyMeta(item.DaysUntilDue).text }
-                            </span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>*@
+                                <td>
+                                    <span class="asset-code">${ item.AssetCode }</span>
+                                </td>
+                                <td>
+                                    <div class="device-name">${ item.ItemName || '—' }</div>
+                                    <div class="device-model">${ item.Model || '' }</div>
+                                </td>
+                                <td>${ item.ScheduleName }</td>
+                                <td>
+                                    <span class="type-badge" :class="'type-' + item.MaintenanceType">
+                                        ${ typeLabel(item.MaintenanceType) }
+                                    </span>
+                                </td>
+                                <td>${ item.DepartmentName || '—' }</td>
+                                <td>${ formatDate(item.LastMaintenanceDate) || '—' }</td>
+                                <td>${ formatDate(item.NextMaintenanceDate) }</td>
+                                <td>
+                                    <span v-if="item.IsRecurring">
+                                        🔄 ${ item.RecurringMonths } tháng
+                                    </span>
+                                    <span v-else style="color:#94a3b8">1 lần</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="'status-' + item.Status">
+                                        ${ statusLabel(item.Status) }
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="urgency-badge"
+                                          :style="{
+                                              background: urgencyMeta(item.DaysUntilDue).bg,
+                                              color: urgencyMeta(item.DaysUntilDue).color
+                                          }">
+                                        ${ urgencyMeta(item.DaysUntilDue).text }
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>*@
 
             <div class="table-card"
                  ref="tableCard"
@@ -219,9 +233,11 @@
                                 :class="urgencyClass(item.DaysUntilDue)"
                                 v-on:click="openDetail(item)">
 
-                                <td>
-                                    <span class="asset-code">${ item.AssetCode }</span>
-                                </td>
+                                @*<td>
+                                        <span class="asset-code">${ item.AssetCode }</span>
+                                    </td>*@
+                                <td><span class="asset-code">${ item.AssetCode || '—' }</span></td>
+
                                 <td>
                                     <div class="device-name">${ item.ItemName || '—' }</div>
                                     <div class="device-model">${ item.Model || '' }</div>
@@ -353,6 +369,57 @@
                             ${ urgencyMeta(selected.DaysUntilDue).text }
                         </span>
                     </div>
+                </div>
+                <div class="modal-body" v-if="selected">
+                    <div class="detail-grid">
+                        <!-- ...giữ nguyên toàn bộ nội dung cũ... -->
+                    </div>
+
+                    <div style="margin-top:18px;text-align:right"
+                         v-if="selected.MaintenanceType === 'renewal' && selected.Status === 'active'">
+                        <button class="btn-primary" v-on:click="completeRenewal(selected)">
+                            ✅ Đã gia hạn xong
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal-overlay" v-if="showAddRenewal" v-on:click.self="showAddRenewal = false">
+        <div class="device-modal">
+            <div class="modal-header">
+                <h3>➕ Thêm lịch gia hạn</h3>
+                <button class="close-btn" v-on:click="showAddRenewal = false">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div>
+                        <label>Tên (web, phần mềm, dịch vụ...) *</label>
+                        <input type="text" v-model="newRenewal.RenewalName" class="form-input" />
+                    </div>
+                    <div>
+                        <label>Ngày đến hạn *</label>
+                        <input type="date" v-model="newRenewal.NextMaintenanceDate" class="form-input" />
+                    </div>
+                    <div>
+                        <label>Nhắc trước (ngày)</label>
+                        <input type="number" v-model.number="newRenewal.ReminderDays" class="form-input" />
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" v-model="newRenewal.IsRecurring"/> Lặp lại định kỳ
+                        </label>
+                    </div>
+                    <div v-if="newRenewal.IsRecurring">
+                        <label>Chu kỳ (tháng)</label>
+                        <input type="number" v-model.number="newRenewal.RecurringMonths" class="form-input" />
+                    </div>
+                </div>
+                <div style="margin-top:16px;text-align:right">
+                    <button class="btn-secondary" v-on:click="showAddRenewal = false">Hủy</button>
+                    <button class="btn-primary" v-on:click="submitRenewal()">Lưu</button>
                 </div>
             </div>
         </div>
