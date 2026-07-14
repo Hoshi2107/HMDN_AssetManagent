@@ -263,8 +263,8 @@ var app = new Vue({
         },
 
         isDaSuaChua: function (d) {
-            // Thiết bị đã có ít nhất 1 ca sửa chữa được đóng (closed)
-            return d.ClosedLogs > 0;
+            // Thiết bị đã có ít nhất 1 ca sửa chữa được đóng (closed) và không có ca nào đang xử lý (open hoặc in_progress)
+            return d.ClosedLogs > 0 && d.OpenLogs === 0 && d.InProgressLogs === 0;
         },
 
         isChuaSuaChua: function (d) {
