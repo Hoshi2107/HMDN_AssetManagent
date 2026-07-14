@@ -403,11 +403,13 @@
     letter-spacing: .3px;
 }
 
-.life-active     { background: #d1fae5; color: #065f46; }
-.life-suspended  { background: #fef3c7; color: #92400e; }
-.life-disposed   { background: #f1f5f9; color: #64748b; }
-.life-broken     { background: #fee2e2; color: #991b1b; }
-.life-in_repair  { background: #dbeafe; color: #1e40af; }
+.life-active           { background: #d1fae5; color: #065f46; }
+.life-suspended        { background: #fef3c7; color: #92400e; }
+.life-disposed         { background: #f1f5f9; color: #64748b; }
+.life-broken           { background: #fee2e2; color: #991b1b; }
+.life-in_repair        { background: #dbeafe; color: #1e40af; }
+.life-maintenance_bv   { background: #fffbeb; color: #92400e; }
+.life-maintenance_hang { background: #f0f9ff; color: #0369a1; }
 
 /* ── BADGES (Status & Priority) ── */
 .badge-status-maint {
