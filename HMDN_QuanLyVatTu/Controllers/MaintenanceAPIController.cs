@@ -31,6 +31,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             TotalLogs = g.Count(),
                             OpenLogs = g.Count(l => l.Status == "open"),
                             InProgressLogs = g.Count(l => l.Status == "in_progress"),
+                            ActiveVendorLogs = g.Count(l => (l.Status == "open" || l.Status == "in_progress") && l.Vendor != null && l.Vendor != ""),
                             ClosedLogs = g.Count(l => l.Status == "closed"),
                             TicketLogs = g.Count(l => l.TicketId != null && l.TicketId > 0),
                             FirstLogDate = g.Min(l => l.CreatedAt),
@@ -60,6 +61,21 @@ namespace HMDN_QuanLyVatTu.Controllers
                     var result = inventories.Select(inv =>
                     {
                         logCounts.TryGetValue(inv.Id, out var stats);
+
+                        // Resolve dynamic status like sp_DashboardSummary
+                        string resolvedLifeStatus = inv.LifeStatus;
+                        if (stats != null && (stats.OpenLogs > 0 || stats.InProgressLogs > 0))
+                        {
+                            if (stats.ActiveVendorLogs > 0)
+                            {
+                                resolvedLifeStatus = "maintenance_hang";
+                            }
+                            else
+                            {
+                                resolvedLifeStatus = "maintenance_bv";
+                            }
+                        }
+
                         return new
                         {
                             inv.Id,
@@ -68,7 +84,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             inv.SerialNumber,
                             inv.DepartmentName,
                             inv.LocationName,
-                            LifeStatus = inv.LifeStatus,   // Dùng đúng trạng thái thực tế từ DB
+                            LifeStatus = resolvedLifeStatus,
                             ImportDate = inv.ImportDate.ToString("yyyy-MM-dd"),
                             UnitPrice = inv.UnitPrice,
                             // Thống kê sửa chữa

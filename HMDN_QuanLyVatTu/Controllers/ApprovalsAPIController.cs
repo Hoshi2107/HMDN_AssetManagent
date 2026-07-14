@@ -431,6 +431,22 @@ namespace HMDN_QuanLyVatTu.Controllers
                         {
                             ticketToUpdate.CheckedBy = request.UserId;
                             ticketToUpdate.CheckedAt = DateTime.Now;
+
+                            // Đóng các ca sửa chữa tương ứng nếu phiếu bị từ chối phê duyệt
+                            var logsToClose = db.MaintenanceLogs.Where(l => l.TicketId == request.TicketId).ToList();
+                            foreach (var log in logsToClose)
+                            {
+                                log.Status = "closed";
+                                log.ClosedAt = DateTime.Now;
+                                log.ActionTaken = "Phiếu yêu cầu sửa chữa bị từ chối phê duyệt";
+
+                                // Revert trạng thái thiết bị nếu đang tạm ngưng do phiếu này
+                                var inv = db.Inventories.Find(log.InventoryId);
+                                if (inv != null && inv.LifeStatus == "suspended")
+                                {
+                                    inv.LifeStatus = "active";
+                                }
+                            }
                         }
                         db.SaveChanges();
                     }
