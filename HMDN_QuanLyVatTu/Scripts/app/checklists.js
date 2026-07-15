@@ -693,60 +693,55 @@ new Vue({
             
             vm.$set(sch, '_isQuickPassing', true);
 
-            fetch('/api/checklists/device-checklist?inventoryId=' + sch.InventoryId + '&cycleType=' + (sch.CycleType || ''))
+            var isAsset = !!sch.InventoryId;
+            var scope = isAsset ? 3 : 4;
+            var targetId = isAsset ? sch.InventoryId : sch.LocationId;
+            var url = '/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + (sch.CycleType || '');
+
+            fetch(url)
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     if (res.success && res.data) {
                         var itemsPayload = res.data.map(function (item) {
+                            var stringVal = null;
+                            if (item.ValueType === 'select') {
+                                var defaultOpt = (item.Options || []).find(function (o) { return o.IsDefault || o.isDefault; });
+                                stringVal = defaultOpt ? defaultOpt.Value : 'normal';
+                            }
                             return {
                                 DefinitionId: item.Id,
                                 IsPassed: true,
+                                NumericValue: null,
+                                StringValue: stringVal,
                                 Note: null
                             };
                         });
                         
                         var payload = {
                             ScheduleId: sch.Id,
-                            InventoryId: sch.InventoryId,
+                            InventoryId: sch.InventoryId || null,
+                            LocationId: sch.LocationId || null,
+                            TemplateVersionId: res.templateVersionId || null,
                             CheckedBy: vm.currentUser.Id,
                             CycleType: sch.CycleType,
                             OverallResult: 'pass',
                             Note: 'Hệ thống tự động Đạt Nhanh (Duyệt nhanh).',
                             QrScanned: false,
-                            QrLocation: '',
+                            QrLocation: sch.LocationName || sch.DepartmentName || '',
                             ImageUrls: '',
                             Items: itemsPayload
                         };
-                        
-                        fetch('/api/checklists/save', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        })
-                        .then(function (r) { return r.json(); })
-                        .then(function (saveRes) {
-                            if (saveRes.success) {
-                                vm.toast('Thành công', 'Đã Đạt Nhanh thành công.', 'success');
-                                vm.loadSchedules();
-                                vm.loadLogs();
-                            } else {
-                                vm.toast('Lỗi', saveRes.message, 'danger');
-                                vm.$set(sch, '_isQuickPassing', false);
-                            }
-                        })
-                        .catch(function (err) {
-                            vm.$set(sch, '_isQuickPassing', false);
-                            console.error(err);
-                            vm.toast('Lỗi kết nối', 'Không thể gửi kết quả lên máy chủ.', 'danger');
-                        });
+
+                        vm.postSaveChecklist(payload, true, sch);
                     } else {
+                        vm.toast('Lỗi', res.message || 'Không thể tải cấu hình mẫu checklist.', 'danger');
                         vm.$set(sch, '_isQuickPassing', false);
-                        vm.toast('Lỗi', 'Không thể tải cấu trúc biểu mẫu.', 'danger');
                     }
                 })
                 .catch(function (err) {
-                    vm.$set(sch, '_isQuickPassing', false);
                     console.error(err);
+                    vm.toast('Lỗi', 'Không thể kết nối đến máy chủ.', 'danger');
+                    vm.$set(sch, '_isQuickPassing', false);
                 });
         },
 
@@ -1465,8 +1460,103 @@ new Vue({
             }
         },
 
+        postSaveChecklist(payload, isQuickPass, sch) {
+            var vm = this;
+
+            function queueOffline(payload) {
+                var queue = [];
+                try {
+                    var existing = localStorage.getItem('offlineChecklistQueue');
+                    if (existing) queue = JSON.parse(existing);
+                } catch(e) {}
+                
+                var exists = queue.some(function(item) { return item.ScheduleId === payload.ScheduleId; });
+                if (!exists) {
+                    queue.push(payload);
+                    localStorage.setItem('offlineChecklistQueue', JSON.stringify(queue));
+                }
+                vm.offlineQueueLength = queue.length;
+
+                // Cập nhật schedules cache
+                var schIdx = vm.schedules.findIndex(function(s) { return s.Id === payload.ScheduleId; });
+                if (schIdx !== -1) {
+                    vm.schedules[schIdx].Status = 'done';
+                    localStorage.setItem('checklist_schedules_cache', JSON.stringify(vm.schedules));
+                }
+
+                // Cập nhật logs cache
+                var existsLog = vm.logs.some(function(l) { return l.ScheduleId === payload.ScheduleId; });
+                if (!existsLog) {
+                    var targetSch = isQuickPass ? sch : vm.activeSchedule;
+                    var mockLog = {
+                        Id: -Date.now(),
+                        AssetCode: targetSch.AssetCode,
+                        ItemName: targetSch.ItemName,
+                        SerialNumber: targetSch.SerialNumber,
+                        DepartmentName: targetSch.DepartmentName,
+                        CheckedByName: vm.currentUser.FullName || 'Kỹ thuật viên',
+                        CheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                        CycleType: payload.CycleType,
+                        OverallResult: payload.OverallResult,
+                        ApprovalStatus: payload.OverallResult === 'pass' ? 'Approved' : 'Pending'
+                    };
+                    vm.logs.unshift(mockLog);
+                    localStorage.setItem('checklist_logs_cache', JSON.stringify(vm.logs));
+                }
+
+                vm.calculateKPIs();
+                if (!isQuickPass) {
+                    vm.performForm.submitted = true;
+                }
+                vm.isSubmitting = false;
+                if (isQuickPass) {
+                    vm.$set(sch, '_isQuickPassing', false);
+                }
+                vm.toast('Đã lưu ngoại tuyến', 'Mất kết nối máy chủ. Checklist đã được lưu ngoại tuyến thành công.', 'warning');
+            }
+
+            if (!vm.isOnline) {
+                queueOffline(payload);
+                return;
+            }
+
+            fetch('/api/checklists/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                vm.isSubmitting = false;
+                if (isQuickPass) {
+                    vm.$set(sch, '_isQuickPassing', false);
+                }
+                if (res.success) {
+                    vm.toast('Thành công', res.message, 'success');
+                    if (!isQuickPass) {
+                        vm.lastSubmitLogId = res.logId;
+                        vm.lastSubmitResult = payload.OverallResult;
+                        vm.performForm.submitted = true;
+                    }
+                    vm.loadSchedules();
+                    vm.loadLogs();
+                } else {
+                    vm.toast('Lỗi', res.message, 'danger');
+                }
+            })
+            .catch(function (err) {
+                console.error(err);
+                queueOffline(payload);
+            });
+        },
+
         submitChecklist() {
             var vm = this;
+
+            if (!vm.checklistItems || vm.checklistItems.length === 0) {
+                vm.toast('Cảnh báo', 'Không có hạng mục kiểm tra nào trong biểu mẫu. Vui lòng thiết lập mẫu checklist trước khi thực hiện.', 'warning');
+                return;
+            }
 
             // 1. Dynamic validation
             var missing = [];
@@ -1573,83 +1663,7 @@ new Vue({
                 })
             };
 
-
-            function queueOffline(payload) {
-                var queue = [];
-                try {
-                    var existing = localStorage.getItem('offlineChecklistQueue');
-                    if (existing) queue = JSON.parse(existing);
-                } catch(e) {}
-                
-                var exists = queue.some(function(item) { return item.ScheduleId === payload.ScheduleId; });
-                if (!exists) {
-                    queue.push(payload);
-                    localStorage.setItem('offlineChecklistQueue', JSON.stringify(queue));
-                }
-                vm.offlineQueueLength = queue.length;
-
-                // Cập nhật schedules cache
-                var schIdx = vm.schedules.findIndex(function(s) { return s.Id === payload.ScheduleId; });
-                if (schIdx !== -1) {
-                    vm.schedules[schIdx].Status = 'done';
-                    localStorage.setItem('checklist_schedules_cache', JSON.stringify(vm.schedules));
-                }
-
-                // Cập nhật logs cache
-                var existsLog = vm.logs.some(function(l) { return l.ScheduleId === payload.ScheduleId; });
-                if (!existsLog) {
-                    var mockLog = {
-                        Id: -Date.now(),
-                        AssetCode: vm.activeSchedule.AssetCode,
-                        ItemName: vm.activeSchedule.ItemName,
-                        SerialNumber: vm.activeSchedule.SerialNumber,
-                        DepartmentName: vm.activeSchedule.DepartmentName,
-                        CheckedByName: vm.currentUser.FullName || 'Kỹ thuật viên',
-                        CheckedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-                        CycleType: payload.CycleType,
-                        OverallResult: payload.OverallResult,
-                        ApprovalStatus: payload.OverallResult === 'pass' ? 'Approved' : 'Pending'
-                    };
-                    vm.logs.unshift(mockLog);
-                    localStorage.setItem('checklist_logs_cache', JSON.stringify(vm.logs));
-                }
-
-                vm.calculateKPIs();
-                vm.performForm.submitted = true;
-                vm.isSubmitting = false;
-                vm.toast('Đã lưu ngoại tuyến', 'Mất kết nối máy chủ. Checklist đã được lưu ngoại tuyến thành công.', 'warning');
-            }
-
-            if (!vm.isOnline) {
-                queueOffline(payload);
-                return;
-            }
-
-            fetch('/api/checklists/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                vm.isSubmitting = false;
-                if (res.success) {
-                    vm.toast('Thành công', res.message, 'success');
-                    
-                    vm.lastSubmitLogId = res.logId;
-                    vm.lastSubmitResult = overall;
-
-                    vm.performForm.submitted = true;
-                    vm.loadSchedules();
-                    vm.loadLogs();
-                } else {
-                    vm.toast('Lỗi', res.message, 'danger');
-                }
-            })
-            .catch(function (err) {
-                console.error(err);
-                queueOffline(payload);
-            });
+            vm.postSaveChecklist(payload, false, null);
         },
 
         openDetailsModal(logId) {
@@ -2035,6 +2049,13 @@ new Vue({
             vm.toast('Mất kết nối', 'Bạn đang ngoại tuyến (Offline).', 'danger');
         });
 
+        var todayStr = now.toISOString().substring(0, 10);
+        vm.schedulesFilter.fromDate = todayStr;
+        vm.schedulesFilter.toDate = todayStr;
+        
+        vm.loadSchedules();
+        vm.loadLogs();
+
         // Redirection & Today's Focus default
         if (vm.isManager()) {
             vm.activeTab = 'manager_approvals';
@@ -2043,10 +2064,6 @@ new Vue({
             vm.loadOperationalKPIs();
         } else {
             vm.activeTab = 'schedules';
-            var todayStr = now.toISOString().substring(0, 10);
-            vm.schedulesFilter.fromDate = todayStr;
-            vm.schedulesFilter.toDate = todayStr;
-            vm.loadSchedules();
         }
 
         vm.loadActiveGroups();

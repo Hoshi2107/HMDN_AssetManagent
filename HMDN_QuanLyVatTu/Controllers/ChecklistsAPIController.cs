@@ -400,9 +400,27 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                if (payload == null || (payload.InventoryId == null && payload.LocationId == null))
+                if (payload == null)
                 {
-                    return Ok(new { success = false, message = "Dữ liệu gửi lên không hợp lệ (cần chọn thiết bị hoặc phòng/khu vực)." });
+                    return Ok(new { success = false, message = "Dữ liệu gửi lên trống (payload is null)." });
+                }
+
+                if (!payload.InventoryId.HasValue && !payload.LocationId.HasValue)
+                {
+                    return Ok(new { success = false, message = "Dữ liệu không hợp lệ: Cần liên kết với thiết bị (InventoryId) hoặc vị trí (LocationId)." });
+                }
+
+                if (payload.Items == null || !payload.Items.Any())
+                {
+                    return Ok(new { success = false, message = "Không thể lưu nhật ký checklist rỗng (cần ít nhất một hạng mục kiểm tra)." });
+                }
+
+                foreach (var item in payload.Items)
+                {
+                    if (item.DefinitionId <= 0)
+                    {
+                        return Ok(new { success = false, message = "Dữ liệu không hợp lệ: Có hạng mục kiểm tra bị thiếu mã định nghĩa (DefinitionId)." });
+                    }
                 }
 
                 if (payload.ScheduleId > 0)
