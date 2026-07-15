@@ -271,7 +271,27 @@ namespace HMDN_QuanLyVatTu.Controllers
                             if (string.IsNullOrWhiteSpace(device.ItemName)) continue;
 
                             string assetCode = device.ItemName.Trim();
+                            string serialNumber = (device.SerialNumber ?? "").Trim();
+
+                            // Parse assetCode if it contains serial number format
+                            if (assetCode.Contains(" (SN: "))
+                            {
+                                int idx = assetCode.IndexOf(" (SN: ");
+                                serialNumber = assetCode.Substring(idx + 6).Replace(")", "").Trim();
+                                assetCode = assetCode.Substring(0, idx).Trim();
+                            }
+                            else if (assetCode.Contains("(SN:"))
+                            {
+                                int idx = assetCode.IndexOf("(SN:");
+                                serialNumber = assetCode.Substring(idx + 4).Replace(")", "").Trim();
+                                assetCode = assetCode.Substring(0, idx).Trim();
+                            }
+
                             var existingInventory = db.Inventories.FirstOrDefault(i => i.AssetCode == assetCode);
+                            if (existingInventory == null && !string.IsNullOrEmpty(serialNumber))
+                            {
+                                existingInventory = db.Inventories.FirstOrDefault(i => i.SerialNumber == serialNumber);
+                            }
 
                             if (existingInventory != null)
                             {

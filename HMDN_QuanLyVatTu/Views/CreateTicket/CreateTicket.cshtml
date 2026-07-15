@@ -1106,6 +1106,312 @@
                 color: #b45309;
                 margin-top: 3px;
             }
+
+    /* ══════════════════════════════════════════════════
+       Mobile Responsive Styles — CreateTicket
+       ══════════════════════════════════════════════════ */
+
+    /* ── Tablet: ≤992px ── */
+    @@media (max-width: 992px) {
+        .custom-select-dropdown {
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+    }
+
+    /* ── Mobile: ≤768px ── */
+    @@media (max-width: 768px) {
+
+        /* Container & Cards */
+        .ct-container {
+            padding: 8px 0 120px 0;
+            gap: 14px;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+
+        .col-left, .col-right {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .p-card {
+            border-radius: 12px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+
+        .p-card:hover {
+            transform: none; /* Disable lift-on-hover for touch */
+        }
+
+        .c-head {
+            padding: 12px 14px;
+            gap: 10px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .c-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .c-title {
+            font-size: 14px;
+        }
+
+        .c-body {
+            padding: 14px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Page header */
+        .pg-head {
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .pg-title {
+            font-size: 17px;
+        }
+
+        /* Search input in "Danh sách thiết bị" card header */
+        .c-head .f-input[placeholder*="Tìm kiếm"] {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .c-head > div[style*="margin-left: auto"] {
+            width: 100%;
+            margin-left: 0 !important;
+            flex-basis: 100%;
+        }
+
+        /* Repair toggle banner — prevent text cut-off */
+        .repair-toggle-banner {
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 14px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .repair-toggle-banner .info .subtitle {
+            word-break: break-word;
+        }
+
+        /* Device add grid — stack vertically */
+        .dev-add-grid {
+            grid-template-columns: 1fr !important;
+            gap: 14px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Custom dropdown table — scrollable and positioned within viewport */
+        .custom-select-dropdown {
+            position: fixed !important;
+            top: 60px !important;
+            left: 8px !important;
+            right: 8px !important;
+            width: calc(100vw - 16px) !important;
+            max-height: 70vh;
+            border-radius: 12px;
+            z-index: 9999;
+        }
+
+        .dropdown-table-container {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            max-height: 55vh;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .dropdown-table {
+            min-width: 560px;
+        }
+
+        /* PR table (import/export/transfer) — scrollable */
+        .pr-form-grid {
+            grid-template-columns: 1fr !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .pr-form-grid .f-group {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .pr-table-wrap {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            display: block !important;
+        }
+
+        .pr-table {
+            min-width: 520px;
+        }
+
+        /* Device list table — scrollable */
+        .c-body > div[style*="overflow-x: auto"] {
+            border-radius: 10px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow-x: auto !important;
+        }
+
+        /* Reason & proposal grid — stack */
+        .reason-proposal-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .reason-textarea {
+            min-height: 110px;
+            padding: 12px;
+        }
+
+        /* Bottom action bar */
+        .bottom-bar {
+            left: 0 !important;
+            padding: 0 14px;
+            gap: 12px;
+            height: 64px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            text-align: center;
+            padding: 10px 8px;
+            font-size: 13px;
+        }
+
+        .btn-submit {
+            flex: 1.5;
+            justify-content: center;
+            padding: 0 14px;
+            height: 42px;
+            font-size: 13px;
+            border-radius: 20px;
+        }
+
+        /* Form input height */
+        .f-input {
+            height: 44px;
+            padding: 0 14px;
+            font-size: 14px;
+        }
+
+        /* Chat area */
+        .chat-wrap {
+            height: 320px;
+        }
+
+        .chat-input-bar {
+            padding: 12px 14px;
+            gap: 8px;
+        }
+
+        /* Attachment zone */
+        .drop-zone {
+            margin: 14px;
+            padding: 24px 16px;
+            min-height: 120px;
+        }
+
+        .drop-icon {
+            font-size: 28px;
+        }
+
+        /* Notes textarea */
+        .notes-ta {
+            height: 100px;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        /* Info box */
+        .pr-info-box {
+            padding: 10px 12px;
+            font-size: 12.5px;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .pr-info-box span {
+            word-break: break-word !important;
+            white-space: normal !important;
+        }
+    }
+
+    /* ── Small Mobile: ≤576px ── */
+    @@media (max-width: 576px) {
+        .pg-title {
+            font-size: 16px;
+        }
+
+        .back-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 13px;
+        }
+
+        .c-title {
+            font-size: 13.5px;
+        }
+
+        .c-head {
+            padding: 10px 12px;
+        }
+
+        .c-body {
+            padding: 12px;
+        }
+
+        .f-label {
+            font-size: 12px;
+        }
+
+        /* Bottom bar tighter */
+        .bottom-bar {
+            height: 60px;
+            padding: 0 12px;
+        }
+
+        .btn-submit {
+            height: 40px;
+            padding: 0 12px;
+            font-size: 12.5px;
+            gap: 6px;
+        }
+
+        .btn-cancel {
+            font-size: 12.5px;
+            padding: 8px 6px;
+        }
+    }
 </style>
 
 <div id="app" v-cloak>
@@ -1207,7 +1513,7 @@
                         <span class="c-title">Danh sách thiết bị yêu cầu <span style="color: var(--hm-text-sec); font-size: 13px; font-weight: normal;">(Không bắt buộc)</span></span>
                         <div style="margin-left: auto; position: relative;">
                             <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hm-navy); font-size: 13px; pointer-events: none;"></i>
-                            <input type="text" class="f-input" v-model="searchQuery" placeholder="Tìm kiếm Mã Tài Sản..." style="padding-left: 36px; width: 240px; height: 38px; font-size: 12.5px; border-radius: 20px;" />
+                            <input type="text" class="f-input" v-model="searchQuery" placeholder="Tìm kiếm Mã Tài Sản..." style="padding-left: 36px; width: 100%; max-width: 240px; height: 38px; font-size: 12.5px; border-radius: 20px;" />
                         </div>
                     </div>
                     <div class="c-body">

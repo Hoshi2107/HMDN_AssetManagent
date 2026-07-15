@@ -426,11 +426,76 @@ namespace HMDN_QuanLyVatTu.Controllers
                         {
                             ticketToUpdate.ApprovedBy = request.UserId;
                             ticketToUpdate.ApprovedAt = DateTime.Now;
+
+                            // Đảm bảo tạo MaintenanceLog nếu chưa được tạo lúc làm phiếu (ví dụ: do lỗi tìm thiết bị)
+                            if (ticketToUpdate.TicketType == "REPAIR" || ticketToUpdate.TicketType == "SUPPORT")
+                            {
+                                var ticketDetails = db.TicketDetails.Where(td => td.TicketId == ticketToUpdate.Id).ToList();
+                                foreach (var td in ticketDetails)
+                                {
+                                    string assetCode = td.ItemName;
+                                    string serialNumber = "";
+                                    if (td.ItemName != null && td.ItemName.Contains(" (SN: "))
+                                    {
+                                        int idx = td.ItemName.IndexOf(" (SN: ");
+                                        assetCode = td.ItemName.Substring(0, idx).Trim();
+                                        serialNumber = td.ItemName.Substring(idx + 6).Replace(")", "").Trim();
+                                    }
+
+                                    if (!string.IsNullOrEmpty(assetCode))
+                                    {
+                                        var inventory = db.Inventories.FirstOrDefault(i => i.AssetCode == assetCode);
+                                        if (inventory == null && !string.IsNullOrEmpty(serialNumber))
+                                        {
+                                            inventory = db.Inventories.FirstOrDefault(i => i.SerialNumber == serialNumber);
+                                        }
+
+                                        if (inventory != null)
+                                        {
+                                            bool logExists = db.MaintenanceLogs.Any(l => l.TicketId == ticketToUpdate.Id && l.InventoryId == inventory.Id);
+                                            if (!logExists)
+                                            {
+                                                var mLog = new MaintenanceLog
+                                                {
+                                                    InventoryId = inventory.Id,
+                                                    MaintenanceType = "corrective",
+                                                    Title = "Sửa chữa từ phiếu " + ticketToUpdate.TicketCode,
+                                                    Description = string.IsNullOrWhiteSpace(ticketToUpdate.Note) ? "Yêu cầu sửa chữa" : ticketToUpdate.Note,
+                                                    ErrorDescription = ticketToUpdate.Note,
+                                                    StartDate = DateTime.Now,
+                                                    Status = "open",
+                                                    Priority = "normal",
+                                                    ReportedBy = ticketToUpdate.CreatedBy,
+                                                    CreatedAt = DateTime.Now,
+                                                    TicketId = ticketToUpdate.Id
+                                                };
+                                                db.MaintenanceLogs.Add(mLog);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         else if (request.Status == "REJECTED")
                         {
                             ticketToUpdate.CheckedBy = request.UserId;
                             ticketToUpdate.CheckedAt = DateTime.Now;
+
+                            // Đóng các ca sửa chữa tương ứng nếu phiếu bị từ chối phê duyệt
+                            var logsToClose = db.MaintenanceLogs.Where(l => l.TicketId == request.TicketId).ToList();
+                            foreach (var log in logsToClose)
+                            {
+                                log.Status = "closed";
+                                log.ClosedAt = DateTime.Now;
+                                log.ActionTaken = "Phiếu yêu cầu sửa chữa bị từ chối phê duyệt";
+
+                                // Revert trạng thái thiết bị nếu đang tạm ngưng do phiếu này
+                                var inv = db.Inventories.Find(log.InventoryId);
+                                if (inv != null && inv.LifeStatus == "suspended")
+                                {
+                                    inv.LifeStatus = "active";
+                                }
+                            }
                         }
                         db.SaveChanges();
                     }

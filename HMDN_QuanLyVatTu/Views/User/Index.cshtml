@@ -370,6 +370,8 @@
         background-position: right 14px center;
         background-size: 14px;
         min-width: 190px;
+        max-width: 100%;
+        text-overflow: ellipsis;
         transition: all 0.25s ease;
     }
 
@@ -785,6 +787,322 @@
         border: none;
         color: #ffffff;
         box-shadow: 0 4px 10px rgba(0, 144, 161, 0.25);
+    }
+
+    /* ══════════════════════════════════════════════════
+       Mobile Responsive — User List
+       ══════════════════════════════════════════════════ */
+
+    @@media (max-width: 768px) {
+
+        /* Topbar search — compact on mobile */
+        .header-search {
+            width: 140px !important;
+            padding: 6px 10px !important;
+            border-radius: 8px;
+        }
+
+        .header-search:focus-within {
+            width: 180px !important;
+        }
+
+        .header-search input {
+            font-size: 12px !important;
+        }
+
+        /* Page header — stack */
+        .page-header-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .page-header-title h1 {
+            font-size: 22px;
+        }
+
+        .page-header-title p {
+            font-size: 13px;
+        }
+
+        .btn-add-user {
+            width: 100%;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 12px;
+        }
+
+        .btn-add-user:hover {
+            transform: none;
+        }
+
+        /* Filters — stack vertically */
+        .filters-card {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 14px;
+            gap: 12px;
+            border-radius: 12px;
+        }
+
+        .filters-left {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .filter-select-item {
+            width: 100%;
+            min-width: unset;
+        }
+
+        .filters-right {
+            display: flex;
+            justify-content: center;
+        }
+
+        .display-count-badge {
+            font-size: 12px;
+            padding: 6px 14px;
+        }
+
+        /* Table card — full width containment */
+        .table-card-custom {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* ── Transform table into card layout ── */
+        .users-table-custom,
+        .users-table-custom thead,
+        .users-table-custom tbody,
+        .users-table-custom tr,
+        .users-table-custom td {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .users-table-custom thead {
+            display: none;
+        }
+
+        .users-table-custom tbody {
+            padding: 12px;
+        }
+
+        .users-table-custom tbody tr {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        .users-table-custom tbody tr:last-child {
+            margin-bottom: 0;
+        }
+
+        .users-table-custom tbody tr:hover {
+            transform: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background-color: #ffffff;
+        }
+
+        .users-table-custom td {
+            padding: 0 !important;
+            border: none !important;
+            width: 100%;
+        }
+
+        /* ID Cell — top-right badge */
+        .id-cell {
+            position: absolute !important;
+            top: 14px;
+            right: 14px;
+            font-size: 11px;
+            background: #f1f5f9;
+            padding: 3px 10px !important;
+            border-radius: 6px;
+            color: #64748b;
+            font-weight: 700;
+            width: auto !important;
+        }
+
+        .id-cell::before {
+            content: '#';
+        }
+
+        /* User info cell — prominent at top */
+        .user-info-cell {
+            gap: 12px;
+        }
+
+        .user-avatar-circle {
+            width: 44px;
+            height: 44px;
+            font-size: 14px;
+        }
+
+        .user-fullname-text {
+            font-size: 15px;
+        }
+
+        /* Contact info cell — styled block with icons */
+        .contact-info-cell {
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+            gap: 6px;
+        }
+
+        .contact-email-text,
+        .contact-phone-text {
+            font-size: 12.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-email-text::before {
+            content: '\f0e0';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--hm-teal);
+            font-size: 11px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .contact-phone-text::before {
+            content: '\f095';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--hm-teal);
+            font-size: 11px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* Department badge */
+        .department-badge-custom {
+            width: fit-content;
+            padding: 4px 14px;
+            font-size: 11.5px;
+        }
+
+        /* Actions cell — bottom row with divider */
+        .actions-cell {
+            border-top: 1px solid #f1f5f9 !important;
+            padding-top: 12px !important;
+            margin-top: 2px;
+            text-align: right !important;
+        }
+
+        .action-buttons-wrapper {
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .action-link-btn {
+            width: 38px;
+            height: 38px;
+            background-color: #f8fafc;
+        }
+
+        .action-link-btn:hover {
+            transform: none !important;
+        }
+
+        /* No data state */
+        .no-data-cell {
+            padding: 32px 16px !important;
+        }
+
+        /* Pagination — wrap and center */
+        .pagination-footer-custom {
+            padding: 14px 12px;
+        }
+
+        .pagination-container-custom {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .page-nav-btn-custom {
+            padding: 8px 14px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .page-numbers-list {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .page-number-custom {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+    }
+
+    /* ── Small Mobile: ≤480px ── */
+    @@media (max-width: 480px) {
+        .header-search {
+            width: 110px !important;
+        }
+
+        .header-search:focus-within {
+            width: 140px !important;
+        }
+
+        .page-header-title h1 {
+            font-size: 20px;
+        }
+
+        .users-table-custom tbody {
+            padding: 8px;
+        }
+
+        .users-table-custom tbody tr {
+            padding: 14px;
+            gap: 10px;
+            border-radius: 12px;
+        }
+
+        .user-avatar-circle {
+            width: 40px;
+            height: 40px;
+            font-size: 13px;
+        }
+
+        .user-fullname-text {
+            font-size: 14px;
+        }
+
+        .contact-info-cell {
+            padding: 8px 12px;
+        }
+
+        .page-nav-btn-custom {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
     }
 </style>
 

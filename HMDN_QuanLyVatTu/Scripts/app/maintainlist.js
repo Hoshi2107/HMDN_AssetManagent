@@ -17,7 +17,16 @@
         pageSize: 15,
 
         showDetail: false,
-        selected: null
+        selected: null,
+
+        showAddRenewal: false,
+        newRenewal: {
+            RenewalName: '',
+            NextMaintenanceDate: '',
+            ReminderDays: 7,
+            IsRecurring: false,
+            RecurringMonths: null
+        }
     },
 
     computed: {
@@ -147,15 +156,15 @@
             return val.toString().substring(0, 10)
         },
 
-        typeLabel(type) {
-            const map = {
-                preventive: 'Định kỳ',
-                corrective: 'Sửa chữa',
-                calibration: 'Hiệu chuẩn',
-                inspection: 'Kiểm tra'
-            }
-            return map[type] || type
-        },
+        // typeLabel(type) {
+        //     const map = {
+        //         preventive: 'Định kỳ',
+        //         corrective: 'Sửa chữa',
+        //         calibration: 'Hiệu chuẩn',
+        //         inspection: 'Kiểm tra'
+        //     }
+        //     return map[type] || type
+        // },
 
         statusLabel(status) {
             const map = {
@@ -179,7 +188,64 @@
             if (days <= 3) return 'row-critical'
             if (days <= 7) return 'row-warning'
             return ''
+        },
+
+        typeLabel(type) {
+            const map = {
+                preventive: 'Định kỳ',
+                corrective: 'Sửa chữa',
+                calibration: 'Hiệu chuẩn',
+                inspection: 'Kiểm tra',
+                renewal: 'Gia hạn'
+            }
+            return map[type] || type
+        },
+
+        submitRenewal() {
+            if (!this.newRenewal.RenewalName || !this.newRenewal.NextMaintenanceDate) {
+                alert('Vui lòng nhập tên và ngày đến hạn')
+                return
+            }
+            $.ajax({
+                url: '/api/maintain-list/create-renewal',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.newRenewal),
+                success: () => {
+                    this.showAddRenewal = false
+                    this.newRenewal = {
+                        RenewalName: '',
+                        NextMaintenanceDate: '',
+                        ReminderDays: 7,
+                        IsRecurring: false,
+                        RecurringMonths: null
+                    }
+                    this.loadList()
+                },
+                error: () => alert('Không thêm được lịch gia hạn')
+            })
+        },
+
+        completeRenewal(item) {
+            const confirmMsg = item.IsRecurring
+                ? 'Xác nhận đã gia hạn xong "' + item.ItemName + '"? Hệ thống sẽ tự tạo lịch gia hạn kế tiếp.'
+                : 'Xác nhận đã gia hạn xong "' + item.ItemName + '"?'
+
+            if (!confirm(confirmMsg)) return
+
+            $.ajax({
+                url: '/api/maintain-list/complete-renewal',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ id: item.Id }),
+                success: () => {
+                    this.showDetail = false
+                    this.loadList()
+                },
+                error: () => alert('Không thể cập nhật gia hạn')
+            })
         }
+
     },
 
     mounted() {

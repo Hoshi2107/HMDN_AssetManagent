@@ -187,6 +187,7 @@
     <Compile Include="Models\Approvals.cs" />
     <Compile Include="Models\ChangeStatusVM.cs" />
     <Compile Include="Models\ChecklistProgressModel.cs" />
+    <Compile Include="Models\CompleteRenewalDto.cs" />
     <Compile Include="Models\CreateInventoryResult.cs" />
     <Compile Include="Models\CreateInventoryVM.cs" />
     <Compile Include="Models\CreateUserViewModel.cs" />
@@ -224,6 +225,7 @@
     <Compile Include="Models\MaintenanceCostSummary.cs" />
     <Compile Include="Models\MaintenanceFrequencyModel.cs" />
     <Compile Include="Models\MaintenanceLog.cs" />
+    <Compile Include="Models\RenewalCreateDto.cs" />
     <Compile Include="Models\ReplaceDeviceVM.cs" />
     <Compile Include="Models\ReportErrorVM.cs" />
     <Compile Include="Models\Role.cs" />
@@ -311,6 +313,9 @@
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Medium.ttf" />
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Regular.ttf" />
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-SemiBold.ttf" />
+    <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
+    <None Include="Properties\PublishProfiles\hoshikagayaku-001-site1 - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\hoshikagayaku-001-site1 - Web Deploy.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />

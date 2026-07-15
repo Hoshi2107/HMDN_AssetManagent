@@ -237,7 +237,8 @@ var app = new Vue({
                 'suspended': 'Tạm ngưng',
                 'disposed': 'Thanh lý',
                 'broken': 'Hỏng',
-                'maintenance_bv': 'BV Bảo trì'
+                'maintenance_bv': 'BV Bảo trì',
+                'maintenance_hang': 'Hãng sửa'
             };
             return map[status] || status || 'N/A';
         },
@@ -250,7 +251,10 @@ var app = new Vue({
         isBaoHong: function (d) {
             return d.LifeStatus === 'broken' ||
                    d.LifeStatus === 'suspended' ||
-                   d.LifeStatus === 'maintenance_bv';
+                   d.LifeStatus === 'maintenance_bv' ||
+                   d.LifeStatus === 'maintenance_hang' ||
+                   d.OpenLogs > 0 ||
+                   d.InProgressLogs > 0;
         },
 
         isDangSuaChua: function (d) {
@@ -259,8 +263,8 @@ var app = new Vue({
         },
 
         isDaSuaChua: function (d) {
-            // Thiết bị đã có ít nhất 1 ca sửa chữa được đóng (closed)
-            return d.ClosedLogs > 0;
+            // Thiết bị đã có ít nhất 1 ca sửa chữa được đóng (closed) và không có ca nào đang xử lý (open hoặc in_progress)
+            return d.ClosedLogs > 0 && d.OpenLogs === 0 && d.InProgressLogs === 0;
         },
 
         isChuaSuaChua: function (d) {

@@ -1473,16 +1473,18 @@
 
                 Tài sản hiện có
             </div>
+            <div class="tab-item"
+                 :class="{ active: currentTab === 'location' }"
+                 v-on:click="currentTab = 'location'">
+                Vị trí
+            </div>
         </div>
-        <div class="topbar-right">
+        @*<div class="topbar-right">
             <div class="topbar-search-wrap">
                 <span class="search-ico">🔍</span>
                 <input type="text" placeholder="Tìm kiếm nhóm tài sản ..." v-model="globalSearch">
             </div>
-            <button class="topbar-icon-btn">🔔</button>
-            @*<button class="topbar-icon-btn">❓</button>*@
-            <div class="avatar">A</div>
-        </div>
+        </div>*@
     </div>
 
     <!-- ── CATALOG LAYOUT ── -->
@@ -1673,18 +1675,18 @@
                                 <div class="searchable-select-dropdown" v-if="showToolbarItemDropdown" style="position: absolute; top: 38px; left: 0; right: 0; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 1000; padding: 6px; display: flex; flex-direction: column; gap: 6px; max-height: 250px;">
                                     <input type="text" class="searchable-select-search-input" v-model="toolbarItemDropdownSearch" placeholder="🔍 Gõ để tìm nhanh..." v-on:click.stop style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; outline: none; width: 100%; box-sizing: border-box;" />
                                     <ul class="searchable-select-options" style="list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 180px; display: flex; flex-direction: column;">
-                                        <li class="searchable-select-option" 
-                                            :class="{ selected: defListFilterItemId === '' }" 
+                                        <li class="searchable-select-option"
+                                            :class="{ selected: defListFilterItemId === '' }"
                                             v-on:click="selectToolbarDropdownItem({ Id: '' })"
                                             style="padding: 6px 8px; font-size: 12.5px; cursor: pointer; border-radius: 4px; transition: background 0.1s;"
                                             v-on:mouseover="$event.target.style.background = '#f1f5f9'"
                                             v-on:mouseleave="$event.target.style.background = ''">
                                             -- Tất cả loại thiết bị --
                                         </li>
-                                        <li class="searchable-select-option" 
-                                            v-for="it in filteredToolbarDropdownItems" 
-                                            :key="it.Id" 
-                                            :class="{ selected: defListFilterItemId === it.Id }" 
+                                        <li class="searchable-select-option"
+                                            v-for="it in filteredToolbarDropdownItems"
+                                            :key="it.Id"
+                                            :class="{ selected: defListFilterItemId === it.Id }"
                                             v-on:click="selectToolbarDropdownItem(it)"
                                             style="padding: 6px 8px; font-size: 12.5px; cursor: pointer; border-radius: 4px; transition: background 0.1s;"
                                             v-on:mouseover="$event.target.style.background = '#f1f5f9'"
@@ -1697,11 +1699,11 @@
                                     </ul>
                                 </div>
                             </div>
-                            
+
                             <div style="position: relative; flex: 1; min-width: 200px; display: flex; align-items: center;">
                                 <input type="text" v-model="defListSearch" placeholder="Tìm tên hạng mục..." style="padding: 6px 32px 6px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; outline: none; width: 100%; height: 34px; margin: 0;" />
                             </div>
-                            
+
                             <button type="button" class="btn-cancel" v-if="defListSearch || defListScope !== 'all' || defListFilterItemId" v-on:click="defListSearch = ''; defListScope = 'all'; defListFilterItemId = ''; showToolbarItemDropdown = false; toolbarItemDropdownSearch = '';" style="padding: 6px 12px; font-size: 12.5px; height: 34px; margin: 0; white-space: nowrap; border: 1px solid #cbd5e1; border-radius: 6px;">Xóa lọc</button>
                         </div>
 
@@ -1733,9 +1735,9 @@
                                     <tr v-for="def in filteredChecklistDefinitions" :key="def.Id">
                                         <td>
                                             <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;"
-                                                  :style="{ 
-                                                      background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'inventory' ? '#fee2e2' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe', 
-                                                      color: def.Scope === 'global' ? '#475569' : def.Scope === 'inventory' ? '#991b1b' : def.Scope === 'item' ? '#d97706' : '#1d4ed8' 
+                                                  :style="{
+                                                      background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'inventory' ? '#fee2e2' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe',
+                                                      color: def.Scope === 'global' ? '#475569' : def.Scope === 'inventory' ? '#991b1b' : def.Scope === 'item' ? '#d97706' : '#1d4ed8'
                                                   }">
                                                 ${ def.Scope === 'global' ? '🔒 Toàn cục' : getInventoryLabel(def) }
                                             </span>
@@ -1743,9 +1745,9 @@
                                         <td>
                                             <span style="font-weight: 500;">
                                                 ${ def.CycleType === 'daily' ? 'Hàng ngày' :
-                                                   def.CycleType === 'weekly' ? 'Hàng tuần' :
-                                                   def.CycleType === 'monthly' ? 'Hàng tháng' :
-                                                   def.CycleType === 'yearly' ? 'Hàng năm' : 'Mọi chu kỳ' }
+                                                def.CycleType === 'weekly' ? 'Hàng tuần' :
+                                                def.CycleType === 'monthly' ? 'Hàng tháng' :
+                                                def.CycleType === 'yearly' ? 'Hàng năm' : 'Mọi chu kỳ' }
                                             </span>
                                         </td>
                                         <td><span class="td-name">${ def.CheckName }</span></td>
@@ -1784,6 +1786,135 @@
 
     </div>
 
+    <!-- ── LOCATION VIEW ── -->
+    <div class="catalog-wrap" v-if="currentTab === 'location'">
+
+        <!-- LEFT: DEPARTMENT LIST -->
+        <div class="group-panel">
+
+            <div class="group-panel-header">
+                <h4>Khoa / Phòng ban</h4>
+                <button class="btn-add-group" v-if="hasPermission('Locations', 'CREATE')" v-on:click="openAddLoc" title="Thêm khoa phòng">+</button>
+            </div>
+
+            <div class="group-list">
+
+                <div v-if="locDepartments.length === 0" style="padding:20px;text-align:center;color:#94a3b8;font-size:13px">
+                    Chưa có khoa phòng nào
+                </div>
+
+                <div v-for="d in filteredLocDepartments"
+                     :key="d.Id"
+                     class="group-item"
+                     :class="{ active: locActiveDept && locActiveDept.Id === d.Id }"
+                     v-on:click="selectLocDept(d)">
+
+                    <div class="gi-name">${ d.Name }</div>
+                    <div class="gi-sub">${ d.AssetCount } tài sản</div>
+
+                    <div class="gi-actions" v-on:click.stop>
+                        <button class="btn-gi" v-if="hasPermission('Locations', 'EDIT')" v-on:click="openEditLoc(d)" title="Sửa">✏️</button>
+                        <button class="btn-gi" v-if="hasPermission('Locations', 'EDIT')" v-on:click="openToggleLocStatus(d)" :title="d.IsActive ? 'Ngưng sử dụng' : 'Kích hoạt'">
+                            ${ d.IsActive ? '🔒' : '🔓' }
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- RIGHT: ASSETS OF DEPARTMENT -->
+        <div class="item-panel">
+
+            <div v-if="!locActiveDept" class="no-select-state">
+                <div class="ei">👈</div>
+                <p>Chọn một khoa phòng để xem danh sách tài sản</p>
+            </div>
+
+            <template v-if="locActiveDept">
+
+                <div class="item-panel-header">
+                    <div class="item-panel-label">
+                        <span>🏥</span>
+                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600"
+                              :style="{background: locActiveDept.IsActive ? '#dcfce7' : '#fee2e2',
+                          color: locActiveDept.IsActive ? '#16a34a' : '#dc2626'}">
+                            ${ locActiveDept.IsActive ? 'Đang hoạt động' : 'Ngưng hoạt động' }
+                        </span>
+                    </div>
+                    <div class="item-panel-title">${ locActiveDept.Name }</div>
+                </div>
+
+                <div class="item-panel-toolbar">
+                    <div class="item-search-wrap">
+                        <span class="search-ico">🔍</span>
+                        <input type="text" placeholder="Tìm theo mã, tên tài sản, nhóm..." v-model="locAssetSearch">
+                    </div>
+                </div>
+
+                <div class="item-table-wrap">
+                    <div class="table-card">
+
+                        <div v-if="locPaginatedInventories.length === 0" class="empty-state">
+                            <div class="ei">📦</div>
+                            <p>Không có tài sản nào thuộc khoa phòng này</p>
+                        </div>
+
+                        <table v-else>
+                            <thead>
+                                <tr>
+                                    <th>Mã tài sản</th>
+                                    <th>Tên thiết bị</th>
+                                    <th>Nhóm</th>
+                                    <th>Hãng / Model</th>
+                                    <th>SL</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="inv in locPaginatedInventories" :key="inv.InventoryId">
+                                    <td><span class="td-code">${ inv.AssetCode }</span></td>
+                                    <td><span class="td-name">${ inv.ItemName }</span></td>
+                                    <td>${ inv.GroupName }</td>
+                                    <td>${ inv.Brand || '—' } / ${ inv.Model || '—' }</td>
+                                    <td>${ inv.Quantity }</td>
+                                    <td>
+                                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px"
+                                              :style="{background:getLifeStatusMeta(inv.LifeStatus).bg,color:getLifeStatusMeta(inv.LifeStatus).color}">
+                                            ${ getLifeStatusMeta(inv.LifeStatus).icon } ${ getLifeStatusMeta(inv.LifeStatus).text }
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+                <!-- PAGINATION -->
+                <div class="item-pagination">
+                    <span>Hiển thị ${ locPaginationInfo } tài sản</span>
+                    <div class="pg-btns">
+                        <button class="pg-btn" v-on:click="locPrevPage" :disabled="locCurrentPage === 1">‹</button>
+                        <button v-for="p in locPages"
+                                :key="p"
+                                class="pg-btn"
+                                :class="{ active: locCurrentPage === p }"
+                                v-on:click="locChangePage(p)">
+                            ${ p }
+                        </button>
+                        <button class="pg-btn" v-on:click="locNextPage" :disabled="locCurrentPage === locTotalPages">›</button>
+                    </div>
+                </div>
+
+            </template>
+
+        </div>
+
+    </div>
+
     <!-- INVENTORY VIEW -->
     <div v-if="currentTab === 'inventory'"
          class="item-panel"
@@ -1811,8 +1942,8 @@
             </div>
 
             @*<button class="btn-add-item">
-                + Nhập tài sản
-            </button>*@
+                    + Nhập tài sản
+                </button>*@
 
         </div>
 
@@ -1847,7 +1978,7 @@
 
                             <td>${ x.GroupName }</td>
 
-                            <td>${ x.LocationName || '—' }</td>
+                            <td>${ x.DepartmentName || '—' }</td>
 
 
                             @*<td>${ x.LifeStatus }</td>*@
@@ -1887,11 +2018,12 @@
                         ‹
                     </button>
 
-                    <button v-for="p in inventoryPages"
-                            :key="p"
+                    <button v-for="(p, idx) in inventoryPages"
+                            :key="idx"
                             class="pg-btn"
-                            :class="{ active: inventoryCurrentPage === p }"
-                            v-on:click="changeInventoryPage(p)">
+                            :class="{ active: inventoryCurrentPage === p, 'pg-dots': p === '...' }"
+                            :disabled="p === '...'"
+                            v-on:click="p !== '...' && changeInventoryPage(p)">
 
                         ${ p }
 
@@ -1952,9 +2084,9 @@
                     <!-- Asset Search Bar -->
                     <div style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 14px; color: #64748b;">🔍</span>
-                        <input type="text" 
-                               placeholder="Tìm tài sản theo Mã, Serial hoặc Vị trí..." 
-                               v-model="detailAssetSearch" 
+                        <input type="text"
+                               placeholder="Tìm tài sản theo Mã, Serial hoặc Vị trí..."
+                               v-model="detailAssetSearch"
                                style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; width: 100%; box-sizing: border-box;">
                     </div>
 
@@ -1964,11 +2096,11 @@
                             Không tìm thấy tài sản nào phù hợp
                         </div>
 
-                        <div v-else v-for="inv in filteredDetailInventories" 
-                             :key="inv.Id" 
-                             class="inv-accordion-item" 
+                        <div v-else v-for="inv in filteredDetailInventories"
+                             :key="inv.Id"
+                             class="inv-accordion-item"
                              :class="{ expanded: expandedInventoryMap[inv.Id] }">
-                             
+
                             <!-- Accordion Header -->
                             <div class="inv-accordion-header" v-on:click="toggleExpandInventory(inv.Id)">
                                 <span class="inv-accordion-icon">${ expandedInventoryMap[inv.Id] ? '▼' : '▶' }</span>
@@ -1984,14 +2116,14 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Accordion Body -->
                             <div class="inv-accordion-body" v-if="expandedInventoryMap[inv.Id]">
                                 <!-- Loading -->
                                 <div v-if="loadingChecklist[inv.Id]" class="chk-loading">
                                     <span class="chk-spinner"></span> Đang tải checklist...
                                 </div>
-                                
+
                                 <div v-else>
                                     <!-- Checklist Table -->
                                     <table class="inline-checklist-table" v-if="(inventoryChecklistCache[inv.Id] || []).length > 0">
@@ -2005,30 +2137,30 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr v-for="def in (inventoryChecklistCache[inv.Id] || [])" 
+                                            <tr v-for="def in (inventoryChecklistCache[inv.Id] || [])"
                                                 :key="def.Id"
                                                 :class="{ 'row-saving': savingChecklist[def.Id] }">
                                                 <td>
                                                     <input v-if="editingChecklistId === def.Id"
-                                                           type="text" 
-                                                           class="inline-edit-input" 
-                                                           :ref="'editInput_' + def.Id" 
-                                                           v-model="def.CheckName" 
-                                                           v-on:keydown.enter="saveInlineChecklist(def)" 
+                                                           type="text"
+                                                           class="inline-edit-input"
+                                                           :ref="'editInput_' + def.Id"
+                                                           v-model="def.CheckName"
+                                                           v-on:keydown.enter="saveInlineChecklist(def)"
                                                            v-on:keydown.esc="cancelInlineEdit(def)"
                                                            v-on:blur="cancelInlineEdit(def)"
                                                            :disabled="savingChecklist[def.Id]">
-                                                    <span v-else 
-                                                          class="inline-edit-name" 
-                                                          v-on:click="startInlineEdit(def)" 
+                                                    <span v-else
+                                                          class="inline-edit-name"
+                                                          v-on:click="startInlineEdit(def)"
                                                           title="Click để sửa">
                                                         ${ def.CheckName }
                                                         <span v-if="savingChecklist[def.Id]" class="saving-dot">●</span>
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <select v-model="def.CycleType" 
-                                                            v-on:change="saveInlineChecklist(def)" 
+                                                    <select v-model="def.CycleType"
+                                                            v-on:change="saveInlineChecklist(def)"
                                                             class="chk-select"
                                                             :disabled="savingChecklist[def.Id] || editingChecklistId === def.Id">
                                                         <option :value="null">Tất cả</option>
@@ -2039,24 +2171,24 @@
                                                     </select>
                                                 </td>
                                                 <td style="text-align: center;">
-                                                    <input type="checkbox" 
-                                                           v-model="def.IsRequired" 
+                                                    <input type="checkbox"
+                                                           v-model="def.IsRequired"
                                                            v-on:change="saveInlineChecklist(def)"
                                                            :disabled="savingChecklist[def.Id]"
                                                            class="chk-checkbox">
                                                 </td>
                                                 <td style="text-align: center;">
                                                     <label class="toggle" style="margin: 0 auto;">
-                                                        <input type="checkbox" 
-                                                               :checked="def.IsActive" 
+                                                        <input type="checkbox"
+                                                               :checked="def.IsActive"
                                                                v-on:change="toggleChecklistActive(def, $event)"
                                                                :disabled="savingChecklist[def.Id]">
                                                         <span class="toggle-slider"></span>
                                                     </label>
                                                 </td>
                                                 <td style="text-align: center;">
-                                                    <button class="chk-btn-del" 
-                                                            v-on:click="deleteChecklist(def)" 
+                                                    <button class="chk-btn-del"
+                                                            v-on:click="deleteChecklist(def)"
                                                             :disabled="deletingChecklist[def.Id]"
                                                             title="Xóa">
                                                         🗑
@@ -2079,10 +2211,10 @@
                                             <div class="inline-add-grid">
                                                 <div class="inline-add-fg">
                                                     <label>Tên checklist</label>
-                                                    <input type="text" 
-                                                           class="inline-add-input" 
-                                                           :ref="'addInput_' + inv.Id" 
-                                                           v-model="inlineAddForm[inv.Id].CheckName" 
+                                                    <input type="text"
+                                                           class="inline-add-input"
+                                                           :ref="'addInput_' + inv.Id"
+                                                           v-model="inlineAddForm[inv.Id].CheckName"
                                                            placeholder="Nhập tên checklist..."
                                                            v-on:keydown.enter="saveInlineAddChecklist(inv.Id)"
                                                            v-on:keydown.esc="cancelInlineAdd(inv.Id)">
@@ -2108,7 +2240,7 @@
                                                     <label>&nbsp;</label>
                                                     <div style="display: flex; gap: 6px;">
                                                         <button class="chk-btn-cancel" v-on:click="cancelInlineAdd(inv.Id)">Hủy</button>
-                                                        <button class="chk-btn-save" 
+                                                        <button class="chk-btn-save"
                                                                 v-on:click="saveInlineAddChecklist(inv.Id)"
                                                                 :disabled="savingChecklist['add_' + inv.Id]">
                                                             ${ savingChecklist['add_' + inv.Id] ? 'Đang lưu...' : 'Lưu' }
@@ -2144,7 +2276,7 @@
             </div>
         </div>
     </div>
- 
+
     <!-- ══ FORM GROUP ══ -->
     <div class="modal-overlay" v-if="showGroupForm" v-on:click.self="showGroupForm = false">
         <div class="form-modal">
@@ -2271,14 +2403,14 @@
                 </div>
                 <button class="close-btn" v-on:click="showDefinitionForm = false">×</button>
             </div>
-            
+
             <div class="form-body">
                 <div class="form-grid">
                     <div class="fg full">
                         <label>Tên hạng mục kiểm tra <span style="color:red">*</span></label>
                         <input type="text" v-model="definitionForm.CheckName" placeholder="VD: Kiểm tra nguồn, Kiểm tra màn hình...">
                     </div>
-                    
+
                     <div class="fg">
                         <label>Phạm vi áp dụng</label>
                         <select v-model="definitionForm.Scope" v-on:change="onDefinitionScopeChange" :disabled="isLockScope">
@@ -2298,15 +2430,15 @@
                             <div class="searchable-select-dropdown" v-if="showItemDropdown">
                                 <input type="text" class="searchable-select-search-input" v-model="itemDropdownSearch" placeholder="🔍 Gõ để tìm nhanh..." v-on:click.stop />
                                 <ul class="searchable-select-options">
-                                    <li class="searchable-select-option" 
-                                        :class="{ selected: definitionForm.ItemId === '' }" 
+                                    <li class="searchable-select-option"
+                                        :class="{ selected: definitionForm.ItemId === '' }"
                                         v-on:click="selectDropdownItem({ Id: '' })">
                                         -- Chọn loại thiết bị --
                                     </li>
-                                    <li class="searchable-select-option" 
-                                        v-for="it in filteredDropdownItems" 
-                                        :key="it.Id" 
-                                        :class="{ selected: definitionForm.ItemId === it.Id }" 
+                                    <li class="searchable-select-option"
+                                        v-for="it in filteredDropdownItems"
+                                        :key="it.Id"
+                                        :class="{ selected: definitionForm.ItemId === it.Id }"
                                         v-on:click="selectDropdownItem(it)">
                                         ${ it.Name }
                                     </li>
@@ -2328,15 +2460,15 @@
                             <div class="searchable-select-dropdown" v-if="showInventoryDropdown">
                                 <input type="text" class="searchable-select-search-input" v-model="inventoryDropdownSearch" placeholder="🔍 Nhập mã, S/N hoặc vị trí..." v-on:click.stop />
                                 <ul class="searchable-select-options">
-                                    <li class="searchable-select-option" 
-                                        :class="{ selected: definitionForm.InventoryId === '' }" 
+                                    <li class="searchable-select-option"
+                                        :class="{ selected: definitionForm.InventoryId === '' }"
                                         v-on:click="selectDropdownInventory({ Id: '' })">
                                         -- Chọn thiết bị cụ thể --
                                     </li>
-                                    <li class="searchable-select-option" 
-                                        v-for="inv in filteredDropdownInventories" 
-                                        :key="inv.Id" 
-                                        :class="{ selected: definitionForm.InventoryId === inv.Id }" 
+                                    <li class="searchable-select-option"
+                                        v-for="inv in filteredDropdownInventories"
+                                        :key="inv.Id"
+                                        :class="{ selected: definitionForm.InventoryId === inv.Id }"
                                         v-on:click="selectDropdownInventory(inv)">
                                         ${ inv.AssetCode } - ${ inv.LocationName || 'Chưa phân vị trí' } (${ inv.SerialNumber || 'Không S/N' })
                                     </li>
@@ -2400,6 +2532,57 @@
             <div class="confirm-footer">
                 <button class="btn-cancel" v-on:click="showDeleteDefModal = false">Không</button>
                 <button class="btn-danger" v-on:click="confirmDeleteDefinition">Xoá luôn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ FORM KHOA PHÒNG ══ -->
+    <div class="modal-overlay" v-if="showLocForm" v-on:click.self="showLocForm = false">
+        <div class="form-modal">
+            <div class="modal-header">
+                <div><h3>${ isEditLoc ? 'Sửa khoa phòng' : 'Thêm khoa phòng mới' }</h3></div>
+                <button class="close-btn" v-on:click="showLocForm = false">×</button>
+            </div>
+            <div class="form-body">
+                <div class="form-grid">
+                    <div class="fg">
+                        <label>Mã khoa phòng *</label>
+                        <input type="text" placeholder="VD: KHOA-01" v-model="locForm.Code">
+                    </div>
+                    <div class="fg">
+                        <label>Tên khoa phòng *</label>
+                        <input type="text" placeholder="VD: Khoa Nội tổng quát" v-model="locForm.Name">
+                    </div>
+                    <div class="fg full">
+                        <label>Ghi chú</label>
+                        <textarea placeholder="Mô tả thêm nếu cần..." v-model="locForm.Description"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button class="btn-cancel" v-on:click="showLocForm = false">Huỷ</button>
+                <button class="btn-save" v-on:click="saveLoc">${ isEditLoc ? '💾 Lưu' : '+ Thêm' }</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CONFIRM TOGGLE TRẠNG THÁI KHOA PHÒNG ══ -->
+    <div class="modal-overlay" v-if="showLocStatusModal" v-on:click.self="showLocStatusModal = false">
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="ci">${ locStatusTarget && locStatusTarget.IsActive ? '🔒' : '🔓' }</div>
+                <h3>${ locStatusTarget && locStatusTarget.IsActive ? 'Ngưng sử dụng khoa phòng' : 'Kích hoạt khoa phòng' }</h3>
+                <p>
+                    Bạn có chắc muốn
+                    <strong>${ locStatusTarget && locStatusTarget.IsActive ? 'ngưng sử dụng' : 'kích hoạt lại' }</strong>
+                    khoa phòng <strong>${ locStatusTarget ? locStatusTarget.Name : '' }</strong> không?
+                </p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" v-on:click="showLocStatusModal = false">Huỷ</button>
+                <button class="btn-danger" v-on:click="confirmToggleLocStatus">
+                    ${ locStatusTarget && locStatusTarget.IsActive ? '🔒 Ngưng sử dụng' : '🔓 Kích hoạt' }
+                </button>
             </div>
         </div>
     </div>
