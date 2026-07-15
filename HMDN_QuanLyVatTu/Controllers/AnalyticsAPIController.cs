@@ -87,22 +87,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                     DateTime startRange = startDate.Date;
                     DateTime endRange = endDate.Date.AddDays(1);
 
-                    // 1. Số lượng đã thực hiện checklist (Đếm từ lịch sử thực hiện ChecklistLogs trong khoảng thời gian)
-                    var done = db.ChecklistLogs.Count(l => l.CheckedAt >= startRange && l.CheckedAt < endRange);
-                    // 2. Lịch trình chưa làm (Đếm các lịch trình trong khoảng thời gian chưa hoàn thành, áp dụng cùng logic gộp nhóm để khớp số lượng)
-                    var pendingList = db.ChecklistSchedules
-                        .Where(s => s.ScheduledDate >= startRange && s.ScheduledDate < endRange && (s.Status == "pending" || s.Status == "NeedsReinspection" || s.Status == "overdue"))
-                        .Select(s => new { s.InventoryId, s.CycleType })
-                        .ToList();
-                    var pending = pendingList.Distinct().Count();
-                    var total = done + pending;
+                    // Gọi dịch vụ thống kê tập trung để tính toán chỉ số
+                    var metrics = HMDN_QuanLyVatTu.Services.ChecklistAnalyticsService.GetProgressMetrics(db, startRange, endRange);
 
                     var progress = new
                     {
                         Range = range,
-                        TotalSchedules = total,
-                        DoneCount = done,
-                        PendingCount = pending
+                        TotalSchedules = metrics.TotalSchedules,
+                        DoneCount = metrics.DoneCount,
+                        PendingCount = metrics.PendingCount,
+                        OverdueCount = metrics.OverdueCount
                     };
                     return Ok(progress);
                 }

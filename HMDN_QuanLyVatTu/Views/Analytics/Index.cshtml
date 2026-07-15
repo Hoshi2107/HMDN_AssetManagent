@@ -5,6 +5,231 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="@Url.Content("~/Content/analytics/analytics-module.css")" />
 
+<style>
+    /* Premium styles for Checklist Logs Modal */
+    #checklistLogsModal .modal-content {
+        border-radius: 16px !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+    
+    #checklistLogsModal .bg-kpi-compliance {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+        border-bottom: none !important;
+    }
+
+    #checklistLogsModal .nav-pills {
+        background-color: #f1f5f9 !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        width: 100% !important;
+        border-bottom: none !important;
+        gap: 0 !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item {
+        flex: 1 !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item button {
+        width: 100% !important;
+        border: none !important;
+        background: transparent !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease-in-out !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item button.btn-success.text-white {
+        background-color: #10b981 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.15) !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item button.btn-warning.text-dark {
+        background-color: #f59e0b !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.15) !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item button.btn-danger.text-white {
+        background-color: #ef4444 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.15) !important;
+    }
+
+    #checklistLogsModal .nav-pills .nav-item button:hover:not(.text-white):not(.text-dark) {
+        background-color: rgba(148, 163, 184, 0.15) !important;
+        color: #1e293b !important;
+    }
+
+    #analytics-module-hub .filter-panel {
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        padding: 16px !important;
+    }
+
+    #analytics-module-hub .filter-item-inline {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    #analytics-module-hub .filter-label-inline {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        white-space: nowrap !important;
+        min-width: 75px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    #analytics-module-hub .filter-select {
+        height: 32px !important;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        font-size: 12.5px !important;
+        font-weight: 500 !important;
+        padding: 4px 10px !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 10px center !important;
+        background-size: 10px 10px !important;
+        padding-right: 28px !important;
+    }
+
+    #analytics-module-hub .filter-select:focus {
+        border-color: #0ea5e9 !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12) !important;
+        outline: none !important;
+    }
+
+    #analytics-module-hub .btn-reset-filters {
+        height: 32px !important;
+        line-height: 22px !important;
+        padding: 4px 12px !important;
+        font-size: 12.5px !important;
+        border-radius: 6px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
+        color: #475569 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    #analytics-module-hub .btn-reset-filters:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+        color: #1e293b !important;
+    }
+
+    #checklistLogsModal .modal-readonly-label {
+        font-size: 10.5px !important;
+        text-transform: uppercase !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        margin-bottom: 5px !important;
+        letter-spacing: 0.5px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+
+    #checklistLogsModal .modal-readonly-value {
+        height: 38px !important;
+        line-height: 24px !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #f8fafc !important;
+        padding: 6px 12px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #1e293b !important;
+        display: flex !important;
+        align-items: center !important;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.01) !important;
+    }
+
+    #checklistLogsModal .btn-light.border {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
+        padding: 6px 14px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    #checklistLogsModal .btn-light.border:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+        color: #1e293b !important;
+    }
+
+    #checklistLogsModal .btn-secondary {
+        background-color: #64748b !important;
+        border: none !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        padding: 6px 14px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    #checklistLogsModal .btn-secondary:hover {
+        background-color: #475569 !important;
+    }
+
+    #checklistLogsModal .btn-pagination {
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        color: #475569 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    #checklistLogsModal .btn-pagination:hover:not(:disabled) {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    #checklistLogsModal .btn-pagination:disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+    }
+
+    #checklistLogsModal .pagination-info {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+    }
+</style>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
@@ -91,7 +316,7 @@
                     {{ checklistCompliance }}%
                 </h2>
                 <div class="mt-1 text-white-muted" style="font-size: 11px; line-height: 1.3;">
-                    Xong: <strong>{{ checklistProgress.done }}</strong> / Tổng: <strong>{{ checklistProgress.total }}</strong>
+                    Xong: <strong>{{ checklistProgress.done }}</strong> / Chờ: <strong>{{ checklistProgress.pending }}</strong> / Trễ: <strong>{{ checklistProgress.overdue }}</strong>
                 </div>
             </div>
             <div class="rounded-circle d-flex align-items-center justify-content-center kpi-icon-box">
@@ -213,23 +438,17 @@
 
                         <!-- Bộ lọc nhanh theo Khoa phòng & Nhóm thiết bị -->
                         <div class="filter-panel p-3 mb-3 border rounded">
-                            <div class="row align-items-end">
-                                <div class="col-12 col-md-5 mb-2 mb-md-0">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-hospital text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Khoa phòng ban</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="statusModal.filterDept">
+                            <div class="row align-items-center">
+                                <div class="col-12 col-md-5 mb-2 mb-md-0 filter-item-inline">
+                                    <span class="filter-label-inline" style="min-width: 100px !important;"><i class="fa-solid fa-hospital text-primary"></i> Khoa phòng</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="statusModal.filterDept">
                                         <option :value="null">-- Tất cả khoa phòng --</option>
                                         <option v-for="dept in lookups.Departments" :key="dept.Id" :value="dept.Id">{{ dept.Name }}</option>
                                     </select>
                                 </div>
-                                <div class="col-12 col-md-5 mb-2 mb-md-0">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-tags text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Nhóm thiết bị y tế</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="statusModal.filterGroup">
+                                <div class="col-12 col-md-5 mb-2 mb-md-0 filter-item-inline">
+                                    <span class="filter-label-inline" style="min-width: 100px !important;"><i class="fa-solid fa-tags text-primary"></i> Nhóm TB</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="statusModal.filterGroup">
                                         <option :value="null">-- Tất cả nhóm thiết bị --</option>
                                         <option v-for="grp in lookups.Groups" :key="grp.Id" :value="grp.Id">{{ grp.Name }}</option>
                                     </select>
@@ -404,15 +623,20 @@
                 </div>
                 <div class="modal-body p-4">
                     <!-- Tabs toggles -->
-                    <ul class="nav nav-pills mb-3" style="gap: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                    <ul class="nav nav-pills mb-3">
                         <li class="nav-item">
                             <button type="button" class="btn btn-sm font-weight-bold" :class="checklistModal.tab === 'completed' ? 'btn-success text-white' : 'btn-outline-success'" v-on:click="setChecklistModalTab('completed')">
-                                <i class="fa-solid fa-square-check mr-1"></i> Đã Checklist ({{ checklistModal.logs.length }})
+                                <i class="fa-solid fa-square-check mr-1"></i> Đã Checklist ({{ checklistModal.completedCount }})
                             </button>
                         </li>
                         <li class="nav-item">
                             <button type="button" class="btn btn-sm font-weight-bold" :class="checklistModal.tab === 'pending' ? 'btn-warning text-dark' : 'btn-outline-warning'" v-on:click="setChecklistModalTab('pending')">
-                                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Chưa làm / Trễ hạn ({{ checklistModal.pendingSchedules.length }})
+                                <i class="fa-solid fa-clock mr-1"></i> Chờ thực hiện ({{ checklistModal.pendingSchedules.filter(function(s) { return s.Status !== 'overdue'; }).length }})
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="btn btn-sm font-weight-bold" :class="checklistModal.tab === 'overdue' ? 'btn-danger text-white' : 'btn-outline-danger'" v-on:click="setChecklistModalTab('overdue')">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i> Trễ hạn ({{ checklistModal.pendingSchedules.filter(function(s) { return s.Status === 'overdue'; }).length }})
                             </button>
                         </li>
                     </ul>
@@ -421,14 +645,11 @@
                     <div v-if="checklistModal.viewMode === 'list'">
                         <!-- Bộ lọc tiện ích (combobox người check, thiết bị check, ngày tuần tháng quý năm) -->
                         <div class="filter-panel p-3 mb-3 border rounded">
-                            <div class="row">
+                            <div class="row align-items-center">
                                 <!-- Lọc Thời gian (ngày tuần tháng quý năm) -->
-                                <div class="col-12 col-sm-6 mb-2" :class="checklistModal.tab === 'completed' ? 'col-md-3' : 'col-md-6'">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-calendar-days text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Khoảng thời gian</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.range" v-on:change="fetchChecklistLogs">
+                                <div class="col-12 col-md-4 mb-2 filter-item-inline">
+                                    <span class="filter-label-inline"><i class="fa-solid fa-calendar-days text-primary"></i> Thời gian</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="checklistModal.range" v-on:change="fetchChecklistLogs">
                                         <option value="today">Hôm nay</option>
                                         <option value="week">Tuần này</option>
                                         <option value="month">Tháng này</option>
@@ -436,44 +657,50 @@
                                         <option value="year">Năm nay</option>
                                     </select>
                                 </div>
-                                <!-- Lọc Người check -->
-                                <div class="col-12 col-sm-6 col-md-3 mb-2" v-if="checklistModal.tab === 'completed'">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-user-check text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Người kiểm tra</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterUser">
+                                <!-- Lọc Chu kỳ -->
+                                <div class="col-12 col-md-4 mb-2 filter-item-inline">
+                                    <span class="filter-label-inline"><i class="fa-solid fa-rotate text-primary"></i> Chu kỳ</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="checklistModal.filterCycle" v-on:change="checklistModal.currentPage = 1">
                                         <option value="">-- Tất cả --</option>
-                                        <option v-for="user in checklistUniqueUsers" :value="user">{{ user }}</option>
+                                        <option value="daily">Hàng ngày</option>
+                                        <option value="weekly">Hàng tuần</option>
+                                        <option value="monthly">Hàng tháng</option>
+                                        <option value="quarterly">Hàng quý</option>
+                                        <option value="yearly">Hàng năm</option>
+                                        <option value="adhoc" v-if="checklistModal.tab === 'completed'">Đột xuất</option>
                                     </select>
                                 </div>
                                 <!-- Lọc Thiết bị check -->
-                                <div class="col-12 col-sm-6 mb-2" :class="checklistModal.tab === 'completed' ? 'col-md-3' : 'col-md-6'">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-screwdriver-wrench text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Thiết bị</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterDevice">
+                                <div class="col-12 col-md-4 mb-2 filter-item-inline">
+                                    <span class="filter-label-inline"><i class="fa-solid fa-screwdriver-wrench text-primary"></i> Thiết bị</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="checklistModal.filterDevice" v-on:change="checklistModal.currentPage = 1">
                                         <option value="">-- Tất cả --</option>
                                         <option v-for="dev in checklistUniqueDevices" :value="dev">{{ dev }}</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="row align-items-center mt-1" v-if="checklistModal.tab === 'completed'">
+                                <!-- Lọc Người check -->
+                                <div class="col-12 col-md-6 mb-2 filter-item-inline">
+                                    <span class="filter-label-inline" style="min-width: 80px !important;"><i class="fa-solid fa-user-check text-primary"></i> Người kiểm</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="checklistModal.filterUser" v-on:change="checklistModal.currentPage = 1">
+                                        <option value="">-- Tất cả --</option>
+                                        <option v-for="user in checklistUniqueUsers" :value="user">{{ user }}</option>
+                                    </select>
+                                </div>
                                 <!-- Lọc Kết quả -->
-                                <div class="col-12 col-sm-6 col-md-3 mb-2" v-if="checklistModal.tab === 'completed'">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-square-poll-vertical text-primary mr-1" style="font-size: 11px;"></i>
-                                        <span class="filter-label">Kết quả</span>
-                                    </div>
-                                    <select class="form-control form-control-sm filter-select" v-model="checklistModal.filterResult">
+                                <div class="col-12 col-md-6 mb-2 filter-item-inline">
+                                    <span class="filter-label-inline" style="min-width: 80px !important;"><i class="fa-solid fa-square-poll-vertical text-primary"></i> Kết quả</span>
+                                    <select class="form-control form-control-sm filter-select flex-grow-1" v-model="checklistModal.filterResult" v-on:change="checklistModal.currentPage = 1">
                                         <option value="">-- Tất cả --</option>
                                         <option value="pass">Đạt (Pass)</option>
                                         <option value="fail">Không đạt (Fail)</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="row mt-2" v-if="checklistModal.filterUser || checklistModal.filterDevice || checklistModal.filterResult">
+                            <div class="row mt-2" v-if="checklistModal.filterUser || checklistModal.filterDevice || checklistModal.filterResult || checklistModal.filterCycle">
                                 <div class="col-12 text-right">
-                                    <button type="button" class="btn btn-xs btn-link text-secondary font-weight-bold p-0" v-on:click="checklistModal.filterUser = ''; checklistModal.filterDevice = ''; checklistModal.filterResult = '';">
+                                    <button type="button" class="btn btn-xs btn-link text-secondary font-weight-bold p-0" v-on:click="checklistModal.filterUser = ''; checklistModal.filterDevice = ''; checklistModal.filterResult = ''; checklistModal.filterCycle = '';">
                                         <i class="fa-solid fa-rotate-left mr-1"></i>Xóa bộ lọc
                                     </button>
                                 </div>
@@ -522,8 +749,8 @@
                                 </tbody>
                             </table>
 
-                            <!-- Bảng chưa checklist -->
-                            <table v-if="checklistModal.tab === 'pending'" class="table table-hover align-middle border-0 table-analytics">
+                            <!-- Bảng chưa checklist / trễ hạn -->
+                            <table v-if="checklistModal.tab === 'pending' || checklistModal.tab === 'overdue'" class="table table-hover align-middle border-0 table-analytics">
                                 <thead style="background-color: #f1f5f9; color: #0f172a; font-weight: 700;">
                                     <tr>
                                         <th class="border-0">Ngày lập lịch</th>
@@ -677,4 +904,4 @@
     };
 </script>
 
-<script src="~/Scripts/app/analytics-module.js?v=@DateTime.Now.Ticks"></script>
+<script src="~/Scripts/app/analytics-module.js?v=@DateTime.Now.Ticks" charset="utf-8"></script>

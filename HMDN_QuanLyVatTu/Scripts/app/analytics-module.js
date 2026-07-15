@@ -55,7 +55,7 @@ window.addEventListener('DOMContentLoaded', function () {
             lookups: { Departments: [], Groups: [] },
             inventoryList: [],
             availableYears: [],
-            checklistProgress: { done: 0, pending: 0, total: 0 },
+            checklistProgress: { done: 0, pending: 0, overdue: 0, total: 0 },
 
             pieChart: null,
             barChart: null,
@@ -80,12 +80,13 @@ window.addEventListener('DOMContentLoaded', function () {
             // Trạng thái cho popup xem danh sách checklist logs
             checklistModal: {
                 range: 'today',
-                tab: 'completed', // 'completed' | 'pending'
+                tab: 'completed', // 'completed' | 'pending' | 'overdue'
                 logs: [],
                 pendingSchedules: [],
                 filterUser: '',
                 filterDevice: '',
                 filterResult: '',
+                filterCycle: '',
                 currentPage: 1,
                 pageSize: 6,
                 viewMode: 'list',
@@ -211,7 +212,16 @@ window.addEventListener('DOMContentLoaded', function () {
             filteredChecklistLogs: function () {
                 var vm = this;
                 if (vm.checklistModal.tab === 'completed') {
-                    var list = vm.checklistModal.logs || [];
+                    var seen = {};
+                    var uniqueList = [];
+                    (vm.checklistModal.logs || []).forEach(function (l) {
+                        var key = l.ScheduleId ? 'sch_' + l.ScheduleId : 'adhoc_' + l.InventoryId + '_' + l.LocationId + '_' + l.CycleType;
+                        if (!seen[key]) {
+                            seen[key] = true;
+                            uniqueList.push(l);
+                        }
+                    });
+                    var list = uniqueList;
 
                     if (vm.checklistModal.filterUser) {
                         list = list.filter(function (item) {
@@ -231,9 +241,15 @@ window.addEventListener('DOMContentLoaded', function () {
                         });
                     }
 
+                    if (vm.checklistModal.filterCycle) {
+                        list = list.filter(function (item) {
+                            return item.CycleType && item.CycleType.toLowerCase() === vm.checklistModal.filterCycle.toLowerCase();
+                        });
+                    }
+
                     return list;
-                } else {
-                    var list = vm.checklistModal.pendingSchedules || [];
+                } else if (vm.checklistModal.tab === 'pending') {
+                    var list = (vm.checklistModal.pendingSchedules || []).filter(function (s) { return s.Status !== 'overdue'; });
 
                     if (vm.checklistModal.filterDevice) {
                         list = list.filter(function (item) {
@@ -241,8 +257,31 @@ window.addEventListener('DOMContentLoaded', function () {
                         });
                     }
 
+                    if (vm.checklistModal.filterCycle) {
+                        list = list.filter(function (item) {
+                            return item.CycleType && item.CycleType.toLowerCase() === vm.checklistModal.filterCycle.toLowerCase();
+                        });
+                    }
+
+                    return list;
+                } else if (vm.checklistModal.tab === 'overdue') {
+                    var list = (vm.checklistModal.pendingSchedules || []).filter(function (s) { return s.Status === 'overdue'; });
+
+                    if (vm.checklistModal.filterDevice) {
+                        list = list.filter(function (item) {
+                            return item.ItemName === vm.checklistModal.filterDevice;
+                        });
+                    }
+
+                    if (vm.checklistModal.filterCycle) {
+                        list = list.filter(function (item) {
+                            return item.CycleType && item.CycleType.toLowerCase() === vm.checklistModal.filterCycle.toLowerCase();
+                        });
+                    }
+
                     return list;
                 }
+                return [];
             },
             checklistTotalPages: function () {
                 var len = this.filteredChecklistLogs.length;
@@ -651,12 +690,13 @@ window.addEventListener('DOMContentLoaded', function () {
                 $.getJSON(window.AnalyticsEndpoints.getChecklist, { range: vm.checklistRange }, function (res) {
                     vm.checklistProgress.done = res.DoneCount || 0;
                     vm.checklistProgress.pending = res.PendingCount || 0;
+                    vm.checklistProgress.overdue = res.OverdueCount || 0;
                     vm.checklistProgress.total = res.TotalSchedules || 0;
-                    vm.renderTodayChecklistChart(res.DoneCount, res.PendingCount, res.TotalSchedules);
+                    vm.renderTodayChecklistChart(res.DoneCount, res.PendingCount, res.OverdueCount, res.TotalSchedules);
                 });
             },
             // Cập nhật Checklist Chart bằng cách luôn hủy và tạo mới để tránh lỗi thay đổi độ dài mảng dữ liệu trong Chart.js
-            renderTodayChecklistChart: function (done, pending, total) {
+            renderTodayChecklistChart: function (done, pending, overdue, total) {
                 var chartElement = document.getElementById('todayChecklistChart');
                 if (!chartElement) return;
                 var ctx = chartElement.getContext('2d');
@@ -674,10 +714,10 @@ window.addEventListener('DOMContentLoaded', function () {
                 else if (vm.checklistRange === 'quarter') emptyLabel = 'Chưa có lịch quý này';
                 else if (vm.checklistRange === 'year') emptyLabel = 'Chưa có lịch năm nay';
 
-                // Bổ sung hiển thị trực quan số lượng (done / pending) ngay trên nhãn chú thích (Legend)
-                var chartLabels = total === 0 ? [emptyLabel] : ['Đã Checklist (' + done + ')', 'Chưa làm (' + pending + ')'];
-                var chartData = total === 0 ? [1] : [done, pending];
-                var chartColors = total === 0 ? ['#e2e8f0'] : ['#10b981', '#ef4444'];
+                // Bổ sung hiển thị trực quan số lượng (done / pending / overdue) ngay trên nhãn chú thích (Legend)
+                var chartLabels = total === 0 ? [emptyLabel] : ['Đã Checklist (' + done + ')', 'Chờ thực hiện (' + pending + ')', 'Trễ hạn (' + overdue + ')'];
+                var chartData = total === 0 ? [1] : [done, pending, overdue];
+                var chartColors = total === 0 ? ['#e2e8f0'] : ['#10b981', '#3b82f6', '#ef4444'];
 
                 this.todayChecklistChart = new Chart(ctx, {
                     type: 'doughnut',
@@ -712,8 +752,10 @@ window.addEventListener('DOMContentLoaded', function () {
                                 // Phân tích click lát bánh (slice) để mở tab tương ứng
                                 if (label && label.indexOf('Đã Checklist') !== -1) {
                                     vm.openChecklistLogsModal(vm.checklistRange, 'completed');
-                                } else if (label && label.indexOf('Chưa làm') !== -1) {
+                                } else if (label && label.indexOf('Chờ thực hiện') !== -1) {
                                     vm.openChecklistLogsModal(vm.checklistRange, 'pending');
+                                } else if (label && label.indexOf('Trễ hạn') !== -1) {
+                                    vm.openChecklistLogsModal(vm.checklistRange, 'overdue');
                                 } else {
                                     vm.openChecklistLogsModal(vm.checklistRange);
                                 }
@@ -759,10 +801,12 @@ window.addEventListener('DOMContentLoaded', function () {
                 vm.checklistModal.range = initialRange || vm.checklistRange || 'today';
                 vm.checklistModal.tab = initialTab || 'completed';
                 vm.checklistModal.logs = [];
+                vm.checklistModal.completedCount = 0;
                 vm.checklistModal.pendingSchedules = [];
                 vm.checklistModal.filterUser = '';
                 vm.checklistModal.filterDevice = '';
                 vm.checklistModal.filterResult = '';
+                vm.checklistModal.filterCycle = '';
                 vm.checklistModal.currentPage = 1;
                 vm.checklistModal.viewMode = 'list';
                 vm.checklistModal.selectedLog = null;
@@ -778,6 +822,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 vm.checklistModal.filterUser = '';
                 vm.checklistModal.filterDevice = '';
                 vm.checklistModal.filterResult = '';
+                vm.checklistModal.filterCycle = '';
                 vm.fetchChecklistLogs();
             },
             fetchChecklistLogs: function () {
@@ -831,7 +876,20 @@ window.addEventListener('DOMContentLoaded', function () {
                 var p2 = $.getJSON('/api/checklists/schedules', { fromDate: fromDateStr, toDate: toDateStr, status: 'pending' });
 
                 $.when(p1, p2).done(function (r1, r2) {
-                    vm.checklistModal.logs = r1[0].data || [];
+                    var logs = r1[0].data || [];
+                    vm.checklistModal.logs = logs;
+                    
+                    // Tính số lượng checklist duy nhất đã hoàn thành
+                    var seen = {};
+                    var count = 0;
+                    logs.forEach(function (l) {
+                        var key = l.ScheduleId ? 'sch_' + l.ScheduleId : 'adhoc_' + l.InventoryId + '_' + l.LocationId + '_' + l.CycleType;
+                        if (!seen[key]) {
+                            seen[key] = true;
+                            count++;
+                        }
+                    });
+                    vm.checklistModal.completedCount = count;
                     vm.checklistModal.pendingSchedules = r2[0].data || [];
                     vm.checklistModal.loading = false;
                 }).fail(function () {
