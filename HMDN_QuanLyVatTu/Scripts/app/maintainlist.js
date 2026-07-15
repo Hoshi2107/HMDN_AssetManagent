@@ -26,7 +26,21 @@
             ReminderDays: 7,
             IsRecurring: false,
             RecurringMonths: null
-        }
+        },
+
+        showEditSchedule: false,
+        editSchedule: {
+            Id: null,
+            ScheduleName: '',
+            NextMaintenanceDate: '',
+            ReminderDays: 7,
+            IsRecurring: false,
+            RecurringMonths: null
+        },
+
+        showCompleteConfirm: false,
+        completeTarget: null,
+        completeNextDate: ''
     },
 
     computed: {
@@ -244,7 +258,87 @@
                 },
                 error: () => alert('Không thể cập nhật gia hạn')
             })
+        },
+
+        openEditSchedule(item) {
+            this.editSchedule = {
+                Id: item.Id,
+                ScheduleName: item.ScheduleName,
+                NextMaintenanceDate: this.formatDate(item.NextMaintenanceDate),
+                ReminderDays: item.ReminderDays,
+                IsRecurring: item.IsRecurring,
+                RecurringMonths: item.RecurringMonths
+            }
+            this.showEditSchedule = true
+        },
+
+        submitEditSchedule() {
+            if (!this.editSchedule.ScheduleName || !this.editSchedule.NextMaintenanceDate) {
+                alert('Vui lòng nhập đầy đủ tên lịch và ngày đến hạn')
+                return
+            }
+            if (this.editSchedule.IsRecurring && !this.editSchedule.RecurringMonths) {
+                alert('Vui lòng nhập chu kỳ lặp lại')
+                return
+            }
+
+            $.ajax({
+                url: '/api/maintain-list/update-schedule',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.editSchedule),
+                success: () => {
+                    this.showEditSchedule = false
+                    this.showDetail = false
+                    this.loadList()
+                },
+                error: () => alert('Không sửa được lịch')
+            })
+        },
+
+        // Tính ngày gợi ý tiếp theo, cộng thêm N tháng theo kiểu lịch (dùng cho input date)
+        addMonthsToDateString(dateStr, months) {
+            if (!dateStr) return ''
+            const d = new Date(dateStr)
+            d.setMonth(d.getMonth() + months)
+            return d.toISOString().substring(0, 10)
+        },
+
+        // Mở modal xác nhận thay vì confirm() mặc định
+        completeRenewal(item) {
+            this.completeTarget = item
+            this.completeNextDate = item.IsRecurring
+                ? this.addMonthsToDateString(this.formatDate(item.NextMaintenanceDate), item.RecurringMonths)
+                : ''
+            this.showCompleteConfirm = true
+        },
+
+        confirmCompleteRenewal() {
+            const item = this.completeTarget
+            if (!item) return
+
+            if (item.IsRecurring && !this.completeNextDate) {
+                alert('Vui lòng chọn ngày đến hạn tiếp theo')
+                return
+            }
+
+            $.ajax({
+                url: '/api/maintain-list/complete-renewal',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    id: item.Id,
+                    NextMaintenanceDate: item.IsRecurring ? this.completeNextDate : null
+                }),
+                success: () => {
+                    this.showCompleteConfirm = false
+                    this.showDetail = false
+                    this.loadList()
+                },
+                error: () => alert('Không thể cập nhật gia hạn')
+            })
         }
+
 
     },
 

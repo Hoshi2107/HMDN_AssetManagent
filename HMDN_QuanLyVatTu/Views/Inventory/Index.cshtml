@@ -66,11 +66,11 @@
             <div class="filter-bar">
 
                 <!-- Filter theo vị trí -->
-                <select v-model="filterLoca">
-                    <option value="">Tất cả vị trí</option>
-
-                    <option v-for="loc in locations" :key="loc" :value="loc">
-                        ${ loc }
+                <!-- MỚI -->
+                <select v-model="filterDept">
+                    <option value="">Tất cả khoa</option>
+                    <option v-for="dep in deptOptions" :key="dep" :value="dep">
+                        ${ dep }
                     </option>
                 </select>
 
@@ -258,10 +258,10 @@
                                         <p>${ selectedDevice.DepartmentName }</p>
                                     </div>
 
-                                    <div>
+                                    @*<div>
                                         <label>Vị trí</label>
                                         <p>${ selectedDevice.LocationName }</p>
-                                    </div>
+                                    </div>*@
 
                                     <div>
                                         <label>Tầng</label>
@@ -965,7 +965,7 @@
                             </div>
 
                             <!-- Location -->
-                            <div class="form-group">
+                            <!--<div class="form-group">
 
                                 <label>Vị trí</label>
 
@@ -986,7 +986,7 @@
 
                                 </select>
 
-                            </div>
+                            </div>-->
 
                             <!-- Import Date -->
                             <div class="form-group">
@@ -1404,7 +1404,7 @@
                             </div>
 
                             <!-- Location -->
-                            <div class="form-group">
+                            @*<div class="form-group">
 
                                 <label>Vị trí</label>
 
@@ -1425,7 +1425,7 @@
 
                                 </select>
 
-                            </div>
+                            </div>*@
 
                             <!-- Import Date -->
                             <div class="form-group">
@@ -2346,7 +2346,7 @@
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Serial</th>
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Số lượng</th>
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Khoa</th>
-                                    <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Vị trí</th>
+                                    @*<th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Vị trí</th>*@
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Ngày nhập</th>
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Đơn giá</th>
                                     <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:left;white-space:nowrap">Lỗi</th>

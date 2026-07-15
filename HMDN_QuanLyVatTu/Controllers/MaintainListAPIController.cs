@@ -132,6 +132,56 @@ namespace HMDN.Controllers.API
             return Ok(new { success = true, id = newId });
         }
 
+        //[HttpPost]
+        //[Route("complete-renewal")]
+        //public IHttpActionResult CompleteRenewal([FromBody] CompleteRenewalDto dto)
+        //{
+        //    if (dto == null || dto.Id <= 0)
+        //        return BadRequest("Thiếu Id");
+
+        //    var current = db.Database.SqlQuery<MaintenanceScheduleVM>(
+        //        @"SELECT Id, MaintenanceType, IsRecurring, RecurringMonths
+        //  FROM MaintenanceSchedules WHERE Id = @id",
+        //        new SqlParameter("@id", dto.Id)
+        //    ).FirstOrDefault();
+
+        //    if (current == null)
+        //        return NotFound();
+
+        //    // Đánh dấu lịch hiện tại đã hoàn thành
+        //    db.Database.ExecuteSqlCommand(
+        //        @"UPDATE MaintenanceSchedules
+        //  SET Status = 'completed', LastMaintenanceDate = NextMaintenanceDate
+        //  WHERE Id = @id",
+        //        new SqlParameter("@id", dto.Id));
+
+        //    int? newId = null;
+
+        //    // Nếu có lặp lại -> tự tạo lịch gia hạn kế tiếp
+        //    if (current.IsRecurring && current.RecurringMonths.HasValue && current.RecurringMonths > 0)
+        //    {
+        //        var insertSql = @"
+        //    INSERT INTO MaintenanceSchedules
+        //        (ScheduleName, MaintenanceType, RenewalName, LastMaintenanceDate,
+        //         NextMaintenanceDate, ReminderDays, IsRecurring, RecurringMonths,
+        //         Status, IsActive, CreatedAt, CreatedBy)
+        //    OUTPUT INSERTED.Id
+        //    SELECT
+        //        ScheduleName, MaintenanceType, RenewalName, NextMaintenanceDate,
+        //        DATEADD(MONTH, @months, NextMaintenanceDate), ReminderDays, IsRecurring, RecurringMonths,
+        //        'active', 1, GETDATE(), CreatedBy
+        //    FROM MaintenanceSchedules
+        //    WHERE Id = @id";
+
+        //        newId = db.Database.SqlQuery<int>(insertSql,
+        //            new SqlParameter("@months", current.RecurringMonths.Value),
+        //            new SqlParameter("@id", dto.Id)
+        //        ).First();
+        //    }
+
+        //    return Ok(new { success = true, newId = newId });
+        //}
+
         [HttpPost]
         [Route("complete-renewal")]
         public IHttpActionResult CompleteRenewal([FromBody] CompleteRenewalDto dto)
@@ -140,7 +190,7 @@ namespace HMDN.Controllers.API
                 return BadRequest("Thiếu Id");
 
             var current = db.Database.SqlQuery<MaintenanceScheduleVM>(
-                @"SELECT Id, MaintenanceType, IsRecurring, RecurringMonths
+                @"SELECT Id, MaintenanceType, IsRecurring, RecurringMonths, NextMaintenanceDate
           FROM MaintenanceSchedules WHERE Id = @id",
                 new SqlParameter("@id", dto.Id)
             ).FirstOrDefault();
@@ -157,9 +207,13 @@ namespace HMDN.Controllers.API
 
             int? newId = null;
 
-            // Nếu có lặp lại -> tự tạo lịch gia hạn kế tiếp
             if (current.IsRecurring && current.RecurringMonths.HasValue && current.RecurringMonths > 0)
             {
+                // Ưu tiên ngày người dùng xác nhận/chỉnh trong modal.
+                // Nếu không truyền lên thì fallback tính theo chu kỳ (giữ hành vi cũ).
+                var nextDate = dto.NextMaintenanceDate
+                    ?? current.NextMaintenanceDate.AddMonths(current.RecurringMonths.Value);
+
                 var insertSql = @"
             INSERT INTO MaintenanceSchedules
                 (ScheduleName, MaintenanceType, RenewalName, LastMaintenanceDate,
@@ -168,13 +222,13 @@ namespace HMDN.Controllers.API
             OUTPUT INSERTED.Id
             SELECT
                 ScheduleName, MaintenanceType, RenewalName, NextMaintenanceDate,
-                DATEADD(MONTH, @months, NextMaintenanceDate), ReminderDays, IsRecurring, RecurringMonths,
+                @nextDate, ReminderDays, IsRecurring, RecurringMonths,
                 'active', 1, GETDATE(), CreatedBy
             FROM MaintenanceSchedules
             WHERE Id = @id";
 
                 newId = db.Database.SqlQuery<int>(insertSql,
-                    new SqlParameter("@months", current.RecurringMonths.Value),
+                    new SqlParameter("@nextDate", nextDate),
                     new SqlParameter("@id", dto.Id)
                 ).First();
             }
@@ -182,7 +236,33 @@ namespace HMDN.Controllers.API
             return Ok(new { success = true, newId = newId });
         }
 
+        [HttpPost]
+        [Route("update-schedule")]
+        public IHttpActionResult UpdateSchedule([FromBody] UpdateScheduleDto dto)
+        {
+            if (dto == null || dto.Id <= 0)
+                return BadRequest("Thiếu Id");
 
+            if (dto.IsRecurring && (!dto.RecurringMonths.HasValue || dto.RecurringMonths <= 0))
+                return BadRequest("Vui lòng nhập chu kỳ lặp lại hợp lệ");
+
+            db.Database.ExecuteSqlCommand(
+                @"UPDATE MaintenanceSchedules
+          SET ScheduleName = @ScheduleName,
+              NextMaintenanceDate = @NextMaintenanceDate,
+              ReminderDays = @ReminderDays,
+              IsRecurring = @IsRecurring,
+              RecurringMonths = @RecurringMonths
+          WHERE Id = @Id",
+                new SqlParameter("@ScheduleName", dto.ScheduleName),
+                new SqlParameter("@NextMaintenanceDate", dto.NextMaintenanceDate),
+                new SqlParameter("@ReminderDays", dto.ReminderDays),
+                new SqlParameter("@IsRecurring", dto.IsRecurring),
+                new SqlParameter("@RecurringMonths", (object)dto.RecurringMonths ?? DBNull.Value),
+                new SqlParameter("@Id", dto.Id));
+
+            return Ok(new { success = true });
+        }
 
     }
 }
