@@ -232,7 +232,7 @@ var app = new Vue({
 
         searchQuery: '',
 
-        filterLoca: '',
+        // filterLoca: '',
 
         filterDept: '',
 
@@ -352,16 +352,14 @@ var app = new Vue({
 
             // FILTER
             if (this.filterDept) {
-                list = list.filter(x =>
-                    x.dept == this.filterDept
-                )
+                list = list.filter(x => x.DepartmentName == this.filterDept)
             }
 
-            if (this.filterLoca) {
-                list = list.filter(x =>
-                    x.LocationName == this.filterLoca
-                )
-            }
+            // if (this.filterLoca) {
+            //     list = list.filter(x =>
+            //         x.LocationName == this.filterLoca
+            //     )
+            // }
 
             if (this.filterStatus) {
                 list = list.filter(x =>
@@ -469,12 +467,17 @@ var app = new Vue({
             return result
         },
         // Get unique locations for filter dropdown
-        locations() {
+        // locations() {
 
+        //     return [...new Set(
+        //         this.devices
+        //             .map(x => x.LocationName)
+        //             .filter(x => x)
+        //     )]
+        // },
+        deptOptions() {
             return [...new Set(
-                this.devices
-                    .map(x => x.LocationName)
-                    .filter(x => x)
+                this.devices.map(x => x.DepartmentName).filter(x => x)
             )]
         },
 
@@ -588,7 +591,7 @@ var app = new Vue({
                 SerialNumber: (raw['Serial Number'] || '').toString().trim(),
                 Quantity: parseInt(raw['Số lượng']) || 1,
                 DepartmentName: (raw['Khoa'] || '').toString().trim(),
-                LocationName: (raw['Vị trí'] || '').toString().trim(),
+                // LocationName: (raw['Vị trí'] || '').toString().trim(),
                 ImportDate: this.parseExcelDate(raw['Ngày nhập']),
                 WarrantyExpiry: this.parseExcelDate(raw['Hết bảo hành']),
                 UnitPrice: parseFloat((raw['Đơn giá'] || '0').toString().replace(/,/g, '')) || 0,
@@ -652,7 +655,7 @@ var app = new Vue({
                 SerialNumber: row.SerialNumber || null,
                 Quantity: row.Quantity,
                 DepartmentId: this.resolveDeptId(row.DepartmentName),
-                LocationId: this.resolveLocId(row.LocationName),
+                // LocationId: this.resolveLocId(row.LocationName),
                 ImportDate: row.ImportDate,
                 WarrantyExpiry: row.WarrantyExpiry,
                 UnitPrice: row.UnitPrice,
@@ -955,7 +958,7 @@ var app = new Vue({
                 'Hãng': x.Brand || '',
                 'Loại tài sản': x.GroupName || '',
                 'Khoa': x.DepartmentName || '',
-                'Vị trí': x.LocationName || '',
+                // 'Vị trí': x.LocationName || '',
                 'Trạng thái': this.getLifeStatusMeta(x.LifeStatus).text,
                 'Đơn giá': x.UnitPrice || 0,
                 'Tổng giá trị': x.TotalPrice || 0,
@@ -1004,7 +1007,6 @@ var app = new Vue({
                 { wch: 14 },  // Hãng
                 { wch: 20 },  // Loại tài sản
                 { wch: 20 },  // Khoa
-                { wch: 16 },  // Vị trí
                 { wch: 16 },  // Trạng thái
                 { wch: 14 },  // Đơn giá
                 { wch: 14 },  // Tổng giá trị
@@ -2145,9 +2147,11 @@ var app = new Vue({
             this.currentPage = 1
         },
 
-        filterLoca() {
-            this.currentPage = 1
-        },
+        // filterLoca() {
+        //     this.currentPage = 1
+        // },
+
+        filterDept() { this.currentPage = 1 }, 
 
         filterGroup() {
             this.currentPage = 1
