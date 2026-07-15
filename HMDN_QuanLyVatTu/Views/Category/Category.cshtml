@@ -1750,7 +1750,23 @@
                                                 def.CycleType === 'yearly' ? 'Hàng năm' : 'Mọi chu kỳ' }
                                             </span>
                                         </td>
-                                        <td><span class="td-name">${ def.CheckName }</span></td>
+                                         <td>
+                                             <span class="td-name" style="font-weight: 600; color: #1e293b;">${ def.CheckName }</span>
+                                             <div style="margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap;">
+                                                 <span style="font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; background: #e0f2fe; color: #0369a1; display: inline-block;" v-if="def.ValueType === 'number'">
+                                                     🔢 Số <span v-if="def.Unit">(${ def.Unit })</span>
+                                                 </span>
+                                                 <span style="font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; background: #f0fdf4; color: #15803d; display: inline-block;" v-else-if="def.ValueType === 'select'">
+                                                     Dropdown (Lựa chọn)
+                                                 </span>
+                                                 <span style="font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; background: #faf5ff; color: #6b21a8; display: inline-block;" v-else-if="def.ValueType === 'text'">
+                                                     ✍️ Văn bản ngắn
+                                                 </span>
+                                                 <span style="font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; background: #fdf2f8; color: #9d174d; display: inline-block;" v-else-if="def.ValueType === 'textarea'">
+                                                     📝 Văn bản dài
+                                                 </span>
+                                             </div>
+                                         </td>
                                         <td style="color:#64748b;">${ def.Description || '—' }</td>
                                         <td style="text-align: center;">
                                             <span :style="{ color: def.IsRequired ? '#dc2626' : '#64748b', fontWeight: def.IsRequired ? 'bold' : 'normal' }">
@@ -2494,6 +2510,44 @@
                     <div class="fg">
                         <label>Thứ tự hiển thị</label>
                         <input type="number" v-model.number="definitionForm.SortOrder">
+                    </div>
+
+                    <div class="fg">
+                        <label>Kiểu giá trị (Value Type)</label>
+                        <select v-model="definitionForm.ValueType">
+                            <option value="checkbox">Đúng / Sai (Checkbox)</option>
+                            <option value="number">Đo lường / Nhập số (Number)</option>
+                            <option value="select">Danh sách chọn (Select)</option>
+                            <option value="text">Nhập văn bản ngắn (Text)</option>
+                            <option value="textarea">Nhập văn bản dài (Textarea)</option>
+                        </select>
+                    </div>
+
+                    <div class="fg" v-if="definitionForm.ValueType === 'number'">
+                        <label>Đơn vị đo (Unit)</label>
+                        <input type="text" v-model="definitionForm.Unit" placeholder="VD: °C, %, bar, V, A...">
+                    </div>
+
+                    <!-- Number validation rules (min, max, defaultValue) -->
+                    <template v-if="definitionForm.ValueType === 'number'">
+                        <div class="fg">
+                            <label>Giá trị Min tiêu chuẩn</label>
+                            <input type="number" step="any" v-model.number="definitionForm.MinVal" placeholder="Không bắt buộc">
+                        </div>
+                        <div class="fg">
+                            <label>Giá trị Max tiêu chuẩn</label>
+                            <input type="number" step="any" v-model.number="definitionForm.MaxVal" placeholder="Không bắt buộc">
+                        </div>
+                        <div class="fg full">
+                            <label>Giá trị Đạt mặc định (Để điền nhanh)</label>
+                            <input type="number" step="any" v-model.number="definitionForm.DefaultVal" placeholder="Ví dụ: 22 hoặc 45">
+                        </div>
+                    </template>
+
+                    <!-- Options list for Select dropdown -->
+                    <div class="fg full" v-if="definitionForm.ValueType === 'select'">
+                        <label>Các lựa chọn cho danh sách thả xuống (Mỗi dòng là một lựa chọn. Thêm dấu * ở đầu dòng để đặt làm mặc định)</label>
+                        <textarea v-model="definitionForm.OptionsText" rows="4" placeholder="VD:&#10;*Bình thường&#10;Cảnh báo&#10;Lỗi / Hỏng" style="height: 100px;"></textarea>
                     </div>
 
                     <div class="fg full">

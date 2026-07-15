@@ -785,9 +785,13 @@ input:checked + .switch-slider:before {
     .alert-card-actions {
         width: 100%;
         flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
     }
-    .alert-card-actions button {
-        flex: 1;
+    .alert-card-actions button,
+    .alert-card-actions .inline-restock-group {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 120px;
     }
     .notification-methods {
         grid-template-columns: 1fr;

@@ -644,12 +644,48 @@
         flex-wrap: wrap;
     }
 
-    /* Premium Toggle button style */
+    /* Responsive Mobile UI for Checklist Item Cards */
+    @@media (max-width: 640px) {
+        .cl-exec-item {
+            padding: 12px;
+            gap: 10px;
+        }
+        .cl-exec-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .cl-toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+        .cl-toggle-group .cl-toggle-btn {
+            justify-content: center;
+            width: 100%;
+        }
+        .cl-input-group-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .cl-input-group-row > input,
+        .cl-input-group-row > select,
+        .cl-input-group-row > div {
+            flex: 1 !important;
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+    }
+
     .cl-toggle-btn {
-        height: 38px;
-        padding: 0 18px;
-        border-radius: 10px;
-        font-size: 13px;
+        height: 32px;
+        padding: 0 12px;
+        border-radius: 6px;
+        font-size: 12.5px;
         font-weight: 600;
         border: 1.5px solid var(--cl-border);
         background: #fff;
@@ -962,9 +998,12 @@
         .cl-modal-card {
             max-width: 100% !important;
             height: 100vh !important;
+            height: 100dvh !important;
             max-height: 100vh !important;
+            max-height: 100dvh !important;
             border-radius: 0 !important;
             border: none !important;
+            padding-bottom: env(safe-area-inset-bottom) !important;
         }
         .cl-modal-header {
             padding: 12px 16px !important;
@@ -984,6 +1023,24 @@
             width: 100% !important;
             justify-content: center !important;
             height: 40px !important;
+        }
+        .cl-perform-subheader {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        .cl-perform-subheader-buttons {
+            display: flex !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+        .cl-perform-subheader-buttons .cl-btn {
+            flex: 1 !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+            font-size: 10.5px !important;
+            padding: 0 6px !important;
+            height: 32px !important;
         }
 
         /* Device Info Grid */
@@ -1408,6 +1465,7 @@
                     <option value="pending">Chờ thực hiện</option>
                     <option value="overdue">Quá hạn</option>
                     <option value="completed">Đã hoàn thành</option>
+                    <option value="skipped">Đã bỏ qua</option>
                 </select>
             </div>
             <div class="cl-input-group">
@@ -1477,7 +1535,11 @@
                                 </button>
                             </div>
                             <span v-else-if="sch.Status === 'completed' || sch.Status === 'done'" style="color:var(--cl-success); font-size:12.5px; font-weight:600;"><i class="fa-solid fa-circle-check text-success mr-1"></i> Hoàn tất</span>
-                            <span v-else-if="sch.Status === 'skipped'" style="color:var(--cl-text-muted); font-size:12.5px; font-style:italic; font-weight:600;"><i class="fa-solid fa-circle-minus mr-1"></i> Đã bỏ qua</span>
+                            <div v-else-if="sch.Status === 'skipped'" style="display:inline-flex; border-radius:8px; overflow:hidden; border:1px solid var(--cl-success); height: 32px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <button class="cl-btn" style="height:32px; padding:0 12px; font-size:12px; background:var(--cl-success); color:#fff; border:none; border-radius:0; font-weight:600;" @@click="openPerformModal(sch)" title="Thực hiện bổ sung checklist ngày trước">
+                                    <i class="fa-solid fa-play"></i> Thực hiện
+                                </button>
+                            </div>
                             <span v-else style="color:var(--cl-text-muted); font-size:12.5px; font-weight:600;">${ statusLabel(sch.Status) }</span>
                         </td>
                     </tr>
@@ -1803,14 +1865,14 @@
 
                 <div v-else style="display:flex; flex-direction:column; gap:16px;">
                     <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid var(--cl-border); padding-bottom:8px; margin: 0;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin: 0;">
+                        <div class="cl-perform-subheader" style="display: flex; align-items: center; justify-content: space-between; margin: 0; width: 100%;">
                             <h4 style="font-size:14px; font-weight:700; color:var(--cl-text); margin: 0;"><i class="fa-solid fa-list-check mr-1 text-primary"></i> Hạng mục kiểm tra bắt buộc</h4>
-                            <div style="display:flex; gap:10px;">
+                            <div class="cl-perform-subheader-buttons" style="display:flex; gap:10px;">
                                 <button type="button" v-if="recentInspectionHistory.length > 0" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-primary); color: var(--cl-primary-dark);" @@click="applyYesterdayResults()">
                                     <i class="fa-solid fa-copy"></i> Sao chép từ lần trước
                                 </button>
                                 <button type="button" class="cl-btn cl-btn-outline" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-radius: 6px; border-color: var(--cl-success); color: var(--cl-success-dark);" @@click="bulkSetAllPassed()">
-                                    <i class="fa-solid fa-check-double"></i> Xác nhận đạt tất cả
+                                    <i class="fa-solid fa-check-double"></i> Đạt tất cả
                                 </button>
                             </div>
                         </div>
@@ -1834,40 +1896,42 @@
                                 <div class="cl-exec-name">${ item.CheckName } <span style="color:var(--cl-danger)" v-if="item.IsRequired">*</span></div>
                                 <div class="cl-exec-desc" v-if="item.Description">${ item.Description }</div>
                             </div>
-                            <div class="cl-exec-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <!-- Checkbox / Boolean Value Type -->
-                                <template v-if="item.ValueType === 'checkbox'">
+                            <div class="cl-exec-actions">
+                                <!-- Đạt / Lỗi Toggles for All Value Types -->
+                                <div class="cl-toggle-group">
                                     <button type="button" class="cl-toggle-btn pass" :class="{active: item.isPassed === true}" @@click="setItemPassed(idx, true)">
                                         <i class="fa-solid fa-circle-check"></i> Đạt
                                     </button>
                                     <button type="button" class="cl-toggle-btn fail" :class="{active: item.isPassed === false}" @@click="setItemPassed(idx, false)">
                                         <i class="fa-solid fa-circle-xmark"></i> Lỗi
                                     </button>
-                                </template>
+                                </div>
 
-                                <!-- Number Input Value Type -->
-                                <template v-else-if="item.ValueType === 'number'">
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <input type="number" step="any" class="cl-input" :placeholder="'Nhập số... ' + (item.ValidationRules ? '(' + (item.ValidationRules.min !== undefined ? 'Min: ' + item.ValidationRules.min : '') + (item.ValidationRules.max !== undefined ? ', Max: ' + item.ValidationRules.max : '') + ')' : '')" style="height: 36px; width: 140px; font-size: 13px; padding: 6px 10px;" v-model="item.numericValue" />
-                                        <span v-if="item.Unit" class="text-muted font-weight-bold" style="font-size: 12px; white-space: nowrap;">${ item.Unit }</span>
-                                    </div>
-                                </template>
+                                <div class="cl-input-group-row">
+                                    <!-- Number Input Value Type -->
+                                    <template v-if="item.ValueType === 'number'">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <input type="number" step="any" class="cl-input" :placeholder="'Nhập số... ' + (item.ValidationRules ? '(' + (item.ValidationRules.min !== undefined ? 'Min: ' + item.ValidationRules.min : '') + (item.ValidationRules.max !== undefined ? ', Max: ' + item.ValidationRules.max : '') + ')' : '')" style="height: 32px; width: 110px; font-size: 12.5px; padding: 6px 10px;" v-model="item.numericValue" @@input="onNumericInput(idx)" />
+                                            <span v-if="item.Unit" class="text-muted font-weight-bold" style="font-size: 12px; white-space: nowrap;">${ item.Unit }</span>
+                                        </div>
+                                    </template>
 
-                                <!-- Select Dropdown Value Type -->
-                                <template v-else-if="item.ValueType === 'select'">
-                                    <select class="cl-select" style="height: 36px; width: 180px; font-size: 13px; padding: 4px 10px;" v-model="item.stringValue">
-                                        <option value="">-- Chọn --</option>
-                                        <option v-for="opt in item.Options" :key="opt.Id" :value="opt.Value">${ opt.Label }</option>
-                                    </select>
-                                </template>
+                                    <!-- Select Dropdown Value Type -->
+                                    <template v-else-if="item.ValueType === 'select'">
+                                        <select class="cl-select" style="height: 32px; width: 140px; font-size: 12.5px; padding: 4px 10px; border-radius: 6px;" v-model="item.stringValue" @@change="onSelectChange(idx)">
+                                            <option value="">-- Chọn --</option>
+                                            <option v-for="opt in item.Options" :key="opt.Value" :value="opt.Value">${ opt.DisplayText }</option>
+                                        </select>
+                                    </template>
 
-                                <!-- Text Input Value Type -->
-                                <template v-else-if="item.ValueType === 'text'">
-                                    <input type="text" class="cl-input" placeholder="Nhập ghi nhận..." style="height: 36px; width: 180px; font-size: 13px; padding: 6px 10px;" v-model="item.stringValue" />
-                                </template>
+                                    <!-- Text Input Value Type -->
+                                    <template v-else-if="item.ValueType === 'text'">
+                                        <input type="text" class="cl-input" placeholder="Nhập ghi nhận..." style="height: 32px; width: 140px; font-size: 12.5px; padding: 6px 10px;" v-model="item.stringValue" @@input="onTextInput(idx)" />
+                                    </template>
 
-                                <!-- Text Note input for fault remarks or extra description -->
-                                <input type="text" class="cl-input" placeholder="Ghi chú lỗi/chi tiết..." :style="{ height: '36px', width: '180px', fontSize: '12.5px', borderColor: ((item.isPassed === false || (item.ValueType === 'select' && (item.stringValue === 'fault' || item.stringValue === 'lỗi'))) && (!item.note || !item.note.trim())) ? '#dc2626' : '' }" v-model="item.note" />
+                                    <!-- Text Note input for fault remarks or extra description -->
+                                    <input type="text" class="cl-input" placeholder="Ghi chú chi tiết..." :style="{ height: '32px', width: '160px', fontSize: '12px', borderColor: ((item.isPassed === false || (item.ValueType === 'select' && (item.stringValue === 'fault' || item.stringValue === 'lỗi'))) && (!item.note || !item.note.trim())) ? '#dc2626' : '' }" v-model="item.note" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1929,7 +1993,7 @@
                     <i class="fa-solid fa-check"></i>
                 </div>
                 <div>
-                    <h3 style="font-size:18px; font-weight:700; color:var(--cl-success-dark); margin:0;">Checklist completed successfully.</h3>
+                    <h3 style="font-size:18px; font-weight:700; color:var(--cl-success-dark); margin:0;">Đã ghi nhận kết quả kiểm tra!</h3>
                     <p style="font-size:13.5px; color:var(--cl-text-muted); margin-top:8px; max-width:400px; margin-left:auto; margin-right:auto;">
                         Nhật ký kiểm tra đã được ghi nhận và lưu trữ.
                     </p>
@@ -1960,10 +2024,10 @@
             
             <div class="cl-modal-footer" v-if="performForm.submitted">
                 <button v-if="nextPendingAsset" class="cl-btn cl-btn-primary" v-on:click="goToNextAsset">
-                    <i class="fa-solid fa-forward mr-1"></i> Next Asset
+                    <i class="fa-solid fa-forward mr-1"></i> Thiết bị tiếp theo
                 </button>
                 <button class="cl-btn cl-btn-outline" v-on:click="showPerformModal=false; loadSchedules(); loadLogs();">
-                    <i class="fa-solid fa-list mr-1"></i> Back to Schedule List
+                    <i class="fa-solid fa-list mr-1"></i> Quay lại danh sách
                 </button>
             </div>
         </div>
@@ -2200,3 +2264,5 @@
 @section scripts {
     <script src="~/Scripts/app/checklists.js?v=@DateTime.Now.Ticks.ToString()" charset="utf-8"></script>
 }
+
+

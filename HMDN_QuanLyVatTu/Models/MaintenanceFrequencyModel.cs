@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -11,5 +11,8 @@ namespace HMDN_QuanLyVatTu.Models
 
         // Số lượng ca bảo trì trong tháng đó
         public int MaintenanceCount { get; set; }
+
+        // Số lượng ca sửa chữa trong tháng đó
+        public int RepairCount { get; set; }
     }
 }

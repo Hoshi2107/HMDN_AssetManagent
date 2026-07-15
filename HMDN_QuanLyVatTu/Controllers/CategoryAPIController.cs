@@ -327,6 +327,21 @@ END');
                     "EXEC sp_GetChecklistDefinitionsByGroup @GroupId",
                     new SqlParameter("@GroupId", groupId)
                 ).ToList();
+
+                if (list.Count > 0)
+                {
+                    var defIds = list.Select(d => d.Id).ToList();
+                    var optionsList = db.ChecklistDefinitionOptions
+                        .Where(o => defIds.Contains(o.ChecklistDefinitionId) && o.IsActive)
+                        .OrderBy(o => o.SortOrder)
+                        .ToList();
+
+                    foreach (var item in list)
+                    {
+                        item.Options = optionsList.Where(o => o.ChecklistDefinitionId == item.Id).ToList();
+                    }
+                }
+
                 return Ok(list);
             }
             catch (Exception ex)
@@ -437,11 +452,33 @@ END');
                           IsRequired = dto.IsRequired,
                           SortOrder = dto.SortOrder,
                           IsActive = dto.IsActive,
-                          CreatedAt = DateTime.Now
+                          CreatedAt = DateTime.Now,
+                          ValueType = string.IsNullOrEmpty(dto.ValueType) ? "checkbox" : dto.ValueType.Trim().ToLower(),
+                          Unit = dto.Unit?.Trim(),
+                          ValidationRules = dto.ValidationRules?.Trim(),
+                          Severity = string.IsNullOrEmpty(dto.Severity) ? "Information" : dto.Severity.Trim()
                     };
                     db.ChecklistDefinitions.Add(def);
                     db.SaveChanges();
                     resultDef = def;
+
+                    if (dto.Options != null && dto.Options.Count > 0)
+                    {
+                        foreach (var optDto in dto.Options)
+                        {
+                            db.ChecklistDefinitionOptions.Add(new ChecklistDefinitionOption
+                            {
+                                ChecklistDefinitionId = resultDef.Id,
+                                Value = optDto.Value?.Trim() ?? "",
+                                DisplayText = optDto.DisplayText?.Trim() ?? "",
+                                Color = optDto.Color?.Trim(),
+                                SortOrder = optDto.SortOrder,
+                                IsDefault = optDto.IsDefault,
+                                IsActive = optDto.IsActive
+                            });
+                        }
+                        db.SaveChanges();
+                    }
                 }
                 else
                 {
@@ -459,9 +496,35 @@ END');
                     def.IsRequired = dto.IsRequired;
                     def.SortOrder = dto.SortOrder;
                     def.IsActive = dto.IsActive;
+                    def.ValueType = string.IsNullOrEmpty(dto.ValueType) ? "checkbox" : dto.ValueType.Trim().ToLower();
+                    def.Unit = dto.Unit?.Trim();
+                    def.ValidationRules = dto.ValidationRules?.Trim();
+                    def.Severity = string.IsNullOrEmpty(dto.Severity) ? "Information" : dto.Severity.Trim();
 
                     db.SaveChanges();
                     resultDef = def;
+
+                    var oldOpts = db.ChecklistDefinitionOptions.Where(o => o.ChecklistDefinitionId == def.Id).ToList();
+                    db.ChecklistDefinitionOptions.RemoveRange(oldOpts);
+                    db.SaveChanges();
+
+                    if (dto.Options != null && dto.Options.Count > 0)
+                    {
+                        foreach (var optDto in dto.Options)
+                        {
+                            db.ChecklistDefinitionOptions.Add(new ChecklistDefinitionOption
+                            {
+                                ChecklistDefinitionId = resultDef.Id,
+                                Value = optDto.Value?.Trim() ?? "",
+                                DisplayText = optDto.DisplayText?.Trim() ?? "",
+                                Color = optDto.Color?.Trim(),
+                                SortOrder = optDto.SortOrder,
+                                IsDefault = optDto.IsDefault,
+                                IsActive = optDto.IsActive
+                            });
+                        }
+                        db.SaveChanges();
+                    }
                 }
 
                 // Trigger schedule generation event-driven
@@ -701,6 +764,12 @@ END');
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
 
+        public string ValueType { get; set; }
+        public string Unit { get; set; }
+        public string ValidationRules { get; set; }
+        public string Severity { get; set; }
+        public List<ChecklistDefinitionOptionDTO> Options { get; set; }
+
         private int? ConvertToNullableInt(object value)
         {
             if (value == null) return null;
@@ -724,5 +793,16 @@ END');
             if (parsed <= 0) return null;
             return parsed;
         }
+    }
+
+    public class ChecklistDefinitionOptionDTO
+    {
+        public int Id { get; set; }
+        public string Value { get; set; }
+        public string DisplayText { get; set; }
+        public string Color { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsDefault { get; set; }
+        public bool IsActive { get; set; }
     }
 }
