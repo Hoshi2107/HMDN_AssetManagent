@@ -23,10 +23,10 @@
                 </button>
             </div>
             @*<div class="topbar-actions">
-                <span class="total-badge">
-                    Tổng: ${ filteredList.length } lịch
-                </span>
-            </div>*@
+                    <span class="total-badge">
+                        Tổng: ${ filteredList.length } lịch
+                    </span>
+                </div>*@
         </header>
 
         <main class="page-content">
@@ -377,6 +377,9 @@
 
                     <div style="margin-top:18px;text-align:right"
                          v-if="selected.MaintenanceType === 'renewal' && selected.Status === 'active'">
+                        <button class="btn-secondary" v-on:click="openEditSchedule(selected)">
+                            ✏️ Sửa lịch
+                        </button>
                         <button class="btn-primary" v-on:click="completeRenewal(selected)">
                             ✅ Đã gia hạn xong
                         </button>
@@ -409,7 +412,7 @@
                     </div>
                     <div>
                         <label>
-                            <input type="checkbox" v-model="newRenewal.IsRecurring"/> Lặp lại định kỳ
+                            <input type="checkbox" v-model="newRenewal.IsRecurring" /> Lặp lại định kỳ
                         </label>
                     </div>
                     <div v-if="newRenewal.IsRecurring">
@@ -420,6 +423,71 @@
                 <div style="margin-top:16px;text-align:right">
                     <button class="btn-secondary" v-on:click="showAddRenewal = false">Hủy</button>
                     <button class="btn-primary" v-on:click="submitRenewal()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal sửa lịch -->
+    <div class="modal-overlay" v-if="showEditSchedule" v-on:click.self="showEditSchedule = false">
+        <div class="device-modal">
+            <div class="modal-header">
+                <h3>✏️ Sửa lịch gia hạn</h3>
+                <button class="close-btn" v-on:click="showEditSchedule = false">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div>
+                        <label>Tên lịch *</label>
+                        <input type="text" v-model="editSchedule.ScheduleName" class="form-input" />
+                    </div>
+                    <div>
+                        <label>Ngày đến hạn *</label>
+                        <input type="date" v-model="editSchedule.NextMaintenanceDate" class="form-input" />
+                    </div>
+                    <div>
+                        <label>Nhắc trước (ngày)</label>
+                        <input type="number" v-model.number="editSchedule.ReminderDays" class="form-input" />
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" v-model="editSchedule.IsRecurring" /> Lặp lại định kỳ
+                        </label>
+                    </div>
+                    <div v-if="editSchedule.IsRecurring">
+                        <label>Chu kỳ (tháng)</label>
+                        <input type="number" v-model.number="editSchedule.RecurringMonths" class="form-input" />
+                    </div>
+                </div>
+                <div style="margin-top:16px;text-align:right">
+                    <button class="btn-secondary" v-on:click="showEditSchedule = false">Hủy</button>
+                    <button class="btn-primary" v-on:click="submitEditSchedule()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal xác nhận hoàn thành gia hạn -->
+    <div class="modal-overlay" v-if="showCompleteConfirm" v-on:click.self="showCompleteConfirm = false">
+        <div class="device-modal">
+            <div class="modal-header">
+                <h3>✅ Xác nhận đã gia hạn xong</h3>
+                <button class="close-btn" v-on:click="showCompleteConfirm = false">×</button>
+            </div>
+            <div class="modal-body" v-if="completeTarget">
+                <p>Xác nhận đã gia hạn xong "<b>${ completeTarget.ItemName || completeTarget.ScheduleName }</b>"?</p>
+
+                <div v-if="completeTarget.IsRecurring" style="margin-top:12px">
+                    <label>Ngày đến hạn tiếp theo (có thể chỉnh nếu có thay đổi)</label>
+                    <input type="date" v-model="completeNextDate" class="form-input" />
+                </div>
+                <div v-else style="margin-top:12px;color:#94a3b8">
+                    Lịch này không lặp lại nên sẽ không tạo lịch tiếp theo.
+                </div>
+
+                <div style="margin-top:16px;text-align:right">
+                    <button class="btn-secondary" v-on:click="showCompleteConfirm = false">Hủy</button>
+                    <button class="btn-primary" v-on:click="confirmCompleteRenewal()">Xác nhận</button>
                 </div>
             </div>
         </div>
