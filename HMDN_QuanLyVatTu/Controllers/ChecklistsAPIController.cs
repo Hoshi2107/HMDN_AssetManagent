@@ -248,11 +248,16 @@ namespace HMDN_QuanLyVatTu.Controllers
         [HttpGet]
         [Route("template")]
         [Route("~/api/checklist/template")]
-        public IHttpActionResult GetChecklistTemplate(int scope, int targetId, string cycleType = null)
+        public IHttpActionResult GetChecklistTemplate(int scope, int targetId, string cycleType = null, string scheduledDate = null)
         {
             try
             {
                 int? resolvedTemplateVersionId = null;
+                DateTime? sDate = null;
+                if (!string.IsNullOrEmpty(scheduledDate) && DateTime.TryParse(scheduledDate, out DateTime tempDate))
+                {
+                    sDate = tempDate;
+                }
 
                 // 1. Resolve template version using mapping
                 var mapping = db.ChecklistTemplateMappings
@@ -308,8 +313,42 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                     if (version != null)
                     {
-                        var items = version.Definitions
-                            .Where(d => d.IsActive)
+                        var defsQuery = version.Definitions.Where(d => d.IsActive);
+
+                        if (!string.IsNullOrEmpty(cycleType))
+                        {
+                            var cycle = cycleType.ToLower();
+                            if (cycle == "daily")
+                            {
+                                // Đối với ca kiểm tra hàng ngày, chỉ đưa vào hạng mục hàng tuần nếu là thứ Hai, hàng tháng nếu là ngày 1
+                                defsQuery = defsQuery.Where(d =>
+                                    string.IsNullOrEmpty(d.CycleType) ||
+                                    d.CycleType.ToLower() == "daily" ||
+                                    (d.CycleType.ToLower() == "weekly" && sDate.HasValue && sDate.Value.DayOfWeek == DayOfWeek.Monday) ||
+                                    (d.CycleType.ToLower() == "monthly" && sDate.HasValue && sDate.Value.Day == 1) ||
+                                    (d.CycleType.ToLower() == "yearly" && sDate.HasValue && sDate.Value.Day == 1 && sDate.Value.Month == 1)
+                                );
+                            }
+                            else if (cycle == "weekly")
+                            {
+                                defsQuery = defsQuery.Where(d =>
+                                    string.IsNullOrEmpty(d.CycleType) ||
+                                    d.CycleType.ToLower() == "daily" ||
+                                    d.CycleType.ToLower() == "weekly"
+                                );
+                            }
+                            else if (cycle == "monthly")
+                            {
+                                defsQuery = defsQuery.Where(d =>
+                                    string.IsNullOrEmpty(d.CycleType) ||
+                                    d.CycleType.ToLower() == "daily" ||
+                                    d.CycleType.ToLower() == "weekly" ||
+                                    d.CycleType.ToLower() == "monthly"
+                                );
+                            }
+                        }
+
+                        var items = defsQuery
                             .OrderBy(d => d.SortOrder)
                             .ThenBy(d => d.Id)
                             .Select(d => new
@@ -351,9 +390,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (scope == 3)
                 {
                     var legacyDefs = db.Database.SqlQuery<ChecklistDefinition>(
-                        "EXEC sp_GetChecklistForInventory @InventoryId, @CycleType",
+                        "EXEC sp_GetChecklistForInventory @InventoryId, @CycleType, @ScheduledDate",
                         new SqlParameter("@InventoryId", targetId),
-                        new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType)
+                        new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType),
+                        new SqlParameter("@ScheduledDate", sDate.HasValue ? (object)sDate.Value : DBNull.Value)
                     ).ToList();
 
                     var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
@@ -370,7 +410,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                         Severity = d.Severity ?? "Information",
                         d.IsRequired,
                         d.SortOrder,
-                        Options = new List<object>()
+                        Options = db.ChecklistDefinitionOptions
+                            .Where(o => o.ChecklistDefinitionId == d.Id && o.IsActive)
+                            .OrderBy(o => o.SortOrder)
+                            .Select(o => new
+                            {
+                                o.Value,
+                                o.DisplayText,
+                                o.Color,
+                                o.IsDefault
+                            }).ToList()
                     }).ToList();
 
                     return Ok(new
@@ -398,6 +447,12 @@ namespace HMDN_QuanLyVatTu.Controllers
         [Route("~/api/checklist/save")]
         public IHttpActionResult SaveChecklist([FromBody] ChecklistLogPayload payload)
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage + " " + e.Exception?.Message).ToList();
+                return Content(System.Net.HttpStatusCode.BadRequest, new { success = false, message = "Dữ liệu không hợp lệ: " + string.Join("; ", errors) });
+            }
+
             try
             {
                 if (payload == null)
@@ -447,7 +502,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
                             OverallResult = payload.OverallResult ?? "pass",
-                            ApprovalStatus = (payload.OverallResult == "pass") ? "Approved" : "Pending",
+                            ApprovalStatus = "Pending",
                             Note = payload.Note,
                             QrLocation = payload.QrLocation,
                             ImageUrls = payload.ImageUrls
@@ -581,12 +636,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (!string.IsNullOrEmpty(approvalStatus))
                 {
                     query = query.Where(l => l.ApprovalStatus == approvalStatus);
-
-                    // Yêu cầu: Không hiển thị "pass" trong màn hình chờ duyệt để đỡ tốn thời gian duyệt
-                    if (approvalStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase))
-                    {
-                        query = query.Where(l => l.OverallResult != "pass" && l.OverallResult != "Pass");
-                    }
                 }
 
                 var logs = query

@@ -1065,7 +1065,13 @@ var appCatalog = new Vue({
                 Description: '',
                 IsRequired: true,
                 SortOrder: this.checklistDefinitions.filter(d => d.Scope === 'group').length + 1,
-                IsActive: true
+                IsActive: true,
+                ValueType: 'checkbox',
+                Unit: '',
+                MinVal: null,
+                MaxVal: null,
+                DefaultVal: null,
+                OptionsText: ''
             };
             this.showDefinitionForm = true;
         },
@@ -1079,6 +1085,28 @@ var appCatalog = new Vue({
             this.showItemDropdown = false;
             this.showInventoryDropdown = false;
             this.definitionFormInventories = [];
+
+            let minVal = null;
+            let maxVal = null;
+            let defaultVal = null;
+            if (def.ValidationRules) {
+                try {
+                    let rules = typeof def.ValidationRules === 'string' ? JSON.parse(def.ValidationRules) : def.ValidationRules;
+                    if (rules) {
+                        minVal = rules.min !== undefined ? rules.min : null;
+                        maxVal = rules.max !== undefined ? rules.max : null;
+                        defaultVal = rules.defaultValue !== undefined ? rules.defaultValue : null;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            let optionsText = '';
+            if (def.Options && def.Options.length > 0) {
+                optionsText = def.Options.map(o => (o.IsDefault ? '*' : '') + o.DisplayText).join('\n');
+            }
+
             this.definitionForm = {
                 Id: def.Id,
                 GroupId: def.GroupId,
@@ -1090,7 +1118,13 @@ var appCatalog = new Vue({
                 Description: def.Description || '',
                 IsRequired: def.IsRequired,
                 SortOrder: def.SortOrder,
-                IsActive: def.IsActive
+                IsActive: def.IsActive,
+                ValueType: def.ValueType || 'checkbox',
+                Unit: def.Unit || '',
+                MinVal: minVal,
+                MaxVal: maxVal,
+                DefaultVal: defaultVal,
+                OptionsText: optionsText
             };
             if (def.ItemId) {
                 this.loadItemInventories(def.ItemId);
@@ -1117,7 +1151,47 @@ var appCatalog = new Vue({
                     return;
                 }
             }
+            let rules = {};
+            if (this.definitionForm.ValueType === 'number') {
+                if (this.definitionForm.MinVal !== null && this.definitionForm.MinVal !== undefined && this.definitionForm.MinVal !== '') {
+                    rules.min = parseFloat(this.definitionForm.MinVal);
+                }
+                if (this.definitionForm.MaxVal !== null && this.definitionForm.MaxVal !== undefined && this.definitionForm.MaxVal !== '') {
+                    rules.max = parseFloat(this.definitionForm.MaxVal);
+                }
+                if (this.definitionForm.DefaultVal !== null && this.definitionForm.DefaultVal !== undefined && this.definitionForm.DefaultVal !== '') {
+                    rules.defaultValue = parseFloat(this.definitionForm.DefaultVal);
+                }
+            }
+            this.definitionForm.ValidationRules = Object.keys(rules).length > 0 ? JSON.stringify(rules) : null;
+
+            let options = [];
+            if (this.definitionForm.ValueType === 'select' && this.definitionForm.OptionsText) {
+                let lines = this.definitionForm.OptionsText.split('\n').map(l => l.trim()).filter(l => l !== '');
+                options = lines.map((line, idx) => {
+                    let isDefault = false;
+                    let val = line;
+                    if (line.startsWith('*')) {
+                        isDefault = true;
+                        val = line.substring(1).trim();
+                    } else if (idx === 0) {
+                        isDefault = true;
+                    }
+                    // Simple slugify / clean text helper
+                    let safeVal = val.toLowerCase().replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s-]/g, '').trim().replace(/\s+/g, '_');
+                    return {
+                        Value: safeVal || 'opt_' + idx,
+                        DisplayText: val,
+                        SortOrder: idx + 1,
+                        IsDefault: isDefault,
+                        IsActive: true
+                    };
+                });
+            }
+
             var postData = Object.assign({}, this.definitionForm);
+            postData.Options = options;
+            postData.Severity = 'Information';
             this.normalizeNullableIntegers(postData, ['ItemId', 'InventoryId', 'GroupId']);
 
             this.isSavingDefinition = true;

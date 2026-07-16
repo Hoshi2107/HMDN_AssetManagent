@@ -174,9 +174,9 @@ new Vue({
             var vm = this;
             if (!vm.checklistItems || vm.checklistItems.length === 0) return { passed: 0, total: 0, percentage: 0 };
             var passed = vm.checklistItems.filter(i => i.isPassed === true).length;
-            var evaluated = vm.checklistItems.filter(i => i.isPassed !== null).length;
-            var percentage = evaluated > 0 ? Math.round((passed / evaluated) * 100) : 0;
-            return { passed, total: evaluated, percentage };
+            var total = vm.checklistItems.length;
+            var percentage = Math.round((passed / total) * 100);
+            return { passed, total: total, percentage };
         },
         detailLogProgress() {
             var vm = this;
@@ -696,7 +696,7 @@ new Vue({
             var isAsset = !!sch.InventoryId;
             var scope = isAsset ? 3 : 4;
             var targetId = isAsset ? sch.InventoryId : sch.LocationId;
-            var url = '/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + (sch.CycleType || '');
+            var url = '/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + (sch.CycleType || '') + '&scheduledDate=' + (sch.ScheduledDate || '');
 
             fetch(url)
                 .then(function (r) { return r.json(); })
@@ -1331,7 +1331,7 @@ new Vue({
                             Options: item.Options || [],
                             isPassed: null,
                             numericValue: null,
-                            stringValue: item.ValueType === 'select' ? (item.Options.find(o => o.IsDefault)?.Value || '') : '',
+                            stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault; })) ? item.Options.find(function(o) { return o.IsDefault; }).Value : '') : '',
                             note: ''
                         };
                     });
@@ -1349,7 +1349,7 @@ new Vue({
                 return;
             }
 
-            fetch('/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + schedule.CycleType)
+            fetch('/api/checklists/template?scope=' + scope + '&targetId=' + targetId + '&cycleType=' + schedule.CycleType + '&scheduledDate=' + (schedule.ScheduledDate || ''))
                 .then(function (r) { return r.json(); })
                 .then(function (res) {
                     vm.performLoading = false;
@@ -1385,7 +1385,7 @@ new Vue({
                                 Options: item.Options || [],
                                 isPassed: null,
                                 numericValue: null,
-                                stringValue: item.ValueType === 'select' ? (item.Options.find(o => o.IsDefault)?.Value || '') : '',
+                                stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault; })) ? item.Options.find(function(o) { return o.IsDefault; }).Value : '') : '',
                                 note: ''
                             };
                         });
@@ -1401,7 +1401,65 @@ new Vue({
 
 
         setItemPassed(index, val) {
-            this.checklistItems[index].isPassed = val;
+            var item = this.checklistItems[index];
+            item.isPassed = val;
+            if (val === true) {
+                if (item.ValueType === 'number') {
+                    if (item.numericValue === null || item.numericValue === '') {
+                        item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
+                    }
+                } else if (item.ValueType === 'select') {
+                    if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
+                        var def = item.Options.find(function(o) { return o.IsDefault; });
+                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                    }
+                }
+            } else if (val === false) {
+                if (item.ValueType === 'select') {
+                    var faultOpt = item.Options.find(function(o) { return o.Value.toLowerCase() === 'fault' || o.Value.toLowerCase() === 'lỗi'; });
+                    item.stringValue = faultOpt ? faultOpt.Value : (item.Options[0] ? item.Options[0].Value : 'fault');
+                }
+            }
+        },
+
+        onNumericInput(index) {
+            var item = this.checklistItems[index];
+            var val = parseFloat(item.numericValue);
+            if (!isNaN(val)) {
+                if (item.ValidationRules) {
+                    var rules = item.ValidationRules;
+                    var isMinFail = rules.min !== undefined && rules.min !== null && val < rules.min;
+                    var isMaxFail = rules.max !== undefined && rules.max !== null && val > rules.max;
+                    if (isMinFail || isMaxFail) {
+                        item.isPassed = false;
+                    } else {
+                        item.isPassed = true;
+                    }
+                } else {
+                    item.isPassed = true;
+                }
+            } else {
+                item.isPassed = null;
+            }
+        },
+
+        onSelectChange(index) {
+            var item = this.checklistItems[index];
+            if (item.stringValue) {
+                var isFault = item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi';
+                item.isPassed = !isFault;
+            } else {
+                item.isPassed = null;
+            }
+        },
+
+        onTextInput(index) {
+            var item = this.checklistItems[index];
+            if (item.stringValue && item.stringValue.trim() !== '') {
+                item.isPassed = true;
+            } else {
+                item.isPassed = null;
+            }
         },
 
         bulkSetAllPassed() {
@@ -1410,11 +1468,17 @@ new Vue({
                 if (confirm("⚠️ Phát hiện một số hạng mục đang được đánh dấu là LỖI.\n\nBạn có muốn GIỮ LẠI các hạng mục LỖI này và chỉ tự động điền ĐẠT cho các mục còn lại không?\n(Bấm OK để Giữ lỗi + Điền đạt các mục còn lại. Bấm Cancel để xem tùy chọn Ghi đè TẤT CẢ thành ĐẠT)")) {
                     var updatedCount = 0;
                     this.checklistItems.forEach(function (item) {
-                        if (item.ValueType === 'checkbox' && item.isPassed === null) {
+                        if (item.isPassed === null) {
                             item.isPassed = true;
                             updatedCount++;
-                        } else if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
-                            item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
+                            if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
+                                item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
+                            } else if (item.ValueType === 'select') {
+                                if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
+                                    var def = item.Options.find(function(o) { return o.IsDefault; });
+                                    item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                                }
+                            }
                         }
                     });
                     this.toast('Thành công', 'Đã đặt kết quả ĐẠT cho các hạng mục còn lại.', 'success');
@@ -1426,13 +1490,16 @@ new Vue({
                 }
             }
             this.checklistItems.forEach(function (item) {
-                if (item.ValueType === 'checkbox') {
-                    item.isPassed = true;
-                } else if (item.ValueType === 'number') {
-                    item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
+                item.isPassed = true;
+                if (item.ValueType === 'number') {
+                    if (item.numericValue === null || item.numericValue === '') {
+                        item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
+                    }
                 } else if (item.ValueType === 'select') {
-                    var def = item.Options.find(function(o) { return o.IsDefault; });
-                    item.stringValue = def ? def.Value : (item.Options[0] ? item.Options[0].Value : '');
+                    if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
+                        var def = item.Options.find(function(o) { return o.IsDefault; });
+                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                    }
                 }
             });
             this.toast('Thành công', 'Đã đặt kết quả ĐẠT/Mặc định cho toàn bộ ' + this.checklistItems.length + ' hạng mục.', 'success');
@@ -1441,16 +1508,15 @@ new Vue({
         markRemainingPassed() {
             var updatedCount = 0;
             this.checklistItems.forEach(function (item) {
-                if (item.ValueType === 'checkbox' && item.isPassed === null) {
+                if (item.isPassed === null) {
                     item.isPassed = true;
                     updatedCount++;
-                } else if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
-                    item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : null;
-                    updatedCount++;
-                } else if (item.ValueType === 'select' && (item.stringValue === null || item.stringValue === '')) {
-                    var def = item.Options.find(function(o) { return o.IsDefault; });
-                    item.stringValue = def ? def.Value : (item.Options[0] ? item.Options[0].Value : '');
-                    updatedCount++;
+                    if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
+                        item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
+                    } else if (item.ValueType === 'select' && (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi')) {
+                        var def = item.Options.find(function(o) { return o.IsDefault; });
+                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                    }
                 }
             });
             if (updatedCount > 0) {
@@ -1624,9 +1690,9 @@ new Vue({
                 return;
             }
 
-            // 2. Determine Overall Result (fail if any checkbox is false or select is 'fault')
+            // 2. Determine Overall Result (fail if any item is marked false/lỗi or select is 'fault')
             var hasFailed = vm.checklistItems.some(function (item) {
-                if (item.ValueType === 'checkbox' && item.isPassed === false) return true;
+                if (item.isPassed === false) return true;
                 if (item.ValueType === 'select' && (item.stringValue === 'fault' || item.stringValue === 'lỗi')) return true;
                 return false;
             });
@@ -1647,16 +1713,14 @@ new Vue({
                 QrLocation: vm.activeSchedule.LocationName || vm.activeSchedule.DepartmentName || '',
                 ImageUrls: '',
                 Items: vm.checklistItems.map(function (i) {
-                    var passVal = true;
-                    if (i.ValueType === 'checkbox') {
-                        passVal = i.isPassed !== false;
-                    } else if (i.ValueType === 'select') {
-                        passVal = i.stringValue !== 'fault' && i.stringValue !== 'lỗi';
+                    var passVal = i.isPassed !== false;
+                    if (i.ValueType === 'select') {
+                        passVal = passVal && i.stringValue !== 'fault' && i.stringValue !== 'lỗi';
                     }
                     return {
                         DefinitionId: i.DefinitionId,
                         IsPassed: passVal,
-                        NumericValue: i.numericValue !== '' ? i.numericValue : null,
+                        NumericValue: i.numericValue !== '' && i.numericValue !== null ? i.numericValue : null,
                         StringValue: i.stringValue || null,
                         Note: i.note
                     };

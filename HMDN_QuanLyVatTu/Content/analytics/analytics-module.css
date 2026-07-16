@@ -251,8 +251,8 @@
 
 @media (max-width: 576px) {
     .kpi-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
     }
     #analytics-module-hub .card {
         padding: 12px 14px !important;

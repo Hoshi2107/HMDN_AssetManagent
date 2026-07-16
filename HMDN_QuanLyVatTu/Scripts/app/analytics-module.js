@@ -619,17 +619,19 @@ window.addEventListener('DOMContentLoaded', function () {
                 $.getJSON(window.AnalyticsEndpoints.getFrequency, { year: vm.selectedYear }, function (res) {
                     if (res && res.length > 0) {
                         var dynamicLabels = res.map(function (x) { return x.MonthLabel; });
-                        var dynamicCounts = res.map(function (x) { return Number(x.MaintenanceCount); });
-                        vm.renderMonthlyMaintenanceChart(dynamicLabels, dynamicCounts);
+                        var maintCounts = res.map(function (x) { return Number(x.MaintenanceCount); });
+                        var repairCounts = res.map(function (x) { return Number(x.RepairCount || 0); });
+                        vm.renderMonthlyMaintenanceChart(dynamicLabels, maintCounts, repairCounts);
                     } else {
                         var defaultLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-                        var defaultCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-                        vm.renderMonthlyMaintenanceChart(defaultLabels, defaultCounts);
+                        var defaultMaint = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                        var defaultRepair = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                        vm.renderMonthlyMaintenanceChart(defaultLabels, defaultMaint, defaultRepair);
                     }
                 });
             },
             // Cập nhật Line Chart sử dụng .update()
-            renderMonthlyMaintenanceChart: function (labels, maintenanceCounts) {
+            renderMonthlyMaintenanceChart: function (labels, maintenanceCounts, repairCounts) {
                 var chartElement = document.getElementById('maintenanceMonthlyChart');
                 if (!chartElement) return;
                 var ctx = chartElement.getContext('2d');
@@ -637,6 +639,7 @@ window.addEventListener('DOMContentLoaded', function () {
                 if (this.monthlyMaintenanceChart) {
                     this.monthlyMaintenanceChart.data.labels = labels;
                     this.monthlyMaintenanceChart.data.datasets[0].data = maintenanceCounts;
+                    this.monthlyMaintenanceChart.data.datasets[1].data = repairCounts;
                     this.monthlyMaintenanceChart.update();
                     return;
                 }
@@ -645,16 +648,28 @@ window.addEventListener('DOMContentLoaded', function () {
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            label: 'Số lượt bảo trì / sửa chữa',
-                            data: maintenanceCounts,
-                            borderColor: '#f59e0b',
-                            backgroundColor: 'rgba(245, 158, 11, 0.05)',
-                            fill: true,
-                            tension: 0.3,
-                            borderWidth: 2,
-                            pointRadius: 3
-                        }]
+                        datasets: [
+                            {
+                                label: 'Số lượt bảo trì (Checklist)',
+                                data: maintenanceCounts,
+                                borderColor: '#0ea5e9',
+                                backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                                fill: true,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: 3
+                            },
+                            {
+                                label: 'Số lần sửa chữa',
+                                data: repairCounts,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.05)',
+                                fill: true,
+                                tension: 0.3,
+                                borderWidth: 2,
+                                pointRadius: 3
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
