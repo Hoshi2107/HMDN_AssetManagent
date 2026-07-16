@@ -1,4 +1,4 @@
-﻿public class GroupVM
+public class GroupVM
 {
     public int Id { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using HMS.Data;
+using HMS.Data;
 using OfficeOpenXml;
 using OfficeOpenXml.DataValidation;
 using System.Data.SqlClient;

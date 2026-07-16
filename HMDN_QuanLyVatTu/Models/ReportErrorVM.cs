@@ -1,4 +1,4 @@
-﻿public class ReportErrorVM
+public class ReportErrorVM
 {
     public int InventoryId { get; set; }
     public int? TicketId { get; set; }

@@ -706,7 +706,7 @@ new Vue({
                             var stringVal = null;
                             if (item.ValueType === 'select') {
                                 var defaultOpt = (item.Options || []).find(function (o) { return o.IsDefault || o.isDefault; });
-                                stringVal = defaultOpt ? defaultOpt.Value : 'normal';
+                                stringVal = defaultOpt ? (defaultOpt.Value || defaultOpt.value) : 'normal';
                             }
                             return {
                                 DefinitionId: item.Id,
@@ -1331,7 +1331,7 @@ new Vue({
                             Options: item.Options || [],
                             isPassed: null,
                             numericValue: null,
-                            stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault; })) ? item.Options.find(function(o) { return o.IsDefault; }).Value : '') : '',
+                            stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault || o.isDefault; })) ? (item.Options.find(function(o) { return o.IsDefault || o.isDefault; }).Value || item.Options.find(function(o) { return o.IsDefault || o.isDefault; }).value) : '') : '',
                             note: ''
                         };
                     });
@@ -1385,7 +1385,7 @@ new Vue({
                                 Options: item.Options || [],
                                 isPassed: null,
                                 numericValue: null,
-                                stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault; })) ? item.Options.find(function(o) { return o.IsDefault; }).Value : '') : '',
+                                stringValue: item.ValueType === 'select' ? ((item.Options && item.Options.find(function(o) { return o.IsDefault || o.isDefault; })) ? (item.Options.find(function(o) { return o.IsDefault || o.isDefault; }).Value || item.Options.find(function(o) { return o.IsDefault || o.isDefault; }).value) : '') : '',
                                 note: ''
                             };
                         });
@@ -1410,14 +1410,26 @@ new Vue({
                     }
                 } else if (item.ValueType === 'select') {
                     if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
-                        var def = item.Options.find(function(o) { return o.IsDefault; });
-                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                        var def = item.Options.find(function(o) { return o.IsDefault || o.isDefault; });
+                        item.stringValue = def ? (def.Value || def.value) : (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }) ? (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).Value || item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).value) : '');
                     }
                 }
             } else if (val === false) {
                 if (item.ValueType === 'select') {
-                    var faultOpt = item.Options.find(function(o) { return o.Value.toLowerCase() === 'fault' || o.Value.toLowerCase() === 'lỗi'; });
-                    item.stringValue = faultOpt ? faultOpt.Value : (item.Options[0] ? item.Options[0].Value : 'fault');
+                    var faultOpt = item.Options.find(function(o) { 
+                        var v = (o.Value || o.value || '').toLowerCase();
+                        return v === 'fault' || v === 'lỗi'; 
+                    });
+                    item.stringValue = faultOpt ? (faultOpt.Value || faultOpt.value) : (item.Options[0] ? (item.Options[0].Value || item.Options[0].value) : 'fault');
                 }
             }
         },
@@ -1475,8 +1487,17 @@ new Vue({
                                 item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
                             } else if (item.ValueType === 'select') {
                                 if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
-                                    var def = item.Options.find(function(o) { return o.IsDefault; });
-                                    item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                                    var def = item.Options.find(function(o) { return o.IsDefault || o.isDefault; });
+                                    item.stringValue = def ? (def.Value || def.value) : (item.Options.find(function(o) { 
+                                        var v = (o.Value || o.value || '').toLowerCase();
+                                        return v !== 'fault' && v !== 'lỗi'; 
+                                    }) ? (item.Options.find(function(o) { 
+                                        var v = (o.Value || o.value || '').toLowerCase();
+                                        return v !== 'fault' && v !== 'lỗi'; 
+                                    }).Value || item.Options.find(function(o) { 
+                                        var v = (o.Value || o.value || '').toLowerCase();
+                                        return v !== 'fault' && v !== 'lỗi'; 
+                                    }).value) : '');
                                 }
                             }
                         }
@@ -1497,8 +1518,17 @@ new Vue({
                     }
                 } else if (item.ValueType === 'select') {
                     if (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi') {
-                        var def = item.Options.find(function(o) { return o.IsDefault; });
-                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                        var def = item.Options.find(function(o) { return o.IsDefault || o.isDefault; });
+                        item.stringValue = def ? (def.Value || def.value) : (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }) ? (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).Value || item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).value) : '');
                     }
                 }
             });
@@ -1514,8 +1544,17 @@ new Vue({
                     if (item.ValueType === 'number' && (item.numericValue === null || item.numericValue === '')) {
                         item.numericValue = item.ValidationRules && item.ValidationRules.defaultValue !== undefined ? item.ValidationRules.defaultValue : (item.ValidationRules && item.ValidationRules.min !== undefined ? item.ValidationRules.min : null);
                     } else if (item.ValueType === 'select' && (item.stringValue === null || item.stringValue === '' || item.stringValue.toLowerCase() === 'fault' || item.stringValue.toLowerCase() === 'lỗi')) {
-                        var def = item.Options.find(function(o) { return o.IsDefault; });
-                        item.stringValue = def ? def.Value : (item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }) ? item.Options.find(function(o) { return o.Value.toLowerCase() !== 'fault' && o.Value.toLowerCase() !== 'lỗi'; }).Value : '');
+                        var def = item.Options.find(function(o) { return o.IsDefault || o.isDefault; });
+                        item.stringValue = def ? (def.Value || def.value) : (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }) ? (item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).Value || item.Options.find(function(o) { 
+                            var v = (o.Value || o.value || '').toLowerCase();
+                            return v !== 'fault' && v !== 'lỗi'; 
+                        }).value) : '');
                     }
                 }
             });

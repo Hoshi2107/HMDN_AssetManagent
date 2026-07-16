@@ -1,4 +1,4 @@
-﻿namespace HMS.Models.Catalog
+namespace HMS.Models.Catalog
 {
     public class GroupCreateDTO
     {

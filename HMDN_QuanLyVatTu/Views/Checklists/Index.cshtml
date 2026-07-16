@@ -1920,7 +1920,7 @@
                                     <template v-else-if="item.ValueType === 'select'">
                                         <select class="cl-select" style="height: 32px; width: 140px; font-size: 12.5px; padding: 4px 10px; border-radius: 6px;" v-model="item.stringValue" @@change="onSelectChange(idx)">
                                             <option value="">-- Chọn --</option>
-                                            <option v-for="opt in item.Options" :key="opt.Value" :value="opt.Value">${ opt.DisplayText }</option>
+                                            <option v-for="opt in item.Options" :key="opt.Value || opt.value" :value="opt.Value || opt.value">${ opt.DisplayText || opt.displayText }</option>
                                         </select>
                                     </template>
 

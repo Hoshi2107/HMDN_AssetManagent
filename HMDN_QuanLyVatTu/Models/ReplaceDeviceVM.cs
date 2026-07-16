@@ -1,4 +1,4 @@
-﻿public class ReplaceDeviceVM
+public class ReplaceDeviceVM
 {
     public int OldInventoryId { get; set; }
 

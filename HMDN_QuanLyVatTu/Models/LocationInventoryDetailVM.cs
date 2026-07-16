@@ -1,4 +1,4 @@
-﻿public class LocationInventoryDetailVM
+public class LocationInventoryDetailVM
 {
     // LOCATION
     public int LocationId { get; set; }

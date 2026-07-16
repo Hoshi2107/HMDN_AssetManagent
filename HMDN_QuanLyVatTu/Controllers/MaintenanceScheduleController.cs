@@ -1,4 +1,4 @@
-﻿using HMS.Data;
+using HMS.Data;
 using HMS.Models.ViewModels;
 using System;
 using System.Data.SqlClient;

@@ -1,4 +1,4 @@
-﻿namespace HMDN.Models.Location
+namespace HMDN.Models.Location
 {
     public class UpdateLocationVM
     {

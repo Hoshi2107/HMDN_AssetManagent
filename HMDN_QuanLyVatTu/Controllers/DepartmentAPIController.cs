@@ -1,4 +1,4 @@
-﻿using HMDN.Models.Department;
+using HMDN.Models.Department;
 using HMS.Data;
 using System;
 using System.Data.Entity;

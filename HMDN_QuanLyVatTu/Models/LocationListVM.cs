@@ -1,4 +1,4 @@
-﻿namespace HMS.Models.ViewModels
+namespace HMS.Models.ViewModels
 {
     public class LocationListVM
     {

@@ -1,4 +1,4 @@
-﻿var appDept = new Vue({
+var appDept = new Vue({
 
     el: '#app-dept',
 

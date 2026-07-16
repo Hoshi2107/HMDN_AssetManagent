@@ -1,4 +1,4 @@
-﻿public class SuspendDeviceVM
+public class SuspendDeviceVM
 {
     public int Id { get; set; }
 

@@ -1,4 +1,4 @@
-﻿// Models/ViewModels/CreateInventoryResult.cs
+// Models/ViewModels/CreateInventoryResult.cs
 public class CreateInventoryResult
 {
     public int Id { get; set; }
