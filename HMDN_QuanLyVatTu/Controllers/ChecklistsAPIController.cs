@@ -259,6 +259,56 @@ namespace HMDN_QuanLyVatTu.Controllers
                     sDate = tempDate;
                 }
 
+                // A. Check for dynamic checklist definitions first (Scope.Asset)
+                if (scope == 3)
+                {
+                    var dynamicDefs = db.Database.SqlQuery<ChecklistDefinition>(
+                        "EXEC sp_GetChecklistForInventory @InventoryId, @CycleType, @ScheduledDate",
+                        new SqlParameter("@InventoryId", targetId),
+                        new SqlParameter("@CycleType", string.IsNullOrEmpty(cycleType) ? (object)DBNull.Value : cycleType),
+                        new SqlParameter("@ScheduledDate", sDate.HasValue ? (object)sDate.Value : DBNull.Value)
+                    ).ToList();
+
+                    var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
+                    var resolvedItems = resolver.ResolveApplicableDefinitions(dynamicDefs);
+
+                    if (resolvedItems.Any())
+                    {
+                        var items = resolvedItems.Select(d => new
+                        {
+                            d.Id,
+                            d.CheckName,
+                            d.Description,
+                            ValueType = d.ValueType ?? "checkbox",
+                            Unit = d.Unit,
+                            ValidationRules = d.ValidationRules,
+                            Severity = d.Severity ?? "Information",
+                            d.IsRequired,
+                            d.SortOrder,
+                            Options = db.ChecklistDefinitionOptions
+                                .Where(o => o.ChecklistDefinitionId == d.Id && o.IsActive)
+                                .OrderBy(o => o.SortOrder)
+                                .Select(o => new
+                                {
+                                    o.Value,
+                                    o.DisplayText,
+                                    o.Color,
+                                    o.IsDefault
+                                }).ToList()
+                        }).ToList();
+
+                        return Ok(new
+                        {
+                            success = true,
+                            templateId = (int?)null,
+                            templateVersionId = (int?)null,
+                            templateName = "Dynamic Asset Checklist",
+                            versionNumber = 1,
+                            data = items
+                        });
+                    }
+                }
+
                 // 1. Resolve template version using mapping
                 var mapping = db.ChecklistTemplateMappings
                     .Where(m => m.Scope == scope && m.TargetId == targetId && m.IsActive)

@@ -16,38 +16,49 @@ namespace HMDN_QuanLyVatTu.Services
             DateTime firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
             DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
-            // Self-healing: Check if there are any active approved devices with check cycles
-            // that do not have any schedules generated in the current month for their specific cycle type
-            var hasMissingSchedulesQuery =
-                from inv in db.Inventories
-                where inv.LifeStatus == "active" && inv.ApprovalStatus == "approved" && inv.CheckCycleId != null
-                let expectedCycleType = inv.CheckCycle.CycleType
-                let hasCurrentMonthSchedules = db.ChecklistSchedules.Any(s =>
-                    s.InventoryId == inv.Id &&
-                    s.CycleType == expectedCycleType &&
-                    s.ScheduledDate >= firstDayOfMonth &&
-                    s.ScheduledDate <= lastDayOfMonth
-                )
-                let hasTemplateOrDefinition =
-                    db.ChecklistTemplateMappings.Any(m => m.IsActive &&
-                        (
-                            (m.Scope == 3 && m.TargetId == inv.Id) ||
-                            (m.Scope == 2 && inv.Item != null && m.TargetId == inv.Item.GroupId) ||
-                            (m.Scope == 1)
-                        )
-                    ) ||
-                    db.ChecklistDefinitions.Any(cd => cd.IsActive &&
-                        (
-                            cd.Scope == "global" ||
-                            (cd.Scope == "group" && inv.Item != null && cd.GroupId == inv.Item.GroupId) ||
-                            (cd.Scope == "item" && cd.ItemId == inv.ItemId) ||
-                            (cd.Scope == "inventory" && cd.InventoryId == inv.Id)
-                        )
-                    )
-                where hasTemplateOrDefinition && !hasCurrentMonthSchedules
-                select inv;
+            string sqlCheck = @"
+                SELECT TOP 1 1 
+                FROM Inventory inv
+                JOIN CheckCycles cy ON inv.CheckCycleId = cy.Id
+                JOIN Items it ON inv.ItemId = it.Id
+                WHERE inv.LifeStatus = 'active' 
+                  AND inv.ApprovalStatus = 'approved'
+                  AND (
+                      EXISTS (
+                          SELECT 1 FROM ChecklistTemplateMappings m
+                          WHERE m.IsActive = 1
+                            AND m.CycleType = cy.CycleType
+                            AND (
+                              (m.Scope = 3 AND m.TargetId = inv.Id)
+                              OR (m.Scope = 2 AND m.TargetId = it.GroupId)
+                              OR (m.Scope = 1)
+                            )
+                      )
+                      OR EXISTS (
+                          SELECT 1 FROM ChecklistDefinitions cd
+                          WHERE cd.IsActive = 1
+                            AND (cd.CycleType IS NULL OR cd.CycleType = cy.CycleType)
+                            AND (
+                              cd.Scope = 'global'
+                              OR (cd.Scope = 'group' AND cd.GroupId = it.GroupId)
+                              OR (cd.Scope = 'item' AND cd.ItemId = inv.ItemId)
+                              OR (cd.Scope = 'inventory' AND cd.InventoryId = inv.Id)
+                            )
+                      )
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM ChecklistSchedules s
+                      WHERE s.InventoryId = inv.Id
+                        AND s.CycleType = cy.CycleType
+                        AND s.ScheduledDate >= @FirstDay
+                        AND s.ScheduledDate <= @LastDay
+                  );";
 
-            bool hasMissingSchedules = hasMissingSchedulesQuery.Any();
+            bool hasMissingSchedules = db.Database.SqlQuery<int>(
+                sqlCheck,
+                new SqlParameter("@FirstDay", firstDayOfMonth),
+                new SqlParameter("@LastDay", lastDayOfMonth)
+            ).Any();
 
             if (hasMissingSchedules)
             {
