@@ -236,7 +236,15 @@ namespace HMDN.Controllers.API
         public IHttpActionResult Items()
         {
             var data = db.Database.SqlQuery<DropdownVM>(
-                "SELECT Id, Name FROM Items WHERE IsActive = 1 ORDER BY Name"
+                @"SELECT Id, 
+                         Name + CASE 
+                            WHEN (Brand IS NOT NULL AND Brand <> '') OR (Model IS NOT NULL AND Model <> '') 
+                            THEN ' (' + ISNULL(NULLIF(Brand, ''), '—') + CASE WHEN Model IS NOT NULL AND Model <> '' THEN ' - ' + Model ELSE '' END + ')' 
+                            ELSE '' 
+                         END AS Name 
+                  FROM Items 
+                  WHERE IsActive = 1 
+                  ORDER BY Name"
             ).ToList();
             return Ok(data);
         }

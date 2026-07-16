@@ -106,6 +106,9 @@ var appCatalog = new Vue({
         showToolbarItemDropdown: false,
         toolbarItemDropdownSearch: '',
 
+        // ── GROUPED ITEMS (tránh duplicate tên) ──
+        expandedGroupedItemNames: {}, // { [normalizedName]: true/false }
+
         toast: { show: false, msg: '' }
     },
 
@@ -293,13 +296,41 @@ var appCatalog = new Vue({
             return list
         },
 
+        // Group items cùng tên lại để tránh duplicate
+        groupedFilteredItems() {
+            const list = this.filteredItems;
+            const map = {}; // key = normalized name
+            const order = [];
+
+            list.forEach(item => {
+                const key = (item.Name || '').trim().toLowerCase();
+                if (!map[key]) {
+                    map[key] = {
+                        _key: key,
+                        _representative: item, // item đầu tiên đại diện
+                        _variants: [],
+                    };
+                    order.push(key);
+                }
+                map[key]._variants.push(item);
+            });
+
+            return order.map(k => map[k]);
+        },
+
+        paginatedGroupedItems() {
+            const start = (this.currentPage - 1) * this.pageSize;
+            return this.groupedFilteredItems.slice(start, start + this.pageSize);
+        },
+
+        // Kept for backward compat (checklist uses filteredItems)
         paginatedItems() {
             const start = (this.currentPage - 1) * this.pageSize
             return this.filteredItems.slice(start, start + this.pageSize)
         },
 
         totalPages() {
-            return Math.max(1, Math.ceil(this.filteredItems.length / this.pageSize))
+            return Math.max(1, Math.ceil(this.groupedFilteredItems.length / this.pageSize))
         },
 
         inventoryTotalPages() {
@@ -365,11 +396,11 @@ var appCatalog = new Vue({
         },
 
         paginationInfo() {
-            const start = (this.currentPage - 1) * this.pageSize + 1
-            const end = Math.min(this.currentPage * this.pageSize, this.filteredItems.length)
-            return this.filteredItems.length === 0
-                ? '0'
-                : start + '-' + end + ' của ' + this.filteredItems.length
+            const total = this.groupedFilteredItems.length;
+            if (total === 0) return '0';
+            const start = (this.currentPage - 1) * this.pageSize + 1;
+            const end = Math.min(this.currentPage * this.pageSize, total);
+            return start + '-' + end + ' của ' + total;
         },
 
         filteredDetailInventories() {
@@ -735,9 +766,16 @@ var appCatalog = new Vue({
             this.itemFilterStatus = '';
             this.currentPage = 1;
             this.groupSubTab = 'items';
+            this.expandedGroupedItemNames = {}; // reset expand state
 
             this.loadItems(group.Id);
             this.loadChecklistDefinitions(group.Id);
+        },
+
+        // Toggle expand/collapse của nhóm items cùng tên
+        toggleGroupedItem(key) {
+            var current = this.expandedGroupedItemNames[key];
+            this.$set(this.expandedGroupedItemNames, key, !current);
         },
 
         // ── PAGINATION ──
