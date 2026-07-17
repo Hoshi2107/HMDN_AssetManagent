@@ -211,6 +211,7 @@
     <Compile Include="Models\InventoryReportModel.cs" />
     <Compile Include="Models\Item.cs" />
     <Compile Include="Models\ItemCreatDTO.cs" />
+    <Compile Include="Models\ItemUpdateDTO.cs" />
     <Compile Include="Models\ItemInventoryVM.cs" />
     <Compile Include="Models\ItemVM.cs" />
     <Compile Include="Models\Location.cs" />

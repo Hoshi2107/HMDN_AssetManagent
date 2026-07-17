@@ -2443,6 +2443,12 @@
                             <option :value="false">Ngưng</option>
                         </select>
                     </div>
+                    <div class="fg">
+                        <label>Nhóm thiết bị *</label>
+                        <select v-model="itemForm.GroupId">
+                            <option v-for="g in groups" :value="g.Id">${ g.Name }</option>
+                        </select>
+                    </div>
                     <div class="fg full">
                         <label>Mô tả</label>
                         <textarea placeholder="Mô tả thiết bị..." v-model="itemForm.Description"></textarea>

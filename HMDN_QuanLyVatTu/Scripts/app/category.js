@@ -973,9 +973,16 @@ var appCatalog = new Vue({
                 return;
             }
 
+            const url = this.isEditItem ? '/api/category/item/update' : '/api/category/item/create';
+            const type = this.isEditItem ? 'PUT' : 'POST';
+
+            // Lưu lại GroupId cũ trước khi gửi để biết có đổi nhóm không
+            const originalGroupId = this.activeGroup ? this.activeGroup.Id : null;
+            const newGroupId = this.itemForm.GroupId;
+
             $.ajax({
-                url: '/api/category/item/create',
-                type: 'POST',
+                url: url,
+                type: type,
                 contentType: 'application/json',
 
                 data: JSON.stringify(this.itemForm),
@@ -983,10 +990,19 @@ var appCatalog = new Vue({
                 success: (res) => {
 
                     this.showToast(res.message);
-
                     this.showItemForm = false;
 
-                    this.loadItems(this.activeGroup.Id);
+                    // Nếu item bị dời sang nhóm khác → switch activeGroup + reload
+                    if (this.isEditItem && newGroupId !== originalGroupId) {
+                        const newGroup = this.groups.find(g => g.Id === newGroupId);
+                        if (newGroup) {
+                            this.activeGroup = newGroup;
+                            this.showToast('✅ Đã chuyển sang nhóm: ' + newGroup.Name);
+                        }
+                        this.loadItems(newGroupId);
+                    } else {
+                        this.loadItems(this.activeGroup.Id);
+                    }
                 },
 
                 error: (err) => {
