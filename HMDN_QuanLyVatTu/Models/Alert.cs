@@ -16,8 +16,7 @@ namespace HMDN_QuanLyVatTu.Models
         [Required]
         public int AlertRuleId { get; set; }
 
-        [Required]
-        public int InventoryId { get; set; }
+        public int? InventoryId { get; set; }
 
         [Required]
         [StringLength(300)]

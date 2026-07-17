@@ -212,11 +212,12 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return BadRequest("Cảnh báo này đã được xử lý từ trước.");
                     }
 
-                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (!alert.InventoryId.HasValue) return BadRequest("Cảnh báo này không liên kết với thiết bị cụ thể.");
+                    var inventory = db.Inventories.Find(alert.InventoryId.Value);
                     if (inventory == null) return NotFound();
 
                     // Check active maintenance tasks (Status is not 'closed')
-                    bool hasActiveMaintenance = db.MaintenanceLogs.Any(l => l.InventoryId == alert.InventoryId && l.Status != "closed");
+                    bool hasActiveMaintenance = db.MaintenanceLogs.Any(l => l.InventoryId == alert.InventoryId.Value && l.Status != "closed");
 
                     // Check active ticket/operational tasks (tickets that are linked to this inventory and are not approved or rejected)
                     bool hasActiveTickets = false;
@@ -281,7 +282,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return BadRequest("Cảnh báo này đã được xử lý từ trước.");
                     }
 
-                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (!alert.InventoryId.HasValue) return BadRequest("Cảnh báo này không liên kết với thiết bị cụ thể.");
+                    var inventory = db.Inventories.Find(alert.InventoryId.Value);
                     if (inventory != null)
                     {
                         DateTime currentExpiry = inventory.WarrantyExpiry ?? DateTime.Today;
@@ -325,12 +327,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return BadRequest("Cảnh báo này đã được xử lý từ trước.");
                     }
 
+                    if (!alert.InventoryId.HasValue) return BadRequest("Cảnh báo này không liên kết với thiết bị cụ thể.");
                     var today = DateTime.Today;
                     string targetStatus = status == "skipped" ? "done" : status;
                     db.Database.ExecuteSqlCommand(
                         "UPDATE ChecklistSchedules SET Status = @status WHERE InventoryId = @invId AND Status = 'pending' AND DueDate < @today",
                         new System.Data.SqlClient.SqlParameter("@status", targetStatus),
-                        new System.Data.SqlClient.SqlParameter("@invId", alert.InventoryId),
+                        new System.Data.SqlClient.SqlParameter("@invId", alert.InventoryId.Value),
                         new System.Data.SqlClient.SqlParameter("@today", today)
                     );
 
@@ -367,7 +370,8 @@ namespace HMDN_QuanLyVatTu.Controllers
                         return BadRequest("Cảnh báo này đã được xử lý từ trước.");
                     }
 
-                    var inventory = db.Inventories.Find(alert.InventoryId);
+                    if (!alert.InventoryId.HasValue) return BadRequest("Cảnh báo này không liên kết với thiết bị cụ thể.");
+                    var inventory = db.Inventories.Find(alert.InventoryId.Value);
                     if (inventory != null)
                     {
                         inventory.Quantity += quantity;
@@ -415,7 +419,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         Body = a.Body,
                         Severity = a.Severity,
                         AssetCode = a.Inventory != null ? a.Inventory.AssetCode : "",
-                        ItemName = (a.Inventory != null && a.Inventory.Item != null) ? a.Inventory.Item.Name : "Thiết bị",
+                        ItemName = (a.Inventory != null && a.Inventory.Item != null) ? a.Inventory.Item.Name : a.Title,
                         CreatedAtStr = a.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
                         CreatedAtFriendly = FormatDateFriendly(a.CreatedAt),
                         RuleCode = a.AlertRule != null ? a.AlertRule.Code : "",
@@ -533,7 +537,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public int AlertRuleId { get; set; }
         public string RuleCode { get; set; }
         public string RuleType { get; set; }
-        public int InventoryId { get; set; }
+        public int? InventoryId { get; set; }
         public string AssetCode { get; set; }
         public string ItemName { get; set; }
         public string Brand { get; set; }
@@ -555,7 +559,7 @@ namespace HMDN_QuanLyVatTu.Controllers
         public int AlertRuleId { get; set; }
         public string RuleCode { get; set; }
         public string RuleType { get; set; }
-        public int InventoryId { get; set; }
+        public int? InventoryId { get; set; }
         public string AssetCode { get; set; }
         public string ItemName { get; set; }
         public string Brand { get; set; }

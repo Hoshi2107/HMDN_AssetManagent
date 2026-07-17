@@ -1012,7 +1012,7 @@
                                     </div>
                                     <div v-else v-for="alert in alerts" :key="alert.Id" v-on:click="goToAlert(alert)" style="display: flex; gap: 12px; padding: 16px; border-bottom: 1px solid var(--border); cursor: pointer;" :style="isUnread(alert.Id) ? 'background: #f0f9ff;' : 'background: #fff;'">
                                         <div class="toast-mockup-icon-circle" :class="alert.Severity">
-                                            <i class="fa-solid" :class="getIconClass(alert.Severity)"></i>
+                                            <i class="fa-solid" :class="getIconClass(alert.RuleCode, alert.Severity)"></i>
                                         </div>
                                         <div style="flex: 1;">
                                             <div style="font-size: 13px; font-weight: 700; color: #1e2a3a; margin-bottom: 4px;">{{ alert.Title }}</div>
@@ -1113,6 +1113,10 @@
             if (code === 'WARRANTY_EXPIRY_30D' || code === 'EXPIRY_SOON_60D' || code === 'DEPRECIATION_END_30D') return '/VongDoiKhauHao/VongDoiKhauHao?searchCode=' + assetCode + '&inventoryId=' + invId;
             if (code === 'CHECKLIST_OVERDUE' || code === 'CHECKLIST_DUE_3D') return '@Url.Action("Index", "Checklists")' + '?inventoryId=' + invId;
             if (code === 'CONSUMABLES_LOW') return '@Url.Action("Index", "Inventory")' + '?searchCode=' + assetCode + '&inventoryId=' + invId;
+            if (code === 'RENEWAL_DUE_3D' || code === 'RENEWAL_OVERDUE') {
+                var itemName = alert.ItemName || alert.itemName || '';
+                return '@Url.Action("Index", "MaintainList")' + '?type=renewal&search=' + encodeURIComponent(itemName);
+            }
             return '@Url.Action("Index", "Alerts")';
         };
 
@@ -1240,7 +1244,19 @@
                             if (changed) vm.saveData();
                         },
                         isUnread: function (id) { return this.readAlerts.indexOf(id) === -1; },
-                        getIconClass: function (sev) { return sev === 'danger' ? 'fa-triangle-exclamation' : sev === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-info'; },
+                        getIconClass: function (ruleCode, sev) {
+                            if (ruleCode === 'MULTI_FAULT_3X') return 'fa-triangle-exclamation';
+                            if (ruleCode === 'WARRANTY_EXPIRY_30D') return 'fa-shield-halved';
+                            if (ruleCode === 'CHECKLIST_OVERDUE') return 'fa-calendar-minus';
+                            if (ruleCode === 'CHECKLIST_DUE_3D') return 'fa-calendar-check';
+                            if (ruleCode === 'CHECKLIST_FAIL') return 'fa-circle-xmark';
+                            if (ruleCode === 'CONSUMABLES_LOW') return 'fa-boxes-packing';
+                            if (ruleCode === 'EXPIRY_SOON_60D') return 'fa-hourglass-half';
+                            if (ruleCode === 'DEPRECIATION_END_30D') return 'fa-hourglass-end';
+                            if (ruleCode === 'RENEWAL_DUE_3D') return 'fa-calendar-plus';
+                            if (ruleCode === 'RENEWAL_OVERDUE') return 'fa-calendar-xmark';
+                            return sev === 'danger' ? 'fa-triangle-exclamation' : sev === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-info';
+                        },
                         goToAlert: function (a) {
                             if (this.readAlerts.indexOf(a.Id) === -1) {
                                 this.readAlerts.push(a.Id);

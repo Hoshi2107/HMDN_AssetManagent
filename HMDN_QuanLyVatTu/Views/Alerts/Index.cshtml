@@ -86,7 +86,7 @@
                 
                 <!-- Left circular icon -->
                 <div class="alert-icon-wrapper">
-                    <i :class="severityIcon(alert.Severity)"></i>
+                    <i :class="alertIcon(alert.RuleCode, alert.Severity)"></i>
                 </div>
                 
                 <!-- Main details -->
@@ -195,7 +195,49 @@
                             </button>
                         </template>
 
-                        <!-- 5. Default Fallback action -->
+                        <!-- 5. CHECKLIST_FAIL (Checklist failure - critical maintenance issue) -->
+                        <template v-else-if="alert.RuleCode === 'CHECKLIST_FAIL'">
+                            <button class="btn-alert-action btn-action-danger" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'repair')">
+                                <i class="fa-solid fa-screwdriver-wrench mr-1"></i> Sửa chữa
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="resolveAlert(alert.Id)">
+                                Đã khắc phục
+                            </button>
+                        </template>
+
+                        <!-- 6. EXPIRY_SOON_60D or DEPRECIATION_END_30D -->
+                        <template v-else-if="alert.RuleCode === 'EXPIRY_SOON_60D' || alert.RuleCode === 'DEPRECIATION_END_30D'">
+                            <button class="btn-alert-action btn-action-primary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'warranty')">
+                                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Xem vòng đời
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="resolveAlert(alert.Id)">
+                                Đã xử lý
+                            </button>
+                        </template>
+
+                        <!-- 6B. RENEWAL_DUE_3D or RENEWAL_OVERDUE (Renewal schedules) -->
+                        <template v-else-if="alert.RuleCode === 'RENEWAL_DUE_3D' || alert.RuleCode === 'RENEWAL_OVERDUE'">
+                            <button class="btn-alert-action btn-action-success" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="handleAction(alert, 'renewal')">
+                                <i class="fa-solid fa-arrows-spin mr-1"></i> Gia hạn ngay
+                            </button>
+                            <button class="btn-alert-action btn-action-secondary" 
+                                    :disabled="processingAlerts[alert.Id]"
+                                    v-on:click="resolveAlert(alert.Id)">
+                                Đã gia hạn
+                            </button>
+                        </template>
+
+                        <!-- 7. Default Fallback action -->
                         <template v-else>
                             <button class="btn-alert-action btn-action-primary" 
                                     :disabled="processingAlerts[alert.Id]"
@@ -629,6 +671,61 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Checklist Fail Rule -->
+                        <div class="p-3 border rounded bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Cảnh báo kiểm định không đạt chuẩn</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.checklistFail.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.checklistFail.isActive" style="animation: fadeIn 0.2s;">
+                                <p class="text-muted m-0" style="font-size: 11px; line-height: 1.4;">
+                                    Tự động kích hoạt cảnh báo khẩn cấp (danger) khi kết quả kiểm định hoặc thực hiện checklist bảo trì ghi nhận tình trạng Lỗi/Hỏng.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Renewal Due Rule -->
+                        <div class="p-3 border rounded bg-white mt-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Cảnh báo nhắc lịch gia hạn sắp đến hạn</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.renewalDue.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.renewalDue.isActive" style="animation: fadeIn 0.2s;">
+                                <div class="field-row mt-2">
+                                    <div class="field-col">
+                                        <label class="field-label text-muted" style="font-size: 11px;">Thời gian thông báo trước (ngày)</label>
+                                        <input type="number" 
+                                               class="form-control-custom" 
+                                               v-model="configForm.renewalDue.days" 
+                                               min="1" 
+                                               max="30" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Renewal Overdue Rule -->
+                        <div class="p-3 border rounded bg-white mt-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold text-dark m-0" style="font-size: 12.5px;">Cảnh báo quá hạn gia hạn</label>
+                                <label class="switch-control">
+                                    <input type="checkbox" v-model="configForm.renewalOverdue.isActive">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                            <div v-show="configForm.renewalOverdue.isActive" style="animation: fadeIn 0.2s;">
+                                <p class="text-muted m-0" style="font-size: 11px; line-height: 1.4;">
+                                    Tự động kích hoạt cảnh báo khi lịch gia hạn giấy phép/dịch vụ của thiết bị đã quá hạn.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -884,11 +981,25 @@
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_DUE_3D" value="director"></td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Kiểm tra định kỳ không đạt chuẩn</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_FAIL" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_FAIL" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_FAIL" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.CHECKLIST_FAIL" value="director"></td>
+                                </tr>
+                                <tr>
                                     <td><strong>Vật tư tiêu hao sắp hết</strong></td>
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="tech"></td>
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="stock"></td>
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="head"></td>
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.CONSUMABLES_LOW" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thiết bị sắp hết khấu hao</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="director"></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Thiết bị sắp hết hạn sử dụng</strong></td>
@@ -898,11 +1009,18 @@
                                     <td class="text-center"><input type="checkbox" v-model="roleRouting.EXPIRY_SOON_60D" value="director"></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Thiết bị sắp hết khấu hao</strong></td>
-                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="tech"></td>
-                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="stock"></td>
-                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="head"></td>
-                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.DEPRECIATION_END_30D" value="director"></td>
+                                    <td><strong>Gia hạn sắp đến hạn</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_DUE_3D" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_DUE_3D" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_DUE_3D" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_DUE_3D" value="director"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Quá hạn gia hạn</strong></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_OVERDUE" value="tech"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_OVERDUE" value="stock"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_OVERDUE" value="head"></td>
+                                    <td class="text-center"><input type="checkbox" v-model="roleRouting.RENEWAL_OVERDUE" value="director"></td>
                                 </tr>
                             </tbody>
                         </table>

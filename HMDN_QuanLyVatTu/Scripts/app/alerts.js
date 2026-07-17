@@ -50,6 +50,9 @@ var app = new Vue({
             expiry: { id: 0, code: 'EXPIRY_SOON_60D', isActive: true, days: 60, overrides: [] },
             warranty: { id: 0, code: 'WARRANTY_EXPIRY_30D', isActive: true, days: 30, costReport: true, overrides: [] },
             consumables: { id: 0, code: 'CONSUMABLES_LOW', isActive: true, printer: 10, battery: 5, office: 15, cdha: 20, hscc: 8, phongmo: 12, xetnghiem: 25 },
+            checklistFail: { id: 0, code: 'CHECKLIST_FAIL', isActive: true, overrides: [] },
+            renewalDue: { id: 0, code: 'RENEWAL_DUE_3D', isActive: true, days: 3, overrides: [] },
+            renewalOverdue: { id: 0, code: 'RENEWAL_OVERDUE', isActive: true, overrides: [] },
             methods: {
                 email: true,
                 sms: false,
@@ -72,9 +75,12 @@ var app = new Vue({
             'WARRANTY_EXPIRY_30D': ['tech'],
             'CHECKLIST_OVERDUE': ['tech', 'head'],
             'CHECKLIST_DUE_3D': ['tech'],
+            'CHECKLIST_FAIL': ['tech', 'head'],
             'CONSUMABLES_LOW': ['stock'],
             'EXPIRY_SOON_60D': ['tech', 'director'],
-            'DEPRECIATION_END_30D': ['director']
+            'DEPRECIATION_END_30D': ['director'],
+            'RENEWAL_DUE_3D': ['tech'],
+            'RENEWAL_OVERDUE': ['tech', 'head']
         },
 
         // Lịch sử logs thay đổi cấu hình
@@ -139,6 +145,22 @@ var app = new Vue({
             if (severity === 'danger') return 'fa-solid fa-triangle-exclamation';
             if (severity === 'warning') return 'fa-solid fa-circle-exclamation';
             return 'fa-solid fa-circle-info';
+        },
+
+        // Trả về icon phù hợp với rule code hoặc severity
+        alertIcon: function (ruleCode, severity) {
+            if (ruleCode === 'MULTI_FAULT_3X') return 'fa-solid fa-triangle-exclamation';
+            if (ruleCode === 'WARRANTY_EXPIRY_30D') return 'fa-solid fa-shield-halved';
+            if (ruleCode === 'CHECKLIST_OVERDUE') return 'fa-solid fa-calendar-minus';
+            if (ruleCode === 'CHECKLIST_DUE_3D') return 'fa-solid fa-calendar-check';
+            if (ruleCode === 'CHECKLIST_FAIL') return 'fa-solid fa-circle-xmark';
+            if (ruleCode === 'CONSUMABLES_LOW') return 'fa-solid fa-boxes-packing';
+            if (ruleCode === 'EXPIRY_SOON_60D') return 'fa-solid fa-hourglass-half';
+            if (ruleCode === 'DEPRECIATION_END_30D') return 'fa-solid fa-hourglass-end';
+            if (ruleCode === 'RENEWAL_DUE_3D') return 'fa-solid fa-calendar-plus';
+            if (ruleCode === 'RENEWAL_OVERDUE') return 'fa-solid fa-calendar-xmark';
+
+            return this.severityIcon(severity);
         },
 
         // Trả về nhãn mức độ ưu tiên
@@ -207,7 +229,18 @@ var app = new Vue({
             // Load role routing và history logs từ localStorage
             var savedRouting = localStorage.getItem('role_routing_config');
             if (savedRouting) {
-                try { vm.roleRouting = JSON.parse(savedRouting); } catch (e) {}
+                try { 
+                    vm.roleRouting = JSON.parse(savedRouting); 
+                    if (!vm.roleRouting['CHECKLIST_FAIL']) {
+                        Vue.set(vm.roleRouting, 'CHECKLIST_FAIL', ['tech', 'head']);
+                    }
+                    if (!vm.roleRouting['RENEWAL_DUE_3D']) {
+                        Vue.set(vm.roleRouting, 'RENEWAL_DUE_3D', ['tech']);
+                    }
+                    if (!vm.roleRouting['RENEWAL_OVERDUE']) {
+                        Vue.set(vm.roleRouting, 'RENEWAL_OVERDUE', ['tech', 'head']);
+                    }
+                } catch (e) {}
             }
             var savedLogs = localStorage.getItem('config_change_logs');
             if (savedLogs) {
@@ -319,6 +352,31 @@ var app = new Vue({
                         }
                     }
 
+                    var ruleCheckFail = res.find(function (r) { return r.Code === 'CHECKLIST_FAIL'; });
+                    if (ruleCheckFail) {
+                        vm.configForm.checklistFail.id = ruleCheckFail.Id;
+                        vm.configForm.checklistFail.isActive = ruleCheckFail.IsActive;
+                        var d = parseDesc(ruleCheckFail.Description);
+                        vm.configForm.checklistFail.overrides = d.overrides || [];
+                    }
+
+                    var ruleRenewalDue = res.find(function (r) { return r.Code === 'RENEWAL_DUE_3D'; });
+                    if (ruleRenewalDue) {
+                        vm.configForm.renewalDue.id = ruleRenewalDue.Id;
+                        vm.configForm.renewalDue.isActive = ruleRenewalDue.IsActive;
+                        vm.configForm.renewalDue.days = ruleRenewalDue.ThresholdDays !== null ? ruleRenewalDue.ThresholdDays : 3;
+                        var d = parseDesc(ruleRenewalDue.Description);
+                        vm.configForm.renewalDue.overrides = d.overrides || [];
+                    }
+
+                    var ruleRenewalOverdue = res.find(function (r) { return r.Code === 'RENEWAL_OVERDUE'; });
+                    if (ruleRenewalOverdue) {
+                        vm.configForm.renewalOverdue.id = ruleRenewalOverdue.Id;
+                        vm.configForm.renewalOverdue.isActive = ruleRenewalOverdue.IsActive;
+                        var d = parseDesc(ruleRenewalOverdue.Description);
+                        vm.configForm.renewalOverdue.overrides = d.overrides || [];
+                    }
+
                     vm.loading = false;
                 },
                 error: function (xhr) {
@@ -407,6 +465,32 @@ var app = new Vue({
                             PHONGMO: parseInt(vm.configForm.consumables.phongmo),
                             XETNGHIEM: parseInt(vm.configForm.consumables.xetnghiem)
                         }
+                    })
+                },
+                {
+                    Id: vm.configForm.checklistFail.id,
+                    IsActive: vm.configForm.checklistFail.isActive,
+                    ThresholdDays: null,
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo khi kết quả thực hiện checklist của thiết bị ghi nhận lỗi/hỏng (không đạt).',
+                        overrides: vm.configForm.checklistFail.overrides
+                    })
+                },
+                {
+                    Id: vm.configForm.renewalDue.id,
+                    IsActive: vm.configForm.renewalDue.isActive,
+                    ThresholdDays: parseInt(vm.configForm.renewalDue.days),
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo nhắc nhở lịch gia hạn sắp đến hạn.',
+                        overrides: vm.configForm.renewalDue.overrides
+                    })
+                },
+                {
+                    Id: vm.configForm.renewalOverdue.id,
+                    IsActive: vm.configForm.renewalOverdue.isActive,
+                    Description: JSON.stringify({
+                        text: 'Cảnh báo khi kế hoạch gia hạn của thiết bị đã quá hạn.',
+                        overrides: vm.configForm.renewalOverdue.overrides
                     })
                 }
             ];
@@ -662,9 +746,19 @@ var app = new Vue({
             } else if (actionType === 'ignore') {
                 // Bỏ qua cảnh báo bằng cách giải quyết nó
                 vm.resolveAlert(alert.Id);
+            } else if (actionType === 'renewal') {
+                // Đi đến trang danh sách bảo trì/gia hạn
+                window.location.href = '/MaintainList/Index?type=renewal&search=' + encodeURIComponent(alert.ItemName || '');
+            } else if (actionType === 'ignore') {
+                // Bỏ qua cảnh báo bằng cách giải quyết nó
+                vm.resolveAlert(alert.Id);
             } else if (actionType === 'view') {
                 // Xem chi tiết tài sản
-                window.location.href = '/Inventory/Index?searchCode=' + alert.AssetCode + '&inventoryId=' + alert.InventoryId;
+                if (alert.InventoryId) {
+                    window.location.href = '/Inventory/Index?searchCode=' + alert.AssetCode + '&inventoryId=' + alert.InventoryId;
+                } else {
+                    window.location.href = '/MaintainList/Index?type=renewal&search=' + encodeURIComponent(alert.ItemName || '');
+                }
             }
         },
 
@@ -682,6 +776,8 @@ var app = new Vue({
             }
             if (alert.RuleCode === 'CHECKLIST_OVERDUE' || alert.RuleCode === 'CHECKLIST_DUE_3D') {
                 this.handleAction(alert, 'checklist');
+            } else if (alert.RuleCode === 'RENEWAL_DUE_3D' || alert.RuleCode === 'RENEWAL_OVERDUE') {
+                this.handleAction(alert, 'renewal');
             } else {
                 this.handleAction(alert, 'view');
             }

@@ -343,8 +343,12 @@ var app = new Vue({
     },
 
     mounted() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const typeParam = urlParams.get('type');
+        const searchParam = urlParams.get('search');
+        if (typeParam) this.filterType = typeParam;
+        if (searchParam) this.searchQuery = searchParam;
         this.loadList();
         window.addEventListener('resize', this.checkTableScrollState);
-
     }
 })
