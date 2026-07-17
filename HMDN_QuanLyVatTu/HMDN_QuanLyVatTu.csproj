@@ -316,6 +316,7 @@
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Medium.ttf" />
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-Regular.ttf" />
     <Content Include="Addon\vue\fonts\SVN-poppin\SVN-Poppins-SemiBold.ttf" />
+    <Content Include="Document\HƯỚNG DẪN SỬ DỤNG HỆ THỐNG QUẢN LÝ THIẾT BỊ HMDN.docx" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Properties\PublishProfiles\hoshikagayaku-001-site1 - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\hoshikagayaku-001-site1 - Web Deploy.pubxml" />

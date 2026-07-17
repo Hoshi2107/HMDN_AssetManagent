@@ -845,57 +845,10 @@ var appCatalog = new Vue({
 
         saveGroup() {
 
-            //    if (!this.groupForm.Code.trim()
-            //        || !this.groupForm.Name.trim()) {
-
-            //        this.showToast(
-            //            '⚠️ Mã và tên nhóm không được trống!'
-            //        )
-
-            //        return
-            //    }
-
-            //    const url = this.isEditGroup
-            //        ? '/api/category/group/update'
-            //        : '/api/category/group/create'
-
-            //    const type = this.isEditGroup
-            //        ? 'PUT'
-            //        : 'POST'
-
-            //    $.ajax({
-
-            //        url: url,
-
-            //        type: type,
-
-            //        contentType: 'application/json',
-
-            //        data: JSON.stringify(this.groupForm),
-
-            //        success: (res) => {
-
-            //            this.showGroupForm = false
-
-            //            this.loadGroups()
-
-            //            this.showToast(
-            //                this.isEditGroup
-            //                    ? '✅ Đã cập nhật nhóm!'
-            //                    : '✅ Đã thêm nhóm mới!'
-            //            )
-            //        },
-
-            //        error: (xhr) => {
-
-            //            console.log(xhr)
-
-            //            this.showToast(
-            //                xhr.responseText || '❌ Có lỗi xảy ra!'
-            //            )
-            //        }
-            //    })
-            //},
+            if (!this.groupForm.Code.trim() || !this.groupForm.Name.trim()) {
+                this.showToast('⚠️ Mã và tên nhóm không được trống!')
+                return
+            }
 
             if (this.isEditGroup) {
 
@@ -903,45 +856,43 @@ var appCatalog = new Vue({
                     url: '/api/category/group/update',
                     type: 'PUT',
                     contentType: 'application/json',
-
                     data: JSON.stringify(this.groupForm),
-
                     success: (res) => {
-
-                        const index = this.groups.findIndex(
-                            x => x.Id === this.groupForm.Id
-                        )
-
+                        const index = this.groups.findIndex(x => x.Id === this.groupForm.Id)
                         if (index !== -1) {
-
-                            this.groups.splice(index, 1, {
-                                ...this.groups[index],
-                                ...this.groupForm
-                            })
-
-                            // update activeGroup realtime
-                            if (this.activeGroup &&
-                                this.activeGroup.Id === this.groupForm.Id) {
-
+                            this.groups.splice(index, 1, { ...this.groups[index], ...this.groupForm })
+                            if (this.activeGroup && this.activeGroup.Id === this.groupForm.Id) {
                                 this.activeGroup = this.groups[index]
                             }
                         }
-
                         this.showGroupForm = false
-
                         this.showToast(res.message)
                     },
-
                     error: (err) => {
-
                         console.log(err)
-
                         this.showToast('Cập nhật thất bại')
                     }
                 })
 
                 return
             }
+
+            // ── THÊM MỚI ──
+            $.ajax({
+                url: '/api/category/group/create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(this.groupForm),
+                success: (res) => {
+                    this.showGroupForm = false
+                    this.loadGroups()
+                    this.showToast(res.message || '✅ Đã thêm nhóm mới!')
+                },
+                error: (xhr) => {
+                    console.log(xhr)
+                    this.showToast(xhr.responseText || '❌ Có lỗi xảy ra!')
+                }
+            })
         },
 
         openDeleteGroup(g) {
