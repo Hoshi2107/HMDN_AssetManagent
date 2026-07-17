@@ -218,7 +218,12 @@ new Vue({
                     if (vm.schedulesFilter.strictDate) {
                         matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
                     } else {
-                        matchFrom = s.Status === 'pending' || s.Status === 'overdue' || s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                        // Non-strict: show schedules from fromDate onward,
+                        // PLUS any pending/overdue/NeedsReinspection that predates fromDate (carry-forwards).
+                        // Do NOT surface future-dated pending schedules.
+                        var isCarryForward = (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection')
+                            && s.ScheduledDate < vm.schedulesFilter.fromDate;
+                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate || isCarryForward;
                     }
                 }
                 var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
@@ -354,7 +359,11 @@ new Vue({
                     if (vm.schedulesFilter.strictDate) {
                         matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
                     } else {
-                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate;
+                        // Non-strict: same carry-forward logic — overdue from before fromDate are included,
+                        // but future pending schedules are NOT.
+                        var isCarryForward = (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection')
+                            && s.ScheduledDate < vm.schedulesFilter.fromDate;
+                        matchFrom = s.ScheduledDate >= vm.schedulesFilter.fromDate || isCarryForward;
                     }
                 }
                 var matchTo = !vm.schedulesFilter.toDate || s.ScheduledDate <= vm.schedulesFilter.toDate;
@@ -419,13 +428,12 @@ new Vue({
                 return (l.CheckedAt || '').substring(0, 10) === todayStr && l.OverallResult === 'fail';
             }).length;
 
-            // Filters pending items scheduled for today
+            // Pending today: schedules DUE today (ScheduledDate = today) that are not yet done.
+            // Does NOT include historical backlog (overdue from earlier dates) to keep the
+            // number consistent with the default table view filtered to today.
             var pendingToday = vm.schedules.filter(function(s) {
-                return s.ScheduledDate === todayStr && 
-                       s.Status !== 'done' && 
-                       s.Status !== 'completed' && 
-                       s.Status !== 'skipped' && 
-                       s.Status !== 'cancelled';
+                return (s.Status === 'pending' || s.Status === 'overdue' || s.Status === 'NeedsReinspection') 
+                    && s.ScheduledDate === todayStr;
             }).length;
 
             var totalToday = completedToday + pendingToday;
@@ -1646,7 +1654,7 @@ new Vue({
                     vm.loadSchedules();
                     vm.loadLogs();
                 } else {
-                    vm.toast('Lỗi', res.message, 'danger');
+                    vm.toast('Lỗi', res.message || res.Message || 'Lỗi không xác định', 'danger');
                 }
             })
             .catch(function (err) {

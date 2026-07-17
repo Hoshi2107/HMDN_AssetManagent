@@ -531,7 +531,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                 if (payload.ScheduleId > 0)
                 {
                     var sch = db.ChecklistSchedules.Find(payload.ScheduleId);
-                    if (sch != null && sch.ScheduledDate > DateTime.Today)
+                    if (sch != null && sch.ScheduledDate.Date > DateTime.Today.Date.AddDays(1))
                     {
                         return BadRequest("Future checklist schedules cannot be completed.");
                     }
@@ -542,6 +542,22 @@ namespace HMDN_QuanLyVatTu.Controllers
                     try
                     {
                         string cycleLower = (payload.CycleType ?? "adhoc").ToLower();
+                        
+                        bool hasException = (payload.OverallResult == "fail")
+                            || (payload.Items != null && payload.Items.Any(item => !item.IsPassed || !string.IsNullOrWhiteSpace(item.Note)))
+                            || !string.IsNullOrWhiteSpace(payload.Note);
+
+                        if (!hasException && payload.ScheduleId > 0)
+                        {
+                            var sch = db.ChecklistSchedules.Find(payload.ScheduleId);
+                            if (sch != null && sch.DueDate < DateTime.Today)
+                            {
+                                hasException = true;
+                            }
+                        }
+
+                        string approvalStatus = hasException ? "Pending" : "Approved";
+
                         var log = new ChecklistLog
                         {
                             ScheduleId = payload.ScheduleId > 0 ? payload.ScheduleId : (int?)null,
@@ -552,7 +568,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = payload.CycleType ?? "adhoc",
                             OverallResult = payload.OverallResult ?? "pass",
-                            ApprovalStatus = "Pending",
+                            ApprovalStatus = approvalStatus,
                             Note = payload.Note,
                             QrLocation = payload.QrLocation,
                             ImageUrls = payload.ImageUrls
@@ -1104,7 +1120,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             message = "Tất cả lịch trình đã được check bởi người khác hoặc không hợp lệ." });
                     }
 
-                    if (schedules.Any(s => s.ScheduledDate > DateTime.Today))
+                    if (schedules.Any(s => s.ScheduledDate.Date > DateTime.Today.Date.AddDays(1)))
                     {
                         return BadRequest("Future checklist schedules cannot be completed.");
                     }
@@ -1147,6 +1163,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                         string cycleLower = (sch.CycleType ?? "adhoc").ToLower();
                         string result = payload.Mode == "quick" ? "pass" : payload.OverallResult;
 
+                        bool hasException = (result == "fail")
+                            || (payload.Items != null && payload.Items.Any(item => !item.IsPassed || !string.IsNullOrWhiteSpace(item.Note)))
+                            || !string.IsNullOrWhiteSpace(payload.Note)
+                            || (sch.DueDate < DateTime.Today);
+
+                        string approvalStatus = hasException ? "Pending" : "Approved";
+
                         var log = new ChecklistLog
                         {
                             ScheduleId = sch.Id,
@@ -1155,7 +1178,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                             CheckedAt = DateTime.Now,
                             CycleType = sch.CycleType,
                             OverallResult = result,
-                            ApprovalStatus = (result == "pass") ? "Approved" : "Pending",
+                            ApprovalStatus = approvalStatus,
                             Note = payload.Note
                         };
                         allLogs.Add(log);
