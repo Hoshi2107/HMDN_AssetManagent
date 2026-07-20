@@ -33,18 +33,47 @@ namespace HMDN_QuanLyVatTu.Controllers
                     System.Diagnostics.Trace.TraceError($"[ChecklistAPI] Lazy schedule generation failed: {ex.Message}");
                 }
 
-                var query = db.ChecklistSchedules.AsQueryable();
-
+                DateTime? start = null;
+                DateTime? end = null;
                 if (!string.IsNullOrEmpty(fromDate))
                 {
-                    DateTime start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
-                    query = query.Where(s => s.ScheduledDate >= start);
+                    start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
                 }
                 if (!string.IsNullOrEmpty(toDate))
                 {
-                    DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture).Date.AddDays(1);
-                    query = query.Where(s => s.ScheduledDate < end);
+                    end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture).Date.AddDays(1);
                 }
+
+                IQueryable<ChecklistSchedule> query = db.ChecklistSchedules.AsNoTracking();
+
+                // Optimized date range filtering:
+                // - Return all Pending / NeedsReinspection schedules regardless of date (so backlog/overdue is visible).
+                // - Return other statuses (completed/skipped) only if they fall within the selected date range.
+                if (start.HasValue && end.HasValue)
+                {
+                    query = query.Where(s =>
+                        s.Status == "pending" ||
+                        s.Status == "NeedsReinspection" ||
+                        (s.ScheduledDate >= start.Value && s.ScheduledDate < end.Value)
+                    );
+                }
+                else if (start.HasValue)
+                {
+                    query = query.Where(s =>
+                        s.Status == "pending" ||
+                        s.Status == "NeedsReinspection" ||
+                        s.ScheduledDate >= start.Value
+                    );
+                }
+                else if (end.HasValue)
+                {
+                    query = query.Where(s =>
+                        s.Status == "pending" ||
+                        s.Status == "NeedsReinspection" ||
+                        s.ScheduledDate < end.Value
+                    );
+                }
+
                 if (!string.IsNullOrEmpty(status))
                 {
                     if (status == "pending")
@@ -63,11 +92,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                 }
 
                 var openRepairInventoryIds = db.MaintenanceLogs
+                    .AsNoTracking()
                     .Where(ml => ml.Status == "open" || ml.Status == "in_progress")
                     .Select(ml => ml.InventoryId)
                     .Distinct()
                     .ToList();
 
+                // Combine projections to execute entirely on the database side
                 var resolvedSchedules = query
                     .OrderBy(s => s.ScheduledDate)
                     .ThenBy(s => s.Id)
@@ -102,9 +133,10 @@ namespace HMDN_QuanLyVatTu.Controllers
                         GroupIcon = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
                             ? s.Inventory.Item.Group.Icon : "🏢",
                         LifeStatus = s.Inventory != null ? s.Inventory.LifeStatus : "active",
-                        Criticality = s.Inventory != null ? s.Inventory.Criticality : "Low"
+                        Criticality = s.Inventory != null ? s.Inventory.Criticality : "Low",
+                        HasOpenRepair = s.InventoryId.HasValue && openRepairInventoryIds.Contains(s.InventoryId.Value)
                     })
-                    .ToList()
+                    .ToList() // Single materialization from DB
                     .Select(s => new
                     {
                         s.Id,
@@ -121,7 +153,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.CycleType,
                         Status = ((s.Status == "pending" || s.Status == "NeedsReinspection") && s.DueDate < DateTime.Today) ? "overdue" : s.Status,
                         OriginalStatus = s.Status,
-                        DueDate = s.DueDate,
+                        s.DueDate,
                         s.AssignedTo,
                         s.AssigneeName,
                         s.GroupId,
@@ -130,7 +162,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.GroupIcon,
                         s.LifeStatus,
                         Criticality = string.IsNullOrEmpty(s.Criticality) ? "Low" : s.Criticality,
-                        HasOpenRepair = s.InventoryId.HasValue ? openRepairInventoryIds.Contains(s.InventoryId.Value) : false
+                        s.HasOpenRepair
                     })
                     .ToList();
 
@@ -678,27 +710,37 @@ namespace HMDN_QuanLyVatTu.Controllers
         {
             try
             {
-                var query = db.ChecklistLogs.AsQueryable();
+                IQueryable<ChecklistLog> query = db.ChecklistLogs.AsNoTracking();
 
                 if (inventoryId.HasValue && inventoryId.Value > 0)
                 {
                     query = query.Where(l => l.InventoryId == inventoryId.Value);
                 }
 
-                if (!string.IsNullOrEmpty(fromDate))
+                // If no date range filter is provided and we are not looking at a specific inventory or approval status,
+                // default to loading only logs from the last 30 days.
+                if (string.IsNullOrEmpty(fromDate) && !inventoryId.HasValue && string.IsNullOrEmpty(approvalStatus))
+                {
+                    DateTime defaultStart = DateTime.Today.AddDays(-30);
+                    query = query.Where(l => l.CheckedAt >= defaultStart);
+                }
+                else if (!string.IsNullOrEmpty(fromDate))
                 {
                     DateTime start = DateTime.Parse(fromDate, System.Globalization.CultureInfo.InvariantCulture);
                     query = query.Where(l => l.CheckedAt >= start);
                 }
+
                 if (!string.IsNullOrEmpty(toDate))
                 {
                     DateTime end = DateTime.Parse(toDate, System.Globalization.CultureInfo.InvariantCulture).Date.AddDays(1);
                     query = query.Where(l => l.CheckedAt < end);
                 }
+
                 if (!string.IsNullOrEmpty(result))
                 {
                     query = query.Where(l => l.OverallResult == result);
                 }
+
                 if (!string.IsNullOrEmpty(approvalStatus))
                 {
                     query = query.Where(l => l.ApprovalStatus == approvalStatus);
@@ -740,7 +782,7 @@ namespace HMDN_QuanLyVatTu.Controllers
                         l.InventoryId,
                         l.AssetCode,
                         l.ItemName,
-                        l.SerialNumber,
+                        SerialNumber = l.SerialNumber,
                         l.DepartmentName,
                         CheckedAt = l.CheckedAt.ToString("yyyy-MM-dd HH:mm"),
                         l.CheckedByName,

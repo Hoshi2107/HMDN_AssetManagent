@@ -885,8 +885,13 @@ new Vue({
         loadSchedules() {
             var vm = this;
             var now = new Date();
-            var start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-            var end = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+            // Pull completed/skipped schedules for [last 30 days, next 7 days].
+            // Note: Server always returns all pending/overdue schedules regardless of date,
+            // so we do not lose past backlog.
+            var start = new Date();
+            start.setDate(now.getDate() - 30);
+            var end = new Date();
+            end.setDate(now.getDate() + 7);
             
             var startStr = start.toISOString().substring(0, 10);
             var endStr = end.toISOString().substring(0, 10);

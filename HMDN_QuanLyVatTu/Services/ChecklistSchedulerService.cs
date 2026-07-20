@@ -17,42 +17,44 @@ namespace HMDN_QuanLyVatTu.Services
             DateTime lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
 
             string sqlCheck = @"
+                WITH ApplicableCycles AS (
+                    -- 1. Default CheckCycle assigned to the device
+                    SELECT 
+                        inv.Id AS InventoryId,
+                        LOWER(cy.CycleType) AS CycleType
+                    FROM Inventory inv
+                    JOIN CheckCycles cy ON inv.CheckCycleId = cy.Id
+                    WHERE inv.LifeStatus = 'active'
+                      AND inv.ApprovalStatus = 'approved'
+
+                    UNION
+
+                    -- 2. Cycles from active checklist definitions applicable to the device
+                    SELECT DISTINCT
+                        inv.Id AS InventoryId,
+                        LOWER(cd.CycleType) AS CycleType
+                    FROM Inventory inv
+                    JOIN Items it ON inv.ItemId = it.Id
+                    JOIN ChecklistDefinitions cd ON cd.IsActive = 1 
+                        AND cd.CycleType IS NOT NULL
+                        AND (
+                            cd.Scope = 'global'
+                            OR (cd.Scope = 'group' AND cd.GroupId = it.GroupId)
+                            OR (cd.Scope = 'item' AND cd.ItemId = inv.ItemId)
+                            OR (cd.Scope = 'inventory' AND cd.InventoryId = inv.Id)
+                        )
+                    WHERE inv.LifeStatus = 'active'
+                      AND inv.ApprovalStatus = 'approved'
+                )
                 SELECT TOP 1 1 
-                FROM Inventory inv
-                JOIN CheckCycles cy ON inv.CheckCycleId = cy.Id
-                JOIN Items it ON inv.ItemId = it.Id
-                WHERE inv.LifeStatus = 'active' 
-                  AND inv.ApprovalStatus = 'approved'
-                  AND (
-                      EXISTS (
-                          SELECT 1 FROM ChecklistTemplateMappings m
-                          WHERE m.IsActive = 1
-                            AND m.CycleType = cy.CycleType
-                            AND (
-                              (m.Scope = 3 AND m.TargetId = inv.Id)
-                              OR (m.Scope = 2 AND m.TargetId = it.GroupId)
-                              OR (m.Scope = 1)
-                            )
-                      )
-                      OR EXISTS (
-                          SELECT 1 FROM ChecklistDefinitions cd
-                          WHERE cd.IsActive = 1
-                            AND (cd.CycleType IS NULL OR cd.CycleType = cy.CycleType)
-                            AND (
-                              cd.Scope = 'global'
-                              OR (cd.Scope = 'group' AND cd.GroupId = it.GroupId)
-                              OR (cd.Scope = 'item' AND cd.ItemId = inv.ItemId)
-                              OR (cd.Scope = 'inventory' AND cd.InventoryId = inv.Id)
-                            )
-                      )
-                  )
-                  AND NOT EXISTS (
-                      SELECT 1 FROM ChecklistSchedules s
-                      WHERE s.InventoryId = inv.Id
-                        AND s.CycleType = cy.CycleType
-                        AND s.ScheduledDate >= @FirstDay
-                        AND s.ScheduledDate <= @LastDay
-                  );";
+                FROM ApplicableCycles ac
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM ChecklistSchedules s
+                    WHERE s.InventoryId = ac.InventoryId
+                      AND LOWER(s.CycleType) = ac.CycleType
+                      AND s.ScheduledDate >= @FirstDay
+                      AND s.ScheduledDate <= @LastDay
+                );";
 
             bool hasMissingSchedules = db.Database.SqlQuery<int>(
                 sqlCheck,

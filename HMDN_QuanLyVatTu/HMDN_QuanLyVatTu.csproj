@@ -247,6 +247,7 @@
     <Compile Include="Services\IAuthService.cs" />
     <Compile Include="Services\ChecklistDefinitionResolver.cs" />
     <Compile Include="Services\ChecklistSchedulerService.cs" />
+    <Compile Include="Services\ChecklistAnalyticsService.cs" />
     <Compile Include="SimpleDependencyResolver.cs" />
   </ItemGroup>
   <ItemGroup>
