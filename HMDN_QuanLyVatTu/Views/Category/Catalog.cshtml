@@ -688,6 +688,12 @@
                             <option :value="false">Ngưng</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Nhóm thiết bị *</label>
+                        <select v-model="itemForm.GroupId">
+                            <option v-for="g in groups" :key="g.Id" :value="g.Id">${ g.Name }</option>
+                        </select>
+                    </div>
                     <div class="form-group full">
                         <label>Mô tả</label>
                         <textarea placeholder="Mô tả thiết bị..." v-model="itemForm.Description"></textarea>
@@ -834,12 +840,14 @@ var appCatalog = new Vue({
         },
 
         loadAllItems() {
-            $.ajax({
-                url: '/api/catalog/items',
-                type: 'GET',
-                success: (res) => { this.allItems = res },
-                error: () => {}
-            })
+            return new Promise((resolve) => {
+                $.ajax({
+                    url: '/api/catalog/items',
+                    type: 'GET',
+                    success: (res) => { this.allItems = res; resolve(); },
+                    error: () => { resolve(); }
+                });
+            });
         },
 
         // ── OPEN ITEMS MODAL ──
@@ -914,17 +922,26 @@ var appCatalog = new Vue({
             const url  = this.isEditItem ? '/api/catalog/item/update' : '/api/catalog/item/create'
             const type = this.isEditItem ? 'PUT' : 'POST'
 
+            // Lưu lại GroupId gốc để detect xem có đổi nhóm không
+            const originalGroupId = this.activeGroup ? this.activeGroup.Id : null;
+            const newGroupId = this.itemForm.GroupId;
+
             $.ajax({
                 url, type,
                 contentType: 'application/json',
                 data: JSON.stringify(this.itemForm),
                 success: () => {
                     this.showItemForm = false
-                    this.loadAllItems()
-                    // refresh groupItems luôn
-                    setTimeout(() => {
-                        this.groupItems = this.allItems.filter(x => x.GroupId === this.activeGroup.Id)
-                    }, 300)
+                    this.loadAllItems().then(() => {
+                        // Nếu đổi nhóm → chuyển sang nhóm mới
+                        if (this.isEditItem && newGroupId !== originalGroupId) {
+                            const newGroup = this.groups.find(g => g.Id === newGroupId);
+                            if (newGroup) {
+                                this.activeGroup = newGroup;
+                            }
+                        }
+                        this.groupItems = this.allItems.filter(x => x.GroupId === (this.activeGroup ? this.activeGroup.Id : null));
+                    });
                     this.showToast(this.isEditItem ? '✅ Đã cập nhật!' : '✅ Đã thêm loại thiết bị!')
                 },
                 error: () => this.showToast('❌ Có lỗi xảy ra!')

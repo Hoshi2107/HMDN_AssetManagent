@@ -230,6 +230,44 @@ namespace HMDN.Controllers.API
             }
         }
 
+        // PUT: api/category/item/update
+        [HttpPut]
+        [Route("item/update")]
+        public IHttpActionResult UpdateItem(ItemUpdateDTO dto)
+        {
+            try
+            {
+                var item = db.Items.FirstOrDefault(x => x.Id == dto.Id);
+                if (item == null)
+                {
+                    return NotFound();
+                }
+
+                item.GroupId = dto.GroupId;
+                item.Code = dto.Code;
+                item.Name = dto.Name;
+                item.Brand = dto.Brand;
+                item.Model = dto.Model;
+                item.Unit = dto.Unit;
+                item.Description = dto.Description;
+                item.ImageUrl = dto.ImageUrl;
+                item.IsActive = dto.IsActive;
+                item.UpdatedAt = DateTime.Now;
+
+                db.SaveChanges();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Cập nhật mẫu thiết bị thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         // GET: api/category/checklist-definitions/{groupId}
         [HttpGet]
         [Route("checklist-definitions/{groupId}")]
