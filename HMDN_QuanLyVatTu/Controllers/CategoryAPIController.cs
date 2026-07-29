@@ -563,6 +563,104 @@ namespace HMDN.Controllers.API
             }
         }
 
+        // POST: api/category/checklist-definition/batch-toggle
+        [HttpPost]
+        [Route("checklist-definition/batch-toggle")]
+        public IHttpActionResult BatchToggleDefinitions([FromBody] BatchToggleDefinitionsDTO dto)
+        {
+            try
+            {
+                if (dto == null || dto.Ids == null || dto.Ids.Count == 0)
+                {
+                    return Ok(new { success = false, message = "Vui lòng chọn ít nhất một hạng mục để thay đổi trạng thái." });
+                }
+
+                var defs = db.ChecklistDefinitions
+                    .Where(d => dto.Ids.Contains(d.Id) && d.Scope != "global")
+                    .ToList();
+
+                foreach (var def in defs)
+                {
+                    def.IsActive = dto.IsActive;
+                }
+
+                db.SaveChanges();
+                TriggerScheduler(db);
+
+                string actionText = dto.IsActive ? "Bật" : "Tắt";
+                return Ok(new { success = true, message = $"Đã {actionText} thành công {defs.Count} hạng mục checklist." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST: api/category/checklist-definition/batch-delete
+        [HttpPost]
+        [Route("checklist-definition/batch-delete")]
+        public IHttpActionResult BatchDeleteDefinitions([FromBody] BatchDeleteDefinitionsDTO dto)
+        {
+            try
+            {
+                List<ChecklistDefinition> targetDefs = new List<ChecklistDefinition>();
+                if (dto != null && dto.AllInGroup && dto.GroupId.HasValue)
+                {
+                    int gId = dto.GroupId.Value;
+                    targetDefs = db.ChecklistDefinitions
+                        .Where(d => d.Scope != "global" && (
+                            d.GroupId == gId ||
+                            db.Items.Where(i => i.GroupId == gId).Select(i => i.Id).Contains(d.ItemId ?? 0)
+                        ))
+                        .ToList();
+                }
+                else if (dto != null && dto.Ids != null && dto.Ids.Count > 0)
+                {
+                    targetDefs = db.ChecklistDefinitions
+                        .Where(d => dto.Ids.Contains(d.Id) && d.Scope != "global")
+                        .ToList();
+                }
+                else
+                {
+                    return Ok(new { success = false, message = "Không tìm thấy danh sách hạng mục cần xóa." });
+                }
+
+                if (targetDefs.Count == 0)
+                {
+                    return Ok(new { success = false, message = "Không có hạng mục phù hợp để xóa." });
+                }
+
+                int hardDeleted = 0;
+                int softDeleted = 0;
+
+                foreach (var def in targetDefs)
+                {
+                    bool hasLogs = db.ChecklistLogItems.Any(li => li.DefinitionId == def.Id);
+                    if (hasLogs)
+                    {
+                        def.IsActive = false;
+                        softDeleted++;
+                    }
+                    else
+                    {
+                        db.ChecklistDefinitions.Remove(def);
+                        hardDeleted++;
+                    }
+                }
+
+                db.SaveChanges();
+                TriggerScheduler(db);
+
+                string msg = $"Đã xử lý xóa {targetDefs.Count} hạng mục checklist (Xóa hoàn toàn: {hardDeleted}, Vô hiệu hóa bảo toàn lịch sử: {softDeleted}).";
+                return Ok(new { success = true, message = msg, count = targetDefs.Count });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
         // GET: api/category/checklist-definition/inventory/{inventoryId}
         [HttpGet]
         [Route("checklist-definition/inventory/{inventoryId}")]
@@ -758,4 +856,18 @@ namespace HMDN.Controllers.API
         public bool IsDefault { get; set; }
         public bool IsActive { get; set; }
     }
+
+    public class BatchToggleDefinitionsDTO
+    {
+        public List<int> Ids { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class BatchDeleteDefinitionsDTO
+    {
+        public List<int> Ids { get; set; }
+        public int? GroupId { get; set; }
+        public bool AllInGroup { get; set; }
+    }
 }
+

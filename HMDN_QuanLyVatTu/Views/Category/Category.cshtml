@@ -1776,6 +1776,30 @@
                         </button>
                     </div>
 
+                    <!-- BULK ACTIONS TOOLBAR -->
+                    <div v-if="filteredChecklistDefinitions.length > 0 && hasPermission('Catalog', 'EDIT')" style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px 14px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; cursor:pointer; user-select:none; color:#334155;">
+                                <input type="checkbox" :checked="isAllDefsSelected" v-on:change="toggleSelectAllDefs" style="width:16px; height:16px; cursor:pointer;" />
+                                <span>Chọn tất cả (${ selectedDefIds.length }/${ selectableChecklistDefinitions.length })</span>
+                            </label>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <button type="button" class="cl-btn" v-on:click="batchToggleDefsStatus(true)" style="padding:6px 12px; font-size:12px; background:#22c55e; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" :disabled="selectedDefIds.length === 0" :style="{ opacity: selectedDefIds.length === 0 ? 0.5 : 1 }">
+                                ⚡ Bật đã chọn (${ selectedDefIds.length })
+                            </button>
+                            <button type="button" class="cl-btn" v-on:click="batchToggleDefsStatus(false)" style="padding:6px 12px; font-size:12px; background:#eab308; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" :disabled="selectedDefIds.length === 0" :style="{ opacity: selectedDefIds.length === 0 ? 0.5 : 1 }">
+                                ⏸️ Tắt đã chọn (${ selectedDefIds.length })
+                            </button>
+                            <button type="button" class="cl-btn" v-on:click="openBatchDeleteDefs('selected')" style="padding:6px 12px; font-size:12px; background:#ef4444; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" :disabled="selectedDefIds.length === 0" :style="{ opacity: selectedDefIds.length === 0 ? 0.5 : 1 }">
+                                🗑️ Xóa đã chọn (${ selectedDefIds.length })
+                            </button>
+                            <button type="button" class="cl-btn" v-on:click="openBatchDeleteDefs('all')" style="padding:6px 12px; font-size:12px; background:#7f1d1d; color:#fff; border:none; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;" title="Xóa toàn bộ hạng mục checklist của nhóm này">
+                                🔥 Xóa TẤT CẢ hạng mục nhóm
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="item-table-wrap" style="flex:1; overflow-y:auto;">
                         <div class="table-card">
                             <div v-if="filteredChecklistDefinitions.length === 0" class="empty-state">
@@ -1786,6 +1810,9 @@
                             <table v-else>
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px; text-align: center;">
+                                            <input type="checkbox" :checked="isAllDefsSelected" v-on:change="toggleSelectAllDefs" style="width:16px; height:16px; cursor:pointer;" />
+                                        </th>
                                         <th style="width: 100px;">Phạm vi</th>
                                         <th style="width: 120px;">Chu kỳ</th>
                                         <th>Tên hạng mục kiểm tra</th>
@@ -1797,7 +1824,11 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="def in filteredChecklistDefinitions" :key="def.Id">
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" v-if="def.Scope !== 'global'" :value="def.Id" v-model="selectedDefIds" style="width:16px; height:16px; cursor:pointer;" />
+                                        </td>
                                         <td>
+
                                             <span style="font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: bold; display: inline-block;"
                                                   :style="{
                                                       background: def.Scope === 'global' ? '#f1f5f9' : def.Scope === 'inventory' ? '#fee2e2' : def.Scope === 'item' ? '#fef3c7' : '#dbeafe',
@@ -2711,10 +2742,34 @@
         </div>
     </div>
 
+    <!-- ══ MODAL XÓA HẠNG MỤC HÀNG LOẠT ══ -->
+    <div class="modal-overlay" v-if="showBatchDeleteDefModal" v-on:click.self="showBatchDeleteDefModal = false">
+        <div class="confirm-modal">
+            <div class="confirm-body">
+                <div class="ci">⚠️</div>
+                <h3 v-if="batchDeleteMode === 'all'">Xóa TẤT CẢ hạng mục checklist trong nhóm?</h3>
+                <h3 v-else>Xóa ${ selectedDefIds.length } hạng mục checklist đã chọn?</h3>
+                <p v-if="batchDeleteMode === 'all'" style="line-height:1.5;">
+                    Bạn có chắc chắn muốn xoá <strong>TẤT CẢ các hạng mục checklist</strong> thuộc nhóm <strong>${ activeGroup ? activeGroup.Name : '' }</strong> không?<br>
+                    <small style="color:#ef4444; margin-top:6px; display:inline-block;">* Ghi chú: Các hạng mục đã từng được dùng để kiểm tra dữ liệu sẽ tự động chuyển sang trạng thái Vô hiệu hóa để bảo toàn lịch sử.</small>
+                </p>
+                <p v-else style="line-height:1.5;">
+                    Bạn có chắc chắn muốn xoá <strong>${ selectedDefIds.length } hạng mục checklist đã chọn</strong> không?<br>
+                    <small style="color:#ef4444; margin-top:6px; display:inline-block;">* Ghi chú: Các hạng mục đã từng có dữ liệu kiểm tra sẽ tự động chuyển sang Vô hiệu hóa để bảo toàn lịch sử.</small>
+                </p>
+            </div>
+            <div class="confirm-footer">
+                <button class="btn-cancel" v-on:click="showBatchDeleteDefModal = false">Huỷ</button>
+                <button class="btn-danger" v-on:click="confirmBatchDeleteDefs">🔥 Xác nhận Xoá</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
     <div class="toast" v-if="toast.show">${ toast.msg }</div>
 
 </div>
 
 <script src="~/Scripts/app/category.js?v=@DateTime.Now.Ticks"></script>
+
 

@@ -84,10 +84,11 @@ namespace HMDN_QuanLyVatTu.Controllers
             }
             catch (Exception ex)
             {
+                var fullMessage = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
                 return Ok(new LoginResponseDTO
                 {
                     success = false,
-                    message = "Lỗi hệ thống khi xác thực: " + ex.Message
+                    message = "Lỗi hệ thống khi xác thực: " + fullMessage
                 });
             }
         }

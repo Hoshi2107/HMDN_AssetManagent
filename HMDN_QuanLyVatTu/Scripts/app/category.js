@@ -106,11 +106,17 @@ var appCatalog = new Vue({
         showToolbarItemDropdown: false,
         toolbarItemDropdownSearch: '',
 
+        // Checklist Definition Batch Operations
+        selectedDefIds: [],
+        showBatchDeleteDefModal: false,
+        batchDeleteMode: 'selected',
+
         // ── GROUPED ITEMS (tránh duplicate tên) ──
         expandedGroupedItemNames: {}, // { [normalizedName]: true/false }
 
         toast: { show: false, msg: '' }
     },
+
 
     computed: {
 
@@ -240,7 +246,19 @@ var appCatalog = new Vue({
             });
         },
 
+        selectableChecklistDefinitions() {
+            return (this.filteredChecklistDefinitions || []).filter(d => d.Scope !== 'global');
+        },
+
+        isAllDefsSelected() {
+            var selectable = this.selectableChecklistDefinitions;
+            if (!selectable || selectable.length === 0) return false;
+            var selectedSet = new Set(this.selectedDefIds || []);
+            return selectable.every(d => selectedSet.has(d.Id));
+        },
+
         filteredToolbarDropdownItems() {
+
             var list = this.items || [];
             var q = (this.toolbarItemDropdownSearch || '').trim().toLowerCase();
             if (q) {
@@ -1039,7 +1057,9 @@ var appCatalog = new Vue({
         // ── CHECKLIST DEFINITIONS METHODS ──
         loadChecklistDefinitions(groupId) {
             if (!groupId) return;
+            this.selectedDefIds = [];
             $.ajax({
+
                 url: '/api/category/checklist-definitions/' + groupId,
                 type: 'GET',
                 success: (res) => {
@@ -1262,7 +1282,84 @@ var appCatalog = new Vue({
             });
         },
 
+        // ── BATCH CHECKLIST DEFINITIONS METHODS ──
+        toggleSelectAllDefs() {
+            if (this.isAllDefsSelected) {
+                this.selectedDefIds = [];
+            } else {
+                this.selectedDefIds = (this.selectableChecklistDefinitions || []).map(d => d.Id);
+            }
+        },
+
+        batchToggleDefsStatus(isActive) {
+            var idsToToggle = (this.selectedDefIds && this.selectedDefIds.length > 0)
+                ? this.selectedDefIds
+                : (this.selectableChecklistDefinitions || []).map(d => d.Id);
+
+            if (!idsToToggle || idsToToggle.length === 0) {
+                this.showToast('⚠️ Không có hạng mục nào được chọn.');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/category/checklist-definition/batch-toggle',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ Ids: idsToToggle, IsActive: isActive }),
+                success: (res) => {
+                    if (res.success) {
+                        this.showToast(res.message || '✅ Đã cập nhật trạng thái!');
+                        this.loadChecklistDefinitions(this.activeGroup.Id);
+                    } else {
+                        this.showToast('❌ ' + (res.message || 'Lỗi cập nhật!'));
+                    }
+                },
+                error: (xhr) => {
+                    this.showToast('❌ ' + (xhr.responseJSON?.message || 'Lỗi kết nối máy chủ!'));
+                }
+            });
+        },
+
+        openBatchDeleteDefs(mode) {
+            if (mode === 'selected' && (!this.selectedDefIds || this.selectedDefIds.length === 0)) {
+                this.showToast('⚠️ Vui lòng chọn ít nhất một hạng mục để xóa.');
+                return;
+            }
+            this.batchDeleteMode = mode;
+            this.showBatchDeleteDefModal = true;
+        },
+
+        confirmBatchDeleteDefs() {
+            var payload = {};
+            if (this.batchDeleteMode === 'all') {
+                payload = { AllInGroup: true, GroupId: this.activeGroup ? this.activeGroup.Id : null };
+            } else {
+                payload = { Ids: this.selectedDefIds };
+            }
+
+            $.ajax({
+                url: '/api/category/checklist-definition/batch-delete',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: (res) => {
+                    this.showBatchDeleteDefModal = false;
+                    if (res.success) {
+                        this.showToast(res.message || '🗑️ Đã xóa thành công!');
+                        this.loadChecklistDefinitions(this.activeGroup ? this.activeGroup.Id : null);
+                    } else {
+                        this.showToast('❌ ' + (res.message || 'Không thể xóa!'));
+                    }
+                },
+                error: (xhr) => {
+                    this.showBatchDeleteDefModal = false;
+                    this.showToast('❌ ' + (xhr.responseJSON?.message || 'Không thể xóa!'));
+                }
+            });
+        },
+
         disableDefinition(id) {
+
             $.ajax({
                 url: '/api/category/checklist-definition/toggle/' + id,
                 type: 'PUT',
