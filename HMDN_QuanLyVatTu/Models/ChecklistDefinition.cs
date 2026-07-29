@@ -21,6 +21,9 @@ namespace HMDN_QuanLyVatTu.Models
 
         public int? InventoryId { get; set; }
 
+        public int? LocationId { get; set; }
+
+
         [StringLength(100)]
         public string DefinitionCode { get; set; }
 

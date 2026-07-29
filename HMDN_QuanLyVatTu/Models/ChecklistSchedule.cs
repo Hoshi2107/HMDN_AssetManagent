@@ -2,7 +2,9 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using HMS.Models.Inventory;
+using HMS.Models.Catalog;
 using HMS.Models.Auth;
+
 using Newtonsoft.Json;
 
 namespace HMDN_QuanLyVatTu.Models
@@ -13,11 +15,17 @@ namespace HMDN_QuanLyVatTu.Models
         [Key]
         public int Id { get; set; }
 
+        [StringLength(20)]
+        public string TargetType { get; set; } // 'ASSET', 'GROUP', 'LOCATION'
+
         public int? InventoryId { get; set; }
+
+        public int? GroupId { get; set; }
 
         public int? LocationId { get; set; }
 
         public int? TemplateVersionId { get; set; }
+
 
         [Required]
         [Column(TypeName = "date")]
@@ -43,6 +51,10 @@ namespace HMDN_QuanLyVatTu.Models
         [JsonIgnore]
         public virtual Inventory Inventory { get; set; }
 
+        [ForeignKey("GroupId")]
+        [JsonIgnore]
+        public virtual Group Group { get; set; }
+
         [ForeignKey("LocationId")]
         [JsonIgnore]
         public virtual Location Location { get; set; }
@@ -57,9 +69,11 @@ namespace HMDN_QuanLyVatTu.Models
 
         public ChecklistSchedule()
         {
+            TargetType = "ASSET";
             Status = "pending";
             CreatedAt = DateTime.Now;
         }
+
     }
 }
 
