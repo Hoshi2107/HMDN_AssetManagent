@@ -91,6 +91,21 @@ namespace HMDN_QuanLyVatTu.Controllers
                     query = query.Where(s => s.CycleType == cycleType);
                 }
 
+                // Real-time active definition filtering: Only return pending schedules for devices that have AT LEAST ONE active checklist definition
+                query = query.Where(s =>
+                    s.Status == "done" || s.Status == "skipped" || s.Status == "completed" ||
+                    db.ChecklistDefinitions.Any(cd => cd.IsActive &&
+                        (cd.CycleType == null || cd.CycleType == s.CycleType) &&
+                        (
+                            cd.Scope == "global" ||
+                            (cd.Scope == "group" && s.Inventory != null && s.Inventory.Item != null && cd.GroupId == s.Inventory.Item.GroupId) ||
+                            (cd.Scope == "item" && s.Inventory != null && cd.ItemId == s.Inventory.ItemId) ||
+                            (cd.Scope == "inventory" && cd.InventoryId == s.InventoryId)
+                        )
+                    )
+                );
+
+
                 var openRepairInventoryIds = db.MaintenanceLogs
                     .AsNoTracking()
                     .Where(ml => ml.Status == "open" || ml.Status == "in_progress")
