@@ -193,6 +193,7 @@ new Vue({
                 var matchQuery = !q || 
                     (s.AssetCode && s.AssetCode.toLowerCase().indexOf(q) > -1) ||
                     (s.ItemName && s.ItemName.toLowerCase().indexOf(q) > -1) ||
+                    (s.GroupName && s.GroupName.toLowerCase().indexOf(q) > -1) ||
                     (s.SerialNumber && s.SerialNumber.toLowerCase().indexOf(q) > -1) ||
                     (s.DepartmentName && s.DepartmentName.toLowerCase().indexOf(q) > -1);
                 
@@ -242,6 +243,7 @@ new Vue({
                     var matchQuery = !q || 
                         (s.AssetCode && s.AssetCode.toLowerCase().indexOf(q) > -1) ||
                         (s.ItemName && s.ItemName.toLowerCase().indexOf(q) > -1) ||
+                        (s.GroupName && s.GroupName.toLowerCase().indexOf(q) > -1) ||
                         (s.SerialNumber && s.SerialNumber.toLowerCase().indexOf(q) > -1) ||
                         (s.DepartmentName && s.DepartmentName.toLowerCase().indexOf(q) > -1);
                     
@@ -1320,9 +1322,9 @@ new Vue({
             vm.lastSubmitResult = '';
 
             var isAsset = !!schedule.InventoryId;
-            var scope = isAsset ? 3 : 4;
-            var targetId = isAsset ? schedule.InventoryId : schedule.LocationId;
-            var key = (isAsset ? 'asset_' + targetId : 'loc_' + targetId) + '_' + schedule.CycleType;
+            var scope = isAsset ? 3 : (schedule.GroupId ? 2 : 4);
+            var targetId = isAsset ? schedule.InventoryId : (schedule.GroupId || schedule.LocationId || 0);
+            var key = (isAsset ? 'asset_' + targetId : (schedule.GroupId ? 'group_' + targetId : 'loc_' + targetId)) + '_' + schedule.CycleType;
 
             function useCachedDefs() {
                 var defsCache = {};

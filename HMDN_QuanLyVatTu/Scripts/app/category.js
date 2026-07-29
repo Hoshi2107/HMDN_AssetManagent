@@ -426,10 +426,12 @@ var appCatalog = new Vue({
             const q = this.detailAssetSearch.toLowerCase().trim();
             return this.detailInventories.filter(x => 
                 (x.AssetCode || '').toLowerCase().includes(q) ||
+                (x.ItemName || '').toLowerCase().includes(q) ||
                 (x.SerialNumber || '').toLowerCase().includes(q) ||
                 (x.LocationName || '').toLowerCase().includes(q)
             );
         }
+
     },
 
     methods: {

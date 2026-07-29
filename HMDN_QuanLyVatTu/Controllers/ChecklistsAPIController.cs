@@ -91,8 +91,9 @@ namespace HMDN_QuanLyVatTu.Controllers
                     query = query.Where(s => s.CycleType == cycleType);
                 }
 
-                // Real-time active definition filtering: Only return pending schedules for devices that have AT LEAST ONE active checklist definition
+                // Real-time active definition filtering: Allow GROUP/LOCATION targets, or ASSET targets with active definitions
                 query = query.Where(s =>
+                    s.TargetType == "GROUP" || s.TargetType == "LOCATION" ||
                     s.Status == "done" || s.Status == "skipped" || s.Status == "completed" ||
                     db.ChecklistDefinitions.Any(cd => cd.IsActive &&
                         (cd.CycleType == null || cd.CycleType == s.CycleType) &&
@@ -104,7 +105,6 @@ namespace HMDN_QuanLyVatTu.Controllers
                         )
                     )
                 );
-
 
                 var openRepairInventoryIds = db.MaintenanceLogs
                     .AsNoTracking()
@@ -120,12 +120,13 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Select(s => new
                     {
                         s.Id,
+                        TargetType = s.TargetType ?? "ASSET",
                         s.InventoryId,
                         s.LocationId,
                         LocationName = s.Location != null ? s.Location.Name : "",
                         LocationCode = s.Location != null ? s.Location.Code : "",
-                        AssetCode = s.Inventory != null ? s.Inventory.AssetCode : (s.Location != null ? s.Location.Code : ""),
-                        ItemName = (s.Inventory != null && s.Inventory.Item != null) ? s.Inventory.Item.Name : (s.Location != null ? s.Location.Name : "N/A"),
+                        AssetCode = s.Inventory != null ? s.Inventory.AssetCode : (s.Group != null ? s.Group.Code : (s.Location != null ? s.Location.Code : "")),
+                        ItemName = (s.Inventory != null && s.Inventory.Item != null) ? s.Inventory.Item.Name : (s.Group != null ? s.Group.Name : (s.Location != null ? s.Location.Name : "N/A")),
                         SerialNumber = s.Inventory != null ? s.Inventory.SerialNumber : "",
                         DepartmentName = (s.Inventory != null && s.Inventory.Department != null) 
                             ? s.Inventory.Department.Name 
@@ -139,24 +140,23 @@ namespace HMDN_QuanLyVatTu.Controllers
                         s.DueDate,
                         s.AssignedTo,
                         AssigneeName = s.Assignee != null ? s.Assignee.FullName : "",
-                        GroupId = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Id : 0,
-                        GroupCode = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Code : "",
-                        GroupName = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Name : "Khu vực / Phòng máy",
-                        GroupIcon = (s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) 
-                            ? s.Inventory.Item.Group.Icon : "🏢",
+                        GroupId = s.GroupId.HasValue ? s.GroupId.Value : ((s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) ? s.Inventory.Item.Group.Id : 0),
+                        GroupCode = s.Group != null ? s.Group.Code : ((s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) ? s.Inventory.Item.Group.Code : ""),
+                        GroupName = s.Group != null ? s.Group.Name : ((s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) ? s.Inventory.Item.Group.Name : "Khu vực / Phòng máy"),
+                        GroupIcon = s.Group != null ? (s.Group.Icon ?? "🏢") : ((s.Inventory != null && s.Inventory.Item != null && s.Inventory.Item.Group != null) ? s.Inventory.Item.Group.Icon : "🏢"),
                         LifeStatus = s.Inventory != null ? s.Inventory.LifeStatus : "active",
                         Criticality = s.Inventory != null ? s.Inventory.Criticality : "Low",
                         HasOpenRepair = s.InventoryId.HasValue && openRepairInventoryIds.Contains(s.InventoryId.Value)
                     })
+
                     .ToList() // Single materialization from DB
                     .Select(s => new
                     {
                         s.Id,
+                        s.TargetType,
                         s.InventoryId,
                         s.LocationId,
+
                         s.LocationName,
                         s.LocationCode,
                         s.AssetCode,
@@ -183,9 +183,9 @@ namespace HMDN_QuanLyVatTu.Controllers
 
                 var latestPendingDict = resolvedSchedules
                     .Where(s => (s.Status == "pending" || s.Status == "overdue" || s.Status == "NeedsReinspection") && s.ScheduledDate <= DateTime.Today)
-                    .GroupBy(s => new { s.InventoryId, s.LocationId, s.CycleType })
+                    .GroupBy(s => new { s.TargetType, s.InventoryId, s.GroupId, s.LocationId, s.CycleType })
                     .ToDictionary(
-                        g => new { g.Key.InventoryId, g.Key.LocationId, g.Key.CycleType },
+                        g => new { g.Key.TargetType, g.Key.InventoryId, g.Key.GroupId, g.Key.LocationId, g.Key.CycleType },
                         g => g.OrderByDescending(s => s.ScheduledDate).First().Id
                     );
 
@@ -193,13 +193,16 @@ namespace HMDN_QuanLyVatTu.Controllers
                     .Where(s => 
                         (s.Status != "pending" && s.Status != "overdue" && s.Status != "NeedsReinspection")
                         || s.ScheduledDate > DateTime.Today
-                        || (latestPendingDict.TryGetValue(new { s.InventoryId, s.LocationId, s.CycleType }, out int latestId) && latestId == s.Id)
+                        || (latestPendingDict.TryGetValue(new { s.TargetType, s.InventoryId, s.GroupId, s.LocationId, s.CycleType }, out int latestId) && latestId == s.Id)
                     )
+
                     .Select(s => new
                     {
                         s.Id,
+                        s.TargetType,
                         s.InventoryId,
                         s.LocationId,
+
                         s.LocationName,
                         s.LocationCode,
                         s.AssetCode,
@@ -355,6 +358,55 @@ namespace HMDN_QuanLyVatTu.Controllers
                         });
                     }
                 }
+
+                // B. Check for Group / Category checklist definitions (Scope.Group or scope == 2)
+                if (scope == 2 || (scope == 3 && targetId <= 0))
+                {
+                    var groupDefs = db.ChecklistDefinitions
+                        .Where(cd => cd.IsActive && (cd.Scope == "global" || (cd.Scope == "group" && cd.GroupId == targetId)))
+                        .OrderBy(cd => cd.SortOrder)
+                        .ToList();
+
+                    var resolver = new HMDN_QuanLyVatTu.Services.ChecklistDefinitionResolver();
+                    var resolvedItems = resolver.ResolveApplicableDefinitions(groupDefs);
+
+                    if (resolvedItems.Any())
+                    {
+                        var items = resolvedItems.Select(d => new
+                        {
+                            d.Id,
+                            d.CheckName,
+                            d.Description,
+                            ValueType = d.ValueType ?? "checkbox",
+                            Unit = d.Unit,
+                            ValidationRules = d.ValidationRules,
+                            Severity = d.Severity ?? "Information",
+                            d.IsRequired,
+                            d.SortOrder,
+                            Options = db.ChecklistDefinitionOptions
+                                .Where(o => o.ChecklistDefinitionId == d.Id && o.IsActive)
+                                .OrderBy(o => o.SortOrder)
+                                .Select(o => new
+                                {
+                                    o.Value,
+                                    o.DisplayText,
+                                    o.Color,
+                                    o.IsDefault
+                                }).ToList()
+                        }).ToList();
+
+                        return Ok(new
+                        {
+                            success = true,
+                            templateId = (int?)null,
+                            templateVersionId = (int?)null,
+                            templateName = "Group Checklist",
+                            versionNumber = 1,
+                            data = items
+                        });
+                    }
+                }
+
 
                 // 1. Resolve template version using mapping
                 var mapping = db.ChecklistTemplateMappings
@@ -557,10 +609,11 @@ namespace HMDN_QuanLyVatTu.Controllers
                     return Ok(new { success = false, message = "Dữ liệu gửi lên trống (payload is null)." });
                 }
 
-                if (!payload.InventoryId.HasValue && !payload.LocationId.HasValue)
+                if (!payload.InventoryId.HasValue && !payload.LocationId.HasValue && payload.ScheduleId <= 0)
                 {
-                    return Ok(new { success = false, message = "Dữ liệu không hợp lệ: Cần liên kết với thiết bị (InventoryId) hoặc vị trí (LocationId)." });
+                    return Ok(new { success = false, message = "Dữ liệu không hợp lệ: Cần liên kết với thiết bị (InventoryId), vị trí (LocationId) hoặc Lịch trình (ScheduleId)." });
                 }
+
 
                 if (payload.Items == null || !payload.Items.Any())
                 {

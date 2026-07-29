@@ -8,7 +8,10 @@ namespace HMS.Models.ViewModels
 
         public string AssetCode { get; set; }
 
+        public string ItemName { get; set; }
+
         public string SerialNumber { get; set; }
+
 
         public int Quantity { get; set; }
 
