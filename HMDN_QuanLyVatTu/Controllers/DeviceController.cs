@@ -231,20 +231,33 @@ namespace HMDN.Controllers.API
         }
 
         // Dropdown endpoints giữ nguyên vì đơn giản, ko cần SP riêng
+        //[HttpGet]
+        //[Route("items")]
+        //public IHttpActionResult Items()
+        //{
+        //    var data = db.Database.SqlQuery<DropdownVM>(
+        //        @"SELECT Id, 
+        //                 Name + CASE 
+        //                    WHEN (Brand IS NOT NULL AND Brand <> '') OR (Model IS NOT NULL AND Model <> '') 
+        //                    THEN ' (' + ISNULL(NULLIF(Brand, ''), '—') + CASE WHEN Model IS NOT NULL AND Model <> '' THEN ' - ' + Model ELSE '' END + ')' 
+        //                    ELSE '' 
+        //                 END AS Name 
+        //          FROM Items 
+        //          WHERE IsActive = 1 
+        //          ORDER BY Name"
+        //    ).ToList();
+        //    return Ok(data);
+        //}
+
         [HttpGet]
         [Route("items")]
         public IHttpActionResult Items()
         {
-            var data = db.Database.SqlQuery<DropdownVM>(
-                @"SELECT Id, 
-                         Name + CASE 
-                            WHEN (Brand IS NOT NULL AND Brand <> '') OR (Model IS NOT NULL AND Model <> '') 
-                            THEN ' (' + ISNULL(NULLIF(Brand, ''), '—') + CASE WHEN Model IS NOT NULL AND Model <> '' THEN ' - ' + Model ELSE '' END + ')' 
-                            ELSE '' 
-                         END AS Name 
-                  FROM Items 
-                  WHERE IsActive = 1 
-                  ORDER BY Name"
+            var data = db.Database.SqlQuery<ItemDropdownVM>(
+                @"SELECT Id, Name, Code, Brand, Model
+          FROM Items
+          WHERE IsActive = 1
+          ORDER BY Name, Brand, Model"
             ).ToList();
             return Ok(data);
         }

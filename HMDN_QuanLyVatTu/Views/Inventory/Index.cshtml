@@ -895,27 +895,59 @@
                             </div>
 
                             <!-- Item -->
-                            <div class="form-group">
-
+                            <!-- Item -->
+                            <div class="form-group item-select-container">
                                 <label>Thiết bị</label>
 
-                                <select class="form-control"
-                                        v-model="createForm.ItemId">
+                                <div class="form-control item-select-trigger"
+                                     v-on:click="openItemDropdown('create')">
+                                    <span>${ getSelectedItemLabel(createForm.ItemId) }</span>
+                                    <span>▼</span>
+                                </div>
 
-                                    <option value="">
-                                        Chọn thiết bị
-                                    </option>
+                                <div class="item-select-dropdown"
+                                     v-if="showItemDropdown && itemDropdownTarget === 'create'"
+                                     v-on:click.stop>
 
-                                    <option v-for="item in items"
-                                            :key="item.Id"
-                                            :value="item.Id">
+                                    <input type="text" class="item-select-search"
+                                           v-model="itemDropdownSearch"
+                                           placeholder="🔍 Tìm tên / hãng / model...">
 
-                                        ${ item.Name }
+                                    <div class="item-select-list">
 
-                                    </option>
+                                        <div v-if="filteredGroupedItemsDropdown.length === 0" class="item-select-empty">
+                                            Không tìm thấy thiết bị
+                                        </div>
 
-                                </select>
+                                        <div v-for="g in filteredGroupedItemsDropdown" :key="g._key">
 
+                                            <div class="item-select-rep-row" v-on:click="toggleItemGroup(g)">
+                                                <span class="item-select-caret">
+                                                    ${ g._variants.length > 1 ? (expandedItemGroupKeys[g._key] ? '▼' : '▶') : '•' }
+                                                </span>
+                                                <span class="item-select-rep-name">${ g._representative.Name }</span>
+                                                <span class="item-select-rep-count" v-if="g._variants.length > 1">
+                                                    ${ g._variants.length } hãng/biến thể
+                                                </span>
+                                            </div>
+
+                                            <div class="item-select-variants"
+                                                 v-if="expandedItemGroupKeys[g._key] && g._variants.length > 1">
+                                                <div v-for="v in g._variants" :key="v.Id"
+                                                     class="item-select-variant"
+                                                     :class="{ selected: createForm.ItemId == v.Id }"
+                                                     v-on:click="selectItemVariant(v)">
+                                                    <span class="item-select-variant-code">${ v.Code }</span>
+                                                    <span>${ v.Brand || '—' }</span>
+                                                    <span v-if="v.Model" style="color:#94a3b8">/ ${ v.Model }</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
                             </div>
 
                             <!-- Serial -->
@@ -967,27 +999,26 @@
                             <!-- Location -->
                             <!--<div class="form-group">
 
-                                <label>Vị trí</label>
+        <label>Vị trí</label>
 
-                                <select class="form-control"
-                                        v-model="createForm.LocationId">
+        <select class="form-control"
+                v-model="createForm.LocationId">
 
-                                    <option value="">
-                                        Chọn vị trí
-                                    </option>
+            <option value="">
+                Chọn vị trí
+            </option>
 
-                                    <option v-for="loc in locationsData"
-                                            :key="loc.Id"
-                                            :value="loc.Id">
+            <option v-for="loc in locationsData"
+                    :key="loc.Id"
+                    :value="loc.Id">
 
-                                        ${ loc.Name }
+                ${ loc.Name }
 
-                                    </option>
+            </option>
 
-                                </select>
+        </select>
 
-                            </div>-->
-
+    </div>-->
                             <!-- Import Date -->
                             <div class="form-group">
 
@@ -1059,13 +1090,13 @@
                             <!-- Check Cycle -->
                             @*<div class="form-group">
 
-                                    <label>Chu kỳ kiểm tra</label>
+            <label>Chu kỳ kiểm tra</label>
 
-                                    <input type="number"
-                                           class="form-control"
-                                           v-model="createForm.CheckCycleId">
+            <input type="number"
+                   class="form-control"
+                   v-model="createForm.CheckCycleId">
 
-                                </div>*@
+        </div>*@
                             <div class="form-group">
 
                                 <label>Chu kỳ kiểm tra</label>
@@ -1249,13 +1280,13 @@
                             <!-- QR -->
                             @*<div class="form-group">
 
-                                    <label>QR Code</label>
+            <label>QR Code</label>
 
-                                    <input type="text"
-                                           class="form-control"
-                                           v-model="createForm.QrCode">
+            <input type="text"
+                   class="form-control"
+                   v-model="createForm.QrCode">
 
-                                </div>*@
+        </div>*@
 
                         </div>
 
@@ -1334,27 +1365,59 @@
                             </div>
 
                             <!-- Item -->
-                            <div class="form-group">
-
+                            <!-- Item -->
+                            <div class="form-group item-select-container">
                                 <label>Thiết bị</label>
 
-                                <select class="form-control"
-                                        v-model="editForm.ItemId">
+                                <div class="form-control item-select-trigger"
+                                     v-on:click="openItemDropdown('edit')">
+                                    <span>${ getSelectedItemLabel(editForm.ItemId) }</span>
+                                    <span>▼</span>
+                                </div>
 
-                                    <option value="">
-                                        Chọn thiết bị
-                                    </option>
+                                <div class="item-select-dropdown"
+                                     v-if="showItemDropdown && itemDropdownTarget === 'edit'"
+                                     v-on:click.stop>
 
-                                    <option v-for="item in items"
-                                            :key="item.Id"
-                                            :value="item.Id">
+                                    <input type="text" class="item-select-search"
+                                           v-model="itemDropdownSearch"
+                                           placeholder="🔍 Tìm tên / hãng / model...">
 
-                                        ${ item.Name }
+                                    <div class="item-select-list">
 
-                                    </option>
+                                        <div v-if="filteredGroupedItemsDropdown.length === 0" class="item-select-empty">
+                                            Không tìm thấy thiết bị
+                                        </div>
 
-                                </select>
+                                        <div v-for="g in filteredGroupedItemsDropdown" :key="g._key">
 
+                                            <div class="item-select-rep-row" v-on:click="toggleItemGroup(g)">
+                                                <span class="item-select-caret">
+                                                    ${ g._variants.length > 1 ? (expandedItemGroupKeys[g._key] ? '▼' : '▶') : '•' }
+                                                </span>
+                                                <span class="item-select-rep-name">${ g._representative.Name }</span>
+                                                <span class="item-select-rep-count" v-if="g._variants.length > 1">
+                                                    ${ g._variants.length } hãng/biến thể
+                                                </span>
+                                            </div>
+
+                                            <div class="item-select-variants"
+                                                 v-if="expandedItemGroupKeys[g._key] && g._variants.length > 1">
+                                                <div v-for="v in g._variants" :key="v.Id"
+                                                     class="item-select-variant"
+                                                     :class="{ selected: editForm.ItemId == v.Id }"
+                                                     v-on:click="selectItemVariant(v)">
+                                                    <span class="item-select-variant-code">${ v.Code }</span>
+                                                    <span>${ v.Brand || '—' }</span>
+                                                    <span v-if="v.Model" style="color:#94a3b8">/ ${ v.Model }</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
                             </div>
 
                             <!-- Serial -->
@@ -1406,26 +1469,26 @@
                             <!-- Location -->
                             @*<div class="form-group">
 
-                                <label>Vị trí</label>
+            <label>Vị trí</label>
 
-                                <select class="form-control"
-                                        v-model="editForm.LocationId">
+            <select class="form-control"
+                    v-model="editForm.LocationId">
 
-                                    <option value="">
-                                        Chọn vị trí
-                                    </option>
+                <option value="">
+                    Chọn vị trí
+                </option>
 
-                                    <option v-for="loc in locationsData"
-                                            :key="loc.Id"
-                                            :value="loc.Id">
+                <option v-for="loc in locationsData"
+                        :key="loc.Id"
+                        :value="loc.Id">
 
-                                        ${ loc.Name }
+                    ${ loc.Name }
 
-                                    </option>
+                </option>
 
-                                </select>
+            </select>
 
-                            </div>*@
+        </div>*@
 
                             <!-- Import Date -->
                             <div class="form-group">

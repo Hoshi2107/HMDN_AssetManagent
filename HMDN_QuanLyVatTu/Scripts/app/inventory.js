@@ -31,6 +31,12 @@ var app = new Vue({
     delimiters: ['${', '}'],
 
     data: {
+        // GROUPED ITEM PICKER (dùng chung cho create & edit)
+        showItemDropdown: false,
+        itemDropdownTarget: null,      // 'create' | 'edit'
+        itemDropdownSearch: '',
+        expandedItemGroupKeys: {},
+
         STATUS: STATUS,
 
         ticketSearch: '',
@@ -259,7 +265,45 @@ var app = new Vue({
     },
     
     computed: {
+        // Group theo tên (giống hệt logic groupedFilteredItems bên category.js)
+        groupedItemsAll() {
+            const map = {}
+            const order = []
 
+            this.items.forEach(item => {
+                const key = (item.Name || '').trim().toLowerCase()
+                if (!map[key]) {
+                    map[key] = {
+                        _key: key,
+                        _representative: item,
+                        _variants: []
+                    }
+                    order.push(key)
+                }
+                map[key]._variants.push(item)
+            })
+
+            return order.map(k => map[k])
+        },
+
+        filteredGroupedItemsDropdown() {
+            const q = (this.itemDropdownSearch || '').toLowerCase().trim()
+            if (!q) return this.groupedItemsAll
+
+            return this.groupedItemsAll
+                .map(g => {
+                    const nameMatch = g._representative.Name.toLowerCase().includes(q)
+                    const variants = nameMatch
+                        ? g._variants
+                        : g._variants.filter(v =>
+                            (v.Brand || '').toLowerCase().includes(q) ||
+                            (v.Model || '').toLowerCase().includes(q) ||
+                            (v.Code || '').toLowerCase().includes(q)
+                        )
+                    return variants.length ? { ...g, _variants: variants } : null
+                })
+                .filter(Boolean)
+        },
         filteredTickets() {
             if (!this.ticketSearch.trim()) return this.tickets
             const q = this.ticketSearch.toLowerCase().trim()
@@ -503,6 +547,55 @@ var app = new Vue({
     },
 
     methods: {
+
+        openItemDropdown(target) {
+            this.itemDropdownTarget = target
+            this.itemDropdownSearch = ''
+
+            const form = target === 'create' ? this.createForm : this.editForm
+
+            if (form.ItemId) {
+                const cur = this.items.find(x => x.Id == form.ItemId)
+                if (cur) {
+                    const key = (cur.Name || '').trim().toLowerCase()
+                    this.$set(this.expandedItemGroupKeys, key, true)
+                }
+            }
+
+            this.showItemDropdown = true
+        },
+
+        closeItemDropdown() {
+            this.showItemDropdown = false
+            this.itemDropdownTarget = null
+        },
+
+        toggleItemGroup(g) {
+            if (g._variants.length === 1) {
+                this.selectItemVariant(g._variants[0])
+                return
+            }
+            this.$set(this.expandedItemGroupKeys, g._key, !this.expandedItemGroupKeys[g._key])
+        },
+
+        selectItemVariant(item) {
+            if (this.itemDropdownTarget === 'create') {
+                this.createForm.ItemId = item.Id
+            } else if (this.itemDropdownTarget === 'edit') {
+                this.editForm.ItemId = item.Id
+            }
+            this.closeItemDropdown()
+        },
+
+        getSelectedItemLabel(itemId) {
+            const it = this.items.find(x => x.Id == itemId)
+            if (!it) return '-- Chọn thiết bị --'
+            let label = it.Name
+            if (it.Brand || it.Model) {
+                label += ' (' + (it.Brand || '—') + (it.Model ? ' - ' + it.Model : '') + ')'
+            }
+            return label
+        },
 
         // ══════════════════════════════════
         // IMPORT EXCEL
@@ -2166,7 +2259,12 @@ var app = new Vue({
         this.loadDropdowns()
         this.loadDevices()
 
-        // Tự động lọc thiết bị nếu trỏ từ Alerts Center qua searchCode
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.item-select-container')) {
+                this.showItemDropdown = false
+            }
+        })
+
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('searchCode');
         if (code) {

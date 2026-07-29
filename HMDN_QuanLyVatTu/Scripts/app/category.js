@@ -433,6 +433,9 @@ var appCatalog = new Vue({
     },
 
     methods: {
+        getInventoryCountByItem(itemId) {
+            return (this.inventories || []).filter(inv => inv.ItemId === itemId).length;
+        },
 
         // ── LOCATION (Khoa phòng) ──
         loadLocDepartments() {
