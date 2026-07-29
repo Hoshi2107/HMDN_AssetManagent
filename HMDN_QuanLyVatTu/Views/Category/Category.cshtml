@@ -1137,10 +1137,12 @@
     }
     .inv-accordion-meta {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
+        grid-template-columns: 140px 1.5fr 140px 140px 110px;
+        gap: 12px;
         width: 100%;
+        align-items: center;
     }
+
     .inv-meta-col {
         font-size: 13px;
         color: #334155;
@@ -2205,7 +2207,7 @@
                     <div style="padding: 12px 20px; border-bottom: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 14px; color: #64748b;">🔍</span>
                         <input type="text"
-                               placeholder="Tìm tài sản theo Mã, Serial hoặc Vị trí..."
+                               placeholder="Tìm tài sản theo Mã, Tên thiết bị, Serial hoặc Vị trí..."
                                v-model="detailAssetSearch"
                                style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; width: 100%; box-sizing: border-box;">
                     </div>
@@ -2225,9 +2227,12 @@
                             <div class="inv-accordion-header" v-on:click="toggleExpandInventory(inv.Id)">
                                 <span class="inv-accordion-icon">${ expandedInventoryMap[inv.Id] ? '▼' : '▶' }</span>
                                 <div class="inv-accordion-meta">
-                                    <div class="inv-meta-col code">${ inv.AssetCode }</div>
-                                    <div class="inv-meta-col">S/N: ${ inv.SerialNumber || '—' }</div>
-                                    <div class="inv-meta-col">📍 ${ inv.LocationName || 'Chưa phân' }</div>
+                                    <div class="inv-meta-col code" title="Mã tài sản">${ inv.AssetCode }</div>
+                                    <div class="inv-meta-col name" style="font-weight: 600; color: #1e293b;" :title="inv.ItemName || detailItem.Name">
+                                        📦 ${ inv.ItemName || detailItem.Name || '—' }
+                                    </div>
+                                    <div class="inv-meta-col" title="Số Serial">S/N: ${ inv.SerialNumber || '—' }</div>
+                                    <div class="inv-meta-col" title="Khoa phòng / Vị trí">📍 ${ inv.LocationName || 'Chưa phân' }</div>
                                     <div class="inv-meta-col" style="text-align: right;">
                                         <span class="inv-status-badge"
                                               :style="{ background: inv.LifeStatus === 'active' ? '#dcfce7' : '#fee2e2', color: inv.LifeStatus === 'active' ? '#16a34a' : '#dc2626' }">
@@ -2236,6 +2241,7 @@
                                     </div>
                                 </div>
                             </div>
+
 
                             <!-- Accordion Body -->
                             <div class="inv-accordion-body" v-if="expandedInventoryMap[inv.Id]">
